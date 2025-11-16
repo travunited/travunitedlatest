@@ -1,0 +1,499 @@
+"use client";
+
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Eye, Filter, Calendar, CheckCircle, X, AlertCircle, Download, Mail, Trash2, UserCheck, ArrowRight } from "lucide-react";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { formatDate } from "@/lib/dateFormat";
+
+interface Booking {
+  id: string;
+  tourName: string;
+  status: string;
+  totalAmount: number;
+  travelDate: string | null;
+  createdAt: string;
+  processedBy?: { name: string; email: string } | null;
+  user: { name: string; email: string };
+  amountPaid?: number;
+  pendingBalance?: number;
+}
+
+export default function AdminBookingsPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "ALL");
+  const [tourFilter, setTourFilter] = useState<string>("");
+  const [assignedFilter, setAssignedFilter] = useState<string>("ALL");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+
+  const searchParamsKey = useMemo(() => searchParams.toString(), [searchParams]);
+
+  const fetchBookings = useCallback(async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (statusFilter !== "ALL") params.append("status", statusFilter);
+      if (tourFilter) params.append("tour", tourFilter);
+      if (assignedFilter === "UNASSIGNED") params.append("unassigned", "true");
+      if (assignedFilter === "ASSIGNED") params.append("assigned", "true");
+      if (dateFrom) params.append("dateFrom", dateFrom);
+      if (dateTo) params.append("dateTo", dateTo);
+
+      const currentParams = new URLSearchParams(searchParamsKey);
+      const unconfirmed = currentParams.get("unconfirmed") === "true";
+      if (unconfirmed) params.append("unconfirmed", "true");
+
+      const response = await fetch(`/api/admin/bookings?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        setBookings(data);
+      }
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [statusFilter, tourFilter, assignedFilter, dateFrom, dateTo, searchParamsKey]);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (status === "authenticated") {
+      const isAdmin = session?.user?.role === "STAFF_ADMIN" || session?.user?.role === "SUPER_ADMIN";
+      if (!isAdmin) {
+        router.push("/dashboard");
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        const urlStatus = params.get("status");
+        if (urlStatus) {
+          setStatusFilter(urlStatus);
+        }
+        fetchBookings();
+      }
+    }
+  }, [session, status, router, fetchBookings]);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchBookings();
+    }
+  }, [status, fetchBookings]);
+
+  const handleClaim = async (bookingId: string) => {
+    try {
+      const response = await fetch(`/api/admin/bookings/${bookingId}/claim`, {
+        method: "POST",
+      });
+      if (response.ok) {
+        await fetchBookings();
+      }
+    } catch (error) {
+      console.error("Error claiming booking:", error);
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedRows(new Set(bookings.map(b => b.id)));
+      setShowBulkActions(true);
+    } else {
+      setSelectedRows(new Set());
+      setShowBulkActions(false);
+    }
+  };
+
+  const handleSelectRow = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedRows);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedRows(newSelected);
+    setShowBulkActions(newSelected.size > 0);
+  };
+
+  const handleBulkAction = async (action: string, value?: string) => {
+    if (selectedRows.size === 0) return;
+
+    setBulkActionLoading(true);
+    try {
+      switch (action) {
+        case "assign":
+          if (!value) {
+            alert("Please select an admin to assign");
+            setBulkActionLoading(false);
+            return;
+          }
+          await fetch("/api/admin/bookings/bulk/assign", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              bookingIds: Array.from(selectedRows),
+              adminId: value,
+            }),
+          });
+          break;
+        case "status":
+          if (!value) {
+            alert("Please select a status");
+            setBulkActionLoading(false);
+            return;
+          }
+          await fetch("/api/admin/bookings/bulk/status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              bookingIds: Array.from(selectedRows),
+              status: value,
+            }),
+          });
+          break;
+        case "export":
+          window.location.href = `/api/admin/bookings/export?ids=${Array.from(selectedRows).join(",")}`;
+          break;
+        case "resend":
+          await fetch("/api/admin/bookings/bulk/resend-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              bookingIds: Array.from(selectedRows),
+            }),
+          });
+          break;
+        case "delete":
+          if (!confirm("Are you absolutely sure? This action cannot be undone.")) {
+            setBulkActionLoading(false);
+            return;
+          }
+          await fetch("/api/admin/bookings/bulk/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              bookingIds: Array.from(selectedRows),
+            }),
+          });
+          break;
+      }
+      await fetchBookings();
+      setSelectedRows(new Set());
+      setShowBulkActions(false);
+      alert("Bulk action completed");
+    } catch (error) {
+      console.error("Error performing bulk action:", error);
+      alert("Failed to perform bulk action");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      DRAFT: "bg-neutral-200 text-neutral-700",
+      PAYMENT_PENDING: "bg-yellow-100 text-yellow-700",
+      BOOKED: "bg-blue-100 text-blue-700",
+      CONFIRMED: "bg-green-100 text-green-700",
+      COMPLETED: "bg-neutral-100 text-neutral-700",
+      CANCELLED: "bg-red-100 text-red-700",
+    };
+    return colors[status] || "bg-neutral-200 text-neutral-700";
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="mt-4 text-neutral-600">Loading...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  return (
+    <AdminLayout>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-neutral-900">Tour Bookings</h1>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow-medium p-6 border border-neutral-200 mb-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <Filter size={20} className="text-neutral-400" />
+            <h2 className="text-lg font-semibold text-neutral-900">Filters</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="DRAFT">Draft</option>
+                <option value="PAYMENT_PENDING">Payment Pending</option>
+                <option value="BOOKED">Booked</option>
+                <option value="CONFIRMED">Confirmed</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">Tour</label>
+              <input
+                type="text"
+                value={tourFilter}
+                onChange={(e) => setTourFilter(e.target.value)}
+                placeholder="Filter by tour name"
+                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">Assigned</label>
+              <select
+                value={assignedFilter}
+                onChange={(e) => setAssignedFilter(e.target.value)}
+                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+              >
+                <option value="ALL">All</option>
+                <option value="ASSIGNED">Assigned</option>
+                <option value="UNASSIGNED">Unassigned</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">Date From</label>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">Date To</label>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Bulk Actions */}
+        {showBulkActions && (
+          <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 mb-6 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <span className="text-sm font-medium text-neutral-900">
+                {selectedRows.size} booking(s) selected
+              </span>
+              <div className="flex items-center space-x-2">
+                <select
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleBulkAction("assign", e.target.value);
+                      e.target.value = "";
+                    }
+                  }}
+                  className="px-3 py-1 border border-neutral-300 rounded text-sm"
+                  disabled={bulkActionLoading}
+                >
+                  <option value="">Bulk Assign To...</option>
+                  <option value="current">Assign to Me</option>
+                </select>
+                <select
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleBulkAction("status", e.target.value);
+                      e.target.value = "";
+                    }
+                  }}
+                  className="px-3 py-1 border border-neutral-300 rounded text-sm"
+                  disabled={bulkActionLoading}
+                >
+                  <option value="">Bulk Status Change...</option>
+                  <option value="CONFIRMED">Mark as Confirmed</option>
+                  <option value="COMPLETED">Mark as Completed</option>
+                  <option value="CANCELLED">Mark as Cancelled</option>
+                </select>
+                <button
+                  onClick={() => handleBulkAction("resend")}
+                  disabled={bulkActionLoading}
+                  className="px-3 py-1 bg-neutral-100 text-neutral-700 rounded text-sm hover:bg-neutral-200 disabled:opacity-50 flex items-center space-x-1"
+                >
+                  <Mail size={14} />
+                  <span>Resend Email</span>
+                </button>
+                <button
+                  onClick={() => handleBulkAction("export")}
+                  disabled={bulkActionLoading}
+                  className="px-3 py-1 bg-neutral-100 text-neutral-700 rounded text-sm hover:bg-neutral-200 disabled:opacity-50 flex items-center space-x-1"
+                >
+                  <Download size={14} />
+                  <span>Export CSV</span>
+                </button>
+                <button
+                  onClick={() => handleBulkAction("delete")}
+                  disabled={bulkActionLoading}
+                  className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200 disabled:opacity-50 flex items-center space-x-1"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete</span>
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedRows(new Set());
+                setShowBulkActions(false);
+              }}
+              className="text-sm text-neutral-600 hover:text-neutral-900"
+            >
+              Clear Selection
+            </button>
+          </div>
+        )}
+
+        {/* Bookings Table */}
+        {bookings.length > 0 ? (
+          <div className="bg-white rounded-lg shadow-medium border border-neutral-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-neutral-200">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      <input
+                        type="checkbox"
+                        checked={selectedRows.size === bookings.length && bookings.length > 0}
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                      />
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Booking ID
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Tour Name
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Travel Date
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Primary Contact
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Amount Paid
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Pending Balance
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Assigned To
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-neutral-200">
+                  {bookings.map((booking) => (
+                    <tr key={booking.id} className="hover:bg-neutral-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={selectedRows.has(booking.id)}
+                          onChange={(e) => handleSelectRow(booking.id, e.target.checked)}
+                          className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-neutral-900">
+                          {booking.id.slice(0, 8)}...
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-neutral-900">{booking.tourName || "N/A"}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-neutral-900">
+                          {booking.travelDate ? formatDate(booking.travelDate) : "N/A"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-neutral-900">{booking.user.name || "N/A"}</div>
+                        <div className="text-sm text-neutral-500">{booking.user.email}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                        ₹{booking.amountPaid?.toLocaleString() || "0"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {booking.pendingBalance && booking.pendingBalance > 0 ? (
+                          <span className="text-orange-600 font-medium">₹{booking.pendingBalance.toLocaleString()}</span>
+                        ) : (
+                          <span className="text-green-600 font-medium">₹0</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
+                          {booking.status.replace("_", " ")}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {booking.processedBy ? (
+                          <div className="text-sm text-neutral-900">{booking.processedBy.name || booking.processedBy.email}</div>
+                        ) : (
+                          <button
+                            onClick={() => handleClaim(booking.id)}
+                            className="inline-flex items-center space-x-1 px-3 py-1 bg-primary-600 text-white rounded text-xs font-medium hover:bg-primary-700 transition-colors"
+                          >
+                            <UserCheck size={14} />
+                            <span>Claim</span>
+                          </button>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Link
+                          href={`/admin/bookings/${booking.id}`}
+                          className="text-primary-600 hover:text-primary-900 inline-flex items-center space-x-1"
+                        >
+                          <Eye size={16} />
+                          <span>View</span>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border border-neutral-200 p-12 text-center">
+            <Calendar size={48} className="text-neutral-300 mx-auto mb-4" />
+            <p className="text-neutral-600">No bookings found</p>
+          </div>
+        )}
+      </div>
+    </AdminLayout>
+  );
+}

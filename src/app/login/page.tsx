@@ -1,0 +1,148 @@
+"use client";
+
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Mail, Lock, ArrowRight, AlertCircle } from "lucide-react";
+
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Invalid email or password");
+      } else {
+        // Wait a moment for session to update, then check role and redirect
+        setTimeout(async () => {
+          router.refresh();
+          
+          // Fetch session to get user role
+          const sessionRes = await fetch("/api/auth/session");
+          const session = await sessionRes.json();
+          
+          const role = session?.user?.role;
+          
+          // Redirect based on role
+          if (role === "STAFF_ADMIN" || role === "SUPER_ADMIN") {
+            router.push("/admin");
+          } else {
+            router.push("/dashboard");
+          }
+        }, 100);
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-neutral-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="max-w-md w-full"
+      >
+        <div className="bg-white rounded-2xl shadow-large p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-neutral-900 mb-2">Welcome Back</h1>
+            <p className="text-neutral-600">Sign in to your Travunited account</p>
+          </div>
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 text-red-700">
+                  <AlertCircle size={20} />
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    disabled={loading}
+                    className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+                    placeholder="your.email@example.com"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    disabled={loading}
+                    className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+                    placeholder="Enter your password"
+                  />
+                </div>
+              </div>
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center">
+                <input type="checkbox" className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500" />
+                <span className="ml-2 text-sm text-neutral-600">Remember me</span>
+              </label>
+              <Link href="/forgot-password" className="text-sm text-primary-600 hover:text-primary-700">
+                Forgot password?
+              </Link>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span>{loading ? "Signing in..." : "Sign In"}</span>
+              {!loading && <ArrowRight size={20} />}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-neutral-600">
+              Don&rsquo;t have an account?{" "}
+              <Link href="/signup" className="text-primary-600 hover:text-primary-700 font-medium">
+                Sign up
+              </Link>
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
