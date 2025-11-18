@@ -7,7 +7,16 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Save, ArrowLeft, Loader2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { getMediaProxyUrl } from "@/lib/media";
+import {
+  getAllowedImageTypes,
+  MAX_IMAGE_SIZE_BYTES,
+  isValidImageType,
+  isValidImageSize,
+  getAllowedImageFormats,
+  getMaxImageSizeDisplay,
+} from "@/lib/image-upload-config";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -93,12 +102,17 @@ export default function AdminBlogEditPage() {
 
   const handleCoverImageUpload = async (file: File | null) => {
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      alert("Please select a valid image (JPG, PNG, WEBP).");
+    
+    // Frontend validation: Check file type
+    if (!isValidImageType(file.type)) {
+      const allowedFormats = getAllowedImageFormats().join(", ");
+      alert(`Invalid file type. Only ${allowedFormats} images are allowed.`);
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image too large. Max 5MB allowed.");
+    
+    // Frontend validation: Check file size
+    if (!isValidImageSize(file.size)) {
+      alert(`Image too large. Maximum allowed size is ${getMaxImageSizeDisplay()}.`);
       return;
     }
 
@@ -288,11 +302,13 @@ export default function AdminBlogEditPage() {
                     <div className="space-y-2">
                       <input
                         type="file"
-                        accept="image/*"
+                        accept={getAllowedImageTypes().join(",")}
                         onChange={(e) => handleCoverImageUpload(e.target.files?.[0] || null)}
                         className="w-full px-4 py-3 border border-dashed border-neutral-300 rounded-lg text-sm text-neutral-600 hover:border-primary-400 cursor-pointer"
                       />
-                      <p className="text-xs text-neutral-500">JPG, PNG or WEBP up to 5MB.</p>
+                      <p className="text-xs text-neutral-500">
+                        Allowed formats: {getAllowedImageFormats().join(", ")}. Max size: {getMaxImageSizeDisplay()}.
+                      </p>
                       {coverUploading && (
                         <div className="flex items-center gap-2 text-sm text-neutral-600">
                           <Loader2 size={16} className="animate-spin" />
@@ -356,15 +372,14 @@ export default function AdminBlogEditPage() {
               <label className="block text-sm font-medium text-neutral-700 mb-2">
                 Content <span className="text-red-500">*</span>
               </label>
-              <textarea
-                required
-                value={formData.content || ""}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                rows={20}
-                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 font-mono text-sm"
-                placeholder="Write your blog post content here (Markdown supported)..."
+              <RichTextEditor
+                content={formData.content || ""}
+                onChange={(html) => setFormData({ ...formData, content: html })}
+                placeholder="Start writing your blog post..."
               />
-              <p className="text-xs text-neutral-500 mt-1">Supports Markdown formatting</p>
+              <p className="text-xs text-neutral-500 mt-2">
+                Use the toolbar above to format your content. Images must be PNG or JPG, max 5 MB.
+              </p>
             </div>
 
             {/* Publish Status */}

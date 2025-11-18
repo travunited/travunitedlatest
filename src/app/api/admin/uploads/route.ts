@@ -3,9 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { uploadVisaDocument } from "@/lib/minio";
 import { buildMediaProxyUrlFromKey } from "@/lib/media";
-
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+import {
+  getAllowedImageTypes,
+  MAX_IMAGE_SIZE_BYTES,
+  isValidImageType,
+  isValidImageSize,
+} from "@/lib/image-upload-config";
 
 const sanitizeFileName = (value: string) =>
   value.replace(/[^a-zA-Z0-9.\-_]/g, "_").replace(/_+/g, "_");
@@ -34,18 +37,30 @@ export async function POST(request: Request) {
       scope,
     });
 
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    // Validate file type
+    if (!isValidImageType(file.type)) {
       console.error("Invalid file type:", file.type);
+      const allowedTypes = getAllowedImageTypes();
+      const formatNames = allowedTypes
+        .map(t => t === 'image/jpeg' || t === 'image/jpg' ? 'JPG' : t.split('/')[1]?.toUpperCase())
+        .join(', ');
       return NextResponse.json(
-        { error: "Only JPG, PNG or WEBP images are allowed" },
+        { 
+          error: `Invalid file type. Only ${formatNames} images are allowed.`,
+          code: "INVALID_FILE_TYPE"
+        },
         { status: 400 }
       );
     }
 
-    if (file.size > MAX_UPLOAD_BYTES) {
+    // Validate file size
+    if (!isValidImageSize(file.size)) {
       console.error("File too large:", file.size);
       return NextResponse.json(
-        { error: "Image too large. Max 5 MB allowed." },
+        { 
+          error: "Image too large. Maximum allowed size is 5 MB.",
+          code: "FILE_TOO_LARGE"
+        },
         { status: 400 }
       );
     }

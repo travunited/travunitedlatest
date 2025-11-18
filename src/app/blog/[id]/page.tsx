@@ -64,7 +64,7 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
 
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div
-          className="prose prose-lg max-w-none"
+          className="prose prose-lg prose-headings:font-bold prose-headings:text-neutral-900 prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl prose-p:text-neutral-700 prose-p:leading-relaxed prose-a:text-primary-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-neutral-900 prose-ul:list-disc prose-ol:list-decimal prose-li:my-2 prose-blockquote:border-l-4 prose-blockquote:border-primary-300 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-neutral-600 prose-img:rounded-lg prose-img:shadow-medium max-w-none"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
       </article>
