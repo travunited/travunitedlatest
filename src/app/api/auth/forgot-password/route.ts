@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { z } from "zod";
+export const dynamic = "force-dynamic";
+
 
 const forgotPasswordSchema = z.object({
   email: z.string().email(),

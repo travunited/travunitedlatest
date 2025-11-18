@@ -4,6 +4,9 @@ import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl, normalizeMediaInput } from "@/lib/media";
+export const dynamic = "force-dynamic";
+
+
 
 const slugify = (text: string) =>
   text

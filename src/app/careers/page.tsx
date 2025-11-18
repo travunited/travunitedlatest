@@ -49,7 +49,7 @@ export default function CareersPage() {
             <div className="bg-neutral-50 rounded-lg p-6">
               <h3 className="text-xl font-semibold text-neutral-900 mb-3">Growth Opportunities</h3>
               <p className="text-neutral-700">
-                We're a growing company with opportunities for career advancement and skill development.
+                We&apos;re a growing company with opportunities for career advancement and skill development.
               </p>
             </div>
             <div className="bg-neutral-50 rounded-lg p-6">
@@ -115,7 +115,7 @@ export default function CareersPage() {
             </div>
           ) : (
             <div className="bg-neutral-50 rounded-lg p-8 text-center">
-              <p className="text-neutral-600 mb-4">We don't have any open positions at the moment.</p>
+              <p className="text-neutral-600 mb-4">We don&apos;t have any open positions at the moment.</p>
               <p className="text-neutral-600">
                 Check back soon or send us your resume at{" "}
                 <a href="mailto:careers@travunited.com" className="text-primary-600 hover:text-primary-700">
@@ -131,11 +131,11 @@ export default function CareersPage() {
           <h2 className="text-3xl font-bold text-neutral-900 mb-6">How to Apply</h2>
           <div className="prose prose-lg max-w-none text-neutral-700">
             <p className="leading-relaxed mb-4">
-              Interested in joining our team? Here's how to apply:
+              Interested in joining our team? Here&apos;s how to apply:
             </p>
             <ol className="list-decimal pl-6 space-y-3">
               <li>Browse our open positions above and find a role that matches your skills and interests.</li>
-              <li>Click "Apply Now" on the position you're interested in, or send your resume directly to{" "}
+              <li>Click &quot;Apply Now&quot; on the position you&apos;re interested in, or send your resume directly to{" "}
                 <a href="mailto:careers@travunited.com" className="text-primary-600 hover:text-primary-700">
                   careers@travunited.com
                 </a>
@@ -148,10 +148,10 @@ export default function CareersPage() {
 
         {/* General Application */}
         <section className="bg-primary-50 rounded-2xl p-8">
-          <h2 className="text-2xl font-bold text-neutral-900 mb-4">Don't See a Match?</h2>
+          <h2 className="text-2xl font-bold text-neutral-900 mb-4">Don&apos;t See a Match?</h2>
           <p className="text-neutral-700 mb-6">
-            We're always looking for talented individuals to join our team. Send us your resume and 
-            we'll keep you in mind for future opportunities.
+            We&apos;re always looking for talented individuals to join our team. Send us your resume and 
+            we&apos;ll keep you in mind for future opportunities.
           </p>
           <Link
             href="/contact?subject=General Career Inquiry"

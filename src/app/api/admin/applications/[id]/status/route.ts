@@ -5,6 +5,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendVisaStatusUpdateEmail, sendVisaApprovedEmail, sendVisaRejectedEmail } from "@/lib/email";
 import { logAuditEvent } from "@/lib/audit";
+export const dynamic = "force-dynamic";
+
+
 
 export async function PUT(
   req: Request,

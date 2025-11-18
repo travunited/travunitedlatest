@@ -28,7 +28,7 @@ export default async function CountryPage({
       <div className="text-center px-4">
         <h1 className="text-4xl font-bold text-neutral-900 mb-4">Country Not Found</h1>
         <p className="text-neutral-600 mb-6">
-          We couldn't find information for "{params.slug}".
+          We couldn&apos;t find information for &quot;{params.slug}&quot;.
         </p>
         <a
           href="/visas"

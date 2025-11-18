@@ -23,7 +23,7 @@ export default function PrivacyPage() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-neutral-900 mb-4">1. Introduction</h2>
             <p className="text-neutral-700 leading-relaxed">
-              Travunited ("we," "our," or "us") is committed to protecting your privacy. This Privacy 
+              Travunited (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy 
               Policy explains how we collect, use, disclose, and safeguard your information when you 
               use our website and services.
             </p>
@@ -123,7 +123,7 @@ export default function PrivacyPage() {
           </section>
 
           <section className="mb-8">
-            <h2 className="text-2xl font-semibold text-neutral-900 mb-4">9. Children's Privacy</h2>
+            <h2 className="text-2xl font-semibold text-neutral-900 mb-4">9. Children&apos;s Privacy</h2>
             <p className="text-neutral-700 leading-relaxed">
               Our services are not intended for individuals under the age of 18. We do not knowingly 
               collect personal information from children.
@@ -134,7 +134,7 @@ export default function PrivacyPage() {
             <h2 className="text-2xl font-semibold text-neutral-900 mb-4">10. Changes to This Policy</h2>
             <p className="text-neutral-700 leading-relaxed">
               We may update this Privacy Policy from time to time. We will notify you of any changes 
-              by posting the new policy on this page and updating the "Last updated" date.
+              by posting the new policy on this page and updating the &quot;Last updated&quot; date.
             </p>
           </section>
 

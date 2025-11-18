@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+export const dynamic = "force-dynamic";
+
 
 const resetPasswordSchema = z.object({
   token: z.string(),

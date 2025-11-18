@@ -5,6 +5,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ensureRazorpayClient } from "@/lib/razorpay-server";
 import { z } from "zod";
+export const dynamic = "force-dynamic";
+
+
 
 const verifySchema = z.object({
   razorpay_order_id: z.string(),

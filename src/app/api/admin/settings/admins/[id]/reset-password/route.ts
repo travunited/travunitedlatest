@@ -4,6 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import { sendPasswordResetEmail } from "@/lib/email";
+export const dynamic = "force-dynamic";
+
+
 
 export async function POST(
   req: Request,

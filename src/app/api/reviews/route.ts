@@ -5,6 +5,9 @@ import { AuditAction, AuditEntityType, ReviewType } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAuditEvent } from "@/lib/audit";
+export const dynamic = "force-dynamic";
+
+
 
 const reviewSchema = z.object({
   type: z.enum(["visa", "tour"]),

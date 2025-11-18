@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+export const dynamic = "force-dynamic";
+
+
 
 function ensureSuperAdmin(session: Session | null) {
   if (!session?.user?.id) {

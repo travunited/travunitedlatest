@@ -5,6 +5,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DocScope } from "@prisma/client";
 import { getMediaProxyUrl, normalizeMediaInput } from "@/lib/media";
+export const dynamic = "force-dynamic";
+
+
 
 const slugify = (text: string) =>
   text

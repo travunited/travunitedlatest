@@ -6,6 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { uploadVisaDocument } from "@/lib/minio";
 import { sendTourConfirmedEmail } from "@/lib/email";
 import { logAuditEvent } from "@/lib/audit";
+export const dynamic = "force-dynamic";
+
+
 
 export async function POST(
   req: Request,

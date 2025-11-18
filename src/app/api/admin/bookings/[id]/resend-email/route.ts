@@ -9,6 +9,8 @@ import {
   sendTourStatusUpdateEmail,
 } from "@/lib/email";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(
   req: Request,
   { params }: { params: { id: string } }

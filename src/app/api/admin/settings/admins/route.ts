@@ -4,6 +4,9 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+export const dynamic = "force-dynamic";
+
+
 
 export async function GET(req: Request) {
   try {

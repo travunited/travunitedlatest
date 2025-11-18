@@ -99,14 +99,14 @@ export default function AboutPage() {
               confusing, time-consuming, and stressful for Indian travellers.
             </p>
             <p className="leading-relaxed mb-4">
-              Starting as a small team in Karnataka, India, we've grown into a trusted travel partner 
+              Starting as a small team in Karnataka, India, we&apos;ve grown into a trusted travel partner 
               with offices in India and the UAE, serving thousands of customers across the globe. 
               Our team of visa experts, travel consultants, and customer support specialists work 
               tirelessly to ensure every journey is smooth and memorable.
             </p>
             <p className="leading-relaxed">
               Today, Travunited offers comprehensive visa services for destinations worldwide, curated 
-              tour packages, and corporate travel solutions. We're proud to have helped countless 
+              tour packages, and corporate travel solutions. We&apos;re proud to have helped countless 
               travellers realize their dreams of exploring new countries and cultures.
             </p>
           </div>

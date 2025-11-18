@@ -4,6 +4,9 @@ import { AuditAction, AuditEntityType, Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAuditEvent } from "@/lib/audit";
+export const dynamic = "force-dynamic";
+
+
 
 const GENERAL_KEY = "GENERAL";
 const EMAIL_SNIPPETS_KEY = "EMAIL_SNIPPETS";

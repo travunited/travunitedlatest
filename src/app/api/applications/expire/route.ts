@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+export const dynamic = "force-dynamic";
+
 
 // This should be run as a cron job or scheduled task
 // Expires drafts after 7 days and payment pending after 48 hours

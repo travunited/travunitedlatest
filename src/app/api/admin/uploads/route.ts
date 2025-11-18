@@ -10,6 +10,8 @@ import {
   isValidImageSize,
 } from "@/lib/image-upload-config";
 
+export const dynamic = "force-dynamic";
+
 const sanitizeFileName = (value: string) =>
   value.replace(/[^a-zA-Z0-9.\-_]/g, "_").replace(/_+/g, "_");
 

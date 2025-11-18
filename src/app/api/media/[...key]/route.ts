@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getDocumentObject } from "@/lib/minio";
 import { Readable } from "stream";
+export const dynamic = "force-dynamic";
+
 
 function readableToWebStream(stream: Readable): ReadableStream<Uint8Array> {
   const reader = stream;

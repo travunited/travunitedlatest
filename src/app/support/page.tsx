@@ -49,7 +49,7 @@ export default function SupportPage() {
           </Link>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Support Center</h1>
           <p className="text-xl text-white/90 max-w-2xl">
-            We're here to help you with any questions or concerns
+            We&apos;re here to help you with any questions or concerns
           </p>
         </div>
       </div>
@@ -129,7 +129,7 @@ export default function SupportPage() {
             <div className="bg-neutral-50 rounded-lg p-6">
               <h3 className="font-semibold text-neutral-900 mb-2">Document Issues</h3>
               <p className="text-neutral-700 mb-4">
-                If you're having trouble uploading documents or need to resubmit, our team can help guide you through the process.
+                If you&apos;re having trouble uploading documents or need to resubmit, our team can help guide you through the process.
               </p>
               <Link
                 href="/contact"

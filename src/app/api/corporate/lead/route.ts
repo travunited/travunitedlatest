@@ -3,6 +3,8 @@ import { z } from "zod";
 import { AuditAction, AuditEntityType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { logAuditEvent } from "@/lib/audit";
+export const dynamic = "force-dynamic";
+
 
 const leadSchema = z.object({
   companyName: z.string().min(2),

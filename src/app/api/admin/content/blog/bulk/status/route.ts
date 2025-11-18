@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+export const dynamic = "force-dynamic";
+
+
 
 const bulkStatusSchema = z.object({
   ids: z.array(z.string()).min(1, "At least one blog post ID is required"),

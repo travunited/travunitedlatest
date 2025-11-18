@@ -65,7 +65,7 @@ export default function RefundPage() {
                     refundable according to their respective policies. Refund eligibility depends on:
                   </p>
                   <ul className="list-disc pl-6 mt-2 space-y-1 text-neutral-700">
-                    <li>The embassy's refund policy</li>
+                    <li>The embassy&apos;s refund policy</li>
                     <li>Application status at the time of cancellation</li>
                     <li>Reason for cancellation</li>
                   </ul>
@@ -107,7 +107,7 @@ export default function RefundPage() {
                 </div>
                 <p className="text-neutral-700">
                   If your visa is rejected by the embassy, service fees remain non-refundable. However, 
-                  government fees may be refundable according to the embassy's policy.
+                  government fees may be refundable according to the embassy&apos;s policy.
                 </p>
               </div>
 
