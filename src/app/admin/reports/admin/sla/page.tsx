@@ -181,19 +181,19 @@ export default function SLATurnaroundPage() {
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                  <div className="text-sm text-red-600 mb-1">Not Touched > 24h</div>
+                  <div className="text-sm text-red-600 mb-1">Not Touched &gt; 24h</div>
                   <div className="text-2xl font-bold text-red-700">{summary.slaBreaches.notTouched24h}</div>
                 </div>
                 <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                  <div className="text-sm text-red-600 mb-1">Not Touched > 48h</div>
+                  <div className="text-sm text-red-600 mb-1">Not Touched &gt; 48h</div>
                   <div className="text-2xl font-bold text-red-700">{summary.slaBreaches.notTouched48h}</div>
                 </div>
                 <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-                  <div className="text-sm text-orange-600 mb-1">Not Decided > 48h</div>
+                  <div className="text-sm text-orange-600 mb-1">Not Decided &gt; 48h</div>
                   <div className="text-2xl font-bold text-orange-700">{summary.slaBreaches.notDecided48h}</div>
                 </div>
                 <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                  <div className="text-sm text-red-600 mb-1">Not Decided > 72h</div>
+                  <div className="text-sm text-red-600 mb-1">Not Decided &gt; 72h</div>
                   <div className="text-2xl font-bold text-red-700">{summary.slaBreaches.notDecided72h}</div>
                 </div>
               </div>

@@ -74,7 +74,7 @@ export async function PUT(
       adminId: session.user.id,
       entityType: AuditEntityType.BOOKING,
       entityId: params.id,
-      action: AuditAction.ASSIGN,
+      action: AuditAction.UPDATE,
       description: `Booking assigned to ${admin.name || admin.email}`,
       metadata: {
         assignedToId: adminId,

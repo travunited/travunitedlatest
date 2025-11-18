@@ -66,7 +66,6 @@ export async function GET(req: NextRequest) {
             id: true,
             country: true,
             visaType: true,
-            referenceNumber: true,
           },
         },
         booking: {
@@ -132,7 +131,7 @@ export async function GET(req: NextRequest) {
         maxRows: 200,
       });
 
-      return new NextResponse(pdfBuffer, {
+      return new NextResponse(pdfBuffer as any, {
         headers: {
           "Content-Type": "application/pdf",
           "Content-Disposition": `attachment; filename=payments-report-${new Date().toISOString().split("T")[0]}.pdf`,

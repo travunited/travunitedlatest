@@ -54,7 +54,7 @@ export async function GET(req: Request) {
 
     if (format === "xlsx") {
       const buffer = generateXLSXTemplate(headers, exampleRows);
-      return new NextResponse(buffer, {
+      return new NextResponse(buffer as any, {
         headers: {
           "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "Content-Disposition": "attachment; filename=countries-template.xlsx",

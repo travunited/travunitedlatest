@@ -106,7 +106,7 @@ export async function GET(
         },
       },
       orderBy: {
-        createdAt: "asc",
+        timestamp: "asc",
       },
     });
 
@@ -118,7 +118,7 @@ export async function GET(
       pendingBalance: pendingBalance > 0 ? pendingBalance : 0,
       timeline: activities.map((activity) => ({
         id: activity.id,
-        time: activity.createdAt,
+        time: activity.timestamp,
         event: activity.description,
         adminName: activity.admin?.name || activity.admin?.email || "System",
       })),

@@ -153,7 +153,7 @@ export async function GET(req: NextRequest) {
         maxRows: 200,
       });
 
-      return new NextResponse(pdfBuffer, {
+      return new NextResponse(pdfBuffer as any, {
         headers: {
           "Content-Type": "application/pdf",
           "Content-Disposition": `attachment; filename=visa-applications-${new Date().toISOString().split("T")[0]}.pdf`,

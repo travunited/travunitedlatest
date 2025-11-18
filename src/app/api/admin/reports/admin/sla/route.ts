@@ -164,7 +164,7 @@ export async function GET(req: NextRequest) {
         rows,
       });
 
-      return new NextResponse(pdfBuffer, {
+      return new NextResponse(pdfBuffer as any, {
         headers: {
           "Content-Type": "application/pdf",
           "Content-Disposition": `attachment; filename=sla-turnaround-${new Date().toISOString().split("T")[0]}.pdf`,
