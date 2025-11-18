@@ -17,6 +17,7 @@ export type NotificationType =
   | "TOUR_BOOKING_UPDATED"
   | "TOUR_PAYMENT_SUCCESS"
   | "TOUR_PAYMENT_FAILED"
+  | "TOUR_VOUCHERS_READY"
   // Customer - Account & Security
   | "ACCOUNT_NEW_DEVICE_LOGIN"
   | "ACCOUNT_PASSWORD_CHANGED"
@@ -285,5 +286,27 @@ export async function markAllNotificationsAsRead(userId: string): Promise<number
   });
 
   return result.count;
+}
+
+/**
+ * Send notification to multiple users
+ */
+export async function notifyMultiple(
+  userIds: string[],
+  params: Omit<NotificationParams, "userId">
+): Promise<void> {
+  if (userIds.length === 0) {
+    return;
+  }
+
+  // Create notifications for all users
+  const notifications = await Promise.all(
+    userIds.map((userId) =>
+      notify({
+        ...params,
+        userId,
+      })
+    )
+  );
 }
 

@@ -156,7 +156,7 @@ export async function POST(req: Request) {
       await notifyMultiple(
         superAdmins.map((a) => a.id),
         {
-          type: "ADMIN_CREATED",
+          type: "ADMIN_ACCOUNT_CREATED",
           title: "New admin created",
           message: `A new ${admin.role === "SUPER_ADMIN" ? "Super Admin" : "Staff Admin"} has been created: ${admin.name} (${admin.email})`,
           link: `/admin/settings/admins`,

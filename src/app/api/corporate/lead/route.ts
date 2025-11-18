@@ -60,7 +60,7 @@ export async function POST(req: Request) {
       await notifyMultiple(
         admins.map((a) => a.id),
         {
-          type: "ADMIN_CORPORATE_LEAD_ASSIGNED",
+          type: "ADMIN_CORPORATE_LEAD_NEW",
           title: "New corporate lead",
           message: `New corporate lead from ${lead.companyName}. Contact: ${lead.contactName} (${lead.email})`,
           link: `/admin/corporate-leads`,
