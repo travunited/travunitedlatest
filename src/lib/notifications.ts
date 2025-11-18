@@ -310,3 +310,121 @@ export async function notifyMultiple(
   );
 }
 
+/**
+ * Get notifications for a user with filters and pagination
+ */
+export async function getNotifications(
+  userId: string,
+  options: {
+    filter?: "all" | "visa" | "tour" | "payment" | "system";
+    unreadOnly?: boolean;
+    page?: number;
+    limit?: number;
+  } = {}
+): Promise<{
+  notifications: any[];
+  total: number;
+  unreadCount: number;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}> {
+  const {
+    filter = "all",
+    unreadOnly = false,
+    page = 1,
+    limit = 20,
+  } = options;
+
+  const skip = (page - 1) * limit;
+
+  const where: any = {
+    userId,
+  };
+
+  // Filter by read status
+  if (unreadOnly) {
+    where.readAt = null;
+  }
+
+  // Filter by type category
+  if (filter && filter !== "all") {
+    const typeFilters: Record<string, string[]> = {
+      visa: [
+        "VISA_APPLICATION_SUBMITTED",
+        "VISA_STATUS_CHANGED",
+        "VISA_DOCUMENT_REJECTED",
+        "VISA_DOCUMENT_REQUIRED",
+        "VISA_PAYMENT_SUCCESS",
+        "VISA_PAYMENT_FAILED",
+        "VISA_READY",
+      ],
+      tour: [
+        "TOUR_BOOKING_CONFIRMED",
+        "TOUR_BOOKING_CANCELLED",
+        "TOUR_BOOKING_UPDATED",
+        "TOUR_PAYMENT_SUCCESS",
+        "TOUR_PAYMENT_FAILED",
+        "TOUR_VOUCHERS_READY",
+      ],
+      payment: [
+        "VISA_PAYMENT_SUCCESS",
+        "VISA_PAYMENT_FAILED",
+        "TOUR_PAYMENT_SUCCESS",
+        "TOUR_PAYMENT_FAILED",
+        "ADMIN_REFUND_REQUESTED",
+        "ADMIN_REFUND_PROCESSED",
+      ],
+      system: [
+        "ADMIN_APPLICATION_ASSIGNED",
+        "ADMIN_BOOKING_ASSIGNED",
+        "ADMIN_CORPORATE_LEAD_NEW",
+        "ADMIN_VISA_PACKAGE_CHANGED",
+        "ADMIN_VISA_PACKAGE_CREATED",
+        "ADMIN_TOUR_PACKAGE_CHANGED",
+        "ADMIN_TOUR_PACKAGE_CREATED",
+        "ADMIN_BULK_IMPORT_COMPLETED",
+        "ADMIN_PAYMENT_WEBHOOK_ERROR",
+        "ADMIN_ACCOUNT_CREATED",
+        "ADMIN_ROLE_CHANGED",
+        "ADMIN_ACCOUNT_LOCKED",
+      ],
+    };
+
+    if (typeFilters[filter]) {
+      where.type = { in: typeFilters[filter] };
+    }
+  }
+
+  const [notifications, total, unreadCount] = await Promise.all([
+    prisma.notification.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    }),
+    prisma.notification.count({ where }),
+    prisma.notification.count({
+      where: {
+        userId,
+        readAt: null,
+      },
+    }),
+  ]);
+
+  return {
+    notifications,
+    total,
+    unreadCount,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+}
+

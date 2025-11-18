@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { markAllNotificationsAsRead } from "@/lib/notifications";
+import { markAllNotificationsAsRead, getNotifications } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -19,95 +18,22 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const filter = searchParams.get("filter"); // "all", "visa", "tour", "payment", "system"
+    const filter = searchParams.get("filter") as "all" | "visa" | "tour" | "payment" | "system" | null;
     const unreadOnly = searchParams.get("unreadOnly") === "true";
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
-    const skip = (page - 1) * limit;
 
-    const where: any = {
-      userId: session.user.id,
-    };
-
-    // Filter by read status
-    if (unreadOnly) {
-      where.readAt = null;
-    }
-
-    // Filter by type category
-    if (filter && filter !== "all") {
-      const typeFilters: Record<string, string[]> = {
-        visa: [
-          "VISA_APPLICATION_SUBMITTED",
-          "VISA_STATUS_CHANGED",
-          "VISA_DOCUMENT_REJECTED",
-          "VISA_DOCUMENT_REQUIRED",
-          "VISA_PAYMENT_SUCCESS",
-          "VISA_PAYMENT_FAILED",
-          "VISA_READY",
-        ],
-        tour: [
-          "TOUR_BOOKING_CONFIRMED",
-          "TOUR_BOOKING_CANCELLED",
-          "TOUR_BOOKING_UPDATED",
-          "TOUR_PAYMENT_SUCCESS",
-          "TOUR_PAYMENT_FAILED",
-        ],
-        payment: [
-          "VISA_PAYMENT_SUCCESS",
-          "VISA_PAYMENT_FAILED",
-          "TOUR_PAYMENT_SUCCESS",
-          "TOUR_PAYMENT_FAILED",
-          "ADMIN_REFUND_REQUESTED",
-          "ADMIN_REFUND_PROCESSED",
-        ],
-        system: [
-          "ADMIN_APPLICATION_ASSIGNED",
-          "ADMIN_BOOKING_ASSIGNED",
-          "ADMIN_CORPORATE_LEAD_NEW",
-          "ADMIN_VISA_PACKAGE_CHANGED",
-          "ADMIN_VISA_PACKAGE_CREATED",
-          "ADMIN_TOUR_PACKAGE_CHANGED",
-          "ADMIN_TOUR_PACKAGE_CREATED",
-          "ADMIN_BULK_IMPORT_COMPLETED",
-          "ADMIN_PAYMENT_WEBHOOK_ERROR",
-          "ADMIN_ACCOUNT_CREATED",
-          "ADMIN_ROLE_CHANGED",
-          "ADMIN_ACCOUNT_LOCKED",
-        ],
-      };
-
-      if (typeFilters[filter]) {
-        where.type = { in: typeFilters[filter] };
-      }
-    }
-
-    const [notifications, total] = await Promise.all([
-      prisma.notification.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.notification.count({ where }),
-    ]);
-
-    const unreadCount = await prisma.notification.count({
-      where: {
-        userId: session.user.id,
-        readAt: null,
-      },
+    const result = await getNotifications(session.user.id, {
+      filter: filter || "all",
+      unreadOnly,
+      page,
+      limit,
     });
 
     return NextResponse.json({
-      notifications,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      },
-      unreadCount,
+      notifications: result.notifications,
+      pagination: result.pagination,
+      unreadCount: result.unreadCount,
     });
   } catch (error) {
     console.error("Error fetching notifications:", error);
