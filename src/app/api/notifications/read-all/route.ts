@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { markAllNotificationsAsRead } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -17,17 +17,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await prisma.notification.updateMany({
-      where: {
-        userId: session.user.id,
-        readAt: null,
-      },
-      data: {
-        readAt: new Date(),
-      },
-    });
+    const count = await markAllNotificationsAsRead(session.user.id);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, count });
   } catch (error) {
     console.error("Error marking all notifications as read:", error);
     return NextResponse.json(
