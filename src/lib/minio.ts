@@ -59,7 +59,7 @@ export async function getDocumentObject(key: string) {
     const webStream = (streamBody as any).transformToWebStream();
     readable = Readable.fromWeb(webStream);
   } else {
-    readable = Readable.from(streamBody as AsyncIterable<Uint8Array>);
+    readable = Readable.from(streamBody as unknown as AsyncIterable<Uint8Array>);
   }
 
   return {

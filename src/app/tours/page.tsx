@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getMediaProxyUrl } from "@/lib/media";
 import ToursGridClient from "./ToursGridClient";
 
 export const dynamic = "force-dynamic";

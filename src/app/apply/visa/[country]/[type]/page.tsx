@@ -64,7 +64,24 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   const [visaLoading, setVisaLoading] = useState(true);
   const [createdTravellerIds, setCreatedTravellerIds] = useState<string[]>([]);
 
-  const [formData, setFormData] = useState<Partial<VisaDraft & { travellers: Array<{ id: string; firstName: string; lastName: string; dateOfBirth: string; gender: string; passportNumber: string; passportIssueDate: string; passportExpiryDate: string; nationality: string; currentCity?: string }> }>>>({
+  type FormDataTraveller = {
+    id: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    gender: string;
+    passportNumber: string;
+    passportIssueDate: string;
+    passportExpiryDate: string;
+    nationality: string;
+    currentCity?: string;
+  };
+
+  type FormData = Omit<Partial<VisaDraft>, 'travellers'> & {
+    travellers?: FormDataTraveller[];
+  };
+
+  const [formData, setFormData] = useState<FormData>({
     country: params.country,
     visaType: params.type,
     visaId: undefined,
@@ -201,7 +218,18 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   useEffect(() => {
     const draft = getDraftFromLocalStorage();
     if (draft && (draft.country === params.country && draft.visaType === params.type)) {
-      setFormData((prev) => ({ ...prev, ...draft }));
+      // Ensure travellers have IDs when loading from localStorage
+      const travellersWithIds: FormDataTraveller[] = (draft.travellers || []).map((t, idx) => ({
+        ...t,
+        id: (t as any).id || `traveller-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
+      }));
+      
+      const { travellers: _, ...draftWithoutTravellers } = draft;
+      setFormData((prev) => ({ 
+        ...prev, 
+        ...draftWithoutTravellers,
+        travellers: travellersWithIds.length > 0 ? travellersWithIds : prev.travellers,
+      }));
       if (draft.applicationId) {
         setDraftId(draft.applicationId);
       }
@@ -234,7 +262,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           ...prev,
           travellers: prev.travellers?.map((t) => ({
             ...t,
-            id: (t as any).id || `traveller-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            id: t.id || `traveller-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           })) || [],
         }));
       }
