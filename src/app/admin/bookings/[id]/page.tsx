@@ -4,8 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Eye, Upload, Download, User, Mail, Phone, Calendar, CreditCard, Send, Clock, CheckCircle, X, AlertCircle } from "lucide-react";
+import { Eye, Upload, Download, User, Mail, Phone, Calendar, CreditCard, Send, Clock, CheckCircle, X, AlertCircle, ArrowLeft, UserPlus, ChevronDown, FileDown, MapPin, Globe } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
 
@@ -29,20 +28,22 @@ interface Traveller {
   lastName: string;
   dateOfBirth: string | null;
   gender: string | null;
+  email?: string | null;
+  phone?: string | null;
 }
 
-interface Activity {
+interface TimelineEvent {
   id: string;
-  type: string;
-  description: string;
-  createdBy: string | null;
-  createdAt: string;
+  time: string;
+  event: string;
+  adminName: string;
 }
 
 interface Booking {
   id: string;
-  tourId: string;
-  tourName: string;
+  referenceNumber?: string;
+  tourId: string | null;
+  tourName: string | null;
   status: string;
   totalAmount: number;
   currency: string;
@@ -62,9 +63,24 @@ interface Booking {
   }>;
   payments?: Payment[];
   processedBy?: {
+    id?: string;
     name: string;
     email: string;
   } | null;
+  tour?: {
+    id: string;
+    name: string;
+    destination?: string | null;
+    duration?: string | null;
+    price?: number | null;
+    country?: {
+      id: string;
+      name: string;
+      code: string;
+      flagUrl: string | null;
+    } | null;
+  } | null;
+  timeline?: TimelineEvent[];
   amountPaid?: number;
   pendingBalance?: number;
 }
@@ -79,7 +95,12 @@ export default function AdminBookingDetailPage() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [voucherFile, setVoucherFile] = useState<File | null>(null);
   const [notes, setNotes] = useState("");
-  const [activities, setActivities] = useState<Activity[]>([]);
+  const [newNote, setNewNote] = useState("");
+  const [addingNote, setAddingNote] = useState(false);
+  const [admins, setAdmins] = useState<Array<{ id: string; name: string; email: string }>>([]);
+  const [selectedAdminId, setSelectedAdminId] = useState<string>("");
+  const [assigningAdmin, setAssigningAdmin] = useState(false);
+  const [showAssignDropdown, setShowAssignDropdown] = useState(false);
   const [resendingEmail, setResendingEmail] = useState<string | null>(null);
 
   const fetchBooking = useCallback(async () => {
@@ -90,6 +111,9 @@ export default function AdminBookingDetailPage() {
         setBooking(data);
         setSelectedStatus(data.status);
         setNotes(data.notes || "");
+        if (data.processedBy?.id) {
+          setSelectedAdminId(data.processedBy.id);
+        }
       }
     } catch (error) {
       console.error("Error fetching booking:", error);
@@ -98,25 +122,35 @@ export default function AdminBookingDetailPage() {
     }
   }, [params.id]);
 
-  const fetchActivities = useCallback(async () => {
+  const fetchAdmins = useCallback(async () => {
     try {
-      const response = await fetch(`/api/admin/bookings/${params.id}/activities`);
+      const response = await fetch("/api/admin/settings/admins");
       if (response.ok) {
         const data = await response.json();
-        setActivities(data);
+        setAdmins(data.map((admin: any) => ({
+          id: admin.id,
+          name: admin.name || admin.email,
+          email: admin.email,
+        })));
       }
     } catch (error) {
-      console.error("Error fetching activities:", error);
+      console.error("Error fetching admins:", error);
     }
-  }, [params.id]);
+  }, []);
 
   useEffect(() => {
     fetchBooking();
-    fetchActivities();
-  }, [fetchBooking, fetchActivities]);
+    fetchAdmins();
+  }, [fetchBooking, fetchAdmins]);
 
   const handleStatusChange = async () => {
     if (!booking) return;
+    
+    if (selectedStatus === "CANCELLED") {
+      if (!confirm("Are you sure you want to cancel this booking?")) {
+        return;
+      }
+    }
     
     setUpdating(true);
     try {
@@ -128,7 +162,6 @@ export default function AdminBookingDetailPage() {
 
       if (response.ok) {
         await fetchBooking();
-        await fetchActivities();
         alert("Status updated successfully");
       } else {
         alert("Failed to update status");
@@ -137,6 +170,36 @@ export default function AdminBookingDetailPage() {
       alert("An error occurred");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleAssignAdmin = async (adminId: string) => {
+    if (!adminId) {
+      alert("Please select an admin");
+      return;
+    }
+
+    setAssigningAdmin(true);
+    try {
+      const response = await fetch(`/api/admin/bookings/${params.id}/assign`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminId }),
+      });
+
+      if (response.ok) {
+        await fetchBooking();
+        setShowAssignDropdown(false);
+        alert("Booking assigned successfully");
+      } else {
+        const error = await response.json();
+        alert(error.error || "Failed to assign booking");
+      }
+    } catch (error) {
+      console.error("Error assigning admin:", error);
+      alert("An error occurred");
+    } finally {
+      setAssigningAdmin(false);
     }
   };
 
@@ -155,7 +218,6 @@ export default function AdminBookingDetailPage() {
 
       if (response.ok) {
         await fetchBooking();
-        await fetchActivities();
         setVoucherFile(null);
         alert("Voucher uploaded successfully");
       } else {
@@ -168,23 +230,35 @@ export default function AdminBookingDetailPage() {
     }
   };
 
-  const handleSaveNotes = async () => {
-    setUpdating(true);
+  const handleAddNote = async () => {
+    if (!newNote.trim()) {
+      alert("Please enter a note");
+      return;
+    }
+
+    setAddingNote(true);
     try {
+      // Append to existing notes
+      const updatedNotes = notes ? `${notes}\n\n[${new Date().toLocaleString()}] ${newNote}` : `[${new Date().toLocaleString()}] ${newNote}`;
+      
       const response = await fetch(`/api/admin/bookings/${params.id}/notes`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notes }),
+        body: JSON.stringify({ notes: updatedNotes }),
       });
 
       if (response.ok) {
-        await fetchActivities();
-        alert("Notes saved");
+        await fetchBooking();
+        setNewNote("");
+        alert("Note added successfully");
+      } else {
+        alert("Failed to add note");
       }
     } catch (error) {
-      alert("Failed to save notes");
+      console.error("Error adding note:", error);
+      alert("An error occurred");
     } finally {
-      setUpdating(false);
+      setAddingNote(false);
     }
   };
 
@@ -212,38 +286,22 @@ export default function AdminBookingDetailPage() {
   };
 
   const handleSendPaymentReminder = async () => {
-    if (!booking) return;
-
-    setResendingEmail("payment_reminder");
-    try {
-      const response = await fetch(`/api/admin/bookings/${params.id}/resend-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emailType: "payment_reminder" }),
-      });
-
-      if (response.ok) {
-        alert("Payment reminder sent successfully");
-      } else {
-        alert("Failed to send payment reminder");
-      }
-    } catch (error) {
-      alert("An error occurred");
-    } finally {
-      setResendingEmail(null);
-    }
+    await handleResendEmail("payment_reminder");
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      DRAFT: "bg-neutral-200 text-neutral-700",
-      PAYMENT_PENDING: "bg-yellow-100 text-yellow-700",
-      BOOKED: "bg-blue-100 text-blue-700",
-      CONFIRMED: "bg-green-100 text-green-700",
-      COMPLETED: "bg-neutral-100 text-neutral-700",
-      CANCELLED: "bg-red-100 text-red-700",
-    };
-    return colors[status] || "bg-neutral-200 text-neutral-700";
+  // Parse notes into list (if formatted with timestamps)
+  const parseNotes = (notesText: string | null): Array<{ timestamp: string; message: string }> => {
+    if (!notesText) return [];
+    
+    // Try to parse notes that are formatted as [timestamp] message
+    const lines = notesText.split('\n\n');
+    return lines.map(line => {
+      const match = line.match(/^\[(.+?)\]\s*(.+)$/);
+      if (match) {
+        return { timestamp: match[1], message: match[2] };
+      }
+      return { timestamp: '', message: line };
+    }).filter(n => n.message.trim());
   };
 
   if (loading) {
@@ -277,98 +335,230 @@ export default function AdminBookingDetailPage() {
   const amountPaid = booking.amountPaid || booking.payments?.reduce((sum, p) => sum + (p.status === "COMPLETED" ? p.amount : 0), 0) || 0;
   const pendingBalance = booking.pendingBalance !== undefined ? booking.pendingBalance : (booking.totalAmount - amountPaid);
   const completedPayments = booking.payments?.filter(p => p.status === "COMPLETED") || [];
+  const notesList = parseNotes(booking.notes);
+  const primaryTraveller = booking.travellers[0]?.traveller;
 
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header Bar */}
         <div className="mb-8">
           <Link
             href="/admin/bookings"
-            className="inline-flex items-center text-neutral-600 hover:text-neutral-900 mb-4 text-sm"
+            className="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 mb-6 text-sm"
           >
-            ← Back to Bookings
+            <ArrowLeft size={16} />
+            Back to Bookings
           </Link>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-neutral-900">{booking.tourName}</h1>
-              <p className="text-neutral-600 mt-1">
-                Booking ID: {booking.id.slice(0, 8)}...
-              </p>
+          
+          <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              {/* Left: Reference & Tour Info */}
+              <div className="flex items-start gap-4">
+                {booking.tour?.country?.flagUrl && (
+                  <img
+                    src={booking.tour.country.flagUrl}
+                    alt={booking.tour.country.name}
+                    className="w-12 h-8 rounded object-cover border border-neutral-200"
+                  />
+                )}
+                <div>
+                  <h1 className="text-2xl font-bold text-neutral-900">
+                    {booking.tourName || booking.tour?.name || "Tour Booking"}
+                  </h1>
+                  <p className="text-sm text-neutral-600 mt-1">
+                    Reference: <span className="font-mono font-semibold">{booking.referenceNumber || `TRB-${new Date(booking.createdAt).getFullYear()}-${booking.id.slice(-5).toUpperCase()}`}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Right: Status Badge & Actions */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                  booking.status === "CONFIRMED" ? "bg-green-100 text-green-700" :
+                  booking.status === "COMPLETED" ? "bg-neutral-100 text-neutral-700" :
+                  booking.status === "CANCELLED" ? "bg-red-100 text-red-700" :
+                  booking.status === "BOOKED" ? "bg-blue-100 text-blue-700" :
+                  booking.status === "PAYMENT_PENDING" ? "bg-yellow-100 text-yellow-700" :
+                  "bg-neutral-100 text-neutral-700"
+                }`}>
+                  {booking.status.replace(/_/g, " ")}
+                </span>
+                
+                {/* Assign Admin Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowAssignDropdown(!showAssignDropdown)}
+                    className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                  >
+                    <UserPlus size={16} />
+                    {booking.processedBy ? booking.processedBy.name || booking.processedBy.email : "Assign Admin"}
+                    <ChevronDown size={16} />
+                  </button>
+                  {showAssignDropdown && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white border border-neutral-200 rounded-lg shadow-lg z-10 max-h-64 overflow-y-auto">
+                      {admins.length > 0 ? (
+                        <div className="p-2">
+                          {admins.map((admin) => (
+                            <button
+                              key={admin.id}
+                              onClick={() => handleAssignAdmin(admin.id)}
+                              disabled={assigningAdmin}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded ${
+                                booking.processedBy?.id === admin.id ? "bg-primary-50 text-primary-700" : ""
+                              }`}
+                            >
+                              <div className="font-medium">{admin.name}</div>
+                              <div className="text-xs text-neutral-500">{admin.email}</div>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-4 text-sm text-neutral-500">No admins available</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                {completedPayments.length > 0 && (
+                  <button
+                    onClick={() => {
+                      // TODO: Generate/download invoice
+                      alert("Invoice download coming soon");
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                  >
+                    <FileDown size={16} />
+                    Download Invoice
+                  </button>
+                )}
+              </div>
             </div>
-            <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(booking.status)}`}>
-              {booking.status.replace("_", " ")}
-            </span>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
+          {/* Left Column - Booking & Traveller Info */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Booking Overview */}
+            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+              <h2 className="text-xl font-bold text-neutral-900 mb-4">Booking Overview</h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-neutral-600 mb-1">Tour Name</div>
+                  <div className="font-medium text-neutral-900">{booking.tourName || booking.tour?.name || "N/A"}</div>
+                </div>
+                {booking.tour?.destination && (
+                  <div>
+                    <div className="text-sm text-neutral-600 mb-1">Destination</div>
+                    <div className="font-medium text-neutral-900">{booking.tour.destination}</div>
+                  </div>
+                )}
+                {booking.tour?.duration && (
+                  <div>
+                    <div className="text-sm text-neutral-600 mb-1">Duration</div>
+                    <div className="font-medium text-neutral-900">{booking.tour.duration}</div>
+                  </div>
+                )}
+                {booking.travelDate && (
+                  <div>
+                    <div className="text-sm text-neutral-600 mb-1">Travel Date</div>
+                    <div className="font-medium text-neutral-900">{formatDate(booking.travelDate)}</div>
+                  </div>
+                )}
+                {booking.tour?.country && (
+                  <div>
+                    <div className="text-sm text-neutral-600 mb-1">Country</div>
+                    <div className="font-medium text-neutral-900">{booking.tour.country.name}</div>
+                  </div>
+                )}
+                <div>
+                  <div className="text-sm text-neutral-600 mb-1">Total Amount</div>
+                  <div className="font-medium text-neutral-900">₹{booking.totalAmount.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-neutral-600 mb-1">Booked Date</div>
+                  <div className="font-medium text-neutral-900">{formatDate(booking.createdAt)}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-neutral-600 mb-1">Last Updated</div>
+                  <div className="font-medium text-neutral-900">{formatDate(booking.updatedAt)}</div>
+                </div>
+              </div>
+            </div>
+
             {/* Primary Contact */}
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
               <h2 className="text-xl font-bold text-neutral-900 mb-4">Primary Contact Information</h2>
               <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-3">
-                  <User size={20} className="text-neutral-400" />
-                  <div>
-                    <div className="text-sm text-neutral-600">Full Name</div>
-                    <div className="font-medium">{booking.user.name || "N/A"}</div>
-                  </div>
+                <div>
+                  <div className="text-sm text-neutral-600 mb-1">Full Name</div>
+                  <div className="font-medium text-neutral-900">{booking.user.name || "N/A"}</div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Mail size={20} className="text-neutral-400" />
-                  <div>
-                    <div className="text-sm text-neutral-600">Email</div>
-                    <div className="font-medium">{booking.user.email}</div>
-                  </div>
+                <div>
+                  <div className="text-sm text-neutral-600 mb-1">Email</div>
+                  <div className="font-medium text-neutral-900">{booking.user.email}</div>
                 </div>
                 {booking.user.phone && (
-                  <div className="flex items-center space-x-3">
-                    <Phone size={20} className="text-neutral-400" />
-                    <div>
-                      <div className="text-sm text-neutral-600">Phone</div>
-                      <div className="font-medium">{booking.user.phone}</div>
-                    </div>
+                  <div>
+                    <div className="text-sm text-neutral-600 mb-1">Phone</div>
+                    <div className="font-medium text-neutral-900">{booking.user.phone}</div>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Travellers List */}
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <h2 className="text-xl font-bold text-neutral-900 mb-4">Travellers</h2>
-              <div className="space-y-4">
-                {booking.travellers.map((t, index) => (
-                  <div key={t.traveller.id} className="border border-neutral-200 rounded-lg p-4">
-                    <h3 className="font-semibold mb-3">Traveller {index + 1}</h3>
-                    <div className="grid md:grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <span className="text-neutral-600">Name:</span>{" "}
-                        <span className="font-medium">{t.traveller.firstName} {t.traveller.lastName}</span>
+            {booking.travellers.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <h2 className="text-xl font-bold text-neutral-900 mb-4">Travellers</h2>
+                <div className="space-y-4">
+                  {booking.travellers.map((t, index) => (
+                    <div key={t.traveller.id} className="border border-neutral-200 rounded-lg p-4">
+                      <h3 className="font-semibold mb-3">
+                        {index === 0 ? "Primary Traveller" : `Traveller ${index + 1}`}
+                      </h3>
+                      <div className="grid md:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="text-neutral-600">Name:</span>{" "}
+                          <span className="font-medium">{t.traveller.firstName} {t.traveller.lastName}</span>
+                        </div>
+                        {t.traveller.dateOfBirth && (
+                          <div>
+                            <span className="text-neutral-600">Date of Birth:</span>{" "}
+                            <span className="font-medium">{formatDate(t.traveller.dateOfBirth)}</span>
+                          </div>
+                        )}
+                        {t.traveller.gender && (
+                          <div>
+                            <span className="text-neutral-600">Gender:</span>{" "}
+                            <span className="font-medium">{t.traveller.gender}</span>
+                          </div>
+                        )}
+                        {t.traveller.email && (
+                          <div>
+                            <span className="text-neutral-600">Email:</span>{" "}
+                            <span className="font-medium">{t.traveller.email}</span>
+                          </div>
+                        )}
+                        {t.traveller.phone && (
+                          <div>
+                            <span className="text-neutral-600">Phone:</span>{" "}
+                            <span className="font-medium">{t.traveller.phone}</span>
+                          </div>
+                        )}
                       </div>
-                      {t.traveller.dateOfBirth && (
-                        <div>
-                          <span className="text-neutral-600">Date of Birth:</span>{" "}
-                          <span className="font-medium">{formatDate(t.traveller.dateOfBirth)}</span>
-                        </div>
-                      )}
-                      {t.traveller.gender && (
-                        <div>
-                          <span className="text-neutral-600">Gender:</span>{" "}
-                          <span className="font-medium">{t.traveller.gender}</span>
-                        </div>
-                      )}
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Payment Info */}
+            {/* Payment Summary */}
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <h2 className="text-xl font-bold text-neutral-900 mb-4">Payment Information</h2>
+              <h2 className="text-xl font-bold text-neutral-900 mb-4">Payment Summary</h2>
               <div className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid md:grid-cols-3 gap-4">
                   <div className="p-4 bg-neutral-50 rounded-lg">
                     <div className="text-sm text-neutral-600 mb-1">Total Amount</div>
                     <div className="text-2xl font-bold text-neutral-900">₹{booking.totalAmount.toLocaleString()}</div>
@@ -377,24 +567,12 @@ export default function AdminBookingDetailPage() {
                     <div className="text-sm text-neutral-600 mb-1">Amount Paid</div>
                     <div className="text-2xl font-bold text-green-700">₹{amountPaid.toLocaleString()}</div>
                   </div>
-                  {pendingBalance > 0 && (
-                    <div className="p-4 bg-orange-50 rounded-lg md:col-span-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm text-neutral-600 mb-1">Pending Balance</div>
-                          <div className="text-2xl font-bold text-orange-700">₹{pendingBalance.toLocaleString()}</div>
-                        </div>
-                        <button
-                          onClick={handleSendPaymentReminder}
-                          disabled={resendingEmail === "payment_reminder" || updating}
-                          className="px-4 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 disabled:opacity-50 text-sm flex items-center space-x-2"
-                        >
-                          <Send size={16} />
-                          <span>Send Payment Reminder</span>
-                        </button>
-                      </div>
+                  <div className={`p-4 rounded-lg ${pendingBalance > 0 ? "bg-orange-50" : "bg-green-50"}`}>
+                    <div className="text-sm text-neutral-600 mb-1">Pending Balance</div>
+                    <div className={`text-2xl font-bold ${pendingBalance > 0 ? "text-orange-700" : "text-green-700"}`}>
+                      ₹{pendingBalance.toLocaleString()}
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Payment History */}
@@ -469,43 +647,45 @@ export default function AdminBookingDetailPage() {
               )}
             </div>
 
-            {/* Activity Log */}
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <h2 className="text-xl font-bold text-neutral-900 mb-4">Activity Log</h2>
-              {activities.length > 0 ? (
-                <div className="space-y-4">
-                  {activities.map((activity, index) => (
-                    <div key={activity.id || index} className="flex items-start space-x-3 pb-4 border-b border-neutral-200 last:border-b-0 last:pb-0">
-                      <div className="flex-shrink-0 mt-1">
-                        <Clock size={16} className="text-neutral-400" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-sm text-neutral-900">{activity.description}</div>
-                        <div className="text-xs text-neutral-500 mt-1">
-                          {new Date(activity.createdAt).toLocaleString()}
-                          {activity.createdBy && ` • by ${activity.createdBy}`}
+            {/* Timeline */}
+            {booking.timeline && booking.timeline.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <h2 className="text-xl font-bold text-neutral-900 mb-4">Booking Timeline</h2>
+                <div className="relative">
+                  <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-neutral-200"></div>
+                  <div className="space-y-6">
+                    {booking.timeline.map((event, index) => (
+                      <div key={event.id || index} className="relative pl-12">
+                        <div className="absolute left-0 top-1 w-8 h-8 rounded-full bg-primary-100 border-2 border-primary-600 flex items-center justify-center">
+                          <Clock size={14} className="text-primary-600" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium text-neutral-900">{event.event}</div>
+                          <div className="text-xs text-neutral-500 mt-1">
+                            {formatDate(event.time)} {event.adminName && `• by ${event.adminName}`}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                <p className="text-sm text-neutral-500">No activity logged yet</p>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
-          {/* Sidebar */}
+          {/* Right Column - Actions */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Booking Status */}
+            {/* Booking Status Control */}
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <h3 className="font-semibold text-neutral-900 mb-4">Booking Status</h3>
+              <h3 className="font-semibold text-neutral-900 mb-4">Change Status</h3>
               <div className="space-y-4">
                 <select
                   value={selectedStatus}
                   onChange={(e) => setSelectedStatus(e.target.value)}
                   className="w-full px-4 py-2 border border-neutral-300 rounded-lg text-sm"
                 >
+                  <option value="DRAFT">Draft</option>
+                  <option value="PAYMENT_PENDING">Payment Pending</option>
                   <option value="BOOKED">Booked</option>
                   <option value="CONFIRMED">Confirmed</option>
                   <option value="COMPLETED">Completed</option>
@@ -516,10 +696,31 @@ export default function AdminBookingDetailPage() {
                   disabled={updating || selectedStatus === booking.status}
                   className="w-full bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Update Status
+                  {updating ? "Updating..." : "Update Status"}
                 </button>
               </div>
             </div>
+
+            {/* Payment Reminder */}
+            {pendingBalance > 0 && (
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <h3 className="font-semibold text-neutral-900 mb-4">Payment Reminder</h3>
+                <div className="space-y-3">
+                  <div className="p-3 bg-orange-50 rounded-lg">
+                    <div className="text-sm text-neutral-600 mb-1">Pending Balance</div>
+                    <div className="text-xl font-bold text-orange-700">₹{pendingBalance.toLocaleString()}</div>
+                  </div>
+                  <button
+                    onClick={handleSendPaymentReminder}
+                    disabled={resendingEmail === "payment_reminder" || updating}
+                    className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-orange-700 disabled:opacity-50 text-sm flex items-center justify-center gap-2"
+                  >
+                    <Send size={16} />
+                    {resendingEmail === "payment_reminder" ? "Sending..." : "Send Payment Reminder"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Email Actions */}
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
@@ -545,16 +746,6 @@ export default function AdminBookingDetailPage() {
                     <span>Re-send &ldquo;Vouchers Ready&rdquo;</span>
                   </button>
                 )}
-                {pendingBalance > 0 && (
-                  <button
-                    onClick={handleSendPaymentReminder}
-                    disabled={resendingEmail === "payment_reminder" || updating}
-                    className="w-full text-left px-4 py-2 bg-neutral-50 text-neutral-700 rounded-lg hover:bg-neutral-100 transition-colors disabled:opacity-50 text-sm flex items-center space-x-2"
-                  >
-                    <Send size={16} />
-                    <span>Send Payment Reminder</span>
-                  </button>
-                )}
                 <button
                   onClick={() => handleResendEmail("status_update")}
                   disabled={resendingEmail === "status_update" || updating}
@@ -569,48 +760,34 @@ export default function AdminBookingDetailPage() {
             {/* Internal Notes */}
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
               <h3 className="font-semibold text-neutral-900 mb-4">Internal Notes</h3>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Add private notes visible only to admins..."
-                className="w-full px-4 py-2 border border-neutral-300 rounded-lg text-sm mb-3"
-                rows={6}
-              />
-              <button
-                onClick={handleSaveNotes}
-                disabled={updating}
-                className="w-full bg-neutral-100 text-neutral-700 px-4 py-2 rounded-lg font-medium hover:bg-neutral-200 disabled:opacity-50 text-sm"
-              >
-                Save Notes
-              </button>
-            </div>
-
-            {/* Booking Info */}
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <h3 className="font-semibold text-neutral-900 mb-4">Booking Info</h3>
-              <div className="space-y-2 text-sm">
-                <div>
-                  <span className="text-neutral-600">Tour:</span>
-                  <div className="font-medium">{booking.tourName || "N/A"}</div>
-                </div>
-                {booking.travelDate && (
-                  <div>
-                    <span className="text-neutral-600">Travel Date:</span>
-                    <div className="font-medium">{formatDate(booking.travelDate)}</div>
-                  </div>
-                )}
-                <div>
-                  <span className="text-neutral-600">Total Amount:</span>
-                  <div className="font-medium">₹{booking.totalAmount.toLocaleString()}</div>
-                </div>
-                <div>
-                  <span className="text-neutral-600">Booked Date:</span>
-                  <div className="font-medium">{formatDate(booking.createdAt)}</div>
-                </div>
-                {booking.processedBy && (
-                  <div>
-                    <span className="text-neutral-600">Assigned to:</span>
-                    <div className="font-medium">{booking.processedBy.name || booking.processedBy.email}</div>
+              <div className="space-y-4">
+                <textarea
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Add a note..."
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg text-sm"
+                  rows={3}
+                />
+                <button
+                  onClick={handleAddNote}
+                  disabled={addingNote || !newNote.trim()}
+                  className="w-full bg-neutral-100 text-neutral-700 px-4 py-2 rounded-lg font-medium hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {addingNote ? "Adding..." : "Add Note"}
+                </button>
+                
+                {notesList.length > 0 && (
+                  <div className="pt-4 border-t border-neutral-200">
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {notesList.map((note, index) => (
+                        <div key={index} className="text-sm">
+                          {note.timestamp && (
+                            <div className="text-xs text-neutral-500 mb-1">{note.timestamp}</div>
+                          )}
+                          <div className="text-neutral-900">{note.message}</div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

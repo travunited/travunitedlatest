@@ -22,6 +22,9 @@ import {
   ChevronRight,
   Menu,
   X,
+  DollarSign,
+  Clock,
+  TrendingUp,
 } from "lucide-react";
 
 const BASE_MENU_ITEMS = [
@@ -64,6 +67,22 @@ const CONTENT_MENU_ITEMS = [
   { label: "Blog", href: "/admin/content/blog", icon: FolderOpen },
 ];
 
+const REPORTS_MENU_ITEMS = [
+  { label: "Overview", href: "/admin/reports", icon: BarChart3 },
+  { label: "Revenue Summary", href: "/admin/reports/finance/revenue", icon: DollarSign },
+  { label: "Payments & Refunds", href: "/admin/reports/finance/payments", icon: FileText },
+  { label: "Visa Applications", href: "/admin/reports/visas/summary", icon: FileText },
+  { label: "Country-wise Visas", href: "/admin/reports/visas/by-country", icon: Globe },
+  { label: "Visa Type Performance", href: "/admin/reports/visas/performance", icon: TrendingUp },
+  { label: "Tour Bookings", href: "/admin/reports/tours/summary", icon: Calendar },
+  { label: "Tour Performance", href: "/admin/reports/tours/performance", icon: BarChart3 },
+  { label: "Customers", href: "/admin/reports/customers", icon: Users },
+  { label: "Corporate Leads", href: "/admin/reports/corporate", icon: Users },
+  { label: "Admin Performance", href: "/admin/reports/admin/performance", icon: Shield },
+  { label: "SLA & Turnaround", href: "/admin/reports/admin/sla", icon: Clock },
+  { label: "Audit Log", href: "/admin/reports/system/audit", icon: FileSearch },
+];
+
 const SETTINGS_MENU_ITEMS = [
   {
     label: "General Settings",
@@ -81,12 +100,6 @@ const SETTINGS_MENU_ITEMS = [
     label: "Audit Log",
     href: "/admin/settings/audit",
     icon: FileSearch,
-    roles: ["SUPER_ADMIN"],
-  },
-  {
-    label: "Reports",
-    href: "/admin/settings/reports",
-    icon: BarChart3,
     roles: ["SUPER_ADMIN"],
   },
 ];
@@ -107,8 +120,8 @@ function SidebarNavigation({
   session: ReturnType<typeof useSession>["data"];
   pathname: string;
   isSuperAdmin: boolean;
-  expandedMenus: { content: boolean; settings: boolean };
-  toggleMenu: (menu: "content" | "settings") => void;
+  expandedMenus: { content: boolean; settings: boolean; reports: boolean };
+  toggleMenu: (menu: "content" | "settings" | "reports") => void;
   onNavigate?: () => void;
 }) {
   const visibleMenuItems = BASE_MENU_ITEMS.filter((item) =>
@@ -122,6 +135,8 @@ function SidebarNavigation({
   const visibleSettingsItems = isSuperAdmin
     ? SETTINGS_MENU_ITEMS
     : SETTINGS_MENU_ITEMS.filter((item) => item.roles?.includes("STAFF_ADMIN"));
+
+  const visibleReportsItems = isSuperAdmin ? REPORTS_MENU_ITEMS : [];
 
   const isActive = (path: string) =>
     pathname === path || pathname.startsWith(path + "/");
@@ -150,59 +165,115 @@ function SidebarNavigation({
         })}
 
         {isSuperAdmin && (
-          <div className="mt-4">
-            <button
-              onClick={() => toggleMenu("content")}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-colors ${
-                expandedMenus.content || pathname.startsWith("/admin/content")
-                  ? "bg-primary-50 text-primary-700"
-                  : "text-neutral-700 hover:bg-neutral-50"
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <FolderOpen size={20} />
-                <span>Content</span>
-              </div>
-              {expandedMenus.content ? (
-                <ChevronDown size={18} />
-              ) : (
-                <ChevronRight size={18} />
-              )}
-            </button>
-            <AnimatePresence initial={false}>
-              {expandedMenus.content && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <div className="pl-11 pt-1 space-y-1">
-                    {CONTENT_MENU_ITEMS.map((item) => {
-                      const Icon = item.icon;
-                      const active = isActive(item.href);
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={onNavigate}
-                          className={`flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            active
-                              ? "bg-primary-50 text-primary-700"
-                              : "text-neutral-600 hover:bg-neutral-50"
-                          }`}
-                        >
-                          <Icon size={16} />
-                          <span>{item.label}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+          <>
+            <div className="mt-4">
+              <button
+                onClick={() => toggleMenu("content")}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-colors ${
+                  expandedMenus.content || pathname.startsWith("/admin/content")
+                    ? "bg-primary-50 text-primary-700"
+                    : "text-neutral-700 hover:bg-neutral-50"
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <FolderOpen size={20} />
+                  <span>Content</span>
+                </div>
+                {expandedMenus.content ? (
+                  <ChevronDown size={18} />
+                ) : (
+                  <ChevronRight size={18} />
+                )}
+              </button>
+              <AnimatePresence initial={false}>
+                {expandedMenus.content && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pl-11 pt-1 space-y-1">
+                      {CONTENT_MENU_ITEMS.map((item) => {
+                        const Icon = item.icon;
+                        const active = isActive(item.href);
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={onNavigate}
+                            className={`flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              active
+                                ? "bg-primary-50 text-primary-700"
+                                : "text-neutral-600 hover:bg-neutral-50"
+                            }`}
+                          >
+                            <Icon size={16} />
+                            <span>{item.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="mt-4">
+              <button
+                onClick={() => toggleMenu("reports")}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-colors ${
+                  expandedMenus.reports || pathname.startsWith("/admin/reports")
+                    ? "bg-primary-50 text-primary-700"
+                    : "text-neutral-700 hover:bg-neutral-50"
+                }`}
+              >
+                <div className="flex items-center space-x-3">
+                  <BarChart3 size={20} />
+                  <span>Reports</span>
+                </div>
+                {expandedMenus.reports ? (
+                  <ChevronDown size={18} />
+                ) : (
+                  <ChevronRight size={18} />
+                )}
+              </button>
+              <AnimatePresence initial={false}>
+                {expandedMenus.reports && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="pl-11 pt-1 space-y-1 max-h-96 overflow-y-auto">
+                      {visibleReportsItems.map((item) => {
+                        const Icon = item.icon;
+                        const active = isActive(item.href);
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={onNavigate}
+                            className={`flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              active
+                                ? "bg-primary-50 text-primary-700"
+                                : "text-neutral-600 hover:bg-neutral-50"
+                            }`}
+                          >
+                            <Icon size={16} />
+                            <span>{item.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </>
         )}
 
         <div className="mt-4">
@@ -281,9 +352,10 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
   const [expandedMenus, setExpandedMenus] = useState({
     content: pathname.startsWith("/admin/content"),
     settings: pathname.startsWith("/admin/settings"),
+    reports: pathname.startsWith("/admin/reports"),
   });
 
-  const toggleMenu = (menu: "content" | "settings") => {
+  const toggleMenu = (menu: "content" | "settings" | "reports") => {
     setExpandedMenus((prev) => ({
       ...prev,
       [menu]: !prev[menu],
@@ -312,12 +384,7 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
         transition={{ type: "spring", damping: 25, stiffness: 200 }}
         className="fixed top-0 left-0 h-full w-64 bg-white border-r border-neutral-200 z-50 lg:hidden flex flex-col"
       >
-        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-          <Link href="/admin" className="flex items-center space-x-2">
-            <div className="text-xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
-              Travunited
-            </div>
-          </Link>
+        <div className="flex items-center justify-end p-4 border-b border-neutral-200">
           <button
             onClick={onClose}
             className="p-2 rounded-lg text-neutral-600 hover:bg-neutral-100"
@@ -347,9 +414,10 @@ export function AdminSidebarStatic() {
   const [expandedMenus, setExpandedMenus] = useState({
     content: pathname.startsWith("/admin/content"),
     settings: pathname.startsWith("/admin/settings"),
+    reports: pathname.startsWith("/admin/reports"),
   });
 
-  const toggleMenu = (menu: "content" | "settings") => {
+  const toggleMenu = (menu: "content" | "settings" | "reports") => {
     setExpandedMenus((prev) => ({
       ...prev,
       [menu]: !prev[menu],
@@ -358,14 +426,6 @@ export function AdminSidebarStatic() {
 
   return (
     <aside className="h-full w-64 bg-white border-r border-neutral-200 flex flex-col">
-      <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-        <Link href="/admin" className="flex items-center space-x-2">
-          <div className="text-xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent">
-            Travunited
-          </div>
-        </Link>
-      </div>
-
       <SidebarNavigation
         session={session}
         pathname={pathname}

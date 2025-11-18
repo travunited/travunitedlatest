@@ -14,19 +14,22 @@ const mediaField = z
       if (!value || value.trim() === "") {
         return true; // Empty string is valid (will be normalized to null)
       }
+      // Accept paths starting with /api/media/
       if (value.startsWith("/api/media/")) {
         return true;
       }
+      // Accept full URLs
       try {
-        new URL(value);
-        return true;
+        const url = new URL(value);
+        return url.protocol === "http:" || url.protocol === "https:";
       } catch {
         return false;
       }
-    }, "Cover image must be a valid URL or media path"),
+    }, "Cover image must be a valid URL or media path starting with /api/media/"),
     z.literal(""),
   ])
-  .optional();
+  .optional()
+  .nullable();
 
 const blogSchema = z.object({
   title: z.string().min(3).optional(),
@@ -35,7 +38,11 @@ const blogSchema = z.object({
   excerpt: z.string().optional(),
   category: z.string().optional(),
   readTime: z.string().optional(),
-  content: z.string().min(20).optional(),
+  // Content must be at least 20 chars if provided, but can be omitted for updates
+  content: z.union([
+    z.string().min(20, "Content must be at least 20 characters"),
+    z.literal("").transform(() => undefined),
+  ]).optional(),
   published: z.boolean().optional(),
 });
 
@@ -107,7 +114,40 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const data = blogSchema.parse(body);
+    
+    // Log incoming payload for debugging
+    console.log("Blog update request payload:", JSON.stringify(body, null, 2));
+    console.log("Cover image value:", body.coverImage, "Type:", typeof body.coverImage);
+    
+    // Validate with better error messages
+    let data;
+    try {
+      data = blogSchema.parse(body);
+      console.log("Validation passed. Parsed data:", JSON.stringify(data, null, 2));
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.error("Validation errors:", JSON.stringify(error.errors, null, 2));
+        console.error("Failed fields:", error.errors.map(e => ({
+          path: e.path.join('.'),
+          message: e.message,
+          code: e.code,
+          received: e.path.length > 0 ? body[e.path[0]] : 'unknown'
+        })));
+        return NextResponse.json(
+          { 
+            error: "Invalid input", 
+            details: error.errors.map(e => ({
+              field: e.path.join('.'),
+              message: e.message,
+              code: e.code,
+              received: e.path.length > 0 ? body[e.path[0]] : undefined
+            }))
+          },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
 
     const existing = await prisma.blogPost.findUnique({
       where: { id: params.id },
@@ -137,25 +177,40 @@ export async function PUT(
       existingCoverImage: existing.coverImage,
     });
 
+    // Build update data object, only including fields that were provided
+    const updateData: any = {};
+    
+    if (data.title !== undefined) {
+      updateData.title = data.title;
+    }
+    if (data.slug !== undefined) {
+      updateData.slug = data.slug;
+    }
+    if (data.content !== undefined) {
+      updateData.content = data.content;
+    }
+    if (normalizedCover !== undefined) {
+      updateData.coverImage = normalizedCover;
+    }
+    if (data.excerpt !== undefined) {
+      updateData.excerpt = data.excerpt || null;
+    }
+    if (data.category !== undefined) {
+      updateData.category = data.category || null;
+    }
+    if (data.readTime !== undefined) {
+      updateData.readTime = data.readTime || null;
+    }
+    if (data.published !== undefined) {
+      updateData.isPublished = data.published;
+      updateData.publishedAt = data.published 
+        ? (existing.publishedAt ?? new Date())
+        : null;
+    }
+
     const updated = await prisma.blogPost.update({
       where: { id: params.id },
-      data: {
-        title: data.title ?? existing.title,
-        slug: data.slug ?? existing.slug,
-        coverImage:
-          normalizedCover !== undefined ? normalizedCover : existing.coverImage,
-        excerpt: data.excerpt !== undefined ? data.excerpt || null : existing.excerpt,
-        category: data.category !== undefined ? data.category || null : existing.category,
-        readTime: data.readTime !== undefined ? data.readTime || null : existing.readTime,
-        content: data.content ?? existing.content,
-        isPublished: data.published !== undefined ? data.published : existing.isPublished,
-        publishedAt:
-          data.published === undefined
-            ? existing.publishedAt
-            : data.published
-            ? existing.publishedAt ?? new Date()
-            : null,
-      },
+      data: updateData,
     });
 
     return NextResponse.json({

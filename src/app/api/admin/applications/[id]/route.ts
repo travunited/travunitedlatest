@@ -43,10 +43,23 @@ export async function GET(
           include: {
             traveller: true,
           },
+          orderBy: {
+            createdAt: "asc",
+          },
         },
         documents: {
           include: {
             requirement: true,
+            traveller: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: "asc",
           },
         },
         payments: {
@@ -56,8 +69,21 @@ export async function GET(
         },
         processedBy: {
           select: {
+            id: true,
             name: true,
             email: true,
+          },
+        },
+        visa: {
+          include: {
+            country: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+                flagUrl: true,
+              },
+            },
           },
         },
       },
@@ -70,7 +96,43 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(application);
+    // Generate reference number from ID (format: TRV-YYYY-XXXXX)
+    const year = new Date(application.createdAt).getFullYear();
+    const refSuffix = application.id.slice(-5).toUpperCase();
+    const referenceNumber = `TRV-${year}-${refSuffix}`;
+
+    // Get activities/timeline
+    const activities = await prisma.auditLog.findMany({
+      where: {
+        entityType: "APPLICATION",
+        entityId: params.id,
+      },
+      include: {
+        admin: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    // Format response with additional computed fields
+    const response = {
+      ...application,
+      referenceNumber,
+      timeline: activities.map((activity) => ({
+        id: activity.id,
+        time: activity.createdAt,
+        event: activity.description,
+        adminName: activity.admin?.name || activity.admin?.email || "System",
+      })),
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Error fetching application:", error);
     return NextResponse.json(

@@ -460,8 +460,19 @@ function AdminApplicationsPageContent() {
                 </thead>
                 <tbody className="bg-white divide-y divide-neutral-200">
                   {applications.map((app) => (
-                    <tr key={app.id} className="hover:bg-neutral-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <tr 
+                      key={app.id} 
+                      className="hover:bg-neutral-50 cursor-pointer"
+                      onClick={(e) => {
+                        // Don't navigate if clicking on checkbox or button
+                        const target = e.target as HTMLElement;
+                        if (target.closest('input[type="checkbox"]') || target.closest('button') || target.closest('a')) {
+                          return;
+                        }
+                        router.push(`/admin/applications/${app.id}`);
+                      }}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={selectedRows.has(app.id)}
@@ -490,7 +501,7 @@ function AdminApplicationsPageContent() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
                         ₹{app.totalAmount.toLocaleString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         {app.processedBy ? (
                           <div className="text-sm text-neutral-900">{app.processedBy.name || app.processedBy.email}</div>
                         ) : (
@@ -506,7 +517,7 @@ function AdminApplicationsPageContent() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
                         {formatDate(app.createdAt)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                         <Link
                           href={`/admin/applications/${app.id}`}
                           className="text-primary-600 hover:text-primary-900 inline-flex items-center space-x-1"

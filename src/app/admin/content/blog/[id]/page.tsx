@@ -172,13 +172,40 @@ export default function AdminBlogEditPage() {
         : `/api/admin/content/blog/${params.id}`;
       const method = isNew ? "POST" : "PUT";
 
-      // Prepare form data, converting empty strings to undefined for coverImage
-      const submitData = {
-        ...formData,
-        coverImage: formData.coverImage && formData.coverImage.trim() ? formData.coverImage.trim() : undefined,
-      };
+      // Prepare form data, ensuring all fields are properly formatted
+      // Only include fields that have actual values (not empty strings)
+      const submitData: any = {};
+      
+      if (formData.title && formData.title.trim()) {
+        submitData.title = formData.title.trim();
+      }
+      if (formData.slug && formData.slug.trim()) {
+        submitData.slug = formData.slug.trim();
+      }
+      if (formData.content && formData.content.trim()) {
+        submitData.content = formData.content.trim();
+      }
+      if (formData.excerpt && formData.excerpt.trim()) {
+        submitData.excerpt = formData.excerpt.trim();
+      }
+      if (formData.category && formData.category.trim()) {
+        submitData.category = formData.category.trim();
+      }
+      if (formData.readTime && formData.readTime.trim()) {
+        submitData.readTime = formData.readTime.trim();
+      }
+      if (formData.coverImage && formData.coverImage.trim()) {
+        submitData.coverImage = formData.coverImage.trim();
+      }
+      // Published is a boolean, so include it if it's explicitly set
+      if (formData.published !== undefined && formData.published !== null) {
+        submitData.published = formData.published;
+      }
 
-      console.log("Submitting blog post with coverImage:", submitData.coverImage);
+      console.log("Submitting blog post:", {
+        ...submitData,
+        contentLength: submitData.content?.length || 0,
+      });
 
       const response = await fetch(url, {
         method,
@@ -189,8 +216,29 @@ export default function AdminBlogEditPage() {
       if (response.ok) {
         router.push("/admin/content/blog");
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        alert(errorData.error || "Failed to save blog post");
+        let errorData: any = {};
+        try {
+          const text = await response.text();
+          console.error("Blog save error response (raw):", text);
+          errorData = JSON.parse(text);
+        } catch (e) {
+          console.error("Failed to parse error response:", e);
+          errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+        }
+        
+        console.error("Blog save error (parsed):", errorData);
+        console.error("Request payload that failed:", submitData);
+        
+        // Show detailed validation errors if available
+        if (errorData.details && Array.isArray(errorData.details)) {
+          const errorMessages = errorData.details.map((d: any) => {
+            const received = d.received !== undefined ? ` (received: ${JSON.stringify(d.received)})` : '';
+            return `${d.field}: ${d.message}${received}`;
+          }).join('\n');
+          alert(`Validation failed:\n\n${errorMessages}\n\n${errorData.error || "Failed to save blog post"}`);
+        } else {
+          alert(errorData.error || `Failed to save blog post (HTTP ${response.status})`);
+        }
       }
     } catch (error) {
       console.error("Error saving blog post:", error);

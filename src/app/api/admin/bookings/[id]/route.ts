@@ -43,6 +43,9 @@ export async function GET(
           include: {
             traveller: true,
           },
+          orderBy: {
+            createdAt: "asc",
+          },
         },
         payments: {
           orderBy: {
@@ -51,8 +54,21 @@ export async function GET(
         },
         processedBy: {
           select: {
+            id: true,
             name: true,
             email: true,
+          },
+        },
+        tour: {
+          include: {
+            country: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+                flagUrl: true,
+              },
+            },
           },
         },
       },
@@ -70,11 +86,45 @@ export async function GET(
       .reduce((sum, p) => sum + p.amount, 0);
     const pendingBalance = booking.totalAmount - amountPaid;
 
-    return NextResponse.json({
+    // Generate reference number from ID (format: TRV-YYYY-XXXXX)
+    const year = new Date(booking.createdAt).getFullYear();
+    const refSuffix = booking.id.slice(-5).toUpperCase();
+    const referenceNumber = `TRB-${year}-${refSuffix}`;
+
+    // Get activities/timeline
+    const activities = await prisma.auditLog.findMany({
+      where: {
+        entityType: "BOOKING",
+        entityId: params.id,
+      },
+      include: {
+        admin: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+
+    // Format response with additional computed fields
+    const response = {
       ...booking,
+      referenceNumber,
       amountPaid,
       pendingBalance: pendingBalance > 0 ? pendingBalance : 0,
-    });
+      timeline: activities.map((activity) => ({
+        id: activity.id,
+        time: activity.createdAt,
+        event: activity.description,
+        adminName: activity.admin?.name || activity.admin?.email || "System",
+      })),
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Error fetching booking:", error);
     return NextResponse.json(

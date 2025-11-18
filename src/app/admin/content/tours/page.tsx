@@ -5,8 +5,9 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Plus, Edit, Calendar, Search, Filter, Star, RefreshCw } from "lucide-react";
+import { Plus, Edit, Calendar, Search, Filter, Star, RefreshCw, CheckSquare, Square, ChevronDown, Upload } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { ImportModal } from "@/components/admin/ImportModal";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -51,6 +52,10 @@ export default function AdminToursPage() {
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<TourFilters>(TOUR_FILTER_DEFAULT);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const bootstrapped = useRef(false);
 
   const fetchCountries = useCallback(async () => {
@@ -119,6 +124,70 @@ export default function AdminToursPage() {
     fetchTours(filters);
   };
 
+  const handleSelectAll = () => {
+    if (selectedIds.size === filteredTours.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredTours.map((t) => t.id)));
+    }
+  };
+
+  const handleSelectOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    const count = selectedIds.size;
+    if (
+      !confirm(
+        `Are you sure you want to permanently delete ${count} tour record(s)? This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setBulkActionLoading(true);
+    try {
+      const response = await fetch("/api/admin/content/tours/bulk/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: Array.from(selectedIds) }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        await fetchTours(filters);
+        setSelectedIds(new Set());
+        alert(result.message || `Successfully deleted ${count} tour record(s)`);
+      } else {
+        const error = await response.json();
+        if (error.details) {
+          const details = error.details.tours || "";
+          alert(
+            `${error.error}\n\nFailed tours: ${details}\n\nThese tours have active bookings.`
+          );
+        } else {
+          alert(error.error || "Failed to delete tours");
+        }
+      }
+    } catch (error) {
+      console.error("Error bulk deleting tours:", error);
+      alert("An error occurred while deleting");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
   const filteredTours = useMemo(() => tours, [tours]);
 
   if (loading) {
@@ -149,6 +218,13 @@ export default function AdminToursPage() {
             >
               <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
               Refresh
+            </button>
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="inline-flex items-center gap-2 border border-neutral-200 px-4 py-2 rounded-lg text-neutral-700 hover:bg-neutral-50"
+            >
+              <Upload size={18} />
+              Import
             </button>
             <Link
               href="/admin/content/tours/new"
@@ -202,6 +278,70 @@ export default function AdminToursPage() {
           </div>
         </div>
 
+        {/* Bulk Actions Bar */}
+        {selectedIds.size > 0 && (
+          <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-primary-900">
+                {selectedIds.size} tour{selectedIds.size !== 1 ? "s" : ""} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="text-sm text-primary-700 hover:text-primary-900"
+              >
+                Clear selection
+              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowBulkActions(!showBulkActions)}
+                  disabled={bulkActionLoading}
+                  className="inline-flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 disabled:opacity-50"
+                >
+                  Bulk Actions
+                  <ChevronDown size={16} />
+                </button>
+                {showBulkActions && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-neutral-200 rounded-lg shadow-lg z-10">
+                    <button
+                      onClick={() => {
+                        setShowBulkActions(false);
+                        handleBulkDelete();
+                      }}
+                      disabled={bulkActionLoading}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      {bulkActionLoading ? "Deleting..." : "Delete Selected"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Select All Checkbox */}
+        {filteredTours.length > 0 && (
+          <div className="flex items-center gap-2 mb-4">
+            <button
+              onClick={handleSelectAll}
+              className="flex items-center gap-2 text-sm text-neutral-600 hover:text-neutral-900"
+            >
+              {selectedIds.size === filteredTours.length ? (
+                <CheckSquare size={18} className="text-primary-600" />
+              ) : (
+                <Square size={18} className="text-neutral-400" />
+              )}
+              <span>
+                {selectedIds.size === filteredTours.length
+                  ? "Deselect all"
+                  : "Select all"}
+              </span>
+            </button>
+          </div>
+        )}
+
         {filteredTours.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {filteredTours.map((tour, index) => (
@@ -210,9 +350,21 @@ export default function AdminToursPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="bg-white border border-neutral-200 rounded-2xl p-5 hover:shadow-medium transition-shadow"
+                className="bg-white border border-neutral-200 rounded-2xl p-5 hover:shadow-medium transition-shadow relative"
               >
-                <div className="flex items-start justify-between gap-2">
+                <div className="absolute top-4 left-4">
+                  <button
+                    onClick={() => handleSelectOne(tour.id)}
+                    className="flex items-center"
+                  >
+                    {selectedIds.has(tour.id) ? (
+                      <CheckSquare size={18} className="text-primary-600" />
+                    ) : (
+                      <Square size={18} className="text-neutral-400" />
+                    )}
+                  </button>
+                </div>
+                <div className="flex items-start justify-between gap-2 pl-6">
                   <div>
                     <h3 className="text-lg font-semibold text-neutral-900">{tour.name}</h3>
                     <p className="text-sm text-neutral-500">
@@ -286,6 +438,16 @@ export default function AdminToursPage() {
           </div>
         )}
       </div>
+      <ImportModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        entityType="tours"
+        entityName="Tours"
+        onImportComplete={() => {
+          fetchTours(filters);
+          setShowImportModal(false);
+        }}
+      />
     </AdminLayout>
   );
 }

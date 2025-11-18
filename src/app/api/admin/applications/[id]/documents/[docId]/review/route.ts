@@ -56,24 +56,27 @@ export async function PUT(
       );
     }
 
+    // Normalize status: VERIFIED -> APPROVED
+    const normalizedStatus = status === "VERIFIED" ? "APPROVED" : status;
+    
     // Update document status
     const updated = await prisma.applicationDocument.update({
       where: { id: params.docId },
       data: {
-        status,
-        rejectionReason: status === "REJECTED" ? rejectionReason : null,
+        status: normalizedStatus,
+        rejectionReason: normalizedStatus === "REJECTED" ? rejectionReason : null,
       },
     });
 
     const action =
-      status === "VERIFIED" ? AuditAction.DOC_VERIFY : status === "REJECTED" ? AuditAction.DOC_REJECT : AuditAction.UPDATE;
+      normalizedStatus === "APPROVED" ? AuditAction.DOC_VERIFY : normalizedStatus === "REJECTED" ? AuditAction.DOC_REJECT : AuditAction.UPDATE;
 
     await logAuditEvent({
       adminId: session.user.id,
       entityType: AuditEntityType.APPLICATION,
       entityId: params.id,
       action,
-      description: `Document ${document.documentType} set to ${status}`,
+      description: `Document ${document.documentType} set to ${normalizedStatus}`,
       metadata: {
         documentId: document.id,
         travellerId: document.travellerId,
@@ -82,7 +85,7 @@ export async function PUT(
     });
 
     // If rejected, send email notification
-    if (status === "REJECTED" && rejectionReason) {
+    if (normalizedStatus === "REJECTED" && rejectionReason) {
       await sendVisaDocumentRejectedEmail(
         document.application.user.email,
         document.applicationId,
