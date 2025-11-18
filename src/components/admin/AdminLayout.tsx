@@ -3,7 +3,11 @@
 import { useState } from "react";
 import { AdminSidebar, AdminSidebarStatic, AdminSidebarToggle } from "./AdminSidebar";
 <<<<<<< Current (Your changes)
+<<<<<<< Current (Your changes)
 import { NotificationBell } from "@/components/ui/NotificationBell";
+=======
+import { AdminHeader } from "./AdminHeader";
+>>>>>>> Incoming (Background Agent changes)
 =======
 import { AdminHeader } from "./AdminHeader";
 >>>>>>> Incoming (Background Agent changes)
