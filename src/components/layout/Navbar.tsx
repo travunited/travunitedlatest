@@ -9,9 +9,13 @@ import { motion, AnimatePresence } from "framer-motion";
 <<<<<<< Current (Your changes)
 <<<<<<< Current (Your changes)
 <<<<<<< Current (Your changes)
+<<<<<<< Current (Your changes)
 import { NotificationBell } from "@/components/ui/NotificationBell";
 =======
 import { NotificationBell } from "./NotificationBell";
+>>>>>>> Incoming (Background Agent changes)
+=======
+import { NotificationBell } from "../notifications/NotificationBell";
 >>>>>>> Incoming (Background Agent changes)
 =======
 import { NotificationBell } from "../notifications/NotificationBell";
