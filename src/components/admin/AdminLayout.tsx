@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { AdminSidebar, AdminSidebarStatic, AdminSidebarToggle } from "./AdminSidebar";
-import { NotificationBell } from "@/components/ui/NotificationBell";
 import { AdminHeader } from "./AdminHeader";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -23,7 +22,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             <AdminSidebarToggle onToggle={() => setSidebarOpen(true)} />
             <p className="text-sm font-medium text-neutral-700">Menu</p>
           </div>
-          <NotificationBell />
         </div>
         <main className="flex-1 px-4 py-6 lg:px-6">
           <div className="w-full">{children}</div>

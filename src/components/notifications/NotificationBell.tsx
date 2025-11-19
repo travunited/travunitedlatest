@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Bell, Check, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -24,37 +24,42 @@ export function NotificationBell() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Fetch notifications and unread count
-  const fetchNotifications = async () => {
+  // Fetch unread count only (lightweight, for badge)
+  const fetchUnreadCount = useCallback(async () => {
     try {
-      setIsLoading(true);
-      const [notificationsRes, countRes] = await Promise.all([
-        fetch("/api/notifications?limit=10&unreadOnly=false"),
-        fetch("/api/notifications/unread-count"),
-      ]);
-
-      if (notificationsRes.ok) {
-        const data = await notificationsRes.json();
-        setNotifications(data.notifications || []);
-      }
-
-      if (countRes.ok) {
-        const data = await countRes.json();
+      const res = await fetch("/api/notifications/unread-count");
+      if (res.ok) {
+        const data = await res.json();
         setUnreadCount(data.count || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+    }
+  }, []);
+
+  // Fetch full notifications list (only when dropdown opens)
+  const fetchNotifications = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/notifications?limit=10&unreadOnly=false");
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount || 0);
       }
     } catch (error) {
       console.error("Error fetching notifications:", error);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchNotifications();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
   }, []);
+
+  // Fetch unread count on mount and poll every 60 seconds (lightweight)
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 60000); // 60 seconds
+    return () => clearInterval(interval);
+  }, [fetchUnreadCount]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -87,6 +92,8 @@ export function NotificationBell() {
         )
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
+      // Refresh unread count after marking as read
+      fetchUnreadCount();
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
@@ -115,7 +122,14 @@ export function NotificationBell() {
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          const wasOpen = isOpen;
+          setIsOpen(!wasOpen);
+          if (!wasOpen) {
+            // Fetch notifications when opening dropdown
+            fetchNotifications();
+          }
+        }}
         className="relative p-2 text-neutral-700 hover:text-primary-600 transition-colors"
         aria-label="Notifications"
       >
