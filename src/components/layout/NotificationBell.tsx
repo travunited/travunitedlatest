@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { Bell, Check, CheckCheck } from "lucide-react";
 import Link from "next/link";
@@ -24,36 +24,8 @@ export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchNotifications();
-      fetchUnreadCount();
-
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(() => {
-        fetchUnreadCount();
-      }, 30000);
-
-      return () => clearInterval(interval);
-    }
-  }, [session]);
-
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/notifications?limit=10&read=false");
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data.notifications || []);
-      }
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUnreadCount = async () => {
+  // Fetch unread count only (lightweight, for badge)
+  const fetchUnreadCount = useCallback(async () => {
     try {
       const response = await fetch("/api/notifications/unread-count");
       if (response.ok) {
@@ -63,7 +35,33 @@ export function NotificationBell() {
     } catch (error) {
       console.error("Error fetching unread count:", error);
     }
-  };
+  }, []);
+
+  // Fetch full notifications list (only when dropdown opens)
+  const fetchNotifications = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/notifications?limit=10&unreadOnly=false");
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch unread count on mount and poll every 60 seconds (lightweight)
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchUnreadCount();
+      const interval = setInterval(fetchUnreadCount, 60000); // 60 seconds
+      return () => clearInterval(interval);
+    }
+  }, [session?.user?.id, fetchUnreadCount]);
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -76,6 +74,8 @@ export function NotificationBell() {
         )
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
+      // Refresh unread count after marking as read
+      fetchUnreadCount();
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
@@ -90,6 +90,8 @@ export function NotificationBell() {
         prev.map((n) => ({ ...n, readAt: new Date().toISOString() }))
       );
       setUnreadCount(0);
+      // Refresh unread count after marking all as read
+      fetchUnreadCount();
     } catch (error) {
       console.error("Error marking all as read:", error);
     }
@@ -103,8 +105,10 @@ export function NotificationBell() {
     <div className="relative">
       <button
         onClick={() => {
-          setIsOpen(!isOpen);
-          if (!isOpen) {
+          const wasOpen = isOpen;
+          setIsOpen(!wasOpen);
+          if (!wasOpen) {
+            // Fetch notifications when opening dropdown
             fetchNotifications();
           }
         }}
