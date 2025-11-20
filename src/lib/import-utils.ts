@@ -5,17 +5,23 @@ import { CountryImportRow, CountryImportRowSchema, VisaImportRow, VisaImportRowS
 export type ImportEntityType = "countries" | "visas" | "tours";
 
 export function parseCSV(file: File): Promise<any[]> {
-  return new Promise((resolve, reject) => {
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        resolve(results.data as any[]);
-      },
-      error: (error) => {
-        reject(error);
-      },
-    });
+  return new Promise(async (resolve, reject) => {
+    try {
+      // Convert File to text for server-side compatibility
+      const text = await file.text();
+      Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          resolve(results.data as any[]);
+        },
+        error: (error) => {
+          reject(error);
+        },
+      });
+    } catch (error) {
+      reject(error);
+    }
   });
 }
 
