@@ -15,7 +15,7 @@ export function parseCSV(file: File): Promise<any[]> {
         complete: (results) => {
           resolve(results.data as any[]);
         },
-        error: (error) => {
+        error: (error: Error) => {
           reject(error);
         },
       });
