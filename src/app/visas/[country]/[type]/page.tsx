@@ -1,6 +1,7 @@
 "use server";
 
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
   Clock,
@@ -10,6 +11,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getMediaProxyUrl } from "@/lib/media";
 
 export default async function VisaDetailPage({
   params,
@@ -40,6 +42,8 @@ export default async function VisaDetailPage({
     (req) => req.scope === "PER_APPLICATION"
   );
 
+  const heroImageUrl = visa.heroImageUrl ? getMediaProxyUrl(visa.heroImageUrl) : null;
+
   return (
     <div className="min-h-screen bg-white">
       <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-12">
@@ -58,6 +62,18 @@ export default async function VisaDetailPage({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
+            {/* Featured Image */}
+            {heroImageUrl && (
+              <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden shadow-large">
+                <Image
+                  src={heroImageUrl}
+                  alt={visa.name}
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: "Processing", value: visa.processingTime },
