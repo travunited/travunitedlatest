@@ -8,6 +8,7 @@ import Image from "next/image";
 import { Eye, CheckCircle, X, Upload, FileText, User, Mail, Phone, Calendar, Download, CreditCard, Send, Clock, MapPin, ArrowLeft, Globe, ChevronDown, ChevronRight, UserPlus, FileDown, MessageSquare, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
+import { getCountryFlagUrl } from "@/lib/flags";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -410,15 +411,19 @@ export default function AdminApplicationDetailPage() {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* Left: Reference & Country Info */}
               <div className="flex items-start gap-4">
-                {application.visa?.country?.flagUrl && (
-                  <Image
-                    src={application.visa.country.flagUrl}
-                    alt={application.visa.country.name}
-                    width={48}
-                    height={32}
-                    className="rounded object-cover border border-neutral-200"
-                  />
-                )}
+                {(() => {
+                  if (!application.visa?.country) return null;
+                  const flagUrl = getCountryFlagUrl(application.visa.country.flagUrl, application.visa.country.code, 160);
+                  return flagUrl ? (
+                    <Image
+                      src={flagUrl}
+                      alt={application.visa.country.name}
+                      width={48}
+                      height={32}
+                      className="rounded object-cover border border-neutral-200"
+                    />
+                  ) : null;
+                })()}
                 <div>
                   <h1 className="text-2xl font-bold text-neutral-900">
                     {application.visa?.country?.name || application.country} - {application.visaType}

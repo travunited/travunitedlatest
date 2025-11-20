@@ -8,6 +8,7 @@ import Image from "next/image";
 import { Eye, Upload, Download, User, Mail, Phone, Calendar, CreditCard, Send, Clock, CheckCircle, X, AlertCircle, ArrowLeft, UserPlus, ChevronDown, FileDown, MapPin, Globe } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
+import { getCountryFlagUrl } from "@/lib/flags";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -356,15 +357,19 @@ export default function AdminBookingDetailPage() {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* Left: Reference & Tour Info */}
               <div className="flex items-start gap-4">
-                {booking.tour?.country?.flagUrl && (
-                  <Image
-                    src={booking.tour.country.flagUrl}
-                    alt={booking.tour.country.name}
-                    width={48}
-                    height={32}
-                    className="rounded object-cover border border-neutral-200"
-                  />
-                )}
+                {(() => {
+                  if (!booking.tour?.country) return null;
+                  const flagUrl = getCountryFlagUrl(booking.tour.country.flagUrl, booking.tour.country.code, 160);
+                  return flagUrl ? (
+                    <Image
+                      src={flagUrl}
+                      alt={booking.tour.country.name}
+                      width={48}
+                      height={32}
+                      className="rounded object-cover border border-neutral-200"
+                    />
+                  ) : null;
+                })()}
                 <div>
                   <h1 className="text-2xl font-bold text-neutral-900">
                     {booking.tourName || booking.tour?.name || "Tour Booking"}

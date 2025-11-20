@@ -8,6 +8,7 @@ import { Plus, Edit, Globe, Search, RefreshCw, Trash2, ToggleLeft, ToggleRight, 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImportModal } from "@/components/admin/ImportModal";
 import Image from "next/image";
+import { getCountryFlagUrl } from "@/lib/flags";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -377,18 +378,21 @@ export default function AdminCountriesPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      {country.flagUrl ? (
-                        <Image
-                          src={country.flagUrl}
-                          alt={`${country.name} flag`}
-                          width={40}
-                          height={24}
-                          unoptimized
-                          className="rounded object-cover border border-neutral-200"
-                        />
-                      ) : (
-                        <div className="h-6 w-10 rounded bg-neutral-100 border border-neutral-200" />
-                      )}
+                      {(() => {
+                        const flagUrl = getCountryFlagUrl(country.flagUrl, country.code, 160);
+                        return flagUrl ? (
+                          <Image
+                            src={flagUrl}
+                            alt={`${country.name} flag`}
+                            width={40}
+                            height={24}
+                            unoptimized
+                            className="rounded object-cover border border-neutral-200"
+                          />
+                        ) : (
+                          <div className="h-6 w-10 rounded bg-neutral-100 border border-neutral-200" />
+                        );
+                      })()}
                       <div>
                         <div className="font-medium text-neutral-900">{country.name}</div>
                         {country.region && (

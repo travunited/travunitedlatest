@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import VisasGridClient from "./VisasGridClient";
 import { getMediaProxyUrl } from "@/lib/media";
+import { getCountryFlagUrl } from "@/lib/flags";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -32,7 +33,7 @@ export default async function VisasPage() {
     code: country.code,
     name: country.name,
     region: country.region || "",
-    flagUrl: country.flagUrl || "",
+    flagUrl: getCountryFlagUrl(country.flagUrl, country.code, 160),
     heroImage:
       getMediaProxyUrl(country.visas[0]?.heroImageUrl) ||
       "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=600&q=80",

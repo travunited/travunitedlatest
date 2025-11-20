@@ -186,7 +186,7 @@ export default async function VisaDetailPage({
           </div>
 
           <aside className="lg:col-span-1">
-            <div className="sticky top-24 bg-white rounded-2xl shadow-large p-6 border border-neutral-200">
+            <div className="sticky top-24 bg-white rounded-2xl shadow-large p-6 border border-neutral-200 z-10">
               <div className="mb-6">
                 <div className="text-4xl font-bold text-primary-600 mb-1">
                   ₹{visa.priceInInr.toLocaleString()}

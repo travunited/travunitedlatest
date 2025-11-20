@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { Search, ArrowRight } from "lucide-react";
+import { getCountryFlagUrl } from "@/lib/flags";
 
 interface CountryCard {
   id: string;
@@ -129,16 +130,19 @@ export default function VisasGridClient({ countries }: Props) {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
                     <div className="absolute top-4 left-4 flex items-center gap-2 text-white">
-                      {country.flagUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={country.flagUrl}
-                          alt={`${country.name} flag`}
-                          className="h-6 w-9 rounded shadow"
-                        />
-                      ) : (
-                        <div className="h-6 w-9 rounded bg-white/20" />
-                      )}
+                      {(() => {
+                        const flagUrl = getCountryFlagUrl(country.flagUrl, country.code, 160);
+                        return flagUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={flagUrl}
+                            alt={`${country.name} flag`}
+                            className="h-6 w-9 rounded shadow object-cover"
+                          />
+                        ) : (
+                          <div className="h-6 w-9 rounded bg-white/20" />
+                        );
+                      })()}
                       <span className="text-xs uppercase tracking-widest font-semibold">
                         {country.code}
                       </span>
