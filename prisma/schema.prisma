@@ -256,19 +256,60 @@ model Tour {
   price       Int
   basePriceInInr Int?
   description String?
+  shortDescription String?
+  originalPrice Int?
+  currency    String?  @default("INR")
+  durationDays Int?
+  durationNights Int?
+  destinationCountry String?
+  citiesCovered String?  // JSON string array
+  images      String?  // JSON string array
+  featuredImage String?
   itinerary   String?  // JSON string
   inclusions  String?  // JSON string
   exclusions  String?  // JSON string
   importantNotes String?
-  imageUrl    String?
+  difficultyLevel String?
+  groupSizeMin Int?
+  groupSizeMax Int?
+  availableDates String?  // JSON string array
+  bookingDeadline DateTime?
+  status      String?  @default("active") // active, inactive, draft
   isActive    Boolean  @default(true)
   isFeatured  Boolean  @default(false)
+  categoryId  String?
+  imageUrl    String?
   heroImageUrl String?
   galleryImageUrls String?
   allowAdvance Boolean @default(false)
   advancePercentage Int?
   metaTitle   String?
   metaDescription String?
+  metaKeywords String?
+  canonicalUrl String?
+  ogTitle     String?
+  ogDescription String?
+  ogImage     String?
+  twitterTitle String?
+  twitterDescription String?
+  twitterImage String?
+  packageType String?
+  minimumTravelers Int?
+  maximumTravelers Int?
+  hotelCategories String?  // JSON string array
+  customizationOptions String?  // JSON string
+  seasonalPricing String?  // JSON string
+  bookingPolicies String?
+  cancellationTerms String?
+  highlights String?  // JSON string array
+  bestFor   String?  // JSON string array
+  destinationState String?
+  tourType  String?
+  tourSubType String?
+  region    String?
+  primaryDestination String?
+  regionTags String?  // JSON string array
+  themes    String?  // JSON string array
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   days        TourDay[]
