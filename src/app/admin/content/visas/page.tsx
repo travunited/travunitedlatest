@@ -22,9 +22,6 @@ import {
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImportModal } from "@/components/admin/ImportModal";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
 interface VisaRecord {
   id: string;
   name: string;

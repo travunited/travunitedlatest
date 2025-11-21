@@ -9,9 +9,6 @@ import { Plus, Edit, Calendar, Search, Filter, Star, RefreshCw, CheckSquare, Squ
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImportModal } from "@/components/admin/ImportModal";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
 interface TourRecord {
   id: string;
   name: string;

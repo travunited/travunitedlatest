@@ -7,9 +7,6 @@ import Link from "next/link";
 import { BarChart3, DollarSign, FileText, Calendar, Users, Shield, FileSearch, TrendingUp, Globe, ArrowRight } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
 const REPORT_CATEGORIES = [
   {
     title: "Finance",
@@ -137,6 +134,7 @@ export default function ReportsOverviewPage() {
     </AdminLayout>
   );
 }
+
 
 
 

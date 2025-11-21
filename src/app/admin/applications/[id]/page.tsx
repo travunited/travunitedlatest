@@ -10,9 +10,6 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
 import { getCountryFlagUrl } from "@/lib/flags";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
 type DocScope = "PER_TRAVELLER" | "PER_APPLICATION";
 
 interface DocumentRequirementMeta {

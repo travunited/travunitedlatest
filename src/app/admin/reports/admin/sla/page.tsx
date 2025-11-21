@@ -8,9 +8,6 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ReportFilterBar, ReportFilters } from "@/components/admin/ReportFilterBar";
 import { buildExportUrl } from "@/lib/report-export";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
 interface SLASummary {
   totalApplications: number;
   avgTimeToFirstReview: number;

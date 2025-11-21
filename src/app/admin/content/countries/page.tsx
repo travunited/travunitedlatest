@@ -10,9 +10,6 @@ import { ImportModal } from "@/components/admin/ImportModal";
 import Image from "next/image";
 import { getCountryFlagUrl } from "@/lib/flags";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
 interface CountryRecord {
   id: string;
   name: string;

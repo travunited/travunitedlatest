@@ -9,9 +9,6 @@ import { Eye, Filter, Calendar, CheckCircle, X, AlertCircle, Download, Mail, Tra
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
 interface Booking {
   id: string;
   tourName: string;

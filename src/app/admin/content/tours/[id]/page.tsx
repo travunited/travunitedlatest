@@ -13,9 +13,6 @@ import {
   Trash2,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
-
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
 import { getMediaProxyUrl } from "@/lib/media";
 
 type CountryOption = { id: string; name: string };

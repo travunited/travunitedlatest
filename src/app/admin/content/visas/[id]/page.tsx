@@ -14,8 +14,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { getMediaProxyUrl } from "@/lib/media";
 

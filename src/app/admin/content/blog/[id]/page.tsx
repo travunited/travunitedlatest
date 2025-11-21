@@ -18,9 +18,6 @@ import {
   getMaxImageSizeDisplay,
 } from "@/lib/image-upload-config";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
 interface BlogPost {
   id: string;
   title: string;

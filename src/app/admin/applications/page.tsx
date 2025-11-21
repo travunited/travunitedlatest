@@ -9,9 +9,6 @@ import { Eye, Filter, FileText, CheckCircle, X, Clock, AlertCircle, MoreVertical
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
 interface Application {
   id: string;
   country: string;

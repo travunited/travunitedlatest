@@ -10,9 +10,6 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
 import { getCountryFlagUrl } from "@/lib/flags";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
 interface Payment {
   id: string;
   amount: number;

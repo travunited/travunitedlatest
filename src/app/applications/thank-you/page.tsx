@@ -6,9 +6,6 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { CheckCircle, FileText, ArrowRight } from "lucide-react";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
 function ThankYouContent() {
   const searchParams = useSearchParams();
   const router = useRouter();

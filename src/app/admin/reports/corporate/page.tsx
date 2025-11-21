@@ -9,9 +9,6 @@ import { ReportFilterBar, ReportFilters } from "@/components/admin/ReportFilterB
 import { buildExportUrl } from "@/lib/report-export";
 import { formatDate } from "@/lib/dateFormat";
 
-export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
-
 interface CorporateLead {
   id: string;
   companyName: string;
