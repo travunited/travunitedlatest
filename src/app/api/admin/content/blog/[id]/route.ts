@@ -89,7 +89,10 @@ export async function GET(
       ...post,
       published: post.isPublished, // Map isPublished to published for frontend consistency
       coverImage: getMediaProxyUrl(post.coverImage),
-      status: post.status || "DRAFT",
+      // Derive status from isPublished and publishedAt
+      status: post.isPublished 
+        ? (post.publishedAt && post.publishedAt > new Date() ? "SCHEDULED" : "PUBLISHED")
+        : "DRAFT",
     });
   } catch (error) {
     console.error("Error fetching blog post:", error);
@@ -215,23 +218,32 @@ export async function PUT(
         ? (existing.publishedAt ?? new Date())
         : null;
     }
-    // Handle status field
+    // Handle status field - derive from isPublished and publishedAt
+    // Status is computed from isPublished, not stored directly
     if (data.status !== undefined) {
-      updateData.status = data.status || "DRAFT";
+      const status = data.status || "DRAFT";
       // Sync isPublished with status
-      if (data.status === "PUBLISHED") {
+      if (status === "PUBLISHED") {
         updateData.isPublished = true;
         if (!updateData.publishedAt) {
           updateData.publishedAt = existing.publishedAt ?? new Date();
         }
-      } else if (data.status === "DRAFT") {
+      } else if (status === "DRAFT") {
+        updateData.isPublished = false;
+        // Don't clear publishedAt for drafts, keep it for reference
+      } else if (status === "SCHEDULED") {
+        // SCHEDULED: isPublished stays false, but publishedAt is set
         updateData.isPublished = false;
       }
-      // SCHEDULED keeps isPublished as false but sets publishedAt
     }
     // Handle publishedAt separately (for scheduled posts)
     if (data.publishedAt !== undefined && data.publishedAt !== null) {
       updateData.publishedAt = new Date(data.publishedAt);
+      // If publishedAt is in the future and status is SCHEDULED, keep isPublished false
+      const scheduledDate = new Date(data.publishedAt);
+      if (scheduledDate > new Date() && data.status === "SCHEDULED") {
+        updateData.isPublished = false;
+      }
     }
     // SEO & Metadata fields
     if (data.metaTitle !== undefined) {
@@ -252,9 +264,15 @@ export async function PUT(
       data: updateData,
     });
 
+    // Derive status from isPublished and publishedAt
+    const derivedStatus = updated.isPublished 
+      ? (updated.publishedAt && updated.publishedAt > new Date() ? "SCHEDULED" : "PUBLISHED")
+      : "DRAFT";
+
     return NextResponse.json({
       ...updated,
       published: updated.isPublished, // Map isPublished to published for frontend consistency
+      status: derivedStatus,
     });
   } catch (error) {
     console.error("Error updating blog post:", error);

@@ -451,7 +451,7 @@ model BlogPost {
   metaDescription String?
   focusKeyword   String?
   author         String?
-  status         String?  @default("DRAFT") // DRAFT, PUBLISHED, SCHEDULED
+  // Note: status is derived from isPublished and publishedAt, not stored directly
 }
 
 model Notification {

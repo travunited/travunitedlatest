@@ -70,11 +70,19 @@ export async function GET(req: Request) {
       },
     });
 
-    const formatted = posts.map((post) => ({
-      ...post,
-      published: post.isPublished, // Map isPublished to published for frontend consistency
-      coverImage: getMediaProxyUrl(post.coverImage),
-    }));
+    const formatted = posts.map((post) => {
+      // Derive status from isPublished and publishedAt
+      const derivedStatus = post.isPublished 
+        ? (post.publishedAt && post.publishedAt > new Date() ? "SCHEDULED" : "PUBLISHED")
+        : "DRAFT";
+      
+      return {
+        ...post,
+        published: post.isPublished, // Map isPublished to published for frontend consistency
+        coverImage: getMediaProxyUrl(post.coverImage),
+        status: derivedStatus,
+      };
+    });
 
     return NextResponse.json(formatted);
   } catch (error) {
@@ -148,13 +156,19 @@ export async function POST(req: Request) {
         metaDescription: data.metaDescription || null,
         focusKeyword: data.focusKeyword || null,
         author: data.author || null,
-        status: status || "DRAFT",
+        // Note: status is derived from isPublished, not stored directly
       },
     });
+
+    // Derive status from isPublished and publishedAt
+    const derivedStatus = post.isPublished 
+      ? (post.publishedAt && post.publishedAt > new Date() ? "SCHEDULED" : "PUBLISHED")
+      : "DRAFT";
 
     return NextResponse.json({
       ...post,
       published: post.isPublished, // Map isPublished to published for frontend consistency
+      status: derivedStatus,
     });
   } catch (error) {
     console.error("Error creating blog post:", error);
