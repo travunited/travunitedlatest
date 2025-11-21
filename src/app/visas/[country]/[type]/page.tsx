@@ -9,6 +9,7 @@ import {
   FileText,
   HelpCircle,
   ArrowRight,
+  Info,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
@@ -77,9 +78,9 @@ export default async function VisaDetailPage({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: "Processing", value: visa.processingTime },
-                { label: "Stay", value: visa.stayDuration },
+                { label: "Stay", value: visa.stayDurationDays ? `Up to ${visa.stayDurationDays} days` : visa.stayDuration },
                 { label: "Entry", value: visa.entryType },
-                { label: "Validity", value: visa.validity },
+                { label: "Validity", value: visa.validityDays ? `${visa.validityDays} days from issue` : visa.validity },
               ].map((item) => (
                 <div
                   key={item.label}
@@ -188,10 +189,28 @@ export default async function VisaDetailPage({
           <aside className="lg:col-span-1">
             <div className="sticky top-24 bg-white rounded-2xl shadow-large p-6 border border-neutral-200 z-10">
               <div className="mb-6">
-                <div className="text-4xl font-bold text-primary-600 mb-1">
-                  ₹{visa.priceInInr.toLocaleString()}
-                </div>
-                <div className="text-sm text-neutral-500">Per traveller</div>
+                {visa.govtFee !== null && visa.serviceFee !== null ? (
+                  <>
+                    <div className="text-4xl font-bold text-primary-600 mb-1">
+                      {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                      {(visa.govtFee + visa.serviceFee).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-neutral-500 mb-2">
+                      Govt: {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                      {visa.govtFee.toLocaleString()} + Service: {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                      {visa.serviceFee.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-neutral-500">Per traveller</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-4xl font-bold text-primary-600 mb-1">
+                      {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                      {visa.priceInInr.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-neutral-500">Per traveller</div>
+                  </>
+                )}
               </div>
               <Link
                 href={`/apply/visa/${params.country}/${visa.slug}`}
@@ -207,8 +226,14 @@ export default async function VisaDetailPage({
                 </div>
                 <div className="flex items-center">
                   <CheckCircle size={16} className="mr-2 text-primary-600" />
-                  <span>Stay: {visa.stayDuration}</span>
+                  <span>Stay: {visa.stayDurationDays ? `Up to ${visa.stayDurationDays} days` : visa.stayDuration}</span>
                 </div>
+                {visa.validityDays && (
+                  <div className="flex items-center">
+                    <Info size={16} className="mr-2 text-primary-600" />
+                    <span>Validity: {visa.validityDays} days from issue</span>
+                  </div>
+                )}
               </div>
             </div>
           </aside>

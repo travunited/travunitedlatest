@@ -117,6 +117,12 @@ export async function PUT(
       heroImageUrl,
       metaTitle,
       metaDescription,
+      // New fields
+      stayDurationDays,
+      validityDays,
+      govtFee,
+      serviceFee,
+      currency,
       requirements = [],
       faqs = [],
     } = body;
@@ -169,6 +175,12 @@ export async function PUT(
           heroImageUrl: normalizeMediaInput(heroImageUrl),
           metaTitle: metaTitle || null,
           metaDescription: metaDescription || null,
+          // New fields
+          stayDurationDays: stayDurationDays !== undefined ? (stayDurationDays === null ? null : Number(stayDurationDays)) : undefined,
+          validityDays: validityDays !== undefined ? (validityDays === null ? null : Number(validityDays)) : undefined,
+          govtFee: govtFee !== undefined ? (govtFee === null ? null : Number(govtFee)) : undefined,
+          serviceFee: serviceFee !== undefined ? (serviceFee === null ? null : Number(serviceFee)) : undefined,
+          currency: currency || undefined,
         },
       });
 

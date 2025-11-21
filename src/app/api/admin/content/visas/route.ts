@@ -128,6 +128,12 @@ export async function POST(req: Request) {
       heroImageUrl,
       metaTitle,
       metaDescription,
+      // New fields
+      stayDurationDays,
+      validityDays,
+      govtFee,
+      serviceFee,
+      currency,
       requirements = [],
       faqs = [],
     } = body;
@@ -177,6 +183,12 @@ export async function POST(req: Request) {
         heroImageUrl: heroImageUrl || null,
         metaTitle: metaTitle || null,
         metaDescription: metaDescription || null,
+        // New fields
+        stayDurationDays: stayDurationDays !== undefined && stayDurationDays !== null ? Number(stayDurationDays) : null,
+        validityDays: validityDays !== undefined && validityDays !== null ? Number(validityDays) : null,
+        govtFee: govtFee !== undefined && govtFee !== null ? Number(govtFee) : null,
+        serviceFee: serviceFee !== undefined && serviceFee !== null ? Number(serviceFee) : null,
+        currency: currency || "INR",
         requirements: requirements.length
           ? {
               create: requirements.map(

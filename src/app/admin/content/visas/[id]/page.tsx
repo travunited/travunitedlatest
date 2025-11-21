@@ -43,6 +43,12 @@ interface FormState {
   heroImageUrl: string;
   metaTitle: string;
   metaDescription: string;
+  // New fields matching CSV template
+  stayDurationDays: number | null;
+  validityDays: number | null;
+  govtFee: number | null;
+  serviceFee: number | null;
+  currency: string;
 }
 
 interface RequirementState {
@@ -121,6 +127,12 @@ export default function AdminVisaEditorPage() {
     heroImageUrl: "",
     metaTitle: "",
     metaDescription: "",
+    // New fields
+    stayDurationDays: null,
+    validityDays: null,
+    govtFee: null,
+    serviceFee: null,
+    currency: "INR",
   });
   const [requirements, setRequirements] = useState<RequirementState[]>([]);
   const [faqs, setFaqs] = useState<FaqState[]>([]);
@@ -180,6 +192,12 @@ export default function AdminVisaEditorPage() {
       heroImageUrl: data.heroImageUrl || "",
       metaTitle: data.metaTitle || "",
       metaDescription: data.metaDescription || "",
+      // New fields
+      stayDurationDays: data.stayDurationDays ?? null,
+      validityDays: data.validityDays ?? null,
+      govtFee: data.govtFee ?? null,
+      serviceFee: data.serviceFee ?? null,
+      currency: data.currency || "INR",
     });
     setRequirements(
       (data.requirements || []).map((req: any, index: number) => ({
@@ -583,10 +601,85 @@ const handleFaqChange = (
 
             {activeTab === "pricing" && (
               <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-4">
+                <div className="border-b border-neutral-200 pb-4">
+                  <h3 className="text-lg font-semibold text-neutral-900 mb-2">Pricing Breakdown</h3>
+                  <p className="text-sm text-neutral-500">Set government fee and service fee separately</p>
+                </div>
+                <div className="grid md:grid-cols-3 gap-4">
                   <div>
                     <label className="text-sm font-medium text-neutral-700">
-                      Price in INR <span className="text-red-500">*</span>
+                      Government Fee
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={formData.govtFee ?? ""}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ 
+                          ...prev, 
+                          govtFee: e.target.value ? Number(e.target.value) : null,
+                          priceInInr: (prev.serviceFee ?? 0) + (e.target.value ? Number(e.target.value) : 0)
+                        }))
+                      }
+                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700">
+                      Service Fee
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={formData.serviceFee ?? ""}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ 
+                          ...prev, 
+                          serviceFee: e.target.value ? Number(e.target.value) : null,
+                          priceInInr: (prev.govtFee ?? 0) + (e.target.value ? Number(e.target.value) : 0)
+                        }))
+                      }
+                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700">
+                      Currency
+                    </label>
+                    <select
+                      value={formData.currency}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, currency: e.target.value }))
+                      }
+                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="INR">INR (₹)</option>
+                      <option value="USD">USD ($)</option>
+                      <option value="EUR">EUR (€)</option>
+                      <option value="AED">AED (د.إ)</option>
+                      <option value="GBP">GBP (£)</option>
+                    </select>
+                  </div>
+                </div>
+                {(formData.govtFee !== null || formData.serviceFee !== null) && (
+                  <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
+                    <div className="text-sm text-neutral-600 mb-1">Total Fee</div>
+                    <div className="text-2xl font-bold text-primary-600">
+                      {formData.currency === "INR" ? "₹" : formData.currency === "USD" ? "$" : formData.currency === "EUR" ? "€" : formData.currency === "AED" ? "د.إ" : formData.currency === "GBP" ? "£" : formData.currency}
+                      {((formData.govtFee ?? 0) + (formData.serviceFee ?? 0)).toLocaleString()}
+                    </div>
+                    <div className="text-xs text-neutral-500 mt-1">
+                      Govt: {formData.currency === "INR" ? "₹" : formData.currency} {(formData.govtFee ?? 0).toLocaleString()} + Service: {formData.currency === "INR" ? "₹" : formData.currency} {(formData.serviceFee ?? 0).toLocaleString()}
+                    </div>
+                  </div>
+                )}
+                <div className="border-t border-neutral-200 pt-4">
+                  <div className="text-sm text-neutral-500 mb-4">Legacy total price (auto-calculated from govt + service fees)</div>
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700">
+                      Total Price (Legacy)
                     </label>
                     <input
                       type="number"
@@ -595,9 +688,12 @@ const handleFaqChange = (
                       onChange={(e) =>
                         setFormData((prev) => ({ ...prev, priceInInr: Number(e.target.value) || 0 }))
                       }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500 bg-neutral-50"
+                      readOnly
                     />
                   </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-neutral-700">
                       Processing Time
@@ -612,35 +708,100 @@ const handleFaqChange = (
                       placeholder="3-5 working days"
                     />
                   </div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-neutral-700">
-                      Stay Duration
+                      Entry Type
                     </label>
-                    <input
-                      type="text"
-                      value={formData.stayDuration}
+                    <select
+                      value={formData.entryType}
                       onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, stayDuration: e.target.value }))
+                        setFormData((prev) => ({ ...prev, entryType: e.target.value }))
                       }
                       className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
-                      placeholder="Up to 30 days"
-                    />
+                    >
+                      <option value="single">Single</option>
+                      <option value="multiple">Multiple</option>
+                      <option value="double">Double</option>
+                    </select>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-neutral-700">
-                      Validity
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.validity}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, validity: e.target.value }))
-                      }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
-                      placeholder="60 days from issue"
-                    />
+                </div>
+                <div className="border-t border-neutral-200 pt-4">
+                  <h3 className="text-lg font-semibold text-neutral-900 mb-4">Validity & Duration</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-neutral-700">
+                        Stay Duration (Days)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={formData.stayDurationDays ?? ""}
+                        onChange={(e) => {
+                          const days = e.target.value ? parseInt(e.target.value) : null;
+                          setFormData((prev) => ({ 
+                            ...prev, 
+                            stayDurationDays: days,
+                            stayDuration: days ? `${days} days` : prev.stayDuration
+                          }));
+                        }}
+                        className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                        placeholder="30"
+                      />
+                      <p className="text-xs text-neutral-500 mt-1">Number of days allowed to stay</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-neutral-700">
+                        Validity (Days from Issue)
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        value={formData.validityDays ?? ""}
+                        onChange={(e) => {
+                          const days = e.target.value ? parseInt(e.target.value) : null;
+                          setFormData((prev) => ({ 
+                            ...prev, 
+                            validityDays: days,
+                            validity: days ? `${days} days from issue` : prev.validity
+                          }));
+                        }}
+                        className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                        placeholder="60"
+                      />
+                      <p className="text-xs text-neutral-500 mt-1">Number of days visa is valid from date of issue</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-neutral-700">
+                        Stay Duration (Legacy Text)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.stayDuration}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, stayDuration: e.target.value }))
+                        }
+                        className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500 bg-neutral-50"
+                        placeholder="Up to 30 days"
+                        readOnly
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-neutral-700">
+                        Validity (Legacy Text)
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.validity}
+                        onChange={(e) =>
+                          setFormData((prev) => ({ ...prev, validity: e.target.value }))
+                        }
+                        className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500 bg-neutral-50"
+                        placeholder="60 days from issue"
+                        readOnly
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

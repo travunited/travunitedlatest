@@ -13,21 +13,31 @@ export const CountryImportRowSchema = z.object({
 
 export type CountryImportRow = z.infer<typeof CountryImportRowSchema>;
 
-// Visa Import Schema
+// Visa Import Schema - matches new CSV template
 export const VisaImportRowSchema = z.object({
   country_code: z.string().min(2).max(3).toUpperCase(),
   country_name: z.string().min(1),
   visa_name: z.string().min(1),
   visa_slug: z.string().min(1).toLowerCase(),
   entry_type: z.string().optional(),
-  stay_duration_days: z.string().optional(),
-  validity_days: z.string().optional(),
+  stay_duration_days: z.string().optional().transform((val) => {
+    if (!val || val.trim() === "") return null;
+    const num = parseInt(val);
+    return isNaN(num) ? null : num;
+  }),
+  validity_days: z.string().optional().transform((val) => {
+    if (!val || val.trim() === "") return null;
+    const num = parseInt(val);
+    return isNaN(num) ? null : num;
+  }),
   processing_time_days: z.string().optional(),
   govt_fee: z.string().transform((val) => {
+    if (!val || val.trim() === "") return 0;
     const num = parseFloat(val);
     return isNaN(num) ? 0 : Math.round(num);
   }),
   service_fee: z.string().transform((val) => {
+    if (!val || val.trim() === "") return 0;
     const num = parseFloat(val);
     return isNaN(num) ? 0 : Math.round(num);
   }),
@@ -35,7 +45,7 @@ export const VisaImportRowSchema = z.object({
   is_active: z.enum(["TRUE", "FALSE", "true", "false", "1", "0"]).transform((val) => 
     val === "TRUE" || val === "true" || val === "1"
   ),
-  // Optional fields
+  // Optional fields for backward compatibility
   short_description: z.string().optional(),
   long_description: z.string().optional(),
   tags: z.string().optional(),

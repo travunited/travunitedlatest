@@ -77,9 +77,17 @@ export default async function CountryVisasPage({
                   <div className="flex items-center">
                     <CheckCircle size={18} className="mr-3 text-primary-600" />
                     <span>
-                      <strong>Stay Duration:</strong> {visa.stayDuration}
+                      <strong>Stay Duration:</strong> {visa.stayDurationDays ? `Up to ${visa.stayDurationDays} days` : visa.stayDuration}
                     </span>
                   </div>
+                  {visa.validityDays && (
+                    <div className="flex items-center">
+                      <Info size={18} className="mr-3 text-primary-600" />
+                      <span>
+                        <strong>Validity:</strong> {visa.validityDays} days from issue
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center">
                     <Info size={18} className="mr-3 text-primary-600" />
                     <span>
@@ -90,10 +98,28 @@ export default async function CountryVisasPage({
 
                 <div className="flex items-center justify-between pt-6 border-t border-neutral-200">
                   <div>
-                    <div className="text-3xl font-bold text-primary-600">
-                      ₹{visa.priceInInr.toLocaleString()}
-                    </div>
-                    <div className="text-sm text-neutral-500">Per traveller</div>
+                    {visa.govtFee !== null && visa.serviceFee !== null ? (
+                      <>
+                        <div className="text-3xl font-bold text-primary-600">
+                          {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                          {(visa.govtFee + visa.serviceFee).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-neutral-500 mt-1">
+                          Govt: {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                          {visa.govtFee.toLocaleString()} + Service: {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                          {visa.serviceFee.toLocaleString()}
+                        </div>
+                        <div className="text-sm text-neutral-500">Per traveller</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-3xl font-bold text-primary-600">
+                          {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                          {visa.priceInInr.toLocaleString()}
+                        </div>
+                        <div className="text-sm text-neutral-500">Per traveller</div>
+                      </>
+                    )}
                   </div>
                   <Link
                     href={`/visas/${params.country}/${visa.slug}`}

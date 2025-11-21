@@ -166,10 +166,10 @@ model Visa {
   category       String
   isActive       Boolean  @default(true)
   isFeatured     Boolean  @default(false)
-  priceInInr     Int
+  priceInInr     Int      // Legacy field - total price (govtFee + serviceFee)
   processingTime String
-  stayDuration   String
-  validity       String
+  stayDuration   String   // Legacy field - text format
+  validity       String   // Legacy field - text format
   entryType      String
   overview       String
   eligibility    String
@@ -180,6 +180,12 @@ model Visa {
   heroImageUrl   String?
   metaTitle      String?
   metaDescription String?
+  // New fields matching CSV template
+  stayDurationDays Int?   // Integer days from stay_duration_days
+  validityDays     Int?   // Integer days from validity_days
+  govtFee          Int?   // Government fee from govt_fee
+  serviceFee       Int?   // Service fee from service_fee
+  currency         String? @default("INR") // Currency from currency column
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   faqs           VisaFaq[]

@@ -63,34 +63,43 @@ export async function POST(req: NextRequest) {
 
     for (const { row, data } of validation.validRows) {
       try {
-        // Find or create country first
-        let country = await prisma.country.findUnique({
-          where: { code: data.country_code },
-        });
-
-        if (!country) {
-          country = await prisma.country.create({
-            data: {
-              code: data.country_code,
-              name: data.country_name,
-              isActive: true,
-            },
-          });
+        // Validate required fields
+        if (!data.country_code || !data.country_name || !data.visa_name || !data.visa_slug || !data.currency) {
+          failed.push({ row, message: "Missing required fields: country_code, country_name, visa_name, visa_slug, currency" });
+          continue;
         }
 
-        // Calculate total price
-        const totalPrice = data.govt_fee + data.service_fee;
+        // Data is already validated and transformed by the schema
+        // stay_duration_days and validity_days are already integers or null
+        // govt_fee and service_fee are already numbers
 
-        // Find or create visa
-        const existingVisa = await prisma.visa.findUnique({
-          where: { slug: data.visa_slug },
+        // Find or create country by country_code
+        const country = await prisma.country.upsert({
+          where: { code: data.country_code },
+          update: { name: data.country_name },
+          create: {
+            code: data.country_code,
+            name: data.country_name,
+            isActive: true,
+          },
         });
 
+        // Calculate total price for backward compatibility
+        const totalPrice = data.govt_fee + data.service_fee;
+
+        // Build visa data with new fields
         const visaData = {
           countryId: country.id,
           name: data.visa_name,
           slug: data.visa_slug,
           category: data.entry_type || "Tourist",
+          // New fields from CSV template
+          stayDurationDays: data.stay_duration_days ?? null,
+          validityDays: data.validity_days ?? null,
+          govtFee: data.govt_fee,
+          serviceFee: data.service_fee,
+          currency: data.currency || "INR",
+          // Legacy fields (for backward compatibility)
           priceInInr: totalPrice,
           processingTime: data.processing_time_days || "3-5 days",
           stayDuration: data.stay_duration_days ? `${data.stay_duration_days} days` : "30 days",
@@ -98,9 +107,14 @@ export async function POST(req: NextRequest) {
           entryType: data.entry_type || "single",
           overview: data.long_description || data.short_description || "",
           eligibility: "",
-          isActive: data.is_active,
+          isActive: data.is_active ?? true,
           isFeatured: data.show_on_homepage || false,
         };
+
+        // Upsert visa by slug
+        const existingVisa = await prisma.visa.findUnique({
+          where: { slug: data.visa_slug },
+        });
 
         if (existingVisa) {
           await prisma.visa.update({
@@ -115,7 +129,14 @@ export async function POST(req: NextRequest) {
           created++;
         }
       } catch (error: any) {
-        failed.push({ row, message: error.message || "Failed to import" });
+        console.error(`Error importing visa at row ${row}:`, error);
+        let errorMessage = error.message || "Failed to import";
+        if (error.code === "P2002") {
+          errorMessage = "Duplicate slug - visa_slug must be unique";
+        } else if (error.code === "P2003") {
+          errorMessage = `Foreign key constraint failed: ${error.meta?.field_name || "related record not found"}`;
+        }
+        failed.push({ row, message: errorMessage });
       }
     }
 
