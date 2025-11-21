@@ -68,17 +68,27 @@ export async function GET(
       );
     }
 
+    // Safely parse gallery images
+    let processedGalleryImages = null;
+    if (tour.galleryImageUrls) {
+      try {
+        const parsed = JSON.parse(tour.galleryImageUrls);
+        if (Array.isArray(parsed)) {
+          processedGalleryImages = JSON.stringify(
+            parsed.map((url: string) => getMediaProxyUrl(url))
+          );
+        }
+      } catch {
+        // If parsing fails, return as-is
+        processedGalleryImages = tour.galleryImageUrls;
+      }
+    }
+
     return NextResponse.json({
       ...tour,
       imageUrl: getMediaProxyUrl(tour.imageUrl),
       heroImageUrl: getMediaProxyUrl(tour.heroImageUrl),
-      galleryImageUrls: tour.galleryImageUrls
-        ? JSON.stringify(
-            JSON.parse(tour.galleryImageUrls).map((url: string) =>
-              getMediaProxyUrl(url)
-            )
-          )
-        : null,
+      galleryImageUrls: processedGalleryImages,
     });
   } catch (error) {
     console.error("Error fetching tour:", error);
