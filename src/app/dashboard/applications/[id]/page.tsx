@@ -327,6 +327,35 @@ export default function ApplicationDetailPage() {
                     Edit Application
                   </Link>
                 )}
+                {(application.status === "SUBMITTED" || application.status === "IN_PROCESS" || application.status === "APPROVED") && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(`/api/invoices/application/${application.id}`);
+                        if (!response.ok) {
+                          const error = await response.json();
+                          throw new Error(error.error || "Failed to generate invoice");
+                        }
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `invoice-application-${application.id}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                      } catch (error) {
+                        console.error("Error downloading invoice:", error);
+                        alert(`Failed to download invoice: ${error instanceof Error ? error.message : "Unknown error"}`);
+                      }
+                    }}
+                    className="w-full border border-neutral-300 text-neutral-700 px-4 py-2 rounded-lg hover:bg-neutral-50 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <FileText size={18} />
+                    <span>Download Invoice</span>
+                  </button>
+                )}
                 <Link
                   href="/help"
                   className="block w-full text-center border border-neutral-300 text-neutral-700 px-4 py-2 rounded-lg hover:bg-neutral-50 transition-colors"
