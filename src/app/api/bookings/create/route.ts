@@ -29,6 +29,8 @@ const bookingSchema = z.object({
     })
   ),
   paymentType: z.enum(["full", "advance"]),
+  customizations: z.record(z.boolean()).optional(),
+  hotelCategory: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -67,13 +69,46 @@ export async function POST(req: Request) {
 
     const userId = session.user.id;
 
-    // Calculate amounts
-    const basePrice =
-      typeof data.tourPrice === "number" && data.tourPrice > 0
-        ? data.tourPrice
-        : tourRecord.price || 0;
+    // Use the provided tourPrice (which already includes customizations)
+    // If not provided or invalid, calculate from base price
     const totalTravellers = data.numberOfAdults + (data.numberOfChildren || 0);
-    const baseAmount = basePrice * totalTravellers;
+    let totalAmount = 0;
+    
+    if (typeof data.tourPrice === "number" && data.tourPrice > 0) {
+      // Use the final amount from frontend (includes customizations)
+      totalAmount = data.tourPrice;
+    } else {
+      // Fallback: calculate from base price
+      const basePrice = tourRecord.price || 0;
+      totalAmount = basePrice * totalTravellers;
+    }
+
+    // Ensure we have at least one traveller
+    if (totalTravellers < 1) {
+      return NextResponse.json(
+        { error: "At least one traveller is required" },
+        { status: 400 }
+      );
+    }
+
+    // Validate travellers array matches count
+    if (data.travellers.length !== totalTravellers) {
+      return NextResponse.json(
+        { error: "Number of travellers does not match traveller details provided" },
+        { status: 400 }
+      );
+    }
+
+    // Validate travel date is not in past
+    const travelDate = new Date(data.travelDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (travelDate < today) {
+      return NextResponse.json(
+        { error: "Travel date cannot be in the past" },
+        { status: 400 }
+      );
+    }
 
     // Create booking
     const booking = await prisma.booking.create({
@@ -82,14 +117,22 @@ export async function POST(req: Request) {
         tourId: tourRecord.id,
         tourName: data.tourName || tourRecord.name,
         status: "DRAFT",
-        totalAmount: baseAmount, // Store full amount (will be updated after payment)
+        totalAmount: Math.round(totalAmount), // Store full amount (will be updated after payment)
         currency: "INR",
-        travelDate: new Date(data.travelDate),
+        travelDate: travelDate,
       },
     });
 
     // Create travellers (simplified - no passport details for tours)
     for (const travellerData of data.travellers) {
+      // Validate required fields
+      if (!travellerData.firstName || !travellerData.lastName || !travellerData.age) {
+        return NextResponse.json(
+          { error: "All traveller details (first name, last name, age) are required" },
+          { status: 400 }
+        );
+      }
+
       // For tours, we can create simple traveller records or store in booking directly
       // For now, we'll create a basic traveller record
       let traveller = await prisma.traveller.findFirst({
@@ -104,9 +147,10 @@ export async function POST(req: Request) {
         traveller = await prisma.traveller.create({
           data: {
             userId,
-            firstName: travellerData.firstName,
-            lastName: travellerData.lastName,
+            firstName: travellerData.firstName.trim(),
+            lastName: travellerData.lastName.trim(),
             email: data.primaryContact.email,
+            phone: data.primaryContact.phone || null,
           },
         });
       }

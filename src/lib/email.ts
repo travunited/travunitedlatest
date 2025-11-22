@@ -285,3 +285,20 @@ export async function sendTourVouchersReadyEmail(
   return sendEmail({ to: email, subject, html });
 }
 
+export async function sendEmailVerificationEmail(email: string, verificationLink: string, name?: string) {
+  const subject = "Verify Your Travunited Email";
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h1>Verify Your Email Address</h1>
+      <p>Hi${name ? ` ${name}` : ""},</p>
+      <p>Thank you for signing up with Travunited! Please verify your email address by clicking the link below:</p>
+      <p><a href="${verificationLink}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Verify Email</a></p>
+      <p>This link will expire in 7 days.</p>
+      <p>If you didn't create an account, please ignore this email.</p>
+      <p>Best regards,<br>The Travunited Team</p>
+    </div>
+  `;
+  
+  return sendEmail({ to: email, subject, html });
+}
+

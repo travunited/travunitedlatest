@@ -50,10 +50,32 @@ export async function POST(req: Request) {
       },
     });
 
-    // TODO: Send verification email (non-blocking)
-    // In production, send email with verification link
-    // await sendVerificationEmail(user.email, verificationToken);
-    console.log("User created:", user.email, "- Verification email should be sent");
+    // Send verification email (non-blocking)
+    try {
+      const crypto = await import("crypto");
+      const verificationToken = crypto.randomBytes(32).toString("hex");
+      const verificationExpires = new Date();
+      verificationExpires.setDate(verificationExpires.getDate() + 7); // Valid for 7 days
+      
+      // Store verification token using passwordResetToken field (we can add a separate field later if needed)
+      // Prefix token with "verify_" to distinguish from password reset tokens
+      const prefixedToken = `verify_${verificationToken}`;
+      
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordResetToken: prefixedToken,
+          passwordResetExpires: verificationExpires,
+        },
+      });
+      
+      const verificationUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/verify-email?token=${verificationToken}`;
+      const { sendEmailVerificationEmail } = await import("@/lib/email");
+      await sendEmailVerificationEmail(user.email, verificationUrl, user.name || undefined);
+    } catch (error) {
+      // Non-blocking - don't fail signup if email fails
+      console.error("Failed to send verification email:", error);
+    }
 
     return NextResponse.json(
       { message: "User created successfully", user },

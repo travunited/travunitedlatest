@@ -76,7 +76,7 @@ export default function ApplicationsPage() {
   };
 
   const getActions = (app: Application) => {
-    const actions: Array<{ label: string; href: string; icon: any; variant?: string }> = [];
+    const actions: Array<{ label: string; href: string; icon: any; variant?: string; download?: boolean }> = [];
 
     if (app.status === "DRAFT") {
       actions.push({

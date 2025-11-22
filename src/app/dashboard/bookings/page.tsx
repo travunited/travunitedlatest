@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, Clock, CheckCircle, Download, CreditCard, Eye, MessageSquare } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, CheckCircle, Download, CreditCard, Eye, MessageSquare, FileText } from "lucide-react";
 import { formatDate } from "@/lib/dateFormat";
 
 export const dynamic = "force-dynamic";
@@ -66,7 +66,7 @@ export default function BookingsPage() {
   };
 
   const getActions = (booking: Booking) => {
-    const actions: Array<{ label: string; href: string; icon: any; variant?: string }> = [];
+    const actions: Array<{ label: string; href: string; icon: any; variant?: string; download?: boolean }> = [];
 
     if (booking.status === "PAYMENT_PENDING") {
       actions.push({

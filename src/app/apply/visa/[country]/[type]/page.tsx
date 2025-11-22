@@ -63,6 +63,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   const [visaInfo, setVisaInfo] = useState<VisaDetailsResponse | null>(null);
   const [visaLoading, setVisaLoading] = useState(true);
   const [createdTravellerIds, setCreatedTravellerIds] = useState<string[]>([]);
+  const [dateErrors, setDateErrors] = useState<Record<string, string>>({});
 
   type FormDataTraveller = {
     id: string;
@@ -358,14 +359,114 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id, params.country, params.type]);
 
+  // Helper function to validate dates
+  const validateDates = useCallback(() => {
+    const errors: Record<string, string> = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split("T")[0];
+
+    // Validate travel date
+    if (formData.travelDate) {
+      const travelDate = new Date(formData.travelDate);
+      travelDate.setHours(0, 0, 0, 0);
+      if (travelDate < today) {
+        errors.travelDate = "Travel date cannot be in the past";
+      }
+    }
+
+    // Validate traveller dates
+    (formData.travellers || []).forEach((traveller, index) => {
+      const prefix = `traveller-${index}`;
+
+      // Date of Birth - must be in the past, not future
+      if (traveller.dateOfBirth) {
+        const dob = new Date(traveller.dateOfBirth);
+        dob.setHours(0, 0, 0, 0);
+        if (dob >= today) {
+          errors[`${prefix}-dateOfBirth`] = "Date of birth cannot be today or in the future";
+        }
+        // Check if person is at least 1 year old (reasonable minimum)
+        const oneYearAgo = new Date(today);
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        if (dob > oneYearAgo) {
+          errors[`${prefix}-dateOfBirth`] = "Date of birth must be at least 1 year ago";
+        }
+      }
+
+      // Passport Issue Date - must be in the past, before expiry
+      if (traveller.passportIssueDate) {
+        const issueDate = new Date(traveller.passportIssueDate);
+        issueDate.setHours(0, 0, 0, 0);
+        if (issueDate >= today) {
+          errors[`${prefix}-passportIssueDate`] = "Passport issue date cannot be today or in the future";
+        }
+        // Must be before expiry date
+        if (traveller.passportExpiryDate) {
+          const expiryDate = new Date(traveller.passportExpiryDate);
+          expiryDate.setHours(0, 0, 0, 0);
+          if (issueDate >= expiryDate) {
+            errors[`${prefix}-passportIssueDate`] = "Passport issue date must be before expiry date";
+          }
+        }
+      }
+
+      // Passport Expiry Date - must be in the future
+      if (traveller.passportExpiryDate) {
+        const expiryDate = new Date(traveller.passportExpiryDate);
+        expiryDate.setHours(0, 0, 0, 0);
+        if (expiryDate <= today) {
+          errors[`${prefix}-passportExpiryDate`] = "Passport expiry date must be in the future";
+        }
+        // Must be after issue date
+        if (traveller.passportIssueDate) {
+          const issueDate = new Date(traveller.passportIssueDate);
+          issueDate.setHours(0, 0, 0, 0);
+          if (expiryDate <= issueDate) {
+            errors[`${prefix}-passportExpiryDate`] = "Passport expiry date must be after issue date";
+          }
+        }
+        // Optional: Check if passport is valid for at least 6 months from travel date
+        if (formData.travelDate) {
+          const travelDate = new Date(formData.travelDate);
+          travelDate.setHours(0, 0, 0, 0);
+          const sixMonthsFromTravel = new Date(travelDate);
+          sixMonthsFromTravel.setMonth(sixMonthsFromTravel.getMonth() + 6);
+          if (expiryDate < sixMonthsFromTravel) {
+            errors[`${prefix}-passportExpiryDate`] = "Passport must be valid for at least 6 months from travel date";
+          }
+        }
+      }
+    });
+
+    setDateErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [formData.travelDate, formData.travellers]);
+
   // Helper function to update a traveller field
   const updateTravellerField = useCallback((travellerId: string, field: keyof FormDataTraveller, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      travellers: (prev.travellers || []).map((t) =>
+    setFormData((prev) => {
+      const travellers = (prev.travellers || []).map((t) =>
         t.id === travellerId ? { ...t, [field]: value } : t
-      ),
-    }));
+      );
+      
+      // Clear error for this field when user updates it
+      const travellerIndex = travellers.findIndex(t => t.id === travellerId);
+      if (travellerIndex >= 0) {
+        const prefix = `traveller-${travellerIndex}`;
+        const errorKey = `${prefix}-${field}`;
+        setDateErrors(prevErrors => {
+          const newErrors = { ...prevErrors };
+          delete newErrors[errorKey];
+          return newErrors;
+        });
+      }
+      
+      return {
+        ...prev,
+        travellers,
+      };
+    });
   }, []);
 
   // Helper function to remove a traveller
@@ -438,6 +539,12 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           alert("Please fill in all required fields for all travellers");
           return;
         }
+      
+      // Validate all dates before proceeding
+      if (!validateDates()) {
+        alert("Please fix the date errors before proceeding");
+        return;
+      }
       }
     }
     
@@ -534,6 +641,14 @@ export default function VisaApplicationPage({ params }: { params: { country: str
 
     if (!formData.travellers || formData.travellers.length === 0) {
       alert("Please add at least one traveller");
+      return;
+    }
+    
+    // Validate all dates before proceeding
+    if (!validateDates()) {
+      alert("Please fix the date errors before proceeding to payment");
+      // Go back to step 3 (travellers) to show date errors
+      setCurrentStep(3);
       return;
     }
 
@@ -815,10 +930,23 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                 <input
                   type="date"
                   value={formData.travelDate || ""}
-                  onChange={(e) => setFormData({ ...formData, travelDate: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, travelDate: e.target.value });
+                    // Clear error when user updates
+                    setDateErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.travelDate;
+                      return newErrors;
+                    });
+                  }}
                   min={new Date().toISOString().split("T")[0]}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                    dateErrors.travelDate ? "border-red-500" : "border-neutral-300"
+                  }`}
                 />
+                {dateErrors.travelDate && (
+                  <p className="text-sm text-red-600 mt-1">{dateErrors.travelDate}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -981,8 +1109,14 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                         required
                         value={traveller.dateOfBirth}
                         onChange={(e) => updateTravellerField(traveller.id, "dateOfBirth", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                        max={new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]} // At least 1 year ago
+                        className={`w-full px-4 py-2 border rounded-lg ${
+                          dateErrors[`traveller-${index}-dateOfBirth`] ? "border-red-500" : "border-neutral-300"
+                        }`}
                       />
+                      {dateErrors[`traveller-${index}-dateOfBirth`] && (
+                        <p className="text-sm text-red-600 mt-1">{dateErrors[`traveller-${index}-dateOfBirth`]}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -1034,8 +1168,14 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                         required
                         value={traveller.passportIssueDate}
                         onChange={(e) => updateTravellerField(traveller.id, "passportIssueDate", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                        max={new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split("T")[0]} // Yesterday (must be in past)
+                        className={`w-full px-4 py-2 border rounded-lg ${
+                          dateErrors[`traveller-${index}-passportIssueDate`] ? "border-red-500" : "border-neutral-300"
+                        }`}
                       />
+                      {dateErrors[`traveller-${index}-passportIssueDate`] && (
+                        <p className="text-sm text-red-600 mt-1">{dateErrors[`traveller-${index}-passportIssueDate`]}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -1046,8 +1186,14 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                         required
                         value={traveller.passportExpiryDate}
                         onChange={(e) => updateTravellerField(traveller.id, "passportExpiryDate", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                        min={traveller.passportIssueDate ? new Date(new Date(traveller.passportIssueDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]} // Must be after issue date, or today if no issue date
+                        className={`w-full px-4 py-2 border rounded-lg ${
+                          dateErrors[`traveller-${index}-passportExpiryDate`] ? "border-red-500" : "border-neutral-300"
+                        }`}
                       />
+                      {dateErrors[`traveller-${index}-passportExpiryDate`] && (
+                        <p className="text-sm text-red-600 mt-1">{dateErrors[`traveller-${index}-passportExpiryDate`]}</p>
+                      )}
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-neutral-700 mb-2">

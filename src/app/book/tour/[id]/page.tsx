@@ -256,6 +256,31 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
   };
 
   const handleConfirmAndPay = async () => {
+    // Validate required fields
+    if (!formData.travelDate) {
+      alert("Please select a travel date");
+      return;
+    }
+
+    if (!formData.primaryContact.name || !formData.primaryContact.email) {
+      alert("Please fill in all required contact information");
+      return;
+    }
+
+    if (formData.travellers.length === 0) {
+      alert("Please add at least one traveller");
+      return;
+    }
+
+    // Validate all travellers have required fields
+    const invalidTraveller = formData.travellers.find(
+      (t) => !t.firstName || !t.lastName || !t.age
+    );
+    if (invalidTraveller) {
+      alert("Please fill in all required fields for all travellers");
+      return;
+    }
+
     // Check if user is logged in
     if (!session) {
       router.push(`/signup?email=${encodeURIComponent(formData.primaryContact.email || "")}&redirect=/book/tour/${params.id}`);
@@ -268,20 +293,20 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
       const response = await fetch("/api/bookings/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        tourId: tour.id,
-        tourName: tour.name,
-        tourPrice: finalAmount,
-        advancePercentage: tour.advancePercentage,
-        travelDate: formData.travelDate,
-        numberOfAdults: formData.numberOfAdults,
-        numberOfChildren: formData.numberOfChildren,
-        primaryContact: formData.primaryContact,
-        travellers: formData.travellers,
-        paymentType: formData.paymentType,
-        customizations: selectedCustomizations,
-        hotelCategory: selectedHotelCategory,
-      }),
+        body: JSON.stringify({
+          tourId: tour.id,
+          tourName: tour.name,
+          tourPrice: finalAmount, // Final amount includes customizations
+          advancePercentage: tour.advancePercentage,
+          travelDate: formData.travelDate,
+          numberOfAdults: formData.numberOfAdults,
+          numberOfChildren: formData.numberOfChildren,
+          primaryContact: formData.primaryContact,
+          travellers: formData.travellers,
+          paymentType: formData.paymentType,
+          customizations: selectedCustomizations,
+          hotelCategory: selectedHotelCategory,
+        }),
       });
 
       if (response.ok) {
@@ -290,9 +315,11 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
         setCurrentStep(5);
       } else {
         const errorData = await response.json();
-        alert(errorData.error || "Failed to create booking. Please try again.");
+        const errorMessage = errorData.error || errorData.details?.[0]?.message || "Failed to create booking. Please try again.";
+        alert(errorMessage);
       }
     } catch (error) {
+      console.error("Error creating booking:", error);
       alert("An error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -300,7 +327,16 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
   };
 
   const handlePayment = async () => {
-    if (!bookingId) return;
+    if (!bookingId) {
+      alert("Booking ID not found. Please go back and try again.");
+      return;
+    }
+
+    if (!session) {
+      alert("Please login to proceed with payment");
+      router.push(`/login?redirect=/book/tour/${params.id}`);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -308,11 +344,15 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
         ? finalAmount
         : advanceAmount;
 
+      if (amount <= 0) {
+        throw new Error("Invalid payment amount");
+      }
+
       const response = await fetch("/api/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount,
+          amount: Math.round(amount), // Ensure amount is rounded
           bookingId,
           paymentType: formData.paymentType,
         }),
@@ -370,6 +410,8 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
             }
           } catch (error: any) {
             console.error("Payment verification error:", error);
+            setLoading(false);
+            alert(error?.message || "Payment verification failed. Please contact support if payment was deducted.");
             setLoading(false);
             alert(`Payment verification failed: ${error.message || "Please contact support"}`);
           }

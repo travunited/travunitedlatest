@@ -147,9 +147,14 @@ export async function POST(req: Request) {
       if (payment.bookingId && payment.booking) {
         const booking = await prisma.booking.findUnique({
           where: { id: payment.bookingId },
+          include: {
+            user: {
+              select: { email: true, id: true },
+            },
+          },
         });
 
-        if (booking) {
+        if (booking && booking.user) {
           const isAdvance = payment.amount < booking.totalAmount;
           const pendingBalance = booking.totalAmount - payment.amount;
 
@@ -161,7 +166,7 @@ export async function POST(req: Request) {
           });
 
           await sendTourPaymentSuccessEmail(
-            payment.booking.user.email,
+            booking.user.email,
             payment.bookingId,
             booking.tourName || "",
             payment.amount,
@@ -169,7 +174,7 @@ export async function POST(req: Request) {
             isAdvance ? pendingBalance : undefined
           );
           await notify({
-            userId: payment.booking.userId,
+            userId: booking.userId,
             type: isAdvance ? "TOUR_PAYMENT_SUCCESS" : "TOUR_BOOKING_CONFIRMED",
             title: isAdvance ? "Advance Payment Received" : "Tour Booking Confirmed",
             message: isAdvance

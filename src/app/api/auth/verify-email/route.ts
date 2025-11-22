@@ -13,6 +13,52 @@ const verifyEmailSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    const body = await req.json();
+    const { token } = verifyEmailSchema.parse(body);
+
+    // If token provided, verify it (for email link verification)
+    if (token) {
+      // Look for token with "verify_" prefix
+      const prefixedToken = `verify_${token}`;
+      
+      const user = await prisma.user.findFirst({
+        where: {
+          passwordResetToken: prefixedToken,
+        },
+      });
+
+      if (!user || !user.passwordResetExpires) {
+        return NextResponse.json(
+          { error: "Invalid or expired verification token" },
+          { status: 400 }
+        );
+      }
+
+      // Check if token has expired
+      if (new Date() > user.passwordResetExpires) {
+        return NextResponse.json(
+          { error: "Verification token has expired. Please request a new one." },
+          { status: 400 }
+        );
+      }
+
+      // Mark email as verified and clear token
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          emailVerified: true,
+          emailVerifiedAt: new Date(),
+          passwordResetToken: null,
+          passwordResetExpires: null,
+        },
+      });
+
+      return NextResponse.json({
+        message: "Email verified successfully",
+      });
+    }
+
+    // If no token, require session (for manual verification from settings)
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -22,16 +68,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const body = await req.json();
-    const { token } = verifyEmailSchema.parse(body);
-
-    // If token provided, verify it
-    if (token) {
-      // TODO: Implement token-based verification
-      // For now, we'll just mark as verified for logged-in users
-    }
-
-    // Mark email as verified
+    // Mark email as verified (manual verification)
     await prisma.user.update({
       where: { id: session.user.id },
       data: {

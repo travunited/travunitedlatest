@@ -125,16 +125,25 @@ export default function AccountSettingsPage() {
         method: "POST",
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        // Sign out and redirect
+        // Sign out from NextAuth session
+        const { signOut } = await import("next-auth/react");
+        await signOut({ redirect: false });
+        
+        // Clear any local storage
+        localStorage.clear();
+        
+        // Redirect to homepage
         window.location.href = "/";
       } else {
-        const data = await response.json();
         setError(data.error || "Failed to delete account. Please try again.");
+        setLoading(false);
       }
     } catch (error) {
+      console.error("Error deleting account:", error);
       setError("An error occurred. Please try again.");
-    } finally {
       setLoading(false);
     }
   };

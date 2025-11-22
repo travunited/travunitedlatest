@@ -50,6 +50,91 @@ export async function POST(req: Request) {
       );
     }
 
+    // Validate dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dateErrors: string[] = [];
+
+    // Validate travel date
+    if (data.travelDate) {
+      const travelDate = new Date(data.travelDate);
+      travelDate.setHours(0, 0, 0, 0);
+      if (travelDate < today) {
+        dateErrors.push("Travel date cannot be in the past");
+      }
+    }
+
+    // Validate traveller dates
+    for (let i = 0; i < data.travellers.length; i++) {
+      const traveller = data.travellers[i];
+
+      // Date of Birth - must be in the past
+      if (traveller.dateOfBirth) {
+        const dob = new Date(traveller.dateOfBirth);
+        dob.setHours(0, 0, 0, 0);
+        if (dob >= today) {
+          dateErrors.push(`Traveller ${i + 1}: Date of birth cannot be today or in the future`);
+        }
+        // Check if person is at least 1 year old
+        const oneYearAgo = new Date(today);
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        if (dob > oneYearAgo) {
+          dateErrors.push(`Traveller ${i + 1}: Date of birth must be at least 1 year ago`);
+        }
+      }
+
+      // Passport Issue Date - must be in the past, before expiry
+      if (traveller.passportIssueDate) {
+        const issueDate = new Date(traveller.passportIssueDate);
+        issueDate.setHours(0, 0, 0, 0);
+        if (issueDate >= today) {
+          dateErrors.push(`Traveller ${i + 1}: Passport issue date cannot be today or in the future`);
+        }
+        // Must be before expiry date
+        if (traveller.passportExpiryDate) {
+          const expiryDate = new Date(traveller.passportExpiryDate);
+          expiryDate.setHours(0, 0, 0, 0);
+          if (issueDate >= expiryDate) {
+            dateErrors.push(`Traveller ${i + 1}: Passport issue date must be before expiry date`);
+          }
+        }
+      }
+
+      // Passport Expiry Date - must be in the future
+      if (traveller.passportExpiryDate) {
+        const expiryDate = new Date(traveller.passportExpiryDate);
+        expiryDate.setHours(0, 0, 0, 0);
+        if (expiryDate <= today) {
+          dateErrors.push(`Traveller ${i + 1}: Passport expiry date must be in the future`);
+        }
+        // Must be after issue date
+        if (traveller.passportIssueDate) {
+          const issueDate = new Date(traveller.passportIssueDate);
+          issueDate.setHours(0, 0, 0, 0);
+          if (expiryDate <= issueDate) {
+            dateErrors.push(`Traveller ${i + 1}: Passport expiry date must be after issue date`);
+          }
+        }
+        // Optional: Check if passport is valid for at least 6 months from travel date
+        if (data.travelDate) {
+          const travelDate = new Date(data.travelDate);
+          travelDate.setHours(0, 0, 0, 0);
+          const sixMonthsFromTravel = new Date(travelDate);
+          sixMonthsFromTravel.setMonth(sixMonthsFromTravel.getMonth() + 6);
+          if (expiryDate < sixMonthsFromTravel) {
+            dateErrors.push(`Traveller ${i + 1}: Passport must be valid for at least 6 months from travel date`);
+          }
+        }
+      }
+    }
+
+    if (dateErrors.length > 0) {
+      return NextResponse.json(
+        { error: "Date validation failed", details: dateErrors },
+        { status: 400 }
+      );
+    }
+
     const userId = session.user.id;
 
     let linkedVisa: { id: string; slug: string; name: string; countryCode: string } | null =

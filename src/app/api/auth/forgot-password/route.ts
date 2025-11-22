@@ -41,14 +41,16 @@ export async function POST(req: Request) {
       },
     });
 
-    // In production, send email with reset link
-    // For now, we'll just log it (in dev, you can check console)
+    // Send email with reset link
     const resetUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/reset-password/${resetToken}`;
     
-    console.log("Password reset link for", email, ":", resetUrl);
+    const { sendPasswordResetEmail } = await import("@/lib/email");
+    const emailSent = await sendPasswordResetEmail(user.email, resetUrl);
     
-    // TODO: Send email with reset link
-    // await sendPasswordResetEmail(user.email, resetUrl);
+    if (!emailSent) {
+      console.error("Failed to send password reset email to", user.email);
+      // Still return success to user (security best practice - don't reveal if email exists)
+    }
 
     return NextResponse.json({
       message: "If an account exists with this email, a reset link has been sent.",
