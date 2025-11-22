@@ -297,15 +297,24 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
           tourId: tour.id,
           tourName: tour.name,
           tourPrice: finalAmount, // Final amount includes customizations
-          advancePercentage: tour.advancePercentage,
+          advancePercentage: tour.advancePercentage ?? null, // Explicitly send null if undefined
           travelDate: formData.travelDate,
           numberOfAdults: formData.numberOfAdults,
-          numberOfChildren: formData.numberOfChildren,
-          primaryContact: formData.primaryContact,
-          travellers: formData.travellers,
+          numberOfChildren: formData.numberOfChildren ?? null, // Explicitly send null if undefined
+          primaryContact: {
+            name: formData.primaryContact.name,
+            email: formData.primaryContact.email,
+            phone: formData.primaryContact.phone || null, // Explicitly send null if empty string
+          },
+          travellers: formData.travellers.map(t => ({
+            firstName: t.firstName,
+            lastName: t.lastName,
+            age: t.age,
+            gender: t.gender || null, // Explicitly send null if empty
+          })),
           paymentType: formData.paymentType,
-          customizations: selectedCustomizations,
-          hotelCategory: selectedHotelCategory,
+          customizations: Object.keys(selectedCustomizations).length > 0 ? selectedCustomizations : null,
+          hotelCategory: selectedHotelCategory || null, // Explicitly send null if empty
         }),
       });
 

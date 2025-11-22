@@ -11,26 +11,26 @@ const bookingSchema = z.object({
   tourId: z.string(),
   tourName: z.string(),
   tourPrice: z.number(),
-  advancePercentage: z.number().optional(),
+  advancePercentage: z.number().nullable().optional(), // Accept null, undefined, or number
   travelDate: z.string(),
-  numberOfAdults: z.number(),
-  numberOfChildren: z.number().optional(),
+  numberOfAdults: z.number().int().min(1, "At least one adult is required"),
+  numberOfChildren: z.number().int().min(0).nullable().optional(), // Accept null or number
   primaryContact: z.object({
-    name: z.string(),
-    email: z.string().email(),
-    phone: z.string().optional(),
+    name: z.string().min(1, "Primary contact name is required"),
+    email: z.string().email("Invalid email address"),
+    phone: z.string().nullable().optional(), // Accept null, undefined, or string
   }),
   travellers: z.array(
     z.object({
-      firstName: z.string(),
-      lastName: z.string(),
-      age: z.string(),
-      gender: z.string().optional(),
+      firstName: z.string().min(1, "First name is required"),
+      lastName: z.string().min(1, "Last name is required"),
+      age: z.string().min(1, "Age is required"),
+      gender: z.string().nullable().optional(), // Accept null, undefined, or string
     })
-  ),
+  ).min(1, "At least one traveller is required"),
   paymentType: z.enum(["full", "advance"]),
-  customizations: z.record(z.boolean()).optional(),
-  hotelCategory: z.string().optional(),
+  customizations: z.record(z.boolean()).nullable().optional(), // Accept null or object
+  hotelCategory: z.string().nullable().optional(), // Accept null, undefined, or string
 });
 
 export async function POST(req: Request) {
