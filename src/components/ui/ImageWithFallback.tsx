@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Image from "next/image";
 import { getMediaProxyUrl } from "@/lib/media";
+import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
 
-interface SafeImageProps {
+interface ImageWithFallbackProps {
   src?: string | null;
   alt: string;
   fill?: boolean;
@@ -14,12 +15,11 @@ interface SafeImageProps {
   sizes?: string;
   priority?: boolean;
   fallbackSrc?: string;
-  onError?: () => void;
 }
 
 const DEFAULT_FALLBACK = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&q=80";
 
-export function SafeImage({
+export function ImageWithFallback({
   src,
   alt,
   fill = false,
@@ -29,36 +29,32 @@ export function SafeImage({
   sizes,
   priority = false,
   fallbackSrc = DEFAULT_FALLBACK,
-  onError,
-}: SafeImageProps) {
-  const [imageError, setImageError] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState(() => {
+}: ImageWithFallbackProps) {
+  const [imageSrc, setImageSrc] = useState(() => {
     const proxiedUrl = getMediaProxyUrl(src);
     return proxiedUrl || fallbackSrc;
   });
+  const [hasError, setHasError] = useState(false);
 
   const handleError = () => {
-    if (!imageError && currentSrc !== fallbackSrc) {
-      setImageError(true);
-      setCurrentSrc(fallbackSrc);
-      onError?.();
+    if (!hasError && imageSrc !== fallbackSrc) {
+      setHasError(true);
+      setImageSrc(fallbackSrc);
     }
   };
 
-  // Use Next.js Image for fallback to avoid ESLint warnings
-  // All fallbacks use unoptimized mode since they're external URLs
+  const useUnoptimized = shouldUseUnoptimizedImage(src) || true;
 
-  // Use Next.js Image for better optimization
   if (fill) {
     return (
       <Image
-        src={currentSrc}
+        src={imageSrc}
         alt={alt}
         fill
         className={className}
         sizes={sizes}
         priority={priority}
-        unoptimized={imageError || currentSrc === fallbackSrc}
+        unoptimized={useUnoptimized}
         onError={handleError}
       />
     );
@@ -66,14 +62,14 @@ export function SafeImage({
 
   return (
     <Image
-      src={currentSrc}
+      src={imageSrc}
       alt={alt}
       width={width || 800}
       height={height || 600}
       className={className}
       sizes={sizes}
       priority={priority}
-      unoptimized={imageError || currentSrc === fallbackSrc}
+      unoptimized={useUnoptimized}
       onError={handleError}
     />
   );

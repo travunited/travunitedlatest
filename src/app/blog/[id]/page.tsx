@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, Tag } from "lucide-react";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/dateFormat";
 import { getMediaProxyUrl } from "@/lib/media";
-import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
+import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 
 export default async function BlogPostPage({ params }: { params: { id: string } }) {
   const post = await prisma.blogPost.findUnique({
@@ -21,7 +20,7 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
   return (
     <div className="min-h-screen bg-white">
       <div className="relative h-[400px] md:h-[500px] bg-neutral-100">
-        <Image
+        <ImageWithFallback
           src={
             getMediaProxyUrl(post.coverImage) ||
             "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1600&q=80"
@@ -30,13 +29,8 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
           fill
           className="object-cover"
           sizes="100vw"
-          unoptimized={shouldUseUnoptimizedImage(post.coverImage) || true}
-          onError={(e) => {
-            // Fallback to placeholder if image fails to load
-            const target = e.target as HTMLImageElement;
-            target.onerror = null; // Prevent infinite loop
-            target.src = "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1600&q=80";
-          }}
+          priority
+          fallbackSrc="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1600&q=80"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-8 text-white">

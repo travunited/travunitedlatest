@@ -1,7 +1,6 @@
 "use server";
 
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
   Clock,
@@ -13,7 +12,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
-import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
+import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 
 export default async function VisaDetailPage({
   params,
@@ -67,20 +66,14 @@ export default async function VisaDetailPage({
             {/* Featured Image */}
             {heroImageUrl && (
               <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden shadow-large bg-neutral-100">
-                <Image
+                <ImageWithFallback
                   src={heroImageUrl}
                   alt={visa.name}
                   fill
                   className="object-cover"
                   priority
                   sizes="(max-width: 1024px) 100vw, 66vw"
-                  unoptimized={shouldUseUnoptimizedImage(heroImageUrl) || true}
-                  onError={(e) => {
-                    // Fallback to placeholder if image fails to load
-                    const target = e.target as HTMLImageElement;
-                    target.onerror = null; // Prevent infinite loop
-                    target.src = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&q=80";
-                  }}
+                  fallbackSrc="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&q=80"
                 />
               </div>
             )}

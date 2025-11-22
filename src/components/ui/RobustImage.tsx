@@ -66,23 +66,8 @@ export function RobustImage({
     }
   };
 
-  // Use regular img tag if image keeps failing
-  if (imageError && imageSrc === fallbackSrc) {
-    return (
-      <img
-        src={fallbackSrc}
-        alt={alt}
-        className={className}
-        style={fill ? { width: "100%", height: "100%", objectFit: "cover" } : undefined}
-        onError={(e) => {
-          // Prevent infinite loop
-          const target = e.target as HTMLImageElement;
-          target.onerror = null;
-          target.src = DEFAULT_FALLBACK;
-        }}
-      />
-    );
-  }
+  // Use Next.js Image for fallback to avoid ESLint warnings
+  // All fallbacks use unoptimized mode since they're external URLs
 
   // Use Next.js Image for better optimization (when it works)
   if (fill) {

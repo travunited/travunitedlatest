@@ -1,7 +1,6 @@
 "use server";
 
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import {
@@ -20,7 +19,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
-import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
+import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 
 export async function generateMetadata({
   params,
@@ -442,19 +441,13 @@ export default async function TourDetailPage({
                       key={index}
                       className="relative aspect-video rounded-xl overflow-hidden cursor-pointer hover:opacity-90 transition-opacity bg-neutral-100"
                     >
-                      <Image
+                      <ImageWithFallback
                         src={getMediaProxyUrl(src) || src || "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=900&q=80"}
                         alt={`${tour.name} - Image ${index + 1}`}
                         fill
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        unoptimized={shouldUseUnoptimizedImage(src) || true}
-                        onError={(e) => {
-                          // Fallback to placeholder if image fails to load
-                          const target = e.target as HTMLImageElement;
-                          target.onerror = null; // Prevent infinite loop
-                          target.src = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=900&q=80";
-                        }}
+                        fallbackSrc="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=900&q=80"
                       />
                     </div>
                   ))}
@@ -534,20 +527,14 @@ function Hero({
 
   return (
     <div className="relative h-[500px] md:h-[600px] bg-neutral-100">
-      <Image 
-        src={heroImage} 
-        alt={tour.name} 
-        fill 
-        className="object-cover" 
+      <ImageWithFallback
+        src={heroImage}
+        alt={tour.name}
+        fill
+        className="object-cover"
         priority
         sizes="100vw"
-        unoptimized={shouldUseUnoptimizedImage(heroImage) || true}
-        onError={(e) => {
-          // Fallback to placeholder if image fails to load
-          const target = e.target as HTMLImageElement;
-          target.onerror = null; // Prevent infinite loop
-          target.src = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&q=80";
-        }}
+        fallbackSrc="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&q=80"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
       <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
