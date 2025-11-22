@@ -126,15 +126,24 @@ export function getMediaProxyUrl(value?: string | null) {
     return "";
   }
 
+  // If it's already a media proxy URL, return as-is
   if (trimmed.startsWith(MEDIA_PROXY_BASE)) {
     return trimmed;
   }
 
+  // Try to extract MinIO/storage key from URL
   const key = extractMediaKeyFromUrl(trimmed);
   if (key) {
     return buildMediaProxyUrlFromKey(key);
   }
 
+  // For external URLs (http/https), return as-is
+  // Next.js Image will handle these with remotePatterns
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+
+  // For relative paths or other URLs, return as-is
   return trimmed;
 }
 

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
+import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
 
 export default async function VisaDetailPage({
   params,
@@ -73,6 +74,7 @@ export default async function VisaDetailPage({
                   className="object-cover"
                   priority
                   sizes="(max-width: 1024px) 100vw, 66vw"
+                  unoptimized={shouldUseUnoptimizedImage(heroImageUrl)}
                   onError={(e) => {
                     // Fallback to placeholder if image fails to load
                     const target = e.target as HTMLImageElement;

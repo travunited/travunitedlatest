@@ -7,6 +7,7 @@ import { Search, Calendar, ArrowRight, Tag } from "lucide-react";
 import Image from "next/image";
 import { formatDate } from "@/lib/dateFormat";
 import { getMediaProxyUrl } from "@/lib/media";
+import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
 
 export type BlogClientPost = {
   id: string;
@@ -109,6 +110,7 @@ export function BlogClient({ posts }: { posts: BlogClientPost[] }) {
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-500"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    unoptimized={shouldUseUnoptimizedImage(post.coverImage)}
                     onError={(e) => {
                       // Fallback to placeholder if image fails to load
                       const target = e.target as HTMLImageElement;

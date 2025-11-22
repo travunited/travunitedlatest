@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
+import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
 
 export async function generateMetadata({
   params,
@@ -447,6 +448,7 @@ export default async function TourDetailPage({
                         fill
                         className="object-cover"
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        unoptimized={shouldUseUnoptimizedImage(src)}
                         onError={(e) => {
                           // Fallback to placeholder if image fails to load
                           const target = e.target as HTMLImageElement;
@@ -539,6 +541,7 @@ function Hero({
         className="object-cover" 
         priority
         sizes="100vw"
+        unoptimized={shouldUseUnoptimizedImage(heroImage)}
         onError={(e) => {
           // Fallback to placeholder if image fails to load
           const target = e.target as HTMLImageElement;

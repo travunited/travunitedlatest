@@ -1,52 +1,26 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    // Allow images from any domain - simplified configuration
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'source.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.pexels.com',
-      },
-      {
-        protocol: 'https',
-        hostname: '*.pexels.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn.britannica.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'a-z-animals.com',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.supabase.co',
+        hostname: '**',
       },
       {
         protocol: 'http',
-        hostname: 'localhost',
-      },
-      // Allow all external HTTPS images (for bulk imports)
-      {
-        protocol: 'https',
         hostname: '**',
       },
     ],
     // Disable strict mode for external images
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    // Allow unoptimized images for domains that don't support optimization
+    unoptimized: false,
+    // Minimum cache time for optimized images
+    minimumCacheTTL: 60,
+    // Formats to allow
+    formats: ['image/avif', 'image/webp'],
   },
 }
 

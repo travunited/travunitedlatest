@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, MapPin, Clock } from "lucide-react";
 import Image from "next/image";
 import { getMediaProxyUrl } from "@/lib/media";
+import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
 
 type FeaturedVisa = {
   id: string;
@@ -65,6 +66,7 @@ export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
                       fill
                       className="object-cover group-hover:scale-110 transition-transform duration-500"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      unoptimized={shouldUseUnoptimizedImage(visa.image)}
                       onError={(e) => {
                         // Fallback to placeholder if image fails to load
                         const target = e.target as HTMLImageElement;

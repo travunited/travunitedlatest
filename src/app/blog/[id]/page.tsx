@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/dateFormat";
 import { getMediaProxyUrl } from "@/lib/media";
+import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
 
 export default async function BlogPostPage({ params }: { params: { id: string } }) {
   const post = await prisma.blogPost.findUnique({
@@ -29,6 +30,7 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
           fill
           className="object-cover"
           sizes="100vw"
+          unoptimized={shouldUseUnoptimizedImage(post.coverImage)}
           onError={(e) => {
             // Fallback to placeholder if image fails to load
             const target = e.target as HTMLImageElement;

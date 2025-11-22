@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Search, ArrowRight } from "lucide-react";
 import { getCountryFlagUrl } from "@/lib/flags";
 import { getMediaProxyUrl } from "@/lib/media";
+import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
 
 interface CountryCard {
   id: string;
@@ -129,6 +130,7 @@ export default function VisasGridClient({ countries }: Props) {
                       fill
                       className="object-cover group-hover:scale-110 transition-transform duration-500"
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      unoptimized={shouldUseUnoptimizedImage(country.heroImage)}
                       onError={(e) => {
                         // Fallback to placeholder if image fails to load
                         const target = e.target as HTMLImageElement;
