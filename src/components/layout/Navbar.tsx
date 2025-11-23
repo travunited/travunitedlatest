@@ -32,7 +32,7 @@ export function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <img 
-              src="/logo.svg" 
+              src="/logo.png" 
               alt="Travunited Logo" 
               className="h-10 w-auto"
             />

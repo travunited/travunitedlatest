@@ -16,10 +16,10 @@ export const metadata: Metadata = {
   description: "Premium visa services and tour packages for Indian travellers. Trusted by thousands for seamless travel experiences.",
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
     apple: [
-      { url: "/favicon.svg", sizes: "180x180", type: "image/svg+xml" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
   },
 };
