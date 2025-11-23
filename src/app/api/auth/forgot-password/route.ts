@@ -42,13 +42,24 @@ export async function POST(req: Request) {
     });
 
     // Send email with reset link
-    const resetUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/reset-password/${resetToken}`;
     
-    const { sendPasswordResetEmail } = await import("@/lib/email");
-    const emailSent = await sendPasswordResetEmail(user.email, resetUrl, user.role);
-    
-    if (!emailSent) {
-      console.error("Failed to send password reset email to", user.email);
+    try {
+      const { sendPasswordResetEmail } = await import("@/lib/email");
+      const emailSent = await sendPasswordResetEmail(user.email, resetUrl, user.role);
+      
+      if (!emailSent) {
+        console.error("Failed to send password reset email to", user.email);
+        console.error("Reset URL:", resetUrl);
+        console.error("Check RESEND_API_KEY and EMAIL_FROM environment variables");
+        // Still return success to user (security best practice - don't reveal if email exists)
+      } else {
+        console.log("Password reset email sent successfully to", user.email);
+      }
+    } catch (emailError) {
+      console.error("Error sending password reset email:", emailError);
+      console.error("User email:", user.email);
+      console.error("Reset URL:", resetUrl);
       // Still return success to user (security best practice - don't reveal if email exists)
     }
 

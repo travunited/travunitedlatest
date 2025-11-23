@@ -24,12 +24,14 @@ export default function ResetPasswordPage() {
     const validateToken = async () => {
       try {
         const response = await fetch(`/api/auth/validate-reset-token?token=${token}`);
-        if (response.ok) {
+        const data = await response.json();
+        if (response.ok && data.valid === true) {
           setTokenValid(true);
         } else {
           setError("Invalid or expired reset link. Please request a new one.");
         }
       } catch (err) {
+        console.error("Error validating token:", err);
         setError("An error occurred. Please try again.");
       } finally {
         setValidating(false);

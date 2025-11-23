@@ -139,7 +139,13 @@ export async function sendPasswordResetEmail(
     </div>
   `;
   
-  return sendUserEmail({ to: email, role, subject, html });
+  // Password reset emails should ALWAYS go to the user's actual email address
+  // Never route to admin inbox, even for admin users
+  return sendEmail({
+    to: email,
+    subject,
+    html,
+  });
 }
 
 export async function sendVisaPaymentSuccessEmail(

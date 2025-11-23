@@ -13,19 +13,31 @@ export async function GET(req: Request) {
       return NextResponse.json({ valid: false }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
+    // Use findFirst instead of findUnique to handle potential null values better
+    const user = await prisma.user.findFirst({
       where: {
         passwordResetToken: token,
+        passwordResetExpires: {
+          not: null,
+        },
       },
     });
 
     if (!user || !user.passwordResetExpires) {
-      return NextResponse.json({ valid: false }, { status: 400 });
+      console.error("Validate token: Invalid token or no expiry date", { token });
+      return NextResponse.json({ valid: false }, { status: 200 });
     }
 
     // Check if token has expired
-    if (new Date() > user.passwordResetExpires) {
-      return NextResponse.json({ valid: false }, { status: 400 });
+    const now = new Date();
+    const expiresAt = new Date(user.passwordResetExpires);
+    if (now > expiresAt) {
+      console.error("Validate token: Token expired", { 
+        token, 
+        expiresAt: expiresAt.toISOString(),
+        now: now.toISOString() 
+      });
+      return NextResponse.json({ valid: false }, { status: 200 });
     }
 
     return NextResponse.json({ valid: true });
