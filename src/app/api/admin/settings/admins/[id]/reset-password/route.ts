@@ -66,7 +66,7 @@ export async function POST(
 
     // Send password reset email
     const resetLink = `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/reset-password/${resetToken}`;
-    await sendPasswordResetEmail(admin.email, resetLink);
+    await sendPasswordResetEmail(admin.email, resetLink, admin.role);
 
     return NextResponse.json({ message: "Password reset email sent successfully" });
   } catch (error) {

@@ -42,6 +42,7 @@ export async function POST(
         user: {
           select: {
             email: true,
+            role: true,
           },
         },
         payments: {
@@ -68,7 +69,8 @@ export async function POST(
         await sendTourConfirmedEmail(
           booking.user.email,
           booking.id,
-          booking.tourName || ""
+          booking.tourName || "",
+          booking.user.role || "CUSTOMER"
         );
         break;
 
@@ -76,7 +78,8 @@ export async function POST(
         await sendTourVouchersReadyEmail(
           booking.user.email,
           booking.id,
-          booking.tourName || ""
+          booking.tourName || "",
+          booking.user.role || "CUSTOMER"
         );
         break;
 
@@ -86,7 +89,9 @@ export async function POST(
             booking.user.email,
             booking.id,
             booking.tourName || "",
-            pendingBalance
+            pendingBalance,
+            undefined,
+            booking.user.role || "CUSTOMER"
           );
         }
         break;
@@ -96,7 +101,8 @@ export async function POST(
           booking.user.email,
           booking.id,
           booking.tourName || "",
-          booking.status
+          booking.status,
+          booking.user.role || "CUSTOMER"
         );
         break;
 

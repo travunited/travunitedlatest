@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { sendEmail } from "./email";
+import { sendUserEmail } from "./email";
 import { UserRole, Prisma } from "@prisma/client";
 
 export type NotificationType =
@@ -95,13 +95,14 @@ export async function notify(params: NotificationParams): Promise<void> {
       try {
         const user = await prisma.user.findUnique({
           where: { id: userId },
-          select: { email: true, name: true },
+          select: { email: true, name: true, role: true },
         });
 
         if (user?.email) {
           const emailSent = await sendNotificationEmail({
             to: user.email,
             name: user.name || undefined,
+            role: user.role,
             type,
             title,
             message,
@@ -129,11 +130,12 @@ export async function notify(params: NotificationParams): Promise<void> {
 }
 
 /**
- * Send notification email via Resend
+ * Send notification email via Resend with role-based routing
  */
 async function sendNotificationEmail({
   to,
   name,
+  role,
   type,
   title,
   message,
@@ -142,6 +144,7 @@ async function sendNotificationEmail({
 }: {
   to: string;
   name?: string;
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null;
   type: NotificationType;
   title: string;
   message: string;
@@ -161,10 +164,15 @@ async function sendNotificationEmail({
     data,
   });
 
-  return sendEmail({
+  // Determine if this is an admin notification (force admin routing)
+  const forceAdmin = type.startsWith("ADMIN_");
+
+  return sendUserEmail({
     to,
+    role: forceAdmin ? undefined : role, // For admin notifications, use forceAdmin instead
     subject: title,
     html,
+    forceAdmin,
   });
 }
 

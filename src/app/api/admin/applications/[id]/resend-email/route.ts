@@ -41,6 +41,7 @@ export async function POST(
         user: {
           select: {
             email: true,
+            role: true,
           },
         },
         documents: {
@@ -66,7 +67,8 @@ export async function POST(
           application.id,
           application.country || "",
           application.visaType || "",
-          "SUBMITTED"
+          "SUBMITTED",
+          application.user.role || "CUSTOMER"
         );
         break;
 
@@ -80,7 +82,8 @@ export async function POST(
           application.id,
           application.country || "",
           application.visaType || "",
-          rejectedDocs
+          rejectedDocs,
+          application.user.role || "CUSTOMER"
         );
         break;
 
@@ -89,7 +92,8 @@ export async function POST(
           application.user.email,
           application.id,
           application.country || "",
-          application.visaType || ""
+          application.visaType || "",
+          application.user.role || "CUSTOMER"
         );
         break;
 
@@ -99,7 +103,8 @@ export async function POST(
           application.id,
           application.country || "",
           application.visaType || "",
-          application.status
+          application.status,
+          application.user.role || "CUSTOMER"
         );
         break;
 

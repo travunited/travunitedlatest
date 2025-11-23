@@ -47,6 +47,7 @@ export async function POST(req: Request) {
         user: {
           select: {
             email: true,
+            role: true,
           },
         },
       },
@@ -59,7 +60,8 @@ export async function POST(req: Request) {
           booking.user.email,
           booking.id,
           booking.tourName || "",
-          booking.status
+          booking.status,
+          booking.user.role || "CUSTOMER"
         );
       } catch (error) {
         console.error(`Error sending email for booking ${booking.id}:`, error);

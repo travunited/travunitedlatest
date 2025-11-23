@@ -63,14 +63,14 @@ export async function POST(req: Request) {
           application: {
             include: {
               user: {
-                select: { email: true, name: true, id: true },
+                select: { email: true, name: true, id: true, role: true },
               },
             },
           },
           booking: {
             include: {
               user: {
-                select: { email: true, name: true, id: true },
+                select: { email: true, name: true, id: true, role: true },
               },
             },
           },
@@ -112,7 +112,8 @@ export async function POST(req: Request) {
           payment.applicationId,
           payment.application.country || "",
           payment.application.visaType || "",
-          payment.amount
+          payment.amount,
+          payment.application.user.role || "CUSTOMER"
         );
         await notify({
           userId: payment.application.userId,
@@ -149,7 +150,7 @@ export async function POST(req: Request) {
           where: { id: payment.bookingId },
           include: {
             user: {
-              select: { email: true, id: true },
+              select: { email: true, id: true, role: true },
             },
           },
         });
@@ -171,7 +172,8 @@ export async function POST(req: Request) {
             booking.tourName || "",
             payment.amount,
             isAdvance,
-            isAdvance ? pendingBalance : undefined
+            isAdvance ? pendingBalance : undefined,
+            booking.user.role || "CUSTOMER"
           );
           await notify({
             userId: booking.userId,

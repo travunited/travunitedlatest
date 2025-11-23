@@ -47,6 +47,7 @@ export async function POST(req: Request) {
         user: {
           select: {
             email: true,
+            role: true,
           },
         },
       },
@@ -60,7 +61,8 @@ export async function POST(req: Request) {
           app.id,
           app.country || "",
           app.visaType || "",
-          app.status
+          app.status,
+          app.user.role || "CUSTOMER"
         );
       } catch (error) {
         console.error(`Error sending email for application ${app.id}:`, error);

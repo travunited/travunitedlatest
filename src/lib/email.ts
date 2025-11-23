@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { formatDate } from "./dateFormat";
+import { UserRole } from "@prisma/client";
 
 export interface EmailOptions {
   to: string | string[];
@@ -11,6 +12,37 @@ export interface EmailOptions {
 const resendApiKey = process.env.RESEND_API_KEY;
 const emailFrom = process.env.EMAIL_FROM;
 const resendClient = resendApiKey ? new Resend(resendApiKey) : null;
+
+// Central admin inbox - all admin-related emails go here
+const ADMIN_INBOX = "info@travunited.com";
+
+/**
+ * Resolve the recipient email based on user role and routing rules
+ * - Admin users (STAFF_ADMIN, SUPER_ADMIN) → always route to admin inbox
+ * - System/admin alerts (forceAdmin=true) → always route to admin inbox
+ * - Normal customers → their own email
+ */
+export function resolveRecipientEmail(params: {
+  userEmail: string;
+  userRole?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null;
+  forceAdmin?: boolean; // for system/admin-only alerts
+}): string {
+  // Force admin route (system alerts, contact forms to admin etc.)
+  if (params.forceAdmin) {
+    return ADMIN_INBOX;
+  }
+
+  // If role is an admin, route to central inbox
+  if (
+    params.userRole === "STAFF_ADMIN" ||
+    params.userRole === "SUPER_ADMIN"
+  ) {
+    return ADMIN_INBOX;
+  }
+
+  // Normal customer/user → their own email
+  return params.userEmail;
+}
 
 function stripHtml(html: string) {
   return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -41,8 +73,36 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   return true;
 }
 
+/**
+ * Send email with automatic routing based on user role
+ * Use this instead of sendEmail() for all user-facing emails
+ */
+export async function sendUserEmail(options: {
+  to: string;
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null;
+  subject: string;
+  html: string;
+  forceAdmin?: boolean;
+}): Promise<boolean> {
+  const finalTo = resolveRecipientEmail({
+    userEmail: options.to,
+    userRole: options.role,
+    forceAdmin: options.forceAdmin,
+  });
+
+  return sendEmail({
+    to: finalTo,
+    subject: options.subject,
+    html: options.html,
+  });
+}
+
 // Email templates
-export async function sendWelcomeEmail(email: string, name?: string) {
+export async function sendWelcomeEmail(
+  email: string,
+  name?: string,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
+) {
   const subject = "Welcome to Travunited!";
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -59,10 +119,14 @@ export async function sendWelcomeEmail(email: string, name?: string) {
     </div>
   `;
   
-  return sendEmail({ to: email, subject, html });
+  return sendUserEmail({ to: email, role, subject, html });
 }
 
-export async function sendPasswordResetEmail(email: string, resetLink: string) {
+export async function sendPasswordResetEmail(
+  email: string,
+  resetLink: string,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
+) {
   const subject = "Reset Your Travunited Password";
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -75,7 +139,7 @@ export async function sendPasswordResetEmail(email: string, resetLink: string) {
     </div>
   `;
   
-  return sendEmail({ to: email, subject, html });
+  return sendUserEmail({ to: email, role, subject, html });
 }
 
 export async function sendVisaPaymentSuccessEmail(
@@ -83,7 +147,8 @@ export async function sendVisaPaymentSuccessEmail(
   applicationId: string,
   country: string,
   visaType: string,
-  amount: number
+  amount: number,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
   const subject = `Payment Successful - ${country} ${visaType}`;
   const html = `
@@ -97,7 +162,7 @@ export async function sendVisaPaymentSuccessEmail(
     </div>
   `;
   
-  return sendEmail({ to: email, subject, html });
+  return sendUserEmail({ to: email, role, subject, html });
 }
 
 export async function sendVisaStatusUpdateEmail(
@@ -105,7 +170,8 @@ export async function sendVisaStatusUpdateEmail(
   applicationId: string,
   country: string,
   visaType: string,
-  status: string
+  status: string,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
   const subject = `Status Update - ${country} ${visaType}`;
   const html = `
@@ -117,7 +183,7 @@ export async function sendVisaStatusUpdateEmail(
     </div>
   `;
   
-  return sendEmail({ to: email, subject, html });
+  return sendUserEmail({ to: email, role, subject, html });
 }
 
 export async function sendVisaDocumentRejectedEmail(
@@ -125,7 +191,8 @@ export async function sendVisaDocumentRejectedEmail(
   applicationId: string,
   country: string,
   visaType: string,
-  rejectedDocs: Array<{ type: string; reason: string }>
+  rejectedDocs: Array<{ type: string; reason: string }>,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
   const subject = `Documents Need Re-upload - ${country} ${visaType}`;
   const html = `
@@ -140,14 +207,15 @@ export async function sendVisaDocumentRejectedEmail(
     </div>
   `;
   
-  return sendEmail({ to: email, subject, html });
+  return sendUserEmail({ to: email, role, subject, html });
 }
 
 export async function sendVisaApprovedEmail(
   email: string,
   applicationId: string,
   country: string,
-  visaType: string
+  visaType: string,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
   const subject = `Visa Approved! - ${country} ${visaType}`;
   const html = `
@@ -159,7 +227,7 @@ export async function sendVisaApprovedEmail(
     </div>
   `;
   
-  return sendEmail({ to: email, subject, html });
+  return sendUserEmail({ to: email, role, subject, html });
 }
 
 export async function sendVisaRejectedEmail(
@@ -167,7 +235,8 @@ export async function sendVisaRejectedEmail(
   applicationId: string,
   country: string,
   visaType: string,
-  reason: string
+  reason: string,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
   const subject = `Visa Application Update - ${country} ${visaType}`;
   const html = `
@@ -181,7 +250,7 @@ export async function sendVisaRejectedEmail(
     </div>
   `;
   
-  return sendEmail({ to: email, subject, html });
+  return sendUserEmail({ to: email, role, subject, html });
 }
 
 export async function sendTourPaymentSuccessEmail(
@@ -190,7 +259,8 @@ export async function sendTourPaymentSuccessEmail(
   tourName: string,
   amount: number,
   isAdvance: boolean,
-  pendingBalance?: number
+  pendingBalance?: number,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
   const subject = `Payment Successful - ${tourName}`;
   const html = `
@@ -205,13 +275,14 @@ export async function sendTourPaymentSuccessEmail(
     </div>
   `;
   
-  return sendEmail({ to: email, subject, html });
+  return sendUserEmail({ to: email, role, subject, html });
 }
 
 export async function sendTourConfirmedEmail(
   email: string,
   bookingId: string,
-  tourName: string
+  tourName: string,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
   const subject = `Tour Confirmed! - ${tourName}`;
   const html = `
@@ -223,7 +294,7 @@ export async function sendTourConfirmedEmail(
     </div>
   `;
   
-  return sendEmail({ to: email, subject, html });
+  return sendUserEmail({ to: email, role, subject, html });
 }
 
 export async function sendTourPaymentReminderEmail(
@@ -231,7 +302,8 @@ export async function sendTourPaymentReminderEmail(
   bookingId: string,
   tourName: string,
   pendingBalance: number,
-  dueDate?: string
+  dueDate?: string,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
   const subject = `Payment Reminder - ${tourName}`;
   const html = `
@@ -245,14 +317,15 @@ export async function sendTourPaymentReminderEmail(
     </div>
   `;
   
-  return sendEmail({ to: email, subject, html });
+  return sendUserEmail({ to: email, role, subject, html });
 }
 
 export async function sendTourStatusUpdateEmail(
   email: string,
   bookingId: string,
   tourName: string,
-  status: string
+  status: string,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
   const subject = `Tour Status Update - ${tourName}`;
   const html = `
@@ -264,13 +337,14 @@ export async function sendTourStatusUpdateEmail(
     </div>
   `;
 
-  return sendEmail({ to: email, subject, html });
+  return sendUserEmail({ to: email, role, subject, html });
 }
 
 export async function sendTourVouchersReadyEmail(
   email: string,
   bookingId: string,
-  tourName: string
+  tourName: string,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
   const subject = `Your Vouchers Are Ready - ${tourName}`;
   const html = `
@@ -282,10 +356,15 @@ export async function sendTourVouchersReadyEmail(
     </div>
   `;
 
-  return sendEmail({ to: email, subject, html });
+  return sendUserEmail({ to: email, role, subject, html });
 }
 
-export async function sendEmailVerificationEmail(email: string, verificationLink: string, name?: string) {
+export async function sendEmailVerificationEmail(
+  email: string,
+  verificationLink: string,
+  name?: string,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
+) {
   const subject = "Verify Your Travunited Email";
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -299,6 +378,6 @@ export async function sendEmailVerificationEmail(email: string, verificationLink
     </div>
   `;
   
-  return sendEmail({ to: email, subject, html });
+  return sendUserEmail({ to: email, role, subject, html });
 }
 

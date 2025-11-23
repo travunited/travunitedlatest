@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       
       const verificationUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/verify-email?token=${verificationToken}`;
       const { sendEmailVerificationEmail } = await import("@/lib/email");
-      await sendEmailVerificationEmail(user.email, verificationUrl, user.name || undefined);
+      await sendEmailVerificationEmail(user.email, verificationUrl, user.name || undefined, user.role);
     } catch (error) {
       // Non-blocking - don't fail signup if email fails
       console.error("Failed to send verification email:", error);
