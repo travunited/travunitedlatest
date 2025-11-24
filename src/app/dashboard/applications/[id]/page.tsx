@@ -17,7 +17,13 @@ interface Document {
   documentType: string;
   status: string;
   filePath: string;
+  rejectionReason: string | null;
   createdAt: string;
+  traveller: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  } | null;
 }
 
 interface Application {
@@ -80,10 +86,17 @@ export default function ApplicationDetailPage() {
 
       if (response.ok) {
         await fetchApplication();
+        // Show success message
+        const doc = application?.documents.find((d) => d.id === documentId);
+        if (doc) {
+          // The UI will automatically update to show "Pending review" status
+        }
       } else {
-        alert("Failed to upload document. Please try again.");
+        const errorData = await response.json();
+        alert(errorData.error || "Failed to upload document. Please try again.");
       }
     } catch (error) {
+      console.error("Error re-uploading document:", error);
       alert("An error occurred. Please try again.");
     } finally {
       setUploading(null);
@@ -135,6 +148,14 @@ export default function ApplicationDetailPage() {
   const rejectedDocuments = application.documents.filter((doc) => doc.status === "REJECTED");
   const canEdit = application.status === "DRAFT" || application.status === "PAYMENT_PENDING";
 
+  // Scroll to documents section
+  const scrollToDocuments = () => {
+    const documentsSection = document.getElementById("documents-section");
+    if (documentsSection) {
+      documentsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-neutral-50">
       <div className="bg-white border-b border-neutral-200">
@@ -163,6 +184,42 @@ export default function ApplicationDetailPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Rejection Banner */}
+        {rejectedDocuments.length > 0 && (
+          <div className="mb-6 bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
+            <div className="flex items-start">
+              <AlertCircle className="text-red-600 mr-3 mt-0.5" size={24} />
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-red-900 mb-2">
+                  ⚠️ Some of your documents were rejected
+                </h3>
+                <div className="space-y-2 mb-4">
+                  {rejectedDocuments.map((doc) => {
+                    const travellerName = doc.traveller
+                      ? `${doc.traveller.firstName} ${doc.traveller.lastName}`
+                      : "Primary Traveller";
+                    return (
+                      <div key={doc.id} className="text-sm text-red-800">
+                        <span className="font-medium">
+                          {doc.documentType} {application.travellers.length > 1 ? `– ${travellerName}` : ""}
+                        </span>
+                        {doc.rejectionReason && (
+                          <span className="ml-2">– "{doc.rejectionReason}"</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={scrollToDocuments}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-sm"
+                >
+                  Fix & Re-upload Documents
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
@@ -206,12 +263,15 @@ export default function ApplicationDetailPage() {
             </div>
 
             {/* Documents */}
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+            <div id="documents-section" className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
               <h2 className="text-xl font-bold text-neutral-900 mb-4">Documents</h2>
               {application.documents.length > 0 ? (
                 <div className="space-y-4">
                   {application.documents.map((doc) => {
                     const StatusIcon = getDocumentStatusIcon(doc.status);
+                    const travellerName = doc.traveller
+                      ? `${doc.traveller.firstName} ${doc.traveller.lastName}`
+                      : null;
                     return (
                       <div
                         key={doc.id}
@@ -223,21 +283,41 @@ export default function ApplicationDetailPage() {
                             : "border-neutral-200"
                         }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <FileText size={20} className="text-primary-600" />
-                            <div>
-                              <div className="font-medium text-neutral-900">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start space-x-3 flex-1">
+                            <FileText size={20} className="text-primary-600 mt-0.5" />
+                            <div className="flex-1">
+                              <div className="font-medium text-neutral-900 mb-1">
                                 {doc.documentType}
+                                {travellerName && application.travellers.length > 1 && (
+                                  <span className="text-neutral-600 font-normal ml-2">
+                                    – {travellerName}
+                                  </span>
+                                )}
                               </div>
-                              <div className="text-sm text-neutral-600">
+                              <div className="text-sm text-neutral-600 mb-2">
                                 Uploaded: {formatDate(doc.createdAt)}
                               </div>
+                              {doc.status === "REJECTED" && doc.rejectionReason && (
+                                <div className="mt-2 p-2 bg-red-100 border border-red-200 rounded text-sm text-red-800">
+                                  <span className="font-medium">Rejected:</span> "{doc.rejectionReason}"
+                                </div>
+                              )}
+                              {doc.status === "PENDING" && (
+                                <div className="mt-2 text-sm text-yellow-700">
+                                  ⏳ Pending review
+                                </div>
+                              )}
+                              {doc.status === "APPROVED" && (
+                                <div className="mt-2 text-sm text-green-700">
+                                  ✅ Approved
+                                </div>
+                              )}
                             </div>
                           </div>
-                          <div className="flex items-center space-x-3">
+                          <div className="flex items-center space-x-3 ml-4">
                             <span
-                              className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium ${
+                              className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                                 doc.status === "APPROVED"
                                   ? "bg-green-100 text-green-700"
                                   : doc.status === "REJECTED"
@@ -256,18 +336,44 @@ export default function ApplicationDetailPage() {
                                   className="hidden"
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
-                                    if (file) handleDocumentReupload(doc.id, file);
+                                    if (!file) return;
+                                    
+                                    // Validate file size (5MB max)
+                                    if (file.size > 5 * 1024 * 1024) {
+                                      alert("File size must be less than 5MB");
+                                      return;
+                                    }
+                                    
+                                    // Validate file type
+                                    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
+                                    if (!allowedTypes.includes(file.type)) {
+                                      alert("Only JPG, PNG, and PDF files are allowed");
+                                      return;
+                                    }
+                                    
+                                    handleDocumentReupload(doc.id, file);
                                   }}
                                   disabled={uploading === doc.id}
                                 />
-                                <span className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center space-x-1">
+                                <button
+                                  type="button"
+                                  disabled={uploading === doc.id}
+                                  className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center space-x-1 px-3 py-1.5 border border-primary-300 rounded-lg hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
                                   <Upload size={14} />
                                   <span>{uploading === doc.id ? "Uploading..." : "Re-upload"}</span>
-                                </span>
+                                </button>
                               </label>
                             )}
                           </div>
                         </div>
+                        {doc.status === "REJECTED" && (
+                          <div className="mt-3 pt-3 border-t border-red-200">
+                            <p className="text-xs text-neutral-600">
+                              <strong>Allowed formats:</strong> PDF, JPG, PNG. <strong>Max size:</strong> 5 MB
+                            </p>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

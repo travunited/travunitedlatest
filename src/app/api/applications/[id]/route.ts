@@ -28,7 +28,17 @@ export async function GET(
             traveller: true,
           },
         },
-        documents: true,
+        documents: {
+          include: {
+            traveller: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
         user: {
           select: {
             name: true,

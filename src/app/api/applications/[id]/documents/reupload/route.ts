@@ -93,12 +93,13 @@ export async function POST(
     
     await uploadVisaDocument(key, buffer, file.type);
 
-    // Update document record
+    // Update document record - clear rejection reason when re-uploading
     await prisma.applicationDocument.update({
       where: { id: documentId },
       data: {
         filePath: key,
         status: "PENDING",
+        rejectionReason: null, // Clear rejection reason on re-upload
         updatedAt: new Date(),
       },
     });
