@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Download, FileDown, CreditCard, CheckCircle, XCircle, AlertCircle, FileText } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ReportFilterBar, ReportFilters } from "@/components/admin/ReportFilterBar";
+import { ReportSkeleton } from "@/components/admin/ReportSkeleton";
 import { buildExportUrl } from "@/lib/report-export";
 import { formatDate } from "@/lib/dateFormat";
 
@@ -153,33 +154,16 @@ export default function PaymentsReportPage() {
     }
   };
 
-  if (loading && !summary) {
+  // Only show full-page loader on initial load
+  const isInitialLoad = loading && !summary && !error;
+
+  if (isInitialLoad) {
     return (
       <AdminLayout>
         <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
             <p className="mt-4 text-neutral-600">Loading report...</p>
-          </div>
-        </div>
-      </AdminLayout>
-    );
-  }
-
-  if (error && !summary) {
-    return (
-      <AdminLayout>
-        <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-          <div className="text-center max-w-md">
-            <div className="text-red-600 text-5xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-neutral-900 mb-2">Failed to Load Report</h2>
-            <p className="text-neutral-600 mb-6">{error}</p>
-            <button
-              onClick={() => fetchReport()}
-              className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700"
-            >
-              Try Again
-            </button>
           </div>
         </div>
       </AdminLayout>
@@ -206,29 +190,53 @@ export default function PaymentsReportPage() {
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => handleExport("xlsx")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
           >
             <FileDown size={16} />
             Export Excel
           </button>
           <button
             onClick={() => handleExport("csv")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
           >
             <Download size={16} />
             Export CSV
           </button>
           <button
             onClick={() => handleExport("pdf")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700"
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:opacity-50"
           >
             <FileText size={16} />
             Export PDF
           </button>
         </div>
 
-        {/* Summary Cards */}
-        {summary && (
+        {error && !summary && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-red-800 font-semibold">Failed to Load Report</h3>
+                <p className="text-red-600 text-sm mt-1">{error}</p>
+              </div>
+              <button
+                onClick={() => fetchReport()}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
+
+        {loading && summary ? (
+          <ReportSkeleton />
+        ) : (
+          <>
+            {/* Summary Cards */}
+            {summary && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
               <div className="flex items-center justify-between mb-4">
@@ -334,6 +342,8 @@ export default function PaymentsReportPage() {
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
     </AdminLayout>
   );
