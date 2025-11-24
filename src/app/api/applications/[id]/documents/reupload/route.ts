@@ -32,14 +32,6 @@ export async function POST(
       );
     }
 
-    // Only allow re-upload if status is SUBMITTED or IN_PROCESS
-    if (application.status !== "SUBMITTED" && application.status !== "IN_PROCESS") {
-      return NextResponse.json(
-        { error: "Cannot re-upload documents at this stage" },
-        { status: 400 }
-      );
-    }
-
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const documentId = formData.get("documentId") as string;
@@ -63,9 +55,19 @@ export async function POST(
       );
     }
 
+    // Only allow re-upload of rejected documents
     if (existingDoc.status !== "REJECTED") {
       return NextResponse.json(
         { error: "Only rejected documents can be re-uploaded" },
+        { status: 400 }
+      );
+    }
+
+    // Allow re-upload if application is in a state that allows document updates
+    // Block only if application is DRAFT (should use regular upload) or EXPIRED
+    if (application.status === "EXPIRED") {
+      return NextResponse.json(
+        { error: "Cannot re-upload documents for expired applications" },
         { status: 400 }
       );
     }

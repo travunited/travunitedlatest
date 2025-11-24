@@ -334,13 +334,14 @@ export default function ApplicationDetailPage() {
                                   type="file"
                                   accept=".jpg,.jpeg,.png,.pdf"
                                   className="hidden"
+                                  id={`file-input-${doc.id}`}
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (!file) return;
                                     
-                                    // Validate file size (5MB max)
-                                    if (file.size > 5 * 1024 * 1024) {
-                                      alert("File size must be less than 5MB");
+                                    // Validate file size (20MB max - matching API limit)
+                                    if (file.size > 20 * 1024 * 1024) {
+                                      alert("File size must be less than 20MB");
                                       return;
                                     }
                                     
@@ -352,12 +353,20 @@ export default function ApplicationDetailPage() {
                                     }
                                     
                                     handleDocumentReupload(doc.id, file);
+                                    // Reset input so same file can be selected again if needed
+                                    e.target.value = "";
                                   }}
                                   disabled={uploading === doc.id}
                                 />
                                 <button
                                   type="button"
                                   disabled={uploading === doc.id}
+                                  onClick={() => {
+                                    const input = document.getElementById(`file-input-${doc.id}`) as HTMLInputElement;
+                                    if (input && !uploading) {
+                                      input.click();
+                                    }
+                                  }}
                                   className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center space-x-1 px-3 py-1.5 border border-primary-300 rounded-lg hover:bg-primary-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                   <Upload size={14} />
@@ -370,7 +379,7 @@ export default function ApplicationDetailPage() {
                         {doc.status === "REJECTED" && (
                           <div className="mt-3 pt-3 border-t border-red-200">
                             <p className="text-xs text-neutral-600">
-                              <strong>Allowed formats:</strong> PDF, JPG, PNG. <strong>Max size:</strong> 5 MB
+                              <strong>Allowed formats:</strong> PDF, JPG, PNG. <strong>Max size:</strong> 20 MB
                             </p>
                           </div>
                         )}
