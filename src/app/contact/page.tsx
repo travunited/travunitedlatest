@@ -188,13 +188,51 @@ export default function ContactPage() {
           {/* Contact Form */}
           <div className="bg-neutral-50 rounded-2xl p-8">
             <h2 className="text-2xl font-bold text-neutral-900 mb-6">Send us a Message</h2>
-            <form className="space-y-6">
+            <form 
+              className="space-y-6"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const name = formData.get("name") as string;
+                const email = formData.get("email") as string;
+                const phone = formData.get("phone") as string;
+                const subject = formData.get("subject") as string;
+                const message = formData.get("message") as string;
+
+                try {
+                  const response = await fetch("/api/contact/submit", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      name,
+                      email,
+                      phone,
+                      subject,
+                      message,
+                    }),
+                  });
+
+                  const result = await response.json();
+
+                  if (response.ok && result.success) {
+                    alert("Thank you for your message! We'll get back to you soon.");
+                    e.currentTarget.reset();
+                  } else {
+                    alert(result.error || "Failed to send message. Please try again.");
+                  }
+                } catch (error) {
+                  console.error("Error submitting contact form:", error);
+                  alert("An error occurred. Please try again or contact us directly.");
+                }
+              }}
+            >
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
                   Your Name *
                 </label>
                 <input
                   type="text"
+                  name="name"
                   required
                   className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="John Doe"
@@ -206,6 +244,7 @@ export default function ContactPage() {
                 </label>
                 <input
                   type="email"
+                  name="email"
                   required
                   className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="your.email@example.com"
@@ -217,6 +256,7 @@ export default function ContactPage() {
                 </label>
                 <input
                   type="tel"
+                  name="phone"
                   className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="+91 6360392398"
                 />
@@ -227,6 +267,7 @@ export default function ContactPage() {
                 </label>
                 <input
                   type="text"
+                  name="subject"
                   required
                   className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="How can we help?"
@@ -238,6 +279,7 @@ export default function ContactPage() {
                 </label>
                 <textarea
                   rows={5}
+                  name="message"
                   required
                   className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="Tell us more about your inquiry..."

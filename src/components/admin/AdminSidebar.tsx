@@ -65,6 +65,12 @@ const BASE_MENU_ITEMS = [
     icon: Briefcase,
     roles: ["STAFF_ADMIN", "SUPER_ADMIN"],
   },
+  {
+    label: "Form Submissions",
+    href: "/admin/form-submissions",
+    icon: MessageSquare,
+    roles: ["STAFF_ADMIN", "SUPER_ADMIN"],
+  },
 ];
 
 const CONTENT_MENU_ITEMS = [
