@@ -204,7 +204,7 @@ export default function ApplicationDetailPage() {
                           {doc.documentType} {application.travellers.length > 1 ? `– ${travellerName}` : ""}
                         </span>
                         {doc.rejectionReason && (
-                          <span className="ml-2">– "{doc.rejectionReason}"</span>
+                          <span className="ml-2">– &ldquo;{doc.rejectionReason}&rdquo;</span>
                         )}
                       </div>
                     );
@@ -300,7 +300,7 @@ export default function ApplicationDetailPage() {
                               </div>
                               {doc.status === "REJECTED" && doc.rejectionReason && (
                                 <div className="mt-2 p-2 bg-red-100 border border-red-200 rounded text-sm text-red-800">
-                                  <span className="font-medium">Rejected:</span> "{doc.rejectionReason}"
+                                  <span className="font-medium">Rejected:</span> &ldquo;{doc.rejectionReason}&rdquo;
                                 </div>
                               )}
                               {doc.status === "PENDING" && (
