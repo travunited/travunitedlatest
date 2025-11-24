@@ -19,6 +19,7 @@ interface Application {
   createdAt: string;
   updatedAt: string;
   visaDocumentUrl: string | null;
+  invoiceUrl: string | null;
   documents?: Array<{ status: string }>;
 }
 
@@ -102,13 +103,15 @@ export default function ApplicationsPage() {
         icon: Eye,
       });
       
-      // Add Invoice button for paid applications
-      actions.push({
-        label: "Invoice",
-        href: `/api/invoices/application/${app.id}`,
-        icon: FileText,
-        download: true,
-      });
+      // Add Invoice button only if invoiceUrl exists
+      if (app.invoiceUrl) {
+        actions.push({
+          label: "Download Invoice",
+          href: `/api/invoices/download/application/${app.id}`,
+          icon: FileText,
+          download: true,
+        });
+      }
       
       const rejectedDocs = app.documents?.filter(d => d.status === "REJECTED");
       if (rejectedDocs && rejectedDocs.length > 0) {

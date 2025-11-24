@@ -60,6 +60,9 @@ model Application {
   processedBy     User?                  @relation("ProcessedBy", fields: [processedById], references: [id])
   processedById   String?
   visaDocumentUrl String? // URL to approved visa document
+  invoiceUrl      String? // URL to uploaded invoice PDF
+  invoiceUploadedAt DateTime? // When invoice was uploaded
+  invoiceUploadedByAdminId String? // Admin who uploaded the invoice
   notes           String? // Admin notes
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
@@ -126,6 +129,9 @@ model Booking {
   processedBy   User?              @relation("ProcessedBy", fields: [processedById], references: [id])
   processedById String?
   voucherUrl    String? // URL to tour voucher
+  invoiceUrl    String? // URL to uploaded invoice PDF
+  invoiceUploadedAt DateTime? // When invoice was uploaded
+  invoiceUploadedByAdminId String? // Admin who uploaded the invoice
   notes         String? // Admin notes
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt

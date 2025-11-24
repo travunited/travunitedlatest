@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, Upload, Download, User, Mail, Phone, Calendar, CreditCard, Send, Clock, CheckCircle, X, AlertCircle, ArrowLeft, UserPlus, ChevronDown, FileDown, MapPin, Globe } from "lucide-react";
+import { Eye, Upload, Download, User, Mail, Phone, Calendar, CreditCard, Send, Clock, CheckCircle, X, AlertCircle, ArrowLeft, UserPlus, ChevronDown, FileDown, FileText, MapPin, Globe } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
 import { getCountryFlagUrl } from "@/lib/flags";
@@ -48,6 +48,9 @@ interface Booking {
   currency: string;
   travelDate: string | null;
   voucherUrl: string | null;
+  invoiceUrl: string | null;
+  invoiceUploadedAt: string | null;
+  invoiceUploadedByAdminId: string | null;
   notes: string | null;
   createdAt: string;
   updatedAt: string;
@@ -101,6 +104,8 @@ export default function AdminBookingDetailPage() {
   const [assigningAdmin, setAssigningAdmin] = useState(false);
   const [showAssignDropdown, setShowAssignDropdown] = useState(false);
   const [resendingEmail, setResendingEmail] = useState<string | null>(null);
+  const [uploadingInvoice, setUploadingInvoice] = useState(false);
+  const [removingInvoice, setRemovingInvoice] = useState(false);
 
   const fetchBooking = useCallback(async () => {
     try {
@@ -777,6 +782,147 @@ export default function AdminBookingDetailPage() {
                   <span>Re-send Status Update</span>
                 </button>
               </div>
+            </div>
+
+            {/* Invoice Management */}
+            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+              <h3 className="font-semibold text-neutral-900 mb-4">Invoice</h3>
+              {booking.invoiceUrl ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <FileText size={20} className="text-green-600" />
+                      <div>
+                        <div className="text-sm font-medium text-green-900">Invoice Available</div>
+                        {booking.invoiceUploadedAt && (
+                          <div className="text-xs text-green-700">
+                            Uploaded {formatDate(booking.invoiceUploadedAt)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <a
+                      href={`/api/invoices/download/booking/${params.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                    >
+                      Download
+                    </a>
+                  </div>
+                  <div className="flex space-x-2">
+                    <label className="flex-1 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          setUploadingInvoice(true);
+                          try {
+                            const formData = new FormData();
+                            formData.append("file", file);
+                            
+                            const response = await fetch(`/api/admin/bookings/${params.id}/invoice`, {
+                              method: "POST",
+                              body: formData,
+                            });
+                            
+                            if (response.ok) {
+                              await fetchBooking();
+                            } else {
+                              const error = await response.json();
+                              alert(error.error || "Failed to upload invoice");
+                            }
+                          } catch (error) {
+                            alert("An error occurred while uploading invoice");
+                          } finally {
+                            setUploadingInvoice(false);
+                            if (e.target) e.target.value = "";
+                          }
+                        }}
+                        disabled={uploadingInvoice}
+                      />
+                      <div className="w-full bg-neutral-100 text-neutral-700 px-4 py-2 rounded-lg font-medium hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed text-center text-sm">
+                        {uploadingInvoice ? "Uploading..." : "Replace Invoice"}
+                      </div>
+                    </label>
+                    <button
+                      onClick={async () => {
+                        if (!confirm("Are you sure you want to remove this invoice?")) return;
+                        
+                        setRemovingInvoice(true);
+                        try {
+                          const response = await fetch(`/api/admin/bookings/${params.id}/invoice`, {
+                            method: "DELETE",
+                          });
+                          
+                          if (response.ok) {
+                            await fetchBooking();
+                          } else {
+                            alert("Failed to remove invoice");
+                          }
+                        } catch (error) {
+                          alert("An error occurred");
+                        } finally {
+                          setRemovingInvoice(false);
+                        }
+                      }}
+                      disabled={removingInvoice}
+                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    >
+                      {removingInvoice ? "Removing..." : "Remove"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg text-center">
+                    <FileText size={24} className="text-neutral-400 mx-auto mb-2" />
+                    <p className="text-sm text-neutral-600 mb-4">No invoice uploaded</p>
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          setUploadingInvoice(true);
+                          try {
+                            const formData = new FormData();
+                            formData.append("file", file);
+                            
+                            const response = await fetch(`/api/admin/bookings/${params.id}/invoice`, {
+                              method: "POST",
+                              body: formData,
+                            });
+                            
+                            if (response.ok) {
+                              await fetchBooking();
+                            } else {
+                              const error = await response.json();
+                              alert(error.error || "Failed to upload invoice");
+                            }
+                          } catch (error) {
+                            alert("An error occurred while uploading invoice");
+                          } finally {
+                            setUploadingInvoice(false);
+                            if (e.target) e.target.value = "";
+                          }
+                        }}
+                        disabled={uploadingInvoice}
+                      />
+                      <div className="w-full bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-center text-sm">
+                        {uploadingInvoice ? "Uploading..." : "Upload Invoice (PDF)"}
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Internal Notes */}

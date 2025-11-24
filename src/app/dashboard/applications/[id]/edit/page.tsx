@@ -20,6 +20,14 @@ export default function EditApplicationPage() {
         const data = await response.json();
         setApplication(data);
         
+        // Check if application can be edited (only DRAFT or PAYMENT_PENDING)
+        const editableStatuses = ["DRAFT", "PAYMENT_PENDING"];
+        if (!editableStatuses.includes(data.status)) {
+          alert("This application can no longer be edited. Please contact support if you need to make changes.");
+          router.push("/dashboard/applications");
+          return;
+        }
+        
         // Redirect to application form with edit mode
         if (data.country && data.visaType) {
           router.push(`/apply/visa/${data.country}/${data.visaType}?edit=${params.id}&applicationId=${params.id}`);

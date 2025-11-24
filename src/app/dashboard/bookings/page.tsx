@@ -18,6 +18,7 @@ interface Booking {
   travelDate: string | null;
   createdAt: string;
   voucherUrl: string | null;
+  invoiceUrl: string | null;
 }
 
 const statusGroups = {
@@ -101,13 +102,15 @@ export default function BookingsPage() {
         href: `/dashboard/bookings/${booking.id}`,
         icon: Eye,
       });
-      // Add Invoice button for paid bookings
-      actions.push({
-        label: "Invoice",
-        href: `/api/invoices/booking/${booking.id}`,
-        icon: FileText,
-        download: true,
-      });
+      // Add Invoice button only if invoiceUrl exists
+      if (booking.invoiceUrl) {
+        actions.push({
+          label: "Download Invoice",
+          href: `/api/invoices/download/booking/${booking.id}`,
+          icon: FileText,
+          download: true,
+        });
+      }
     }
 
     if (booking.status === "COMPLETED") {
