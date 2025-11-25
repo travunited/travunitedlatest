@@ -402,7 +402,7 @@ export default function AdminApplicationDetailPage() {
     );
   }
 
-  const visaEntryDisplay = getVisaEntryDisplay(application.visa);
+  const visaEntryDisplay = getVisaEntryDisplay(application.visa ?? undefined);
   const documentsGrouped = groupedDocuments();
   const completedPayment = application.payments?.find(p => p.status === "COMPLETED");
   const notesList = parseNotes(application.notes);
