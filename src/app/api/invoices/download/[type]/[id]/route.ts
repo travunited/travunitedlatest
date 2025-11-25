@@ -7,9 +7,19 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   req: Request,
-  { params }: { params: { type: string; id: string } }
+  { params }: { params: Promise<{ type: string; id: string }> | { type: string; id: string } }
 ) {
   try {
+    // Handle params as Promise (Next.js 15+) or object (Next.js 14)
+    const resolvedParams = await Promise.resolve(params);
+    
+    if (!resolvedParams?.type || !resolvedParams?.id) {
+      return NextResponse.json(
+        { error: "Invalid request parameters" },
+        { status: 400 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -21,9 +31,9 @@ export async function GET(
 
     const isAdmin = session.user.role === "STAFF_ADMIN" || session.user.role === "SUPER_ADMIN";
 
-    if (params.type === "application") {
+    if (resolvedParams.type === "application") {
       const application = await prisma.application.findUnique({
-        where: { id: params.id },
+        where: { id: resolvedParams.id },
       });
 
       if (!application) {
@@ -42,21 +52,37 @@ export async function GET(
       }
 
       // Check if invoice exists
-      if (!application.invoiceUrl) {
+      if (!application.invoiceUrl || application.invoiceUrl.trim() === "") {
         return NextResponse.json(
           { error: "Invoice not available yet" },
           { status: 404 }
         );
       }
 
-      // Get signed URL for invoice
-      const signedUrl = await getSignedDocumentUrl(application.invoiceUrl, 300); // 5 minutes expiry
-      
-      // Redirect to signed URL
-      return NextResponse.redirect(signedUrl);
-    } else if (params.type === "booking") {
+      try {
+        // Get signed URL for invoice
+        const signedUrl = await getSignedDocumentUrl(application.invoiceUrl, 300); // 5 minutes expiry
+        
+        if (!signedUrl) {
+          return NextResponse.json(
+            { error: "Failed to generate invoice download link" },
+            { status: 500 }
+          );
+        }
+        
+        // Redirect to signed URL
+        return NextResponse.redirect(signedUrl);
+      } catch (error) {
+        console.error("Error generating signed URL for invoice:", error);
+        console.error("Invoice URL:", application.invoiceUrl);
+        return NextResponse.json(
+          { error: "Failed to generate invoice download link. Please contact support." },
+          { status: 500 }
+        );
+      }
+    } else if (resolvedParams.type === "booking") {
       const booking = await prisma.booking.findUnique({
-        where: { id: params.id },
+        where: { id: resolvedParams.id },
       });
 
       if (!booking) {
@@ -75,18 +101,34 @@ export async function GET(
       }
 
       // Check if invoice exists
-      if (!booking.invoiceUrl) {
+      if (!booking.invoiceUrl || booking.invoiceUrl.trim() === "") {
         return NextResponse.json(
           { error: "Invoice not available yet" },
           { status: 404 }
         );
       }
 
-      // Get signed URL for invoice
-      const signedUrl = await getSignedDocumentUrl(booking.invoiceUrl, 300); // 5 minutes expiry
-      
-      // Redirect to signed URL
-      return NextResponse.redirect(signedUrl);
+      try {
+        // Get signed URL for invoice
+        const signedUrl = await getSignedDocumentUrl(booking.invoiceUrl, 300); // 5 minutes expiry
+        
+        if (!signedUrl) {
+          return NextResponse.json(
+            { error: "Failed to generate invoice download link" },
+            { status: 500 }
+          );
+        }
+        
+        // Redirect to signed URL
+        return NextResponse.redirect(signedUrl);
+      } catch (error) {
+        console.error("Error generating signed URL for invoice:", error);
+        console.error("Invoice URL:", booking.invoiceUrl);
+        return NextResponse.json(
+          { error: "Failed to generate invoice download link. Please contact support." },
+          { status: 500 }
+        );
+      }
     } else {
       return NextResponse.json(
         { error: "Invalid type. Must be 'application' or 'booking'" },
@@ -95,8 +137,13 @@ export async function GET(
     }
   } catch (error) {
     console.error("Error downloading invoice:", error);
+    console.error("Error details:", error instanceof Error ? error.message : String(error));
+    console.error("Error stack:", error instanceof Error ? error.stack : undefined);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { 
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error"
+      },
       { status: 500 }
     );
   }

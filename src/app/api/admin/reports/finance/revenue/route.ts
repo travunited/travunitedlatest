@@ -113,37 +113,54 @@ export async function GET(req: NextRequest) {
 
     // Export handling
     if (format === "pdf") {
-      const headers = ["Date", "Transactions", "Visa Revenue (INR)", "Tour Revenue (INR)", "Total Revenue (INR)"];
-      const rows = dailyData.map((day) => [
-        day.date,
-        day.transactionCount,
-        day.visaRevenue,
-        day.tourRevenue,
-        day.totalRevenue,
-      ]);
+      try {
+        const headers = ["Date", "Transactions", "Visa Revenue (INR)", "Tour Revenue (INR)", "Total Revenue (INR)"];
+        const rows = dailyData.map((day) => [
+          day.date,
+          day.transactionCount,
+          day.visaRevenue,
+          day.tourRevenue,
+          day.totalRevenue,
+        ]);
 
-      const pdfBuffer = await generatePDF({
-        title: "Revenue Summary Report",
-        filters: {
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-        },
-        summary: {
-          "Total Revenue": `₹${totalRevenue.toLocaleString()}`,
-          "Visa Revenue": `₹${visaRevenue.toLocaleString()}`,
-          "Tour Revenue": `₹${tourRevenue.toLocaleString()}`,
-          "Total Transactions": payments.length,
-        },
-        headers,
-        rows,
-      });
+        const pdfBuffer = await generatePDF({
+          title: "Revenue Summary Report",
+          filters: {
+            dateFrom: dateFrom || undefined,
+            dateTo: dateTo || undefined,
+          },
+          summary: {
+            "Total Revenue": `₹${totalRevenue.toLocaleString()}`,
+            "Visa Revenue": `₹${visaRevenue.toLocaleString()}`,
+            "Tour Revenue": `₹${tourRevenue.toLocaleString()}`,
+            "Total Transactions": payments.length,
+          },
+          headers,
+          rows,
+        });
 
-      return new NextResponse(pdfBuffer as any, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename=revenue-summary-${new Date().toISOString().split("T")[0]}.pdf`,
-        },
-      });
+        if (!pdfBuffer || pdfBuffer.length === 0) {
+          throw new Error("PDF buffer is empty");
+        }
+
+        return new NextResponse(pdfBuffer as any, {
+          headers: {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": `attachment; filename=revenue-summary-${new Date().toISOString().split("T")[0]}.pdf`,
+          },
+        });
+      } catch (pdfError) {
+        console.error("Error generating PDF:", pdfError);
+        console.error("PDF error details:", pdfError instanceof Error ? pdfError.message : String(pdfError));
+        console.error("PDF error stack:", pdfError instanceof Error ? pdfError.stack : undefined);
+        return NextResponse.json(
+          { 
+            error: "Failed to generate PDF",
+            message: pdfError instanceof Error ? pdfError.message : "Unknown error occurred during PDF generation"
+          },
+          { status: 500 }
+        );
+      }
     }
 
     if (format === "xlsx" || format === "csv") {
@@ -199,8 +216,13 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching revenue report:", error);
+    console.error("Error details:", error instanceof Error ? error.message : String(error));
+    console.error("Error stack:", error instanceof Error ? error.stack : undefined);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { 
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : "Unknown error occurred"
+      },
       { status: 500 }
     );
   }

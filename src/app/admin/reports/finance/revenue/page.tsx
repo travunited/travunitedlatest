@@ -101,9 +101,32 @@ export default function RevenueReportPage() {
         // For PDF, fetch as blob and download
         const response = await fetch(url);
         if (!response.ok) {
-          throw new Error(`Failed to generate PDF: ${response.statusText}`);
+          // Try to get error message from JSON response
+          let errorMessage = response.statusText;
+          const contentType = response.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            try {
+              const errorData = await response.json();
+              errorMessage = errorData.message || errorData.error || response.statusText;
+            } catch {
+              // If parsing fails, use statusText
+            }
+          }
+          throw new Error(`Failed to generate PDF: ${errorMessage}`);
         }
         const blob = await response.blob();
+        // Check if blob is actually a PDF (not an error JSON)
+        if (blob.type === "application/json" || blob.size === 0) {
+          const text = await blob.text();
+          let errorMessage = "Unknown error";
+          try {
+            const errorData = JSON.parse(text);
+            errorMessage = errorData.message || errorData.error || "Failed to generate PDF";
+          } catch {
+            errorMessage = text || "Failed to generate PDF";
+          }
+          throw new Error(`Failed to generate PDF: ${errorMessage}`);
+        }
         const downloadUrl = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = downloadUrl;
