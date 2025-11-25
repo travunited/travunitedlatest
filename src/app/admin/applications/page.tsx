@@ -265,10 +265,8 @@ function AdminApplicationsPageContent() {
       await fetchApplications();
       setSelectedRows(new Set());
       setShowBulkActions(false);
-      // Auto-hide success message after 5 seconds
-      if (action !== "export") {
-        setTimeout(() => setBulkActionMessage(null), 5000);
-      }
+      // Auto-hide success message after 5 seconds (export handles its own timeout)
+      setTimeout(() => setBulkActionMessage(null), 5000);
     } catch (error) {
       console.error("Error performing bulk action:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to perform bulk action";
