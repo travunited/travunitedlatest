@@ -60,13 +60,39 @@ type PreferencesForm = {
   specialRequests: string;
 };
 
+interface TourAddOn {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  pricingType: string;
+  isRequired: boolean;
+  isActive: boolean;
+}
+
+interface Tour {
+  id: string;
+  name: string;
+  slug?: string | null;
+  basePriceInInr?: number | null;
+  price?: number;
+  originalPrice?: number | null;
+  requiresPassport?: boolean;
+  tourType?: string | null;
+  addOns?: TourAddOn[] | null;
+  hotelCategories?: string[] | null;
+  advancePercentage?: number | null;
+  allowAdvance?: boolean | null;
+  seasonalPricing?: Record<string, { from?: string; to?: string; price?: number }> | null;
+}
+
 export default function TourBookingPage({ params }: { params: { id: string } }) {
   const { data: session } = useSession();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
-  const [tour, setTour] = useState<any>(null);
+  const [tour, setTour] = useState<Tour | null>(null);
   const [tourLoading, setTourLoading] = useState(true);
   const [addOnSelections, setAddOnSelections] = useState<AddOnSelectionState>({});
   const [passportUploadStatus, setPassportUploadStatus] = useState<Record<string, { uploading: boolean; error: string | null }>>({});
@@ -218,8 +244,8 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
         ...prev,
         [travellerKey]: { uploading: false, error: null },
       }));
-    } catch (error: any) {
-      const message = error?.message || "Failed to upload passport copy.";
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to upload passport copy.";
       setPassportUploadStatus((prev) => ({
         ...prev,
         [travellerKey]: { uploading: false, error: message },
@@ -259,8 +285,8 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
       if (!tour?.addOns || tour.addOns.length === 0) return [];
       const travellerTotal = normalizedTravellerCount ?? Math.max(travellerCount, 1);
       return tour.addOns
-        .filter((addOn: any) => addOn.isRequired || addOnSelections[addOn.id]?.selected)
-        .map((addOn: any) => {
+        .filter((addOn) => addOn.isRequired || addOnSelections[addOn.id]?.selected)
+        .map((addOn) => {
           const isPerPerson = addOn.pricingType === "PER_PERSON";
           const state = addOnSelections[addOn.id];
           const quantity = isPerPerson
@@ -303,7 +329,7 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
     let basePrice = tour.basePriceInInr ?? tour.price ?? 0;
     if (formData.travelDate && tour.seasonalPricing) {
       const travelDate = new Date(formData.travelDate);
-      for (const [seasonName, seasonData] of Object.entries(tour.seasonalPricing as Record<string, any>)) {
+      for (const [seasonName, seasonData] of Object.entries(tour.seasonalPricing || {})) {
         if (seasonData.from && seasonData.to) {
           const fromDate = new Date(seasonData.from);
           const toDate = new Date(seasonData.to);
@@ -551,8 +577,8 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
     try {
       const selectedAddOnsPayload =
         tour.addOns
-          ?.filter((addOn: any) => !addOn.isRequired && addOnSelections[addOn.id]?.selected)
-          .map((addOn: any) => ({
+          ?.filter((addOn) => !addOn.isRequired && addOnSelections[addOn.id]?.selected)
+          .map((addOn) => ({
             addOnId: addOn.id,
             quantity:
               addOn.pricingType === "PER_PERSON"
@@ -621,8 +647,8 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
       const data = await response.json();
       setBookingId(data.bookingId);
       return data.bookingId;
-    } catch (error: any) {
-      const message = error?.message || "An error occurred while creating the booking.";
+      } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "An error occurred while creating the booking.";
       setBookingCreationError(message);
       console.error("Error creating booking:", error);
       return null;
@@ -695,7 +721,7 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
           bookingId: ensuredBookingId,
           paymentType: formData.paymentType,
         },
-        handler: async (response: any) => {
+        handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
           try {
             const verifyResponse = await fetch("/api/payments/verify", {
               method: "POST",
@@ -715,10 +741,10 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
               const errorData = await verifyResponse.json();
               throw new Error(errorData.error || "Payment verification failed");
             }
-          } catch (error: any) {
+          } catch (error: unknown) {
             console.error("Payment verification error:", error);
             setLoading(false);
-            alert(error?.message || "Payment verification failed. Please contact support if payment was deducted.");
+            alert(error instanceof Error ? error.message : "Payment verification failed. Please contact support if payment was deducted.");
           }
         },
         modal: {
@@ -731,7 +757,7 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
 
       const razorpay = new window.Razorpay(options);
       
-      razorpay.on("payment.failed", (response: any) => {
+      razorpay.on("payment.failed", (response: { error: { code: string; description: string; source: string; step: string; reason: string; metadata: { order_id: string; payment_id: string } } }) => {
         console.error("Payment failed:", response);
         setLoading(false);
         const errorMessage =
@@ -743,7 +769,7 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
     } catch (error) {
       console.error(error);
       setLoading(false);
-      alert(error?.message || "Unable to process payment. Please try again.");
+      alert(error instanceof Error ? error.message : "Unable to process payment. Please try again.");
     }
   };
 
@@ -919,7 +945,7 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
                     <ShieldCheck size={18} className="text-primary-600" />
                   </div>
                   <div className="space-y-3">
-                    {tour.addOns.map((addOn: any) => {
+                    {tour.addOns.map((addOn) => {
                       const isPerPerson = addOn.pricingType === "PER_PERSON";
                       const state = addOnSelections[addOn.id];
                       const isSelected = addOn.isRequired || state?.selected;

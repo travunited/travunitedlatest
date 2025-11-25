@@ -161,7 +161,7 @@ export default function AdminBookingDetailPage() {
       const response = await fetch("/api/admin/settings/admins");
       if (response.ok) {
         const data = await response.json();
-        setAdmins(data.map((admin: any) => ({
+        setAdmins(data.map((admin: { id: string; name: string | null; email: string }) => ({
           id: admin.id,
           name: admin.name || admin.email,
           email: admin.email,
