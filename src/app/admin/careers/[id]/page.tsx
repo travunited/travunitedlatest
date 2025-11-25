@@ -260,19 +260,6 @@ export default function AdminCareerApplicationDetailPage() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center space-x-2 bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors"
-                  onClick={async (e) => {
-                    // Check if file exists before navigating
-                    try {
-                      const response = await fetch(resumeDownloadUrl, { method: "HEAD" });
-                      if (!response.ok) {
-                        e.preventDefault();
-                        alert("Resume file not available. The file may have been deleted or moved.");
-                      }
-                    } catch (error) {
-                      e.preventDefault();
-                      alert("Unable to access resume file. Please contact support if this issue persists.");
-                    }
-                  }}
                 >
                   <Download size={20} />
                   <span>Download Resume</span>
