@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, CorporateLeadStatus } from "@prisma/client";
 import * as XLSX from "@e965/xlsx";
 import { generatePDF } from "@/lib/pdf-export";
 
@@ -49,7 +49,10 @@ export async function GET(req: NextRequest) {
     }
 
     if (status && status !== "all" && status !== "ALL") {
-      where.status = status;
+      // Validate that status is a valid enum value
+      if (Object.values(CorporateLeadStatus).includes(status as CorporateLeadStatus)) {
+        where.status = status as CorporateLeadStatus;
+      }
     }
 
     // Search filter - search across company name, contact name, email, phone

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, CorporateLeadStatus } from "@prisma/client";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
@@ -31,7 +31,10 @@ export async function GET(req: Request) {
     const where: Prisma.CorporateLeadWhereInput = {};
 
     if (status && status !== "ALL") {
-      where.status = status;
+      // Validate that status is a valid enum value
+      if (Object.values(CorporateLeadStatus).includes(status as CorporateLeadStatus)) {
+        where.status = status as CorporateLeadStatus;
+      }
     }
 
     if (search) {

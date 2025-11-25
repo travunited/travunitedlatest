@@ -209,21 +209,23 @@ export async function POST(req: NextRequest) {
         }
 
         // Build visa data
+        // Access properties that might not be in the schema but could exist in raw data
+        const rawData = data as typeof data & { visa_mode?: string; mode?: string; entry_type_enum?: string; entry_type_structured?: string; entry_type_code?: string; stay_type?: string; stay_duration_type?: string; subtype_label?: string; visa_subtype_label?: string };
         const visaModeValue =
-          normalizeEnumInput(data.visa_mode || data.mode, Object.values(VisaMode), "visa_mode") ||
+          normalizeEnumInput(rawData.visa_mode || rawData.mode, Object.values(VisaMode), "visa_mode") ||
           null;
         const entryTypeEnumSource =
-          data.entry_type_enum || data.entry_type_structured || data.entry_type_code || data.entry_type;
+          rawData.entry_type_enum || rawData.entry_type_structured || rawData.entry_type_code || data.entry_type;
         const entryTypeValue =
           normalizeEnumInput(entryTypeEnumSource, Object.values(EntryType), "entry_type") || null;
         const stayTypeValue =
           normalizeEnumInput(
-            data.stay_type || data.stay_duration_type,
+            rawData.stay_type || rawData.stay_duration_type,
             Object.values(StayType),
             "stay_type"
           ) || null;
         const visaSubTypeLabel =
-          data.subtype_label || data.visa_subtype_label || data.visa_type || null;
+          rawData.subtype_label || rawData.visa_subtype_label || data.visa_type || null;
 
         const visaData = {
           countryId: country.id,
