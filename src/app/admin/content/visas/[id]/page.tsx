@@ -31,7 +31,11 @@ interface FormState {
   processingTime: string;
   stayDuration: string;
   validity: string;
-  entryType: string;
+  entryType: string; // structured enum value (SINGLE/DOUBLE/MULTIPLE)
+  entryTypeLegacy: string;
+  visaMode: string;
+  stayType: string;
+  visaSubTypeLabel: string;
   overview: string;
   eligibility: string;
   importantNotes: string;
@@ -72,7 +76,26 @@ interface CountryOption {
 }
 
 const CATEGORY_OPTIONS = ["Tourist", "Business", "Transit", "Student", "Other"];
-const ENTRY_TYPES = ["Single", "Multiple"];
+const ENTRY_TYPE_OPTIONS = [
+  { value: "", label: "Not specified" },
+  { value: "SINGLE", label: "Single Entry" },
+  { value: "DOUBLE", label: "Double Entry" },
+  { value: "MULTIPLE", label: "Multiple Entry" },
+];
+const VISA_MODE_OPTIONS = [
+  { value: "", label: "Not specified" },
+  { value: "EVISA", label: "eVisa" },
+  { value: "STICKER", label: "Sticker" },
+  { value: "VOA", label: "Visa on Arrival (VOA)" },
+  { value: "VFS", label: "VFS Appointment" },
+  { value: "ETA", label: "ETA" },
+  { value: "OTHER", label: "Other" },
+];
+const STAY_TYPE_OPTIONS = [
+  { value: "", label: "Not specified" },
+  { value: "SHORT_STAY", label: "Short Stay" },
+  { value: "LONG_STAY", label: "Long Stay" },
+];
 const SCOPE_OPTIONS: { label: string; value: DocScope }[] = [
   { label: "Per Traveller", value: "PER_TRAVELLER" },
   { label: "Per Application", value: "PER_APPLICATION" },
@@ -114,7 +137,11 @@ export default function AdminVisaEditorPage() {
     processingTime: "",
     stayDuration: "",
     validity: "",
-    entryType: "Single",
+    entryType: "",
+    entryTypeLegacy: "",
+    visaMode: "",
+    stayType: "",
+    visaSubTypeLabel: "",
     overview: "",
     eligibility: "",
     importantNotes: "",
@@ -181,7 +208,11 @@ export default function AdminVisaEditorPage() {
       processingTime: data.processingTime,
       stayDuration: data.stayDuration,
       validity: data.validity,
-      entryType: data.entryType,
+      entryType: data.entryType || "",
+      entryTypeLegacy: data.entryTypeLegacy || "",
+      visaMode: data.visaMode || "",
+      stayType: data.stayType || "",
+      visaSubTypeLabel: data.visaSubTypeLabel || "",
       overview: data.overview || "",
       eligibility: data.eligibility || "",
       importantNotes: data.importantNotes || "",
@@ -324,8 +355,22 @@ const handleFaqChange = (
     event.preventDefault();
     setSaving(true);
     try {
+      const {
+        entryTypeLegacy,
+        entryType,
+        visaMode,
+        stayType,
+        visaSubTypeLabel,
+        ...restFormData
+      } = formData;
+
       const payload = {
-        ...formData,
+        ...restFormData,
+        entryType: entryTypeLegacy || null,
+        structuredEntryType: entryType || null,
+        visaMode: visaMode || null,
+        stayType: stayType || null,
+        visaSubTypeLabel: visaSubTypeLabel || null,
         sampleVisaImageUrl: formData.sampleVisaImageUrl ? formData.sampleVisaImageUrl : null,
         priceInInr: Number(formData.priceInInr),
         // Ensure SEO fields are always included, even if empty
@@ -597,22 +642,93 @@ const handleFaqChange = (
                     placeholder="Fast approvals for leisure travel"
                   />
                 </div>
-                <div className="grid md:grid-cols-3 gap-4">
+                <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700">
+                      Visa Mode
+                    </label>
+                    <select
+                      value={formData.visaMode}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, visaMode: e.target.value }))
+                      }
+                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                    >
+                      {VISA_MODE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700">
                       Entry Type
                     </label>
                     <select
                       value={formData.entryType}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, entryType: e.target.value }))}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, entryType: e.target.value }))
+                      }
                       className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
                     >
-                      {ENTRY_TYPES.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
+                      {ENTRY_TYPE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
                         </option>
                       ))}
                     </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700">
+                      Stay Type
+                    </label>
+                    <select
+                      value={formData.stayType}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, stayType: e.target.value }))
+                      }
+                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                    >
+                      {STAY_TYPE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700">
+                      Subtype Label
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.visaSubTypeLabel}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, visaSubTypeLabel: e.target.value }))
+                      }
+                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      placeholder="Single Entry eVisa – Short Stay"
+                    />
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="md:col-span-1">
+                    <label className="text-sm font-medium text-neutral-700">
+                      Legacy Entry Display
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.entryTypeLegacy}
+                      onChange={(e) =>
+                        setFormData((prev) => ({ ...prev, entryTypeLegacy: e.target.value }))
+                      }
+                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      placeholder="Single Entry"
+                    />
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Shown on older UI surfaces as fallback when subtype label is missing.
+                    </p>
                   </div>
                   <label className="flex items-center gap-3 border border-neutral-200 rounded-lg px-4 py-2 mt-6">
                     <input
@@ -710,22 +826,6 @@ const handleFaqChange = (
                       className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
                       placeholder="3-5 working days"
                     />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-neutral-700">
-                      Entry Type
-                    </label>
-                    <select
-                      value={formData.entryType}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, entryType: e.target.value }))
-                      }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
-                    >
-                      <option value="single">Single</option>
-                      <option value="multiple">Multiple</option>
-                      <option value="double">Double</option>
-                    </select>
                   </div>
                 </div>
                 <div className="border-t border-neutral-200 pt-4">

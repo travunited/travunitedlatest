@@ -58,6 +58,9 @@ export async function GET(
         days: {
           orderBy: { dayIndex: "asc" },
         },
+        addOns: {
+          orderBy: { sortOrder: "asc" },
+        },
       },
     });
 
@@ -188,6 +191,7 @@ function buildTourData(body: any, resolvedSlug: string) {
     // Advance Payment
     allowAdvance: body.allowAdvance ?? false,
     advancePercentage: body.allowAdvance && body.advancePercentage ? Number(body.advancePercentage) : null,
+    requiresPassport: body.requiresPassport ?? false,
     
     // Content
     overview: body.overview || null,
@@ -246,6 +250,8 @@ export async function PUT(
       params.id
     );
 
+    const addOnsInput = Array.isArray(body.addOns) ? body.addOns : [];
+
     await prisma.$transaction(async (tx) => {
       await tx.tour.update({
         where: { id: params.id },
@@ -269,6 +275,46 @@ export async function PUT(
           ),
         });
       }
+
+      // Sync tour add-ons
+      const keepAddOnIds: string[] = [];
+      for (const addOn of addOnsInput) {
+        const payload = {
+          name: addOn.name,
+          description: addOn.description || null,
+          price: Number(addOn.price || 0),
+          pricingType: addOn.pricingType || "PER_BOOKING",
+          isRequired: !!addOn.isRequired,
+          isActive: addOn.isActive ?? true,
+          sortOrder: typeof addOn.sortOrder === "number" ? addOn.sortOrder : 0,
+        };
+
+        if (addOn.id) {
+          await tx.tourAddOn.update({
+            where: { id: addOn.id },
+            data: payload,
+          });
+          keepAddOnIds.push(addOn.id);
+        } else {
+          const created = await tx.tourAddOn.create({
+            data: {
+              ...payload,
+              tourId: params.id,
+            },
+          });
+          keepAddOnIds.push(created.id);
+        }
+      }
+
+      // Remove add-ons omitted from payload
+      await tx.tourAddOn.deleteMany({
+        where: {
+          tourId: params.id,
+          ...(keepAddOnIds.length
+            ? { id: { notIn: keepAddOnIds } }
+            : {}),
+        },
+      });
     });
 
     const updated = await prisma.tour.findUnique({
@@ -276,6 +322,7 @@ export async function PUT(
       include: {
         country: true,
         days: { orderBy: { dayIndex: "asc" } },
+        addOns: { orderBy: { sortOrder: "asc" } },
       },
     });
 

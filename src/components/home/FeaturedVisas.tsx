@@ -16,8 +16,32 @@ type FeaturedVisa = {
   countryCode: string;
   price: number;
   processingTime: string;
-  entryType: string;
+  entryType?: string | null;
+  entryTypeLegacy?: string | null;
+  stayType?: string | null;
+  visaSubTypeLabel?: string | null;
   image?: string | null;
+};
+
+const enumLabels: Record<string, string> = {
+  SINGLE: "Single Entry",
+  DOUBLE: "Double Entry",
+  MULTIPLE: "Multiple Entry",
+  SHORT_STAY: "Short Stay",
+  LONG_STAY: "Long Stay",
+};
+
+const formatEntrySummary = (visa: FeaturedVisa) => {
+  if (visa.visaSubTypeLabel) return visa.visaSubTypeLabel;
+  if (visa.entryType && visa.stayType) {
+    return `${enumLabels[visa.entryType] || visa.entryType} • ${
+      enumLabels[visa.stayType] || visa.stayType
+    }`;
+  }
+  if (visa.entryType) {
+    return enumLabels[visa.entryType] || visa.entryType;
+  }
+  return visa.entryTypeLegacy || "Flexible Entry";
 };
 
 export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
@@ -92,7 +116,7 @@ export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
                       <Clock size={16} className="mr-1" />
                       <span>{visa.processingTime}</span>
                       <span className="mx-2">•</span>
-                      <span>{visa.entryType}</span>
+                      <span>{formatEntrySummary(visa)}</span>
                     </div>
                     <div className="mt-auto flex items-center justify-between pt-4 border-t border-neutral-200">
                       <div>

@@ -14,6 +14,48 @@ import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 
+const visaModeLabels: Record<string, string> = {
+  EVISA: "eVisa",
+  STICKER: "Sticker",
+  VOA: "Visa on Arrival",
+  VFS: "VFS Appointment",
+  ETA: "ETA",
+  OTHER: "Other",
+};
+
+const entryTypeLabels: Record<string, string> = {
+  SINGLE: "Single Entry",
+  DOUBLE: "Double Entry",
+  MULTIPLE: "Multiple Entry",
+};
+
+const stayTypeLabels: Record<string, string> = {
+  SHORT_STAY: "Short Stay",
+  LONG_STAY: "Long Stay",
+};
+
+const formatEnumLabel = (
+  value: string | null | undefined,
+  labels: Record<string, string>
+) => {
+  if (!value) return null;
+  return labels[value] || value.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+};
+
+const buildEntrySummary = (visa: {
+  visaSubTypeLabel?: string | null;
+  entryType?: string | null;
+  stayType?: string | null;
+  entryTypeLegacy?: string | null;
+}) => {
+  if (visa.visaSubTypeLabel) return visa.visaSubTypeLabel;
+  const entryLabel = formatEnumLabel(visa.entryType ?? null, entryTypeLabels);
+  const stayLabel = formatEnumLabel(visa.stayType ?? null, stayTypeLabels);
+  const parts = [entryLabel, stayLabel].filter(Boolean);
+  if (parts.length) return parts.join(" • ");
+  return visa.entryTypeLegacy || "Flexible Entry";
+};
+
 export default async function VisaDetailPage({
   params,
 }: {
@@ -44,6 +86,15 @@ export default async function VisaDetailPage({
   );
 
   const heroImageUrl = visa.heroImageUrl ? getMediaProxyUrl(visa.heroImageUrl) : null;
+  const modeDisplay = formatEnumLabel(visa.visaMode ?? null, visaModeLabels) || "Not specified";
+  const entryDisplay = buildEntrySummary(visa);
+  const stayTypeDisplay = formatEnumLabel(visa.stayType ?? null, stayTypeLabels);
+  const stayDurationDisplay = visa.stayDurationDays
+    ? `Up to ${visa.stayDurationDays} days`
+    : visa.stayDuration || "Not specified";
+  const validityDisplay = visa.validityDays
+    ? `${visa.validityDays} days from issue`
+    : visa.validity || "Not specified";
 
   return (
     <div className="min-h-screen bg-white">
@@ -57,6 +108,19 @@ export default async function VisaDetailPage({
           </Link>
           <h1 className="text-3xl md:text-4xl font-bold mb-2">{visa.name}</h1>
           <p className="text-lg text-white/90">{visa.subtitle}</p>
+          <p className="text-sm text-white/80 mt-3 flex flex-wrap gap-4">
+            <span>
+              <span className="font-semibold text-white">Mode:</span> {modeDisplay}
+            </span>
+            <span>
+              <span className="font-semibold text-white">Entry:</span> {entryDisplay}
+            </span>
+            {stayTypeDisplay && (
+              <span>
+                <span className="font-semibold text-white">Stay:</span> {stayTypeDisplay}
+              </span>
+            )}
+          </p>
         </div>
       </div>
 
@@ -80,9 +144,10 @@ export default async function VisaDetailPage({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: "Processing", value: visa.processingTime },
-                { label: "Stay", value: visa.stayDurationDays ? `Up to ${visa.stayDurationDays} days` : visa.stayDuration },
-                { label: "Entry", value: visa.entryType },
-                { label: "Validity", value: visa.validityDays ? `${visa.validityDays} days from issue` : visa.validity },
+                { label: "Mode", value: modeDisplay },
+                { label: "Entry", value: entryDisplay },
+                { label: "Stay Duration", value: stayDurationDisplay },
+                { label: "Validity", value: validityDisplay },
               ].map((item) => (
                 <div
                   key={item.label}

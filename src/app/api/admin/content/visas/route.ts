@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { DocScope } from "@prisma/client";
+import { DocScope, EntryType, StayType, VisaMode } from "@prisma/client";
 export const dynamic = "force-dynamic";
 
 
@@ -41,6 +41,29 @@ function ensureContentAdmin(session: Session | null) {
     );
   }
   return null;
+}
+
+function normalizeEnumInput<T extends string>(
+  value: unknown,
+  enumValues: readonly T[],
+  fieldName: string
+): T | null {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  if (typeof value !== "string") {
+    throw new Error(`${fieldName} must be a string value`);
+  }
+  const normalized = value.trim().toUpperCase().replace(/[\s-]+/g, "_");
+  const match = enumValues.find((val) => val === normalized);
+  if (!match) {
+    throw new Error(
+      `${fieldName} must be one of: ${enumValues
+        .map((val) => val.toLowerCase())
+        .join(", ")}`
+    );
+  }
+  return match;
 }
 
 export async function GET(req: Request) {
@@ -133,6 +156,10 @@ export async function POST(req: Request) {
       stayDurationDays,
       validityDays,
       currency,
+      visaMode,
+      structuredEntryType,
+      stayType,
+      visaSubTypeLabel,
       requirements = [],
       faqs = [],
     } = body;
@@ -145,7 +172,6 @@ export async function POST(req: Request) {
       !processingTime ||
       !stayDuration ||
       !validity ||
-      !entryType ||
       !overview ||
       !eligibility
     ) {
@@ -158,6 +184,23 @@ export async function POST(req: Request) {
     const resolvedSlug = await ensureUniqueSlug(
       slug?.trim() || slugify(name)
     );
+
+    let parsedVisaMode: VisaMode | null = null;
+    let parsedEntryType: EntryType | null = null;
+    let parsedStayType: StayType | null = null;
+    try {
+      parsedVisaMode = normalizeEnumInput(visaMode, Object.values(VisaMode), "visaMode");
+      const enumEntrySource = structuredEntryType ?? entryType;
+      parsedEntryType = normalizeEnumInput(enumEntrySource, Object.values(EntryType), "entryType");
+      parsedStayType = normalizeEnumInput(stayType, Object.values(StayType), "stayType");
+    } catch (enumError) {
+      return NextResponse.json(
+        {
+          error: (enumError as Error).message || "Invalid enum value provided",
+        },
+        { status: 400 }
+      );
+    }
 
     const visa = await prisma.visa.create({
       data: {
@@ -172,7 +215,11 @@ export async function POST(req: Request) {
         processingTime,
         stayDuration,
         validity,
-        entryType,
+        entryTypeLegacy: entryType || null,
+        visaMode: parsedVisaMode,
+        entryType: parsedEntryType,
+        stayType: parsedStayType,
+        visaSubTypeLabel: visaSubTypeLabel || null,
         overview,
         eligibility,
         importantNotes: importantNotes || null,

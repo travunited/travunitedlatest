@@ -64,6 +64,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   const [visaLoading, setVisaLoading] = useState(true);
   const [createdTravellerIds, setCreatedTravellerIds] = useState<string[]>([]);
   const [dateErrors, setDateErrors] = useState<Record<string, string>>({});
+  const [phoneErrors, setPhoneErrors] = useState<Record<string, string>>({});
 
   type FormDataTraveller = {
     id: string;
@@ -517,12 +518,72 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     }
   }, [formData, currentStep]);
 
+  // Phone number validation helper
+  const validatePhoneNumber = (phone: string): string | null => {
+    if (!phone || phone.trim() === "") {
+      return null; // Phone is optional, so empty is valid
+    }
+    
+    // Remove all non-digit characters for validation
+    const digitsOnly = phone.replace(/\D/g, "");
+    
+    // Check if it's a valid Indian mobile number (10 digits)
+    if (digitsOnly.length === 10) {
+      // Check if it starts with 6-9 (valid Indian mobile prefixes)
+      if (/^[6-9]/.test(digitsOnly)) {
+        return null; // Valid
+      }
+      return "Phone number must start with 6, 7, 8, or 9";
+    }
+    
+    // Check if it's E.164 format (international)
+    if (phone.startsWith("+")) {
+      const e164Pattern = /^\+[1-9]\d{1,14}$/;
+      if (e164Pattern.test(phone)) {
+        return null; // Valid E.164 format
+      }
+      return "Invalid international phone format. Use E.164 format (e.g., +911234567890)";
+    }
+    
+    // If it has digits but wrong length
+    if (digitsOnly.length > 0 && digitsOnly.length < 10) {
+      return "Phone number must be 10 digits";
+    }
+    
+    if (digitsOnly.length > 10 && !phone.startsWith("+")) {
+      return "Phone number must be 10 digits or use international format (+country code)";
+    }
+    
+    return "Invalid phone number format";
+  };
+
+  // Sanitize phone input - only allow digits, +, spaces, and hyphens
+  const sanitizePhoneInput = (value: string): string => {
+    // Allow digits, +, spaces, and hyphens
+    return value.replace(/[^\d+\s-]/g, "");
+  };
+
   const nextStep = () => {
     // Validation before proceeding
     if (currentStep === 2) {
       if (!formData.primaryContact?.name || !formData.primaryContact?.email) {
         alert("Please fill in all required contact information");
         return;
+      }
+      
+      // Validate phone number if provided
+      if (formData.primaryContact?.phone) {
+        const phoneError = validatePhoneNumber(formData.primaryContact.phone);
+        if (phoneError) {
+          setPhoneErrors({ primaryContact: phoneError });
+          return;
+        }
+        // Clear error if valid
+        setPhoneErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors.primaryContact;
+          return newErrors;
+        });
       }
     }
     
@@ -652,6 +713,17 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       return;
     }
 
+    // Validate phone number before submission
+    if (formData.primaryContact?.phone) {
+      const phoneError = validatePhoneNumber(formData.primaryContact.phone);
+      if (phoneError) {
+        setPhoneErrors({ primaryContact: phoneError });
+        setCurrentStep(2); // Go back to contact step to show error
+        alert(`Phone number validation failed: ${phoneError}`);
+        return;
+      }
+    }
+
     // Check if user is logged in
     if (!session) {
       // Redirect to signup/login
@@ -719,7 +791,23 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         setCurrentStep(6);
       } else {
         const errorData = await response.json();
-        alert(errorData.error || "Failed to save application. Please try again.");
+        let errorMessage = errorData.error || "Failed to save application. Please try again.";
+        
+        // Handle validation errors with field-specific messages
+        if (errorData.details && Array.isArray(errorData.details)) {
+          const phoneError = errorData.details.find((d: any) => d.field === "primaryContact.phone");
+          if (phoneError) {
+            setPhoneErrors({ primaryContact: phoneError.message });
+            setCurrentStep(2); // Go back to contact step
+            errorMessage = phoneError.message;
+          } else {
+            // Show all validation errors
+            const detailMessages = errorData.details.map((d: any) => d.message).join("\n");
+            errorMessage = detailMessages || errorMessage;
+          }
+        }
+        
+        alert(errorMessage);
       }
     } catch (error) {
       alert("An error occurred. Please try again.");
@@ -1021,16 +1109,57 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                 </label>
                 <input
                   type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9+\s-]*"
+                  maxLength={15}
                   value={formData.primaryContact?.phone || ""}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const sanitized = sanitizePhoneInput(e.target.value);
                     setFormData({
                       ...formData,
-                      primaryContact: { ...formData.primaryContact!, phone: e.target.value },
-                    })
-                  }
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  placeholder="+91 1234567890"
+                      primaryContact: { ...formData.primaryContact!, phone: sanitized },
+                    });
+                    // Clear error when user starts typing
+                    if (phoneErrors.primaryContact) {
+                      setPhoneErrors((prev) => {
+                        const newErrors = { ...prev };
+                        delete newErrors.primaryContact;
+                        return newErrors;
+                      });
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // Validate on blur
+                    if (e.target.value) {
+                      const error = validatePhoneNumber(e.target.value);
+                      if (error) {
+                        setPhoneErrors((prev) => ({ ...prev, primaryContact: error }));
+                      } else {
+                        setPhoneErrors((prev) => {
+                          const newErrors = { ...prev };
+                          delete newErrors.primaryContact;
+                          return newErrors;
+                        });
+                      }
+                    }
+                  }}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
+                    phoneErrors.primaryContact
+                      ? "border-red-500 focus:border-red-500"
+                      : "border-neutral-300"
+                  }`}
+                  placeholder="10 digits (e.g., 9876543210) or +91 9876543210"
                 />
+                {phoneErrors.primaryContact && (
+                  <p className="text-sm text-red-600 mt-1">{phoneErrors.primaryContact}</p>
+                )}
+                {!phoneErrors.primaryContact && formData.primaryContact?.phone && (
+                  <p className="text-xs text-neutral-500 mt-1">
+                    {formData.primaryContact.phone.replace(/\D/g, "").length === 10
+                      ? "✓ Valid phone number"
+                      : "Enter 10 digits for Indian mobile or use international format"}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">

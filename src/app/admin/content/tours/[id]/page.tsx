@@ -122,6 +122,18 @@ type DayState = {
   content: string;
 };
 
+type AddOnForm = {
+  uid: string;
+  id?: string;
+  name: string;
+  description: string;
+  price: number;
+  pricingType: "PER_BOOKING" | "PER_PERSON";
+  isRequired: boolean;
+  isActive: boolean;
+  sortOrder: number;
+};
+
 type FormState = {
   // Basic Info
   countryId: string;
@@ -173,6 +185,7 @@ type FormState = {
   // Advance Payment
   allowAdvance: boolean;
   advancePercentage: number | null;
+  requiresPassport: boolean;
   
   // Content
   overview: string;
@@ -257,6 +270,7 @@ const defaultForm: FormState = {
   // Advance Payment
   allowAdvance: false,
   advancePercentage: null,
+  requiresPassport: false,
   
   // Content
   overview: "",
@@ -295,6 +309,7 @@ const tabs = [
   { id: "destination", label: "Destination" },
   { id: "duration", label: "Duration & Group" },
   { id: "pricing", label: "Pricing" },
+  { id: "addons", label: "Add-ons" },
   { id: "availability", label: "Dates & Availability" },
   { id: "content", label: "Content" },
   { id: "itinerary", label: "Itinerary" },
@@ -322,6 +337,7 @@ export default function AdminTourEditorPage() {
   const [countries, setCountries] = useState<CountryOption[]>([]);
   const [formData, setFormData] = useState<FormState>(defaultForm);
   const [days, setDays] = useState<DayState[]>([]);
+  const [addOns, setAddOns] = useState<AddOnForm[]>([]);
   const [activeTab, setActiveTab] = useState("basic");
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
@@ -420,6 +436,7 @@ export default function AdminTourEditorPage() {
       // Advance Payment
       allowAdvance: data.allowAdvance ?? false,
       advancePercentage: data.advancePercentage ?? null,
+      requiresPassport: data.requiresPassport ?? false,
       
       // Content
       overview: data.overview ?? "",
@@ -478,10 +495,24 @@ export default function AdminTourEditorPage() {
         content: day.content ?? "",
       }))
     );
+    setAddOns(
+      (data.addOns || []).map((addOn: any, index: number) => ({
+        uid: addOn.id ?? uid(),
+        id: addOn.id,
+        name: addOn.name ?? "",
+        description: addOn.description ?? "",
+        price: addOn.price ?? 0,
+        pricingType: (addOn.pricingType as "PER_BOOKING" | "PER_PERSON") ?? "PER_BOOKING",
+        isRequired: addOn.isRequired ?? false,
+        isActive: addOn.isActive ?? true,
+        sortOrder: addOn.sortOrder ?? index,
+      }))
+    );
   }, []);
 
   const fetchTour = useCallback(async () => {
     if (isNew) {
+      setAddOns([]);
       setLoading(false);
       return;
     }
@@ -534,6 +565,44 @@ export default function AdminTourEditorPage() {
 
   const removeDay = (uidValue: string) => {
     setDays((prev) => prev.filter((day) => day.uid !== uidValue));
+  };
+
+  const addAddOnRow = () => {
+    setAddOns((prev) => [
+      ...prev,
+      {
+        uid: uid(),
+        name: "",
+        description: "",
+        price: 0,
+        pricingType: "PER_BOOKING",
+        isRequired: false,
+        isActive: true,
+        sortOrder: prev.length,
+      },
+    ]);
+  };
+
+  const updateAddOn = (
+    uidValue: string,
+    key: keyof Omit<AddOnForm, "uid">,
+    value: string | number | boolean
+  ) => {
+    setAddOns((prev) =>
+      prev.map((addOn) =>
+        addOn.uid === uidValue
+          ? { ...addOn, [key]: value }
+          : addOn
+      )
+    );
+  };
+
+  const removeAddOn = (uidValue: string) => {
+    setAddOns((prev) =>
+      prev
+        .filter((addOn) => addOn.uid !== uidValue)
+        .map((addOn, index) => ({ ...addOn, sortOrder: index }))
+    );
   };
 
   const galleryArray = useMemo(
@@ -613,6 +682,7 @@ export default function AdminTourEditorPage() {
         // Advance Payment
         allowAdvance: formData.allowAdvance,
         advancePercentage: formData.advancePercentage,
+        requiresPassport: formData.requiresPassport,
         
         // Content
         overview: formData.overview || null,
@@ -644,6 +714,17 @@ export default function AdminTourEditorPage() {
         ogDescription: formData.ogDescription || null,
         twitterTitle: formData.twitterTitle || null,
         twitterDescription: formData.twitterDescription || null,
+        
+        addOns: addOns.map((addOn, index) => ({
+          id: addOn.id,
+          name: addOn.name,
+          description: addOn.description,
+          price: Number(addOn.price) || 0,
+          pricingType: addOn.pricingType,
+          isRequired: addOn.isRequired,
+          isActive: addOn.isActive,
+          sortOrder: typeof addOn.sortOrder === "number" ? addOn.sortOrder : index,
+        })),
         
         // Itinerary Days
         days: days.map((day, index) => ({
@@ -889,6 +970,7 @@ export default function AdminTourEditorPage() {
             {activeTab === "destination" && <DestinationTab />}
             {activeTab === "duration" && <DurationTab />}
             {activeTab === "pricing" && <PricingTab />}
+            {activeTab === "addons" && <AddOnsTab />}
             {activeTab === "availability" && <AvailabilityTab />}
             {activeTab === "content" && <ContentTab />}
             {activeTab === "itinerary" && <ItineraryTab />}
@@ -1387,6 +1469,177 @@ export default function AdminTourEditorPage() {
             </label>
           )}
         </div>
+
+        <label className="inline-flex items-start gap-3 border border-neutral-200 rounded-lg px-3 py-3">
+          <input
+            type="checkbox"
+            checked={formData.requiresPassport}
+            onChange={(e) => updateForm("requiresPassport", e.target.checked)}
+            className="mt-1 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+          />
+          <span className="text-sm text-neutral-700">
+            <span className="font-medium block">Passport required for this tour</span>
+            <span className="text-neutral-500">
+              Enforce passport collection even for domestic packages.
+            </span>
+          </span>
+        </label>
+      </div>
+    );
+  }
+
+  function AddOnsTab() {
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-neutral-600">
+          Configure optional or mandatory add-ons that travellers can choose during checkout.
+        </p>
+
+        {addOns.length === 0 && (
+          <div className="rounded-2xl border-2 border-dashed border-neutral-200 p-6 text-center">
+            <p className="text-neutral-600 mb-3">No add-ons configured yet.</p>
+            <button
+              type="button"
+              onClick={addAddOnRow}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition"
+            >
+              <Plus size={16} />
+              Add first add-on
+            </button>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {addOns.map((addOn, index) => (
+            <div
+              key={addOn.uid}
+              className="border border-neutral-200 rounded-2xl p-4 shadow-sm bg-white"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm font-semibold text-neutral-900">
+                    Add-on #{index + 1}
+                  </p>
+                  <p className="text-xs text-neutral-500">
+                    {addOn.id ? "Existing item" : "New item"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeAddOn(addOn.uid)}
+                  className="text-sm text-red-600 hover:text-red-700 inline-flex items-center gap-1"
+                >
+                  <Trash2 size={14} />
+                  Remove
+                </button>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <label className="flex flex-col">
+                  <span className="text-sm font-medium text-neutral-700">Name</span>
+                  <input
+                    type="text"
+                    value={addOn.name}
+                    onChange={(e) => updateAddOn(addOn.uid, "name", e.target.value)}
+                    className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                    placeholder="E.g. 4★ Hotel Upgrade"
+                    required
+                  />
+                </label>
+                <label className="flex flex-col">
+                  <span className="text-sm font-medium text-neutral-700">Price (₹)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={addOn.price}
+                    onChange={(e) => updateAddOn(addOn.uid, "price", Number(e.target.value) || 0)}
+                    className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                    placeholder="0 for free add-on"
+                  />
+                </label>
+              </div>
+
+              <label className="flex flex-col mt-4">
+                <span className="text-sm font-medium text-neutral-700">Description</span>
+                <textarea
+                  rows={2}
+                  value={addOn.description}
+                  onChange={(e) => updateAddOn(addOn.uid, "description", e.target.value)}
+                  className="mt-1 border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                  placeholder="Short description that appears to travellers"
+                />
+              </label>
+
+              <div className="grid md:grid-cols-3 gap-4 mt-4">
+                <label className="flex flex-col">
+                  <span className="text-sm font-medium text-neutral-700">Pricing Type</span>
+                  <select
+                    value={addOn.pricingType}
+                    onChange={(e) =>
+                      updateAddOn(
+                        addOn.uid,
+                        "pricingType",
+                        e.target.value as "PER_BOOKING" | "PER_PERSON"
+                      )
+                    }
+                    className="mt-1 border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                  >
+                    <option value="PER_BOOKING">Per booking</option>
+                    <option value="PER_PERSON">Per traveller</option>
+                  </select>
+                </label>
+
+                <label className="flex flex-col">
+                  <span className="text-sm font-medium text-neutral-700">Sort order</span>
+                  <input
+                    type="number"
+                    value={addOn.sortOrder}
+                    onChange={(e) =>
+                      updateAddOn(
+                        addOn.uid,
+                        "sortOrder",
+                        Number(e.target.value) || 0
+                      )
+                    }
+                    className="mt-1 border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                  />
+                </label>
+
+                <div className="flex flex-col gap-2">
+                  <label className="inline-flex items-center gap-2 border border-neutral-200 rounded-lg px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={addOn.isRequired}
+                      onChange={(e) => updateAddOn(addOn.uid, "isRequired", e.target.checked)}
+                      className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-neutral-700">Required</span>
+                  </label>
+                  <label className="inline-flex items-center gap-2 border border-neutral-200 rounded-lg px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={addOn.isActive}
+                      onChange={(e) => updateAddOn(addOn.uid, "isActive", e.target.checked)}
+                      className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-sm text-neutral-700">Active</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {addOns.length > 0 && (
+          <button
+            type="button"
+            onClick={addAddOnRow}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-neutral-300 text-sm font-medium hover:border-neutral-400 transition"
+          >
+            <Plus size={16} />
+            Add another add-on
+          </button>
+        )}
       </div>
     );
   }

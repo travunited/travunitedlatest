@@ -4,7 +4,14 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseFile, validateVisas } from "@/lib/import-utils";
 import { logAuditEvent } from "@/lib/audit";
-import { AuditAction, AuditEntityType, DocScope } from "@prisma/client";
+import {
+  AuditAction,
+  AuditEntityType,
+  DocScope,
+  EntryType,
+  StayType,
+  VisaMode,
+} from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +68,43 @@ async function findOrCreateCountry(countryName: string | undefined, flagEmoji: s
   }
   
   return country;
+}
+
+function normalizeEnumInput<T extends string>(
+  value: unknown,
+  enumValues: readonly T[],
+  fieldName: "visa_mode" | "entry_type" | "stay_type"
+): T | null {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  if (typeof value !== "string") {
+    return null;
+  }
+  const normalized = value.trim().toUpperCase().replace(/[\s-]+/g, "_");
+  const match = enumValues.find((val) => val === normalized);
+  if (match) return match;
+
+  if (fieldName === "entry_type") {
+    if (normalized.includes("SINGLE")) return "SINGLE" as T;
+    if (normalized.includes("DOUBLE")) return "DOUBLE" as T;
+    if (normalized.includes("MULTI")) return "MULTIPLE" as T;
+  }
+
+  if (fieldName === "stay_type") {
+    if (normalized.includes("SHORT")) return "SHORT_STAY" as T;
+    if (normalized.includes("LONG")) return "LONG_STAY" as T;
+  }
+
+  if (fieldName === "visa_mode") {
+    if (normalized.includes("E") && normalized.includes("VISA")) return "EVISA" as T;
+    if (normalized.includes("STICKER")) return "STICKER" as T;
+    if (normalized.includes("ARRIVAL")) return "VOA" as T;
+    if (normalized.includes("VFS")) return "VFS" as T;
+    if (normalized.includes("ETA")) return "ETA" as T;
+  }
+
+  return null;
 }
 
 export async function POST(req: NextRequest) {
@@ -165,6 +209,22 @@ export async function POST(req: NextRequest) {
         }
 
         // Build visa data
+        const visaModeValue =
+          normalizeEnumInput(data.visa_mode || data.mode, Object.values(VisaMode), "visa_mode") ||
+          null;
+        const entryTypeEnumSource =
+          data.entry_type_enum || data.entry_type_structured || data.entry_type_code || data.entry_type;
+        const entryTypeValue =
+          normalizeEnumInput(entryTypeEnumSource, Object.values(EntryType), "entry_type") || null;
+        const stayTypeValue =
+          normalizeEnumInput(
+            data.stay_type || data.stay_duration_type,
+            Object.values(StayType),
+            "stay_type"
+          ) || null;
+        const visaSubTypeLabel =
+          data.subtype_label || data.visa_subtype_label || data.visa_type || null;
+
         const visaData = {
           countryId: country.id,
           name: visaName,
@@ -175,7 +235,11 @@ export async function POST(req: NextRequest) {
           processingTime: data.processing_time || data.processing_time_days || "3-5 days",
           stayDuration: data.duration || (stayDurationDays ? `${stayDurationDays} days` : null) || "",
           validity: data.validity || (validityDays ? `${validityDays} days` : null) || "",
-          entryType: data.entry_type || "single",
+          entryTypeLegacy: data.entry_type || null,
+          visaMode: visaModeValue,
+          entryType: entryTypeValue,
+          stayType: stayTypeValue,
+          visaSubTypeLabel,
           overview: data.description || data.long_description || data.short_description || "",
           eligibility: eligibility,
           heroImageUrl: data.image || null,

@@ -18,6 +18,26 @@ enum DocScope {
   PER_APPLICATION
 }
 
+enum VisaMode {
+  EVISA
+  STICKER
+  VOA
+  VFS
+  ETA
+  OTHER
+}
+
+enum EntryType {
+  SINGLE
+  DOUBLE
+  MULTIPLE
+}
+
+enum StayType {
+  SHORT_STAY
+  LONG_STAY
+}
+
 model User {
   id                    String        @id @default(cuid())
   name                  String?
@@ -133,20 +153,45 @@ model Booking {
   invoiceUploadedAt DateTime? // When invoice was uploaded
   invoiceUploadedByAdminId String? // Admin who uploaded the invoice
   notes         String? // Admin notes
+  foodPreference String?
+  foodPreferenceNotes String?
+  languagePreference String?
+  languagePreferenceOther String?
+  driverPreference String?
+  specialRequests String?
+  policyAccepted Boolean         @default(false)
+  policyAcceptedAt DateTime?
+  policyAcceptedByUserId String?
+  policyAcceptedIp String?
+  policyAcceptedUserAgent String?
+  policyVersion String?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   travellers    BookingTraveller[]
   reviews       Review[]
   payments      Payment[]
+  addOns        BookingAddOn[]
 }
 
 model BookingTraveller {
-  id          String    @id @default(cuid())
-  booking     Booking   @relation(fields: [bookingId], references: [id])
-  bookingId   String
-  traveller   Traveller @relation(fields: [travellerId], references: [id])
-  travellerId String
-  createdAt   DateTime  @default(now())
+  id                    String     @id @default(cuid())
+  booking               Booking    @relation(fields: [bookingId], references: [id])
+  bookingId             String
+  traveller             Traveller? @relation(fields: [travellerId], references: [id])
+  travellerId           String?
+  firstName             String     @default("")
+  lastName              String     @default("")
+  fullName              String?
+  dateOfBirth           DateTime?
+  age                   Int?
+  gender                String?
+  nationality           String?
+  passportNumber        String?
+  passportExpiry        DateTime?
+  passportIssuingCountry String?
+  passportFileKey       String?
+  isPassportRequired    Boolean    @default(false)
+  createdAt             DateTime   @default(now())
 }
 
 model Country {
@@ -176,7 +221,11 @@ model Visa {
   processingTime     String
   stayDuration       String // Legacy field - text format
   validity           String // Legacy field - text format
-  entryType          String
+  entryTypeLegacy    String?
+  visaMode           VisaMode?
+  entryType          EntryType?
+  stayType           StayType?
+  visaSubTypeLabel   String?
   overview           String
   eligibility        String
   importantNotes     String?
@@ -296,6 +345,7 @@ model Tour {
   galleryImageUrls     String?
   allowAdvance         Boolean   @default(false)
   advancePercentage    Int?
+  requiresPassport     Boolean   @default(false)
   metaTitle            String?
   metaDescription      String?
   metaKeywords         String?
@@ -327,6 +377,38 @@ model Tour {
   updatedAt            DateTime  @updatedAt
   days                 TourDay[]
   bookings             Booking[]
+  addOns               TourAddOn[]
+}
+
+model TourAddOn {
+  id             String   @id @default(cuid())
+  tour           Tour     @relation(fields: [tourId], references: [id])
+  tourId         String
+  name           String
+  description    String?
+  price          Int      @default(0)
+  pricingType    String   @default("PER_BOOKING") // PER_PERSON or PER_BOOKING
+  isRequired     Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  bookingAddOns  BookingAddOn[]
+}
+
+model BookingAddOn {
+  id          String   @id @default(cuid())
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  bookingId   String
+  addOn       TourAddOn? @relation(fields: [addOnId], references: [id])
+  addOnId     String?
+  name        String
+  pricingType String
+  quantity    Int      @default(1)
+  unitPrice   Int      @default(0)
+  totalPrice  Int      @default(0)
+  metadata    Json?
+  createdAt   DateTime @default(now())
 }
 
 model Payment {

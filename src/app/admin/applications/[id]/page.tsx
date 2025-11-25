@@ -10,6 +10,17 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
 import { getCountryFlagUrl } from "@/lib/flags";
 
+const getVisaEntryDisplay = (visa?: {
+  visaSubTypeLabel?: string | null;
+  entryType?: string | null;
+  entryTypeLegacy?: string | null;
+}) => {
+  if (!visa) return null;
+  if (visa.visaSubTypeLabel) return visa.visaSubTypeLabel;
+  if (visa.entryTypeLegacy) return visa.entryTypeLegacy;
+  return visa.entryType || null;
+};
+
 type DocScope = "PER_TRAVELLER" | "PER_APPLICATION";
 
 interface DocumentRequirementMeta {
@@ -391,6 +402,7 @@ export default function AdminApplicationDetailPage() {
     );
   }
 
+  const visaEntryDisplay = getVisaEntryDisplay(application.visa);
   const documentsGrouped = groupedDocuments();
   const completedPayment = application.payments?.find(p => p.status === "COMPLETED");
   const notesList = parseNotes(application.notes);
@@ -550,10 +562,10 @@ export default function AdminApplicationDetailPage() {
                     <div className="font-medium text-neutral-900">{application.visa.validity}</div>
                   </div>
                 )}
-                {application.visa?.entryType && (
+                {visaEntryDisplay && (
                   <div>
                     <div className="text-sm text-neutral-600 mb-1">Entry Type</div>
-                    <div className="font-medium text-neutral-900">{application.visa.entryType}</div>
+                    <div className="font-medium text-neutral-900">{visaEntryDisplay}</div>
                   </div>
                 )}
                 <div>

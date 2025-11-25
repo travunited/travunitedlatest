@@ -7,6 +7,45 @@ export const dynamic = "force-dynamic";
 
 
 
+// Phone number validation function
+const validatePhoneNumber = (phone: string): { valid: boolean; message?: string } => {
+  if (!phone || phone.trim() === "") {
+    return { valid: true }; // Phone is optional
+  }
+  
+  // Remove all non-digit characters for validation
+  const digitsOnly = phone.replace(/\D/g, "");
+  
+  // Check if it's a valid Indian mobile number (10 digits)
+  if (digitsOnly.length === 10) {
+    // Check if it starts with 6-9 (valid Indian mobile prefixes)
+    if (/^[6-9]/.test(digitsOnly)) {
+      return { valid: true };
+    }
+    return { valid: false, message: "Phone number must start with 6, 7, 8, or 9" };
+  }
+  
+  // Check if it's E.164 format (international)
+  if (phone.startsWith("+")) {
+    const e164Pattern = /^\+[1-9]\d{1,14}$/;
+    if (e164Pattern.test(phone)) {
+      return { valid: true };
+    }
+    return { valid: false, message: "Invalid international phone format. Use E.164 format (e.g., +911234567890)" };
+  }
+  
+  // If it has digits but wrong length
+  if (digitsOnly.length > 0 && digitsOnly.length < 10) {
+    return { valid: false, message: "Phone number must be 10 digits" };
+  }
+  
+  if (digitsOnly.length > 10 && !phone.startsWith("+")) {
+    return { valid: false, message: "Phone number must be 10 digits or use international format (+country code)" };
+  }
+  
+  return { valid: false, message: "Invalid phone number format" };
+};
+
 const applicationSchema = z.object({
   country: z.string(),
   visaType: z.string(),
@@ -39,6 +78,25 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const data = applicationSchema.parse(body);
+
+    // Validate phone number
+    if (data.primaryContact.phone) {
+      const phoneValidation = validatePhoneNumber(data.primaryContact.phone);
+      if (!phoneValidation.valid) {
+        return NextResponse.json(
+          {
+            error: "Phone number validation failed",
+            details: [
+              {
+                field: "primaryContact.phone",
+                message: phoneValidation.message || "Invalid phone number format",
+              },
+            ],
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     // Get user - must be logged in to create application
     const session = await getServerSession(authOptions);

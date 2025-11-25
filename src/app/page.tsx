@@ -78,6 +78,9 @@ export default async function Home() {
     price: visa.priceInInr,
     processingTime: visa.processingTime,
     entryType: visa.entryType,
+    entryTypeLegacy: visa.entryTypeLegacy,
+    stayType: visa.stayType,
+    visaSubTypeLabel: visa.visaSubTypeLabel,
     image: getMediaProxyUrl(visa.sampleVisaImageUrl || visa.heroImageUrl),
   }));
 

@@ -18,6 +18,10 @@ export async function GET(
       include: {
         country: true,
         days: { orderBy: { dayIndex: "asc" } },
+        addOns: {
+          where: { isActive: true },
+          orderBy: { sortOrder: "asc" },
+        },
       },
     });
 
@@ -55,6 +59,16 @@ export async function GET(
       imageUrl: getMediaProxyUrl(tour.imageUrl),
       heroImageUrl: getMediaProxyUrl(tour.heroImageUrl),
       featuredImage: getMediaProxyUrl(tour.featuredImage),
+      addOns: (tour.addOns || []).map((addOn) => ({
+        id: addOn.id,
+        name: addOn.name,
+        description: addOn.description,
+        price: addOn.price,
+        pricingType: addOn.pricingType,
+        isRequired: addOn.isRequired,
+        sortOrder: addOn.sortOrder,
+        isActive: addOn.isActive,
+      })),
     });
   } catch (error) {
     console.error("Error fetching tour:", error);

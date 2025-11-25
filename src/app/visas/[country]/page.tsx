@@ -5,6 +5,43 @@ import { notFound } from "next/navigation";
 import { Clock, CheckCircle, Info, ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
+const entryTypeLabels: Record<string, string> = {
+  SINGLE: "Single Entry",
+  DOUBLE: "Double Entry",
+  MULTIPLE: "Multiple Entry",
+};
+
+const stayTypeLabels: Record<string, string> = {
+  SHORT_STAY: "Short Stay",
+  LONG_STAY: "Long Stay",
+};
+
+const visaModeLabels: Record<string, string> = {
+  EVISA: "eVisa",
+  STICKER: "Sticker",
+  VOA: "Visa on Arrival",
+  VFS: "VFS Appointment",
+  ETA: "ETA",
+  OTHER: "Other",
+};
+
+const formatEnumLabel = (
+  value: string | null | undefined,
+  labels: Record<string, string>
+) => {
+  if (!value) return null;
+  return labels[value] || value.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+};
+
+const buildEntrySummary = (visa: any) => {
+  if (visa.visaSubTypeLabel) return visa.visaSubTypeLabel;
+  const entryLabel = formatEnumLabel(visa.entryType, entryTypeLabels);
+  const stayLabel = formatEnumLabel(visa.stayType, stayTypeLabels);
+  const parts = [entryLabel, stayLabel].filter(Boolean);
+  if (parts.length) return parts.join(" • ");
+  return visa.entryTypeLegacy || "Flexible Entry";
+};
+
 export default async function CountryVisasPage({
   params,
 }: {
@@ -91,9 +128,17 @@ export default async function CountryVisasPage({
                   <div className="flex items-center">
                     <Info size={18} className="mr-3 text-primary-600" />
                     <span>
-                      <strong>Entry Type:</strong> {visa.entryType}
+                      <strong>Entry Type:</strong> {buildEntrySummary(visa)}
                     </span>
                   </div>
+                  {visa.visaMode && (
+                    <div className="flex items-center">
+                      <Info size={18} className="mr-3 text-primary-600" />
+                      <span>
+                        <strong>Mode:</strong> {formatEnumLabel(visa.visaMode, visaModeLabels)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between pt-6 border-t border-neutral-200">

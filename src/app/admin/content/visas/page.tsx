@@ -31,7 +31,11 @@ interface VisaRecord {
   priceInInr: number;
   processingTime: string;
   stayDuration: string;
-  entryType: string;
+  entryType?: string | null;
+  entryTypeLegacy?: string | null;
+  visaMode?: string | null;
+  stayType?: string | null;
+  visaSubTypeLabel?: string | null;
   isActive: boolean;
   isFeatured: boolean;
   // New fields
@@ -56,6 +60,49 @@ interface CountryOption {
 }
 
 const categories = ["Tourist", "Business", "Transit", "Student", "Other"];
+
+const visaModeLabels: Record<string, string> = {
+  EVISA: "eVisa",
+  STICKER: "Sticker",
+  VOA: "Visa on Arrival",
+  VFS: "VFS Appointment",
+  ETA: "ETA",
+  OTHER: "Other",
+};
+
+const entryTypeLabels: Record<string, string> = {
+  SINGLE: "Single Entry",
+  DOUBLE: "Double Entry",
+  MULTIPLE: "Multiple Entry",
+};
+
+const stayTypeLabels: Record<string, string> = {
+  SHORT_STAY: "Short Stay",
+  LONG_STAY: "Long Stay",
+};
+
+const formatEnumLabel = (
+  value: string | null | undefined,
+  labels: Record<string, string>
+) => {
+  if (!value) return null;
+  return labels[value] || value.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+};
+
+const buildVisaSubtypeLabel = (visa: VisaRecord) => {
+  if (visa.visaSubTypeLabel) {
+    return visa.visaSubTypeLabel;
+  }
+  const parts: string[] = [];
+  const entryLabel = formatEnumLabel(visa.entryType, entryTypeLabels);
+  const stayLabel = formatEnumLabel(visa.stayType, stayTypeLabels);
+  if (entryLabel) parts.push(entryLabel);
+  if (stayLabel) parts.push(stayLabel);
+  if (parts.length > 0) {
+    return parts.join(" • ");
+  }
+  return visa.entryTypeLegacy || "Not specified";
+};
 
 type VisaFilters = {
   countryId: string;
@@ -416,8 +463,18 @@ export default function AdminVisasPage() {
 
         {filteredVisas.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {filteredVisas.map((visa, index) => (
-              <motion.div
+            {filteredVisas.map((visa, index) => {
+              const visaModeDisplay =
+                formatEnumLabel(visa.visaMode, visaModeLabels) || "Not specified";
+              const entryDisplay =
+                formatEnumLabel(visa.entryType, entryTypeLabels) ||
+                visa.entryTypeLegacy ||
+                "Not specified";
+              const stayDisplay =
+                formatEnumLabel(visa.stayType, stayTypeLabels) || "Not specified";
+              const subtypeDisplay = buildVisaSubtypeLabel(visa);
+              return (
+                <motion.div
                 key={visa.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -491,8 +548,20 @@ export default function AdminVisasPage() {
                     </div>
                   </div>
                   <div>
+                    <div className="text-xs text-neutral-500 uppercase">Visa Mode</div>
+                    <div className="font-medium text-neutral-900">{visaModeDisplay}</div>
+                  </div>
+                  <div>
                     <div className="text-xs text-neutral-500 uppercase">Entry Type</div>
-                    <div className="font-medium text-neutral-900 capitalize">{visa.entryType}</div>
+                    <div className="font-medium text-neutral-900">{entryDisplay}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-neutral-500 uppercase">Stay Type</div>
+                    <div className="font-medium text-neutral-900">{stayDisplay}</div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <div className="text-xs text-neutral-500 uppercase">Subtype</div>
+                    <div className="font-medium text-neutral-900">{subtypeDisplay}</div>
                   </div>
                   <div>
                     <div className="text-xs text-neutral-500 uppercase">Documents</div>
@@ -529,8 +598,9 @@ export default function AdminVisasPage() {
                     </button>
                   </div>
                 </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-dashed border-neutral-200 p-12 text-center">

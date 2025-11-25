@@ -185,6 +185,7 @@ function buildTourData(body: any, resolvedSlug: string) {
     // Advance Payment
     allowAdvance: body.allowAdvance ?? false,
     advancePercentage: body.allowAdvance && body.advancePercentage ? Number(body.advancePercentage) : null,
+  requiresPassport: body.requiresPassport ?? false,
     
     // Content
     overview: body.overview || null,
@@ -239,30 +240,62 @@ export async function POST(req: Request) {
       slug?.trim() || slugify(name)
     );
 
-    const tour = await prisma.tour.create({
-      data: {
-        ...buildTourData(body, resolvedSlug),
-        days: days.length
-          ? {
-              create: days.map(
-                (day: { title: string; content: string; dayIndex?: number }, index: number) => ({
-                  title: day.title,
-                  content: day.content,
-                  dayIndex:
-                    typeof day.dayIndex === "number"
-                      ? day.dayIndex
-                      : index + 1,
-                })
-              ),
-            }
-          : undefined,
-      },
-      include: {
-        country: true,
-        days: {
-          orderBy: { dayIndex: "asc" },
+    const addOnsInput = Array.isArray(body.addOns) ? body.addOns : [];
+
+    const tour = await prisma.$transaction(async (tx) => {
+      const created = await tx.tour.create({
+        data: {
+          ...buildTourData(body, resolvedSlug),
+          days: days.length
+            ? {
+                create: days.map(
+                  (day: { title: string; content: string; dayIndex?: number }, index: number) => ({
+                    title: day.title,
+                    content: day.content,
+                    dayIndex:
+                      typeof day.dayIndex === "number"
+                        ? day.dayIndex
+                        : index + 1,
+                  })
+                ),
+              }
+            : undefined,
         },
-      },
+        include: {
+          country: true,
+          days: {
+            orderBy: { dayIndex: "asc" },
+          },
+        },
+      });
+
+      if (addOnsInput.length) {
+        await tx.tourAddOn.createMany({
+          data: addOnsInput.map((addOn: any, index: number) => ({
+            tourId: created.id,
+            name: addOn.name,
+            description: addOn.description || null,
+            price: Number(addOn.price || 0),
+            pricingType: addOn.pricingType || "PER_BOOKING",
+            isRequired: !!addOn.isRequired,
+            isActive: addOn.isActive ?? true,
+            sortOrder: typeof addOn.sortOrder === "number" ? addOn.sortOrder : index,
+          })),
+        });
+      }
+
+      return tx.tour.findUnique({
+        where: { id: created.id },
+        include: {
+          country: true,
+          days: {
+            orderBy: { dayIndex: "asc" },
+          },
+          addOns: {
+            orderBy: { sortOrder: "asc" },
+          },
+        },
+      });
     });
 
     return NextResponse.json(tour);
