@@ -146,6 +146,18 @@ model Booking {
   totalAmount   Int
   currency      String             @default("INR")
   travelDate    DateTime?
+  foodPreference          String?
+  foodPreferenceNotes     String?
+  languagePreference      String?
+  languagePreferenceOther String?
+  driverPreference        String?
+  specialRequests         String?
+  policyAccepted          Boolean            @default(false)
+  policyAcceptedAt        DateTime?
+  policyAcceptedByUserId  String?
+  policyVersion           String?
+  policyAcceptedIp        String?
+  policyAcceptedUserAgent String?
   processedBy   User?              @relation("ProcessedBy", fields: [processedById], references: [id])
   processedById String?
   voucherUrl    String? // URL to tour voucher
@@ -153,45 +165,33 @@ model Booking {
   invoiceUploadedAt DateTime? // When invoice was uploaded
   invoiceUploadedByAdminId String? // Admin who uploaded the invoice
   notes         String? // Admin notes
-  foodPreference String?
-  foodPreferenceNotes String?
-  languagePreference String?
-  languagePreferenceOther String?
-  driverPreference String?
-  specialRequests String?
-  policyAccepted Boolean         @default(false)
-  policyAcceptedAt DateTime?
-  policyAcceptedByUserId String?
-  policyAcceptedIp String?
-  policyAcceptedUserAgent String?
-  policyVersion String?
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
   travellers    BookingTraveller[]
+  addOns        BookingAddOn[]
   reviews       Review[]
   payments      Payment[]
-  addOns        BookingAddOn[]
 }
 
 model BookingTraveller {
-  id                    String     @id @default(cuid())
-  booking               Booking    @relation(fields: [bookingId], references: [id])
-  bookingId             String
-  traveller             Traveller? @relation(fields: [travellerId], references: [id])
-  travellerId           String?
-  firstName             String     @default("")
-  lastName              String     @default("")
-  fullName              String?
-  dateOfBirth           DateTime?
-  age                   Int?
-  gender                String?
-  nationality           String?
-  passportNumber        String?
-  passportExpiry        DateTime?
+  id                     String     @id @default(cuid())
+  booking                Booking    @relation(fields: [bookingId], references: [id])
+  bookingId              String
+  traveller              Traveller? @relation(fields: [travellerId], references: [id])
+  travellerId            String?
+  firstName              String
+  lastName               String
+  dateOfBirth            DateTime?
+  age                    Int?
+  gender                 String?
+  nationality            String?
+  passportNumber         String?
+  passportExpiry         DateTime?
   passportIssuingCountry String?
-  passportFileKey       String?
-  isPassportRequired    Boolean    @default(false)
-  createdAt             DateTime   @default(now())
+  passportFileKey        String?
+  isPassportRequired     Boolean    @default(false)
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt
 }
 
 model Country {
