@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { CertificationsBar } from "@/components/layout/CertificationsBar";
 import { HelpButton } from "@/components/ui/HelpButton";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
@@ -49,6 +50,7 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
+          <CertificationsBar />
           <HelpButton />
         </SessionProvider>
       </body>

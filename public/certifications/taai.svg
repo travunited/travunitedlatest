@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 80">
+  <rect width="220" height="80" fill="#ffffff"/>
+  <path d="M110 15l70 110H40z" fill="#c21807" transform="scale(0.7) translate(45 10)"/>
+  <text x="110" y="45" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="34" font-weight="700" fill="#c21807">TAAI</text>
+  <text x="110" y="65" text-anchor="middle" font-family="Inter, Arial, Helvetica, sans-serif" font-size="12" font-weight="600" fill="#c21807">Travel Agents Association of India</text>
+</svg>
+
