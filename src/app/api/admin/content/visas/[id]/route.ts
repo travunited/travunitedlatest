@@ -216,53 +216,63 @@ export async function PUT(
     const requirements = body.requirements !== undefined ? body.requirements : [];
     const faqs = body.faqs !== undefined ? body.faqs : [];
 
-    // Validate required fields using merged values
-    // Since we merge with existing values, empty strings from frontend won't break validation
-    // We only validate the final merged values to ensure they're valid
+    // Validate required fields
+    // Only validate fields that are actually being updated (not just present in payload)
+    // This allows partial updates like toggling featured without requiring all fields
     const missingFields: string[] = [];
     
-    // Check if this is a minimal update (only boolean flags like isFeatured/isActive)
-    // If so, skip validation since we're just toggling flags
-    const providedFields = Object.keys(body).filter(key => {
+    // Check which fields are actually being updated (have non-empty values in request)
+    const updatedFields = new Set<string>();
+    Object.keys(body).forEach(key => {
       const value = body[key];
-      // Ignore empty strings, null, undefined, and empty arrays
-      if (value === undefined || value === null) return false;
-      if (typeof value === 'string' && value.trim() === '') return false;
-      if (Array.isArray(value) && value.length === 0) return false;
-      return true;
+      // Consider a field "updated" if it has a meaningful value
+      if (value !== undefined && value !== null) {
+        if (typeof value === 'string' && value.trim() !== '') {
+          updatedFields.add(key);
+        } else if (typeof value === 'boolean' || typeof value === 'number') {
+          updatedFields.add(key);
+        } else if (Array.isArray(value) && value.length > 0) {
+          updatedFields.add(key);
+        }
+      }
     });
     
-    const isMinimalUpdate = providedFields.length <= 2 && 
-      (providedFields.includes('isFeatured') || providedFields.includes('isActive'));
+    // Check if this is a minimal update (only boolean flags or very few fields)
+    const isMinimalUpdate = updatedFields.size <= 3 && 
+      (updatedFields.has('isFeatured') || updatedFields.has('isActive'));
     
     // For minimal updates (like toggling featured), skip validation
-    // For full updates, validate all required fields using merged values
+    // For full updates, validate required fields but only if they have existing values
+    // This allows partial updates without forcing users to fill empty fields
     if (!isMinimalUpdate) {
-      if (!countryId || (typeof countryId === 'string' && countryId.trim() === "")) {
+      // Only validate required fields if they have existing values
+      // If existing is empty, allow it to stay empty (don't force users to fill empty fields)
+      
+      if (existingVisa.countryId && (!countryId || (typeof countryId === 'string' && countryId.trim() === ""))) {
         missingFields.push("countryId");
       }
-      if (!name || (typeof name === 'string' && name.trim() === "")) {
+      if (existingVisa.name && existingVisa.name.trim() !== "" && (!name || (typeof name === 'string' && name.trim() === ""))) {
         missingFields.push("name");
       }
-      if (!category || (typeof category === 'string' && category.trim() === "")) {
+      if (existingVisa.category && existingVisa.category.trim() !== "" && (!category || (typeof category === 'string' && category.trim() === ""))) {
         missingFields.push("category");
       }
-      if (priceInInr === undefined || priceInInr === null) {
+      if (existingVisa.priceInInr !== null && existingVisa.priceInInr !== undefined && (priceInInr === undefined || priceInInr === null)) {
         missingFields.push("priceInInr");
       }
-      if (!processingTime || (typeof processingTime === 'string' && processingTime.trim() === "")) {
+      if (existingVisa.processingTime && existingVisa.processingTime.trim() !== "" && (!processingTime || (typeof processingTime === 'string' && processingTime.trim() === ""))) {
         missingFields.push("processingTime");
       }
-      if (!stayDuration || (typeof stayDuration === 'string' && stayDuration.trim() === "")) {
+      if (existingVisa.stayDuration && existingVisa.stayDuration.trim() !== "" && (!stayDuration || (typeof stayDuration === 'string' && stayDuration.trim() === ""))) {
         missingFields.push("stayDuration");
       }
-      if (!validity || (typeof validity === 'string' && validity.trim() === "")) {
+      if (existingVisa.validity && existingVisa.validity.trim() !== "" && (!validity || (typeof validity === 'string' && validity.trim() === ""))) {
         missingFields.push("validity");
       }
-      if (!overview || (typeof overview === 'string' && overview.trim() === "")) {
+      if (existingVisa.overview && existingVisa.overview.trim() !== "" && (!overview || (typeof overview === 'string' && overview.trim() === ""))) {
         missingFields.push("overview");
       }
-      if (!eligibility || (typeof eligibility === 'string' && eligibility.trim() === "")) {
+      if (existingVisa.eligibility && existingVisa.eligibility.trim() !== "" && (!eligibility || (typeof eligibility === 'string' && eligibility.trim() === ""))) {
         missingFields.push("eligibility");
       }
     }
