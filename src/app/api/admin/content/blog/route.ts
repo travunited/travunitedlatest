@@ -72,9 +72,19 @@ export async function GET(req: Request) {
 
     const formatted = posts.map((post) => {
       // Derive status from isPublished and publishedAt
-      const derivedStatus = post.isPublished 
-        ? (post.publishedAt && post.publishedAt > new Date() ? "SCHEDULED" : "PUBLISHED")
-        : "DRAFT";
+      let derivedStatus: "DRAFT" | "PUBLISHED" | "SCHEDULED" = "DRAFT";
+      const now = new Date();
+      
+      if (post.isPublished) {
+        // If published, it's PUBLISHED (even if publishedAt is in future, it's already published)
+        derivedStatus = "PUBLISHED";
+      } else if (post.publishedAt && post.publishedAt > now) {
+        // If not published but has future publishedAt, it's SCHEDULED
+        derivedStatus = "SCHEDULED";
+      } else {
+        // Otherwise it's a DRAFT
+        derivedStatus = "DRAFT";
+      }
       
       return {
         ...post,
@@ -162,9 +172,16 @@ export async function POST(req: Request) {
     });
 
     // Derive status from isPublished and publishedAt
-    const derivedStatus = post.isPublished 
-      ? (post.publishedAt && post.publishedAt > new Date() ? "SCHEDULED" : "PUBLISHED")
-      : "DRAFT";
+    let derivedStatus: "DRAFT" | "PUBLISHED" | "SCHEDULED" = "DRAFT";
+    const now = new Date();
+    
+    if (post.isPublished) {
+      derivedStatus = "PUBLISHED";
+    } else if (post.publishedAt && post.publishedAt > now) {
+      derivedStatus = "SCHEDULED";
+    } else {
+      derivedStatus = "DRAFT";
+    }
 
     return NextResponse.json({
       ...post,

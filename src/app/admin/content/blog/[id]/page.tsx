@@ -50,30 +50,107 @@ export default function AdminBlogEditPage() {
   const [coverUploading, setCoverUploading] = useState(false);
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState<Partial<BlogPost>>({
-    title: "",
-    slug: "",
-    coverImage: "",
-    excerpt: "",
-    category: "",
-    readTime: "",
-    content: "",
-    published: false,
-    metaTitle: "",
-    metaDescription: "",
-    focusKeyword: "",
-    author: "",
-    status: "DRAFT",
-    publishedAt: null,
-    updatedAt: null,
+  // SessionStorage key for draft persistence
+  const draftKey = isNew ? `blogDraft:new` : `blogDraft:${params.id}`;
+
+  // Load draft from sessionStorage on mount
+  const loadDraft = useCallback((): Partial<BlogPost> | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      const draft = sessionStorage.getItem(draftKey);
+      if (draft) {
+        return JSON.parse(draft);
+      }
+    } catch (error) {
+      console.error("Error loading draft from sessionStorage:", error);
+    }
+    return null;
+  }, [draftKey]);
+
+  // Save draft to sessionStorage (debounced)
+  const saveDraftDebounced = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout | null = null;
+      return (data: Partial<BlogPost>) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          if (typeof window !== "undefined") {
+            try {
+              sessionStorage.setItem(draftKey, JSON.stringify(data));
+            } catch (error) {
+              console.error("Error saving draft to sessionStorage:", error);
+            }
+          }
+        }, 500); // Debounce 500ms
+      };
+    })(),
+    [draftKey]
+  );
+
+  // Clear draft from sessionStorage
+  const clearDraft = useCallback(() => {
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.removeItem(draftKey);
+      } catch (error) {
+        console.error("Error clearing draft from sessionStorage:", error);
+      }
+    }
+  }, [draftKey]);
+
+  const [formData, setFormData] = useState<Partial<BlogPost>>(() => {
+    // Try to load from draft first
+    const draft = loadDraft();
+    if (draft) {
+      return {
+        title: "",
+        slug: "",
+        coverImage: "",
+        excerpt: "",
+        category: "",
+        readTime: "",
+        content: "",
+        published: false,
+        metaTitle: "",
+        metaDescription: "",
+        focusKeyword: "",
+        author: "",
+        status: "DRAFT",
+        publishedAt: null,
+        updatedAt: null,
+        ...draft, // Override with draft data
+      };
+    }
+    return {
+      title: "",
+      slug: "",
+      coverImage: "",
+      excerpt: "",
+      category: "",
+      readTime: "",
+      content: "",
+      published: false,
+      metaTitle: "",
+      metaDescription: "",
+      focusKeyword: "",
+      author: "",
+      status: "DRAFT",
+      publishedAt: null,
+      updatedAt: null,
+    };
   });
+
+  // Save to sessionStorage whenever formData changes
+  useEffect(() => {
+    saveDraftDebounced(formData);
+  }, [formData, saveDraftDebounced]);
 
   const fetchPost = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/content/blog/${params.id}`);
       if (response.ok) {
         const data = await response.json();
-        setFormData({
+        const serverData = {
           ...data,
           published: data.published ?? data.isPublished ?? false, // Handle both field names
           coverImage: getMediaProxyUrl(data.coverImage),
@@ -82,10 +159,19 @@ export default function AdminBlogEditPage() {
           focusKeyword: data.focusKeyword || "",
           author: data.author || "",
           status: data.status || "DRAFT",
-          publishedAt: data.publishedAt ? new Date(data.publishedAt).toISOString().split('T')[0] : null,
+          publishedAt: data.publishedAt ? new Date(data.publishedAt).toISOString().slice(0, 16) : null, // Keep datetime for scheduled posts
           updatedAt: data.updatedAt ? new Date(data.updatedAt).toISOString().split('T')[0] : null,
           createdAt: data.createdAt ? new Date(data.createdAt).toISOString().split('T')[0] : null,
-        });
+        };
+        
+        // Merge with draft if it exists (draft takes precedence)
+        const draft = loadDraft();
+        if (draft) {
+          setFormData({ ...serverData, ...draft });
+        } else {
+          setFormData(serverData);
+        }
+        
         if (data.coverImage && !data.coverImage.startsWith("http")) {
           setCoverImageMode("upload");
         } else if (data.coverImage) {
@@ -97,7 +183,7 @@ export default function AdminBlogEditPage() {
     } finally {
       setLoading(false);
     }
-  }, [params.id]);
+  }, [params.id, loadDraft]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -113,6 +199,21 @@ export default function AdminBlogEditPage() {
       }
     }
   }, [session, status, router, isNew, fetchPost]);
+
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Check if there's a draft (indicating unsaved changes)
+      const draft = loadDraft();
+      if (draft) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [loadDraft]);
 
   const generateSlug = (title: string) => {
     return title
@@ -247,7 +348,12 @@ export default function AdminBlogEditPage() {
         submitData.status = formData.status;
       }
       if (formData.publishedAt) {
-        submitData.publishedAt = formData.publishedAt;
+        // For scheduled posts, ensure we send full datetime
+        if (formData.status === "SCHEDULED") {
+          submitData.publishedAt = new Date(formData.publishedAt).toISOString();
+        } else {
+          submitData.publishedAt = formData.publishedAt;
+        }
       }
 
       console.log("Submitting blog post:", {
@@ -262,6 +368,8 @@ export default function AdminBlogEditPage() {
       });
 
       if (response.ok) {
+        // Clear draft on successful save
+        clearDraft();
         router.push("/admin/content/blog");
       } else {
         let errorData: any = {};
@@ -551,13 +659,24 @@ export default function AdminBlogEditPage() {
                     value={formData.status || "DRAFT"}
                     onChange={(e) => {
                       const newStatus = e.target.value;
+                      let newPublishedAt = formData.publishedAt;
+                      
+                      if (newStatus === "PUBLISHED" && !formData.publishedAt) {
+                        // Set to now for immediate publish
+                        newPublishedAt = new Date().toISOString().slice(0, 16);
+                      } else if (newStatus === "SCHEDULED" && !formData.publishedAt) {
+                        // Set to tomorrow at 9 AM for scheduled posts
+                        const tomorrow = new Date();
+                        tomorrow.setDate(tomorrow.getDate() + 1);
+                        tomorrow.setHours(9, 0, 0, 0);
+                        newPublishedAt = tomorrow.toISOString().slice(0, 16);
+                      }
+                      
                       setFormData({ 
                         ...formData, 
                         status: newStatus,
                         published: newStatus === "PUBLISHED",
-                        publishedAt: newStatus === "PUBLISHED" && !formData.publishedAt 
-                          ? new Date().toISOString().split('T')[0] 
-                          : formData.publishedAt
+                        publishedAt: newPublishedAt
                       });
                     }}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
@@ -570,14 +689,51 @@ export default function AdminBlogEditPage() {
                 {(formData.status === "PUBLISHED" || formData.status === "SCHEDULED") && (
                   <div>
                     <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      {formData.status === "SCHEDULED" ? "Scheduled Date" : "Published Date"}
+                      {formData.status === "SCHEDULED" ? "Scheduled Date & Time" : "Published Date"}
                     </label>
-                    <input
-                      type="date"
-                      value={formData.publishedAt || ""}
-                      onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                    />
+                    {formData.status === "SCHEDULED" ? (
+                      <div className="space-y-2">
+                        <input
+                          type="date"
+                          value={formData.publishedAt ? formData.publishedAt.split('T')[0] : ""}
+                          onChange={(e) => {
+                            const date = e.target.value;
+                            const existingDateTime = formData.publishedAt ? new Date(formData.publishedAt) : new Date();
+                            const time = existingDateTime.toTimeString().slice(0, 5); // HH:mm
+                            setFormData({ 
+                              ...formData, 
+                              publishedAt: date ? `${date}T${time}` : null 
+                            });
+                          }}
+                          className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                        />
+                        <input
+                          type="time"
+                          value={formData.publishedAt ? new Date(formData.publishedAt).toTimeString().slice(0, 5) : ""}
+                          onChange={(e) => {
+                            const time = e.target.value;
+                            const existingDate = formData.publishedAt ? formData.publishedAt.split('T')[0] : new Date().toISOString().split('T')[0];
+                            setFormData({ 
+                              ...formData, 
+                              publishedAt: existingDate ? `${existingDate}T${time}` : null 
+                            });
+                          }}
+                          className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                        />
+                        {formData.publishedAt && new Date(formData.publishedAt) <= new Date() && (
+                          <p className="text-xs text-red-600">
+                            Scheduled time must be in the future
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <input
+                        type="date"
+                        value={formData.publishedAt ? formData.publishedAt.split('T')[0] : ""}
+                        onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
+                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      />
+                    )}
                   </div>
                 )}
                 <div className="grid md:grid-cols-2 gap-4">
@@ -612,12 +768,18 @@ export default function AdminBlogEditPage() {
 
           {/* Actions */}
           <div className="flex items-center justify-end space-x-4">
-            <Link
-              href="/admin/content/blog"
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm("Discard unsaved changes?")) {
+                  clearDraft();
+                  router.push("/admin/content/blog");
+                }
+              }}
               className="px-6 py-2 border border-neutral-300 rounded-lg font-medium hover:bg-neutral-50"
             >
               Cancel
-            </Link>
+            </button>
             <button
               type="submit"
               disabled={saving}

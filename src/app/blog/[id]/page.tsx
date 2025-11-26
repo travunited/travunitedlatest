@@ -11,8 +11,23 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
     where: { slug: params.id },
   });
 
-  if (!post || !post.isPublished) {
+  if (!post) {
     notFound();
+  }
+
+  const now = new Date();
+  const isReady = post.isPublished || (post.publishedAt && post.publishedAt <= now);
+
+  if (!isReady) {
+    notFound();
+  }
+
+  // Auto-promote scheduled post if it's ready
+  if (!post.isPublished && post.publishedAt && post.publishedAt <= now) {
+    await prisma.blogPost.update({
+      where: { id: post.id },
+      data: { isPublished: true },
+    });
   }
 
   const publishedDate = formatDate(post.publishedAt ?? post.createdAt);

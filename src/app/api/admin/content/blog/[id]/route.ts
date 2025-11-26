@@ -86,15 +86,24 @@ export async function GET(
       );
     }
 
+    // Derive status from isPublished and publishedAt
+    let derivedStatus: "DRAFT" | "PUBLISHED" | "SCHEDULED" = "DRAFT";
+    const now = new Date();
+    
+    if (post.isPublished) {
+      derivedStatus = "PUBLISHED";
+    } else if (post.publishedAt && post.publishedAt > now) {
+      derivedStatus = "SCHEDULED";
+    } else {
+      derivedStatus = "DRAFT";
+    }
+
     return NextResponse.json({
       ...post,
       published: post.isPublished, // Map isPublished to published for frontend consistency
       coverImage: getMediaProxyUrl(post.coverImage),
       isFeatured: post.isFeatured,
-      // Derive status from isPublished and publishedAt
-      status: post.isPublished 
-        ? (post.publishedAt && post.publishedAt > new Date() ? "SCHEDULED" : "PUBLISHED")
-        : "DRAFT",
+      status: derivedStatus,
     });
   } catch (error) {
     console.error("Error fetching blog post:", error);
@@ -240,11 +249,15 @@ export async function PUT(
     }
     // Handle publishedAt separately (for scheduled posts)
     if (data.publishedAt !== undefined && data.publishedAt !== null) {
-      updateData.publishedAt = new Date(data.publishedAt);
+      const publishedDate = new Date(data.publishedAt);
+      updateData.publishedAt = publishedDate;
+      
       // If publishedAt is in the future and status is SCHEDULED, keep isPublished false
-      const scheduledDate = new Date(data.publishedAt);
-      if (scheduledDate > new Date() && data.status === "SCHEDULED") {
+      if (publishedDate > new Date() && data.status === "SCHEDULED") {
         updateData.isPublished = false;
+      } else if (publishedDate <= new Date() && data.status === "SCHEDULED") {
+        // If scheduled time has passed, auto-publish
+        updateData.isPublished = true;
       }
     }
     // SEO & Metadata fields
@@ -270,9 +283,16 @@ export async function PUT(
     });
 
     // Derive status from isPublished and publishedAt
-    const derivedStatus = updated.isPublished 
-      ? (updated.publishedAt && updated.publishedAt > new Date() ? "SCHEDULED" : "PUBLISHED")
-      : "DRAFT";
+    let derivedStatus: "DRAFT" | "PUBLISHED" | "SCHEDULED" = "DRAFT";
+    const now = new Date();
+    
+    if (updated.isPublished) {
+      derivedStatus = "PUBLISHED";
+    } else if (updated.publishedAt && updated.publishedAt > now) {
+      derivedStatus = "SCHEDULED";
+    } else {
+      derivedStatus = "DRAFT";
+    }
 
     return NextResponse.json({
       ...updated,
@@ -329,9 +349,16 @@ export async function PATCH(
     });
 
     // Derive status from isPublished and publishedAt
-    const derivedStatus = updated.isPublished 
-      ? (updated.publishedAt && updated.publishedAt > new Date() ? "SCHEDULED" : "PUBLISHED")
-      : "DRAFT";
+    let derivedStatus: "DRAFT" | "PUBLISHED" | "SCHEDULED" = "DRAFT";
+    const now = new Date();
+    
+    if (updated.isPublished) {
+      derivedStatus = "PUBLISHED";
+    } else if (updated.publishedAt && updated.publishedAt > now) {
+      derivedStatus = "SCHEDULED";
+    } else {
+      derivedStatus = "DRAFT";
+    }
 
     return NextResponse.json({
       ...updated,

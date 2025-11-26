@@ -68,6 +68,31 @@ function AdminBookingsPageContent() {
     }
   }, [statusFilter, tourFilter, assignedFilter, dateFrom, dateTo, searchParamsKey]);
 
+  const [admins, setAdmins] = useState<Array<{ id: string; name: string; email: string }>>([]);
+  const [bulkActionMessage, setBulkActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const fetchAdmins = useCallback(async () => {
+    try {
+      const response = await fetch("/api/admin/settings/admins");
+      if (response.ok) {
+        const data = await response.json();
+        setAdmins(data.map((admin: { id: string; name: string; email: string }) => ({
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+        })));
+      }
+    } catch (error) {
+      console.error("Error fetching admins:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchAdmins();
+    }
+  }, [status, fetchAdmins]);
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -130,15 +155,16 @@ function AdminBookingsPageContent() {
     if (selectedRows.size === 0) return;
 
     setBulkActionLoading(true);
+    setBulkActionMessage(null);
     try {
       switch (action) {
         case "assign":
           if (!value) {
-            alert("Please select an admin to assign");
+            setBulkActionMessage({ type: "error", text: "Please select an admin to assign" });
             setBulkActionLoading(false);
             return;
           }
-          await fetch("/api/admin/bookings/bulk/assign", {
+          const assignResponse = await fetch("/api/admin/bookings/bulk/assign", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -146,14 +172,19 @@ function AdminBookingsPageContent() {
               adminId: value,
             }),
           });
+          if (!assignResponse.ok) {
+            const errorData = await assignResponse.json().catch(() => ({}));
+            throw new Error(errorData.error || "Failed to assign bookings");
+          }
+          setBulkActionMessage({ type: "success", text: `Successfully assigned ${selectedRows.size} booking(s)` });
           break;
         case "status":
           if (!value) {
-            alert("Please select a status");
+            setBulkActionMessage({ type: "error", text: "Please select a status" });
             setBulkActionLoading(false);
             return;
           }
-          await fetch("/api/admin/bookings/bulk/status", {
+          const statusResponse = await fetch("/api/admin/bookings/bulk/status", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -161,40 +192,73 @@ function AdminBookingsPageContent() {
               status: value,
             }),
           });
+          if (!statusResponse.ok) {
+            const errorData = await statusResponse.json().catch(() => ({}));
+            throw new Error(errorData.error || "Failed to update booking status");
+          }
+          setBulkActionMessage({ type: "success", text: `Successfully updated ${selectedRows.size} booking(s) status` });
           break;
         case "export":
-          window.location.href = `/api/admin/bookings/export?ids=${Array.from(selectedRows).join(",")}`;
-          break;
+          const exportResponse = await fetch(`/api/admin/bookings/export?ids=${Array.from(selectedRows).join(",")}`);
+          if (!exportResponse.ok) {
+            const errorData = await exportResponse.json().catch(() => ({}));
+            throw new Error(errorData.error || "Failed to export bookings");
+          }
+          const blob = await exportResponse.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `bookings-${new Date().toISOString().split("T")[0]}.csv`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          setBulkActionMessage({ type: "success", text: `Successfully exported ${selectedRows.size} booking(s)` });
+          setBulkActionLoading(false);
+          return;
         case "resend":
-          await fetch("/api/admin/bookings/bulk/resend-email", {
+          const resendResponse = await fetch("/api/admin/bookings/bulk/resend-email", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               bookingIds: Array.from(selectedRows),
             }),
           });
+          if (!resendResponse.ok) {
+            const errorData = await resendResponse.json().catch(() => ({}));
+            throw new Error(errorData.error || "Failed to resend emails");
+          }
+          setBulkActionMessage({ type: "success", text: `Successfully resent emails for ${selectedRows.size} booking(s)` });
           break;
         case "delete":
           if (!confirm("Are you absolutely sure? This action cannot be undone.")) {
             setBulkActionLoading(false);
             return;
           }
-          await fetch("/api/admin/bookings/bulk/delete", {
+          const deleteResponse = await fetch("/api/admin/bookings/bulk/delete", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               bookingIds: Array.from(selectedRows),
             }),
           });
+          if (!deleteResponse.ok) {
+            const errorData = await deleteResponse.json().catch(() => ({}));
+            throw new Error(errorData.error || "Failed to delete bookings");
+          }
+          setBulkActionMessage({ type: "success", text: `Successfully deleted ${selectedRows.size} booking(s)` });
           break;
       }
       await fetchBookings();
       setSelectedRows(new Set());
       setShowBulkActions(false);
-      alert("Bulk action completed");
+      // Clear message after 5 seconds
+      setTimeout(() => setBulkActionMessage(null), 5000);
     } catch (error) {
       console.error("Error performing bulk action:", error);
-      alert("Failed to perform bulk action");
+      const errorMessage = error instanceof Error ? error.message : "Failed to perform bulk action";
+      setBulkActionMessage({ type: "error", text: errorMessage });
+      setTimeout(() => setBulkActionMessage(null), 5000);
     } finally {
       setBulkActionLoading(false);
     }
@@ -300,25 +364,50 @@ function AdminBookingsPageContent() {
 
         {/* Bulk Actions */}
         {showBulkActions && (
-          <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 mb-6 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+          <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-neutral-900">
                 {selectedRows.size} booking(s) selected
               </span>
-              <div className="flex items-center space-x-2">
-                <select
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      handleBulkAction("assign", e.target.value);
-                      e.target.value = "";
-                    }
-                  }}
-                  className="px-3 py-1 border border-neutral-300 rounded text-sm"
-                  disabled={bulkActionLoading}
-                >
-                  <option value="">Bulk Assign To...</option>
-                  <option value="current">Assign to Me</option>
-                </select>
+              <button
+                onClick={() => {
+                  setSelectedRows(new Set());
+                  setShowBulkActions(false);
+                  setBulkActionMessage(null);
+                }}
+                className="text-sm text-neutral-600 hover:text-neutral-900"
+              >
+                Clear Selection
+              </button>
+            </div>
+            {bulkActionMessage && (
+              <div className={`mb-3 p-2 rounded text-sm ${
+                bulkActionMessage.type === "success" 
+                  ? "bg-green-100 text-green-700" 
+                  : "bg-red-100 text-red-700"
+              }`}>
+                {bulkActionMessage.text}
+              </div>
+            )}
+            <div className="flex items-center space-x-2 flex-wrap gap-2">
+              <select
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleBulkAction("assign", e.target.value);
+                    e.target.value = "";
+                  }
+                }}
+                className="px-3 py-1 border border-neutral-300 rounded text-sm"
+                disabled={bulkActionLoading}
+              >
+                <option value="">Bulk Assign To...</option>
+                <option value="current">Assign to Me</option>
+                {admins.map((admin) => (
+                  <option key={admin.id} value={admin.id}>
+                    {admin.name} ({admin.email})
+                  </option>
+                ))}
+              </select>
                 <select
                   onChange={(e) => {
                     if (e.target.value) {
@@ -359,16 +448,6 @@ function AdminBookingsPageContent() {
                   <span>Delete</span>
                 </button>
               </div>
-            </div>
-            <button
-              onClick={() => {
-                setSelectedRows(new Set());
-                setShowBulkActions(false);
-              }}
-              className="text-sm text-neutral-600 hover:text-neutral-900"
-            >
-              Clear Selection
-            </button>
           </div>
         )}
 

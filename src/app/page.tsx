@@ -75,9 +75,19 @@ export default async function Home() {
   // Fetch featured blogs (prefer featured, fallback to latest) with error handling
   let featuredBlogs: Prisma.BlogPostGetPayload<{}>[] = [];
   try {
+    const now = new Date();
+    
+    // Fetch posts that are published OR scheduled posts that are ready
     featuredBlogs = await prisma.blogPost.findMany({
       where: {
-        isPublished: true,
+        OR: [
+          { isPublished: true },
+          {
+            // Scheduled posts that are ready (publishedAt <= now)
+            isPublished: false,
+            publishedAt: { lte: now },
+          },
+        ],
       },
       orderBy: [
         { isFeatured: "desc" }, // Featured first
@@ -85,6 +95,29 @@ export default async function Home() {
       ],
       take: 3,
     });
+
+    // Auto-promote scheduled posts that are ready
+    const readyScheduledPosts = featuredBlogs.filter(
+      (post) => !post.isPublished && post.publishedAt && post.publishedAt <= now
+    );
+
+    if (readyScheduledPosts.length > 0) {
+      await prisma.blogPost.updateMany({
+        where: {
+          id: { in: readyScheduledPosts.map((p) => p.id) },
+        },
+        data: {
+          isPublished: true,
+        },
+      });
+
+      // Update the posts array to reflect the change
+      featuredBlogs = featuredBlogs.map((post) =>
+        readyScheduledPosts.some((p) => p.id === post.id)
+          ? { ...post, isPublished: true }
+          : post
+      );
+    }
   } catch (error) {
     console.error("Error fetching featured blogs:", error);
     // Continue with empty array
