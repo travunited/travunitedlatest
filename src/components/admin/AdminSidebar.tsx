@@ -26,6 +26,7 @@ import {
   Clock,
   TrendingUp,
   Briefcase,
+  Star,
 } from "lucide-react";
 
 const BASE_MENU_ITEMS = [
@@ -52,6 +53,12 @@ const BASE_MENU_ITEMS = [
     href: "/admin/reviews",
     icon: MessageSquare,
     roles: ["STAFF_ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    label: "Homepage Reviews",
+    href: "/admin/reviews/homepage",
+    icon: Star,
+    roles: ["SUPER_ADMIN"],
   },
   {
     label: "Customers",

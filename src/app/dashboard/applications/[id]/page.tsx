@@ -72,6 +72,18 @@ export default function ApplicationDetailPage() {
     }
   }, [session, fetchApplication]);
 
+  // Auto-scroll to payment section if hash is present
+  useEffect(() => {
+    if (application?.status === "PAYMENT_PENDING" && window.location.hash === "#payment") {
+      setTimeout(() => {
+        const paymentSection = document.getElementById("payment");
+        if (paymentSection) {
+          paymentSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
+  }, [application]);
+
   const handleDocumentReupload = async (documentId: string, file: File) => {
     setUploading(documentId);
     try {
@@ -416,7 +428,7 @@ export default function ApplicationDetailPage() {
 
             {/* Payment Pending */}
             {application.status === "PAYMENT_PENDING" && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
+              <div id="payment" className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
                 <h2 className="text-xl font-bold text-yellow-900 mb-4 flex items-center space-x-2">
                   <AlertCircle size={24} />
                   <span>Payment Pending</span>

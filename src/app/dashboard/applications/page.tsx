@@ -90,7 +90,7 @@ export default function ApplicationsPage() {
     if (app.status === "PAYMENT_PENDING") {
       actions.push({
         label: "Pay Now",
-        href: `/dashboard/applications/${app.id}`,
+        href: `/dashboard/applications/${app.id}#payment`,
         icon: CreditCard,
         variant: "primary",
       });
@@ -103,15 +103,13 @@ export default function ApplicationsPage() {
         icon: Eye,
       });
       
-      // Add Invoice button only if invoiceUrl exists
-      if (app.invoiceUrl) {
-        actions.push({
-          label: "Download Invoice",
-          href: `/api/invoices/download/application/${app.id}`,
-          icon: FileText,
-          download: true,
-        });
-      }
+      // Add Invoice button - use the blob API route instead of redirect route
+      actions.push({
+        label: "Download Invoice",
+        href: `/api/invoices/application/${app.id}`,
+        icon: FileText,
+        download: true,
+      });
       
       const rejectedDocs = app.documents?.filter(d => d.status === "REJECTED");
       if (rejectedDocs && rejectedDocs.length > 0) {
