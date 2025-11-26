@@ -83,9 +83,11 @@ export function BlogHighlights({ posts }: { posts?: HighlightPost[] }) {
                         target.src = "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1200&q=80";
                       }}
                     />
-                    <div className="absolute top-4 left-4 bg-primary-600 text-white px-3 py-1 rounded-full text-xs font-medium">
-                      {post.category}
-                    </div>
+                    {post.category && (
+                      <div className="absolute top-4 left-4 bg-primary-600 text-white px-3 py-1 rounded-full text-xs font-medium">
+                        {typeof post.category === 'string' ? post.category : String(post.category)}
+                      </div>
+                    )}
                   </div>
                   <div className="p-6">
                     <div className="flex items-center text-neutral-500 text-sm mb-3">

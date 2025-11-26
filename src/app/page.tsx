@@ -162,7 +162,7 @@ export default async function Home() {
     excerpt: post.excerpt,
     image: getMediaProxyUrl(post.coverImage),
     date: (post.publishedAt ?? post.createdAt).toISOString(),
-    category: post.category,
+    category: typeof post.category === 'string' ? post.category : String(post.category || ''),
   }));
 
   return (

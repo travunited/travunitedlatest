@@ -91,6 +91,11 @@ export async function DELETE(
 
     const traveller = await prisma.traveller.findUnique({
       where: { id: params.id },
+      include: {
+        applications: {
+          select: { id: true },
+        },
+      },
     });
 
     if (!traveller || traveller.userId !== session.user.id) {
@@ -100,13 +105,35 @@ export async function DELETE(
       );
     }
 
+    // Check if traveller is used in any applications
+    if (traveller.applications && traveller.applications.length > 0) {
+      return NextResponse.json(
+        { 
+          error: "Cannot delete traveller. This traveller is associated with one or more visa applications. Please delete the applications first.",
+          applicationsCount: traveller.applications.length,
+        },
+        { status: 400 }
+      );
+    }
+
     await prisma.traveller.delete({
       where: { id: params.id },
     });
 
     return NextResponse.json({ message: "Traveller deleted successfully" });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting traveller:", error);
+    
+    // Handle foreign key constraint error
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { 
+          error: "Cannot delete traveller. This traveller is associated with one or more visa applications. Please delete the applications first.",
+        },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
