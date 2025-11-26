@@ -142,6 +142,7 @@ export function ImportModal({
           setImportResult(data.summary || {
             totalRows: summary?.totalRows || 0,
             validRows: summary?.validRows || 0,
+            invalidRows: summary?.invalidRows || 0,
             created: 0,
             updated: 0,
             failed: data.failed?.length || 0,
@@ -178,6 +179,7 @@ export function ImportModal({
         setImportResult({
           totalRows: summary?.totalRows || 0,
           validRows: summary?.validRows || 0,
+          invalidRows: summary?.invalidRows || 0,
           created: 0,
           updated: 0,
           failed: summary?.validRows || 0,
@@ -189,6 +191,7 @@ export function ImportModal({
       setImportResult({
         totalRows: summary?.totalRows || 0,
         validRows: summary?.validRows || 0,
+        invalidRows: summary?.invalidRows || 0,
         created: 0,
         updated: 0,
         failed: summary?.validRows || 0,
