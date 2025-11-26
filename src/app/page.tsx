@@ -42,7 +42,7 @@ export default async function Home() {
     // Continue with empty array
   }
 
-  // Fetch featured tours (max 6) with error handling
+  // Fetch featured tours (max 8) with error handling
   let featuredTours: Prisma.TourGetPayload<{
     include: { country: { select: { id: true; name: true; code: true } } };
   }>[] = [];
@@ -65,7 +65,7 @@ export default async function Home() {
       orderBy: {
         updatedAt: "desc",
       },
-      take: 6,
+      take: 8,
     });
   } catch (error) {
     console.error("Error fetching featured tours:", error);
