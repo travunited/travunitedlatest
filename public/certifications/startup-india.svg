@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 80">
-  <rect width="220" height="80" fill="#ffffff"/>
-  <text x="10" y="45" font-family="Inter, Arial, Helvetica, sans-serif" font-size="32" font-weight="700" fill="#f15a24">#</text>
-  <text x="40" y="45" font-family="Inter, Arial, Helvetica, sans-serif" font-size="32" font-weight="600" fill="#f15a24">startup</text>
-  <text x="165" y="45" font-family="Inter, Arial, Helvetica, sans-serif" font-size="32" font-weight="600" fill="#f7931e">india</text>
-  <rect x="165" y="52" width="20" height="6" rx="3" fill="#7ac943"/>
-  <rect x="190" y="52" width="20" height="6" rx="3" fill="#00a99d"/>
-</svg>
-

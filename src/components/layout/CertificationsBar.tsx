@@ -1,11 +1,11 @@
 import Image from "next/image";
 
 const certifications = [
-  { name: "ISO 9001:2015", src: "/certifications/iso-9001.svg" },
-  { name: "Startup India", src: "/certifications/startup-india.svg" },
-  { name: "IATA", src: "/certifications/iata.svg" },
-  { name: "TAFI", src: "/certifications/tafi.svg" },
-  { name: "TAAI", src: "/certifications/taai.svg" },
+  { name: "ISO 9001:2015", src: "/certifications/iso.png" },
+  { name: "Startup India", src: "/certifications/startupindia.png" },
+  { name: "IATA", src: "/certifications/iata.png" },
+  { name: "TAFI", src: "/certifications/tafi.png" },
+  { name: "TAAI", src: "/certifications/taai.png" },
 ];
 
 export function CertificationsBar() {
