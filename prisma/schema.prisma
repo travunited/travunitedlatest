@@ -475,6 +475,7 @@ enum AuditEntityType {
   SETTINGS
   REVIEW
   PAYMENT
+  TEAM
   OTHER
 }
 
@@ -638,4 +639,29 @@ model ContactMessage {
 
   @@index([email])
   @@index([createdAt])
+}
+
+model TeamMember {
+  id          String    @id @default(cuid())
+  name        String
+  title       String?
+  slug        String?   @unique
+  bio         String?   @db.Text
+  email       String?   @unique
+  phone       String?
+  photoKey    String?
+  photoUrl    String?
+  resumeKey   String?
+  resumeUrl   String?
+  socialLinks Json?
+  isActive    Boolean   @default(true)
+  isFeatured  Boolean   @default(false)
+  sortOrder   Int       @default(0)
+  createdBy   String?
+  updatedBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isActive, isFeatured])
+  @@index([sortOrder])
 }
