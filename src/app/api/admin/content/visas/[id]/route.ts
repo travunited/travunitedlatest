@@ -118,55 +118,104 @@ export async function PUT(
     const authError = ensureContentAdmin(session);
     if (authError) return authError;
 
+    // First, fetch the existing visa to use as defaults for partial updates
+    const existingVisa = await prisma.visa.findUnique({
+      where: { id: params.id },
+      select: {
+        countryId: true,
+        name: true,
+        slug: true,
+        subtitle: true,
+        category: true,
+        isActive: true,
+        isFeatured: true,
+        priceInInr: true,
+        processingTime: true,
+        stayDuration: true,
+        validity: true,
+        entryType: true,
+        overview: true,
+        eligibility: true,
+        importantNotes: true,
+        rejectionReasons: true,
+        whyTravunited: true,
+        statistics: true,
+        heroImageUrl: true,
+        sampleVisaImageUrl: true,
+        metaTitle: true,
+        metaDescription: true,
+        stayDurationDays: true,
+        validityDays: true,
+        currency: true,
+        visaMode: true,
+        stayType: true,
+        visaSubTypeLabel: true,
+        entryTypeLegacy: true,
+      },
+    });
+
+    if (!existingVisa) {
+      return NextResponse.json(
+        { error: "Visa not found" },
+        { status: 404 }
+      );
+    }
+
     const body = await req.json();
     const {
-      countryId,
-      name,
-      slug,
-      subtitle,
-      category,
-      isActive,
-      isFeatured,
-      priceInInr,
-      processingTime,
-      stayDuration,
-      validity,
-      entryType,
-      overview,
-      eligibility,
-      importantNotes,
-      rejectionReasons,
-      whyTravunited,
-      statistics,
-      heroImageUrl,
-      sampleVisaImageUrl,
-      metaTitle,
-      metaDescription,
+      countryId = existingVisa.countryId,
+      name = existingVisa.name,
+      slug = existingVisa.slug,
+      subtitle = existingVisa.subtitle,
+      category = existingVisa.category,
+      isActive = existingVisa.isActive,
+      isFeatured = existingVisa.isFeatured,
+      priceInInr = existingVisa.priceInInr,
+      processingTime = existingVisa.processingTime,
+      stayDuration = existingVisa.stayDuration,
+      validity = existingVisa.validity,
+      entryType = existingVisa.entryTypeLegacy,
+      overview = existingVisa.overview,
+      eligibility = existingVisa.eligibility,
+      importantNotes = existingVisa.importantNotes,
+      rejectionReasons = existingVisa.rejectionReasons,
+      whyTravunited = existingVisa.whyTravunited,
+      statistics = existingVisa.statistics,
+      heroImageUrl = existingVisa.heroImageUrl,
+      sampleVisaImageUrl = existingVisa.sampleVisaImageUrl,
+      metaTitle = existingVisa.metaTitle,
+      metaDescription = existingVisa.metaDescription,
       // New fields
-      stayDurationDays,
-      validityDays,
-      currency,
-      visaMode,
+      stayDurationDays = existingVisa.stayDurationDays,
+      validityDays = existingVisa.validityDays,
+      currency = existingVisa.currency,
+      visaMode = existingVisa.visaMode,
       structuredEntryType,
-      stayType,
-      visaSubTypeLabel,
+      stayType = existingVisa.stayType,
+      visaSubTypeLabel = existingVisa.visaSubTypeLabel,
       requirements = [],
       faqs = [],
     } = body;
 
-    if (
-      !countryId ||
-      !name ||
-      !category ||
-      !priceInInr ||
-      !processingTime ||
-      !stayDuration ||
-      !validity ||
-      !overview ||
-      !eligibility
-    ) {
+    // Validate required fields (using merged values from existing + new)
+    const missingFields: string[] = [];
+    if (!countryId) missingFields.push("countryId");
+    if (!name || name.trim() === "") missingFields.push("name");
+    if (!category || category.trim() === "") missingFields.push("category");
+    if (priceInInr === undefined || priceInInr === null) missingFields.push("priceInInr");
+    if (!processingTime || processingTime.trim() === "") missingFields.push("processingTime");
+    if (!stayDuration || stayDuration.trim() === "") missingFields.push("stayDuration");
+    if (!validity || validity.trim() === "") missingFields.push("validity");
+    if (!overview || overview.trim() === "") missingFields.push("overview");
+    if (!eligibility || eligibility.trim() === "") missingFields.push("eligibility");
+
+    if (missingFields.length > 0) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { 
+          error: "Missing required fields",
+          details: missingFields,
+          message: `The following required fields are missing: ${missingFields.join(", ")}`
+        },
         { status: 400 }
       );
     }
