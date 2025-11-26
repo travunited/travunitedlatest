@@ -210,7 +210,7 @@ export async function POST(req: NextRequest) {
 
         // Build visa data
         // Access properties that might not be in the schema but could exist in raw data
-        const rawData = data as typeof data & { visa_mode?: string; mode?: string; entry_type_enum?: string; entry_type_structured?: string; entry_type_code?: string; stay_type?: string; stay_duration_type?: string; subtype_label?: string; visa_subtype_label?: string };
+        const rawData = data as typeof data & { visa_mode?: string; mode?: string; entry_type_enum?: string; entry_type_structured?: string; entry_type_code?: string; stay_type?: string; stay_duration_type?: string; subtype_label?: string; visa_subtype_label?: string; subtypes?: string; visa_subtypes?: string; sub_types?: string };
         const visaModeValue =
           normalizeEnumInput(rawData.visa_mode || rawData.mode, Object.values(VisaMode), "visa_mode") ||
           null;
@@ -318,7 +318,6 @@ export async function POST(req: NextRequest) {
 
         // Handle SubTypes
         // Support both JSON array format and comma-separated string format
-        const rawData = data as typeof data & { subtypes?: string; visa_subtypes?: string; sub_types?: string };
         const subtypesInput = rawData.subtypes || rawData.visa_subtypes || rawData.sub_types;
         if (subtypesInput) {
           // Delete existing subtypes
