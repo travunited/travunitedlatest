@@ -1,120 +1,42 @@
 -- AlterTable: Booking preferences and policy consent
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Booking' AND column_name='driverPreference') THEN
-        ALTER TABLE "Booking" ADD COLUMN "driverPreference" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Booking' AND column_name='foodPreference') THEN
-        ALTER TABLE "Booking" ADD COLUMN "foodPreference" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Booking' AND column_name='foodPreferenceNotes') THEN
-        ALTER TABLE "Booking" ADD COLUMN "foodPreferenceNotes" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Booking' AND column_name='languagePreference') THEN
-        ALTER TABLE "Booking" ADD COLUMN "languagePreference" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Booking' AND column_name='languagePreferenceOther') THEN
-        ALTER TABLE "Booking" ADD COLUMN "languagePreferenceOther" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Booking' AND column_name='policyAccepted') THEN
-        ALTER TABLE "Booking" ADD COLUMN "policyAccepted" BOOLEAN NOT NULL DEFAULT false;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Booking' AND column_name='policyAcceptedAt') THEN
-        ALTER TABLE "Booking" ADD COLUMN "policyAcceptedAt" TIMESTAMP(3);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Booking' AND column_name='policyAcceptedByUserId') THEN
-        ALTER TABLE "Booking" ADD COLUMN "policyAcceptedByUserId" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Booking' AND column_name='policyAcceptedIp') THEN
-        ALTER TABLE "Booking" ADD COLUMN "policyAcceptedIp" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Booking' AND column_name='policyAcceptedUserAgent') THEN
-        ALTER TABLE "Booking" ADD COLUMN "policyAcceptedUserAgent" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Booking' AND column_name='policyVersion') THEN
-        ALTER TABLE "Booking" ADD COLUMN "policyVersion" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Booking' AND column_name='specialRequests') THEN
-        ALTER TABLE "Booking" ADD COLUMN "specialRequests" TEXT;
-    END IF;
-END $$;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "driverPreference" TEXT;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "foodPreference" TEXT;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "foodPreferenceNotes" TEXT;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "languagePreference" TEXT;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "languagePreferenceOther" TEXT;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "policyAccepted" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "policyAcceptedAt" TIMESTAMP(3);
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "policyAcceptedByUserId" TEXT;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "policyAcceptedIp" TEXT;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "policyAcceptedUserAgent" TEXT;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "policyVersion" TEXT;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "specialRequests" TEXT;
 
 -- AlterTable: BookingTraveller passport + metadata
+-- Drop NOT NULL constraint safely (only if column exists and is NOT NULL)
 DO $$
 BEGIN
-    -- Drop NOT NULL constraint safely (only if column exists and is NOT NULL)
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='BookingTraveller' AND column_name='travellerId' AND is_nullable='NO') THEN
         ALTER TABLE "BookingTraveller" ALTER COLUMN "travellerId" DROP NOT NULL;
     END IF;
-    
-    -- Add columns only if they don't exist
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='BookingTraveller' AND column_name='age') THEN
-        ALTER TABLE "BookingTraveller" ADD COLUMN "age" INTEGER;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='BookingTraveller' AND column_name='dateOfBirth') THEN
-        ALTER TABLE "BookingTraveller" ADD COLUMN "dateOfBirth" TIMESTAMP(3);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='BookingTraveller' AND column_name='firstName') THEN
-        ALTER TABLE "BookingTraveller" ADD COLUMN "firstName" TEXT NOT NULL DEFAULT '';
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='BookingTraveller' AND column_name='fullName') THEN
-        ALTER TABLE "BookingTraveller" ADD COLUMN "fullName" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='BookingTraveller' AND column_name='gender') THEN
-        ALTER TABLE "BookingTraveller" ADD COLUMN "gender" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='BookingTraveller' AND column_name='isPassportRequired') THEN
-        ALTER TABLE "BookingTraveller" ADD COLUMN "isPassportRequired" BOOLEAN NOT NULL DEFAULT false;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='BookingTraveller' AND column_name='lastName') THEN
-        ALTER TABLE "BookingTraveller" ADD COLUMN "lastName" TEXT NOT NULL DEFAULT '';
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='BookingTraveller' AND column_name='nationality') THEN
-        ALTER TABLE "BookingTraveller" ADD COLUMN "nationality" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='BookingTraveller' AND column_name='passportExpiry') THEN
-        ALTER TABLE "BookingTraveller" ADD COLUMN "passportExpiry" TIMESTAMP(3);
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='BookingTraveller' AND column_name='passportFileKey') THEN
-        ALTER TABLE "BookingTraveller" ADD COLUMN "passportFileKey" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='BookingTraveller' AND column_name='passportIssuingCountry') THEN
-        ALTER TABLE "BookingTraveller" ADD COLUMN "passportIssuingCountry" TEXT;
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='BookingTraveller' AND column_name='passportNumber') THEN
-        ALTER TABLE "BookingTraveller" ADD COLUMN "passportNumber" TEXT;
-    END IF;
 END $$;
 
+-- Add columns using IF NOT EXISTS (more reliable than information_schema checks)
+ALTER TABLE "BookingTraveller" ADD COLUMN IF NOT EXISTS "age" INTEGER;
+ALTER TABLE "BookingTraveller" ADD COLUMN IF NOT EXISTS "dateOfBirth" TIMESTAMP(3);
+ALTER TABLE "BookingTraveller" ADD COLUMN IF NOT EXISTS "firstName" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "BookingTraveller" ADD COLUMN IF NOT EXISTS "fullName" TEXT;
+ALTER TABLE "BookingTraveller" ADD COLUMN IF NOT EXISTS "gender" TEXT;
+ALTER TABLE "BookingTraveller" ADD COLUMN IF NOT EXISTS "isPassportRequired" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "BookingTraveller" ADD COLUMN IF NOT EXISTS "lastName" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "BookingTraveller" ADD COLUMN IF NOT EXISTS "nationality" TEXT;
+ALTER TABLE "BookingTraveller" ADD COLUMN IF NOT EXISTS "passportExpiry" TIMESTAMP(3);
+ALTER TABLE "BookingTraveller" ADD COLUMN IF NOT EXISTS "passportFileKey" TEXT;
+ALTER TABLE "BookingTraveller" ADD COLUMN IF NOT EXISTS "passportIssuingCountry" TEXT;
+ALTER TABLE "BookingTraveller" ADD COLUMN IF NOT EXISTS "passportNumber" TEXT;
+
 -- AlterTable: Tour passport rule
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='Tour' AND column_name='requiresPassport') THEN
-        ALTER TABLE "Tour" ADD COLUMN "requiresPassport" BOOLEAN NOT NULL DEFAULT false;
-    END IF;
-END $$;
+ALTER TABLE "Tour" ADD COLUMN IF NOT EXISTS "requiresPassport" BOOLEAN NOT NULL DEFAULT false;
 
 -- CreateTable: TourAddOn
 CREATE TABLE IF NOT EXISTS "TourAddOn" (
