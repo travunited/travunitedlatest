@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
 import ToursGridClient from "./ToursGridClient";
+import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -10,7 +11,7 @@ export default async function ToursPage({
 }: {
   searchParams: { destination?: string; date?: string };
 }) {
-  const where: any = {
+  const where: Prisma.TourWhereInput = {
     isActive: true,
     status: "active",
   };
@@ -26,7 +27,7 @@ export default async function ToursPage({
     ];
   }
 
-  let tours = [];
+  let tours: Prisma.TourGetPayload<{ include: { country: true } }>[] = [];
   try {
     tours = await prisma.tour.findMany({
       where,

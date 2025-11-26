@@ -6,13 +6,16 @@ import { Testimonials } from "@/components/home/Testimonials";
 import { BlogHighlights } from "@/components/home/BlogHighlights";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
+import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function Home() {
   // Fetch featured visas (max 6) with error handling
-  let featuredVisas = [];
+  let featuredVisas: Prisma.VisaGetPayload<{
+    include: { country: { select: { id: true; name: true; code: true; flagUrl: true } } };
+  }>[] = [];
   try {
     featuredVisas = await prisma.visa.findMany({
       where: {
@@ -40,7 +43,9 @@ export default async function Home() {
   }
 
   // Fetch featured tours (max 6) with error handling
-  let featuredTours = [];
+  let featuredTours: Prisma.TourGetPayload<{
+    include: { country: { select: { id: true; name: true; code: true } } };
+  }>[] = [];
   try {
     featuredTours = await prisma.tour.findMany({
       where: {
@@ -68,7 +73,7 @@ export default async function Home() {
   }
 
   // Fetch featured blogs (prefer featured, fallback to latest) with error handling
-  let featuredBlogs = [];
+  let featuredBlogs: Prisma.BlogPostGetPayload<{}>[] = [];
   try {
     featuredBlogs = await prisma.blogPost.findMany({
       where: {

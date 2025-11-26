@@ -1,12 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { BlogClient } from "./BlogClient";
 import { getMediaProxyUrl } from "@/lib/media";
+import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function BlogPage() {
-  let posts = [];
+  let posts: Prisma.BlogPostGetPayload<{}>[] = [];
   try {
     posts = await prisma.blogPost.findMany({
       where: { isPublished: true },
