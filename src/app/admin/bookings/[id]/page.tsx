@@ -85,6 +85,8 @@ interface Booking {
     destination?: string | null;
     duration?: string | null;
     price?: number | null;
+    cancellationTerms?: string | null;
+    bookingPolicies?: string | null;
     country?: {
       id: string;
       name: string;

@@ -60,7 +60,14 @@ export async function GET(
           },
         },
         tour: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            destination: true,
+            duration: true,
+            price: true,
+            cancellationTerms: true,
+            bookingPolicies: true,
             country: {
               select: {
                 id: true,

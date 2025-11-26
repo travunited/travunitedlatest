@@ -73,7 +73,7 @@ export async function GET(
         },
       },
       orderBy: {
-        createdAt: "desc",
+        timestamp: "desc",
       },
     });
 
@@ -95,7 +95,7 @@ export async function GET(
         action: log.action,
         description: log.description,
         adminName: log.admin?.name || log.admin?.email || null,
-        createdAt: log.createdAt,
+        createdAt: log.timestamp,
       });
     });
 
