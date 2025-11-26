@@ -143,6 +143,10 @@ export async function POST(req: NextRequest) {
 
     // Process imports one by one with transactions for better error handling
     for (const { row, data } of validation.validRows) {
+      // Declare variables outside try block so they're accessible in catch
+      let tourSlug: string = "";
+      let destination: string = "";
+      
       try {
         // Find country by country_id or destination_country
         let countryId: string | null = null;
@@ -165,7 +169,7 @@ export async function POST(req: NextRequest) {
 
         // Generate slug if not provided
         const baseSlug = data.slug || slugify(data.title);
-        const tourSlug = await ensureUniqueSlug(baseSlug, data.id || undefined);
+        tourSlug = await ensureUniqueSlug(baseSlug, data.id || undefined);
 
         // Build duration string
         const durationParts: string[] = [];
@@ -174,7 +178,7 @@ export async function POST(req: NextRequest) {
         const duration = durationParts.length > 0 ? durationParts.join(" / ") : "5 days";
 
         // Determine destination
-        const destination = data.primary_destination || data.destination_country || data.title;
+        destination = data.primary_destination || data.destination_country || data.title;
 
         // Build tour data object
         const tourData: any = {
@@ -297,6 +301,10 @@ export async function POST(req: NextRequest) {
           createdIds.push(result.id);
         }
       } catch (error: any) {
+        // Calculate fallback values if they weren't set before error
+        const errorSlug = tourSlug || data.slug || slugify(data.title || "tour");
+        const errorDestination = destination || data.primary_destination || data.destination_country || data.title || "Unknown";
+        
         console.error(`[Tour Import] Error importing tour at row ${row}:`, {
           error: error.message,
           code: error.code,
@@ -304,8 +312,8 @@ export async function POST(req: NextRequest) {
           stack: error.stack,
           data: {
             title: data.title,
-            slug: tourSlug,
-            destination,
+            slug: errorSlug,
+            destination: errorDestination,
           },
         });
         
