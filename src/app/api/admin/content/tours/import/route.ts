@@ -60,6 +60,8 @@ export async function POST(req: NextRequest) {
     let created = 0;
     let updated = 0;
     const failed: Array<{ row: number; message: string }> = [];
+    const createdIds: string[] = [];
+    const updatedIds: string[] = [];
 
     // Helper function to generate slug from title
     const slugify = (text: string) =>
@@ -97,6 +99,7 @@ export async function POST(req: NextRequest) {
       }
     };
 
+    // Process imports one by one with transactions for better error handling
     for (const { row, data } of validation.validRows) {
       try {
         // Find country by country_id or destination_country
@@ -225,18 +228,23 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        if (existingTour) {
-          await prisma.tour.update({
-            where: { id: existingTour.id },
-            data: tourData,
-          });
-          updated++;
-        } else {
-          await prisma.tour.create({
-            data: tourData,
-          });
-          created++;
-        }
+        // Use transaction for each tour to ensure data consistency
+        await prisma.$transaction(async (tx) => {
+          if (existingTour) {
+            await tx.tour.update({
+              where: { id: existingTour.id },
+              data: tourData,
+            });
+            updated++;
+            updatedIds.push(existingTour.id);
+          } else {
+            const newTour = await tx.tour.create({
+              data: tourData,
+            });
+            created++;
+            createdIds.push(newTour.id);
+          }
+        });
       } catch (error: any) {
         console.error(`Error importing tour at row ${row}:`, error);
         
@@ -254,20 +262,25 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Log audit event
-    await logAuditEvent({
-      adminId: session.user.id,
-      entityType: AuditEntityType.OTHER,
-      entityId: "bulk-import",
-      action: AuditAction.CREATE,
-      description: `Bulk imported tours: ${created} created, ${updated} updated, ${failed.length} failed`,
-      metadata: {
-        created,
-        updated,
-        failed: failed.length,
-        totalRows: rows.length,
-      },
-    });
+    // Log audit event (non-blocking)
+    try {
+      await logAuditEvent({
+        adminId: session.user.id,
+        entityType: AuditEntityType.OTHER,
+        entityId: "bulk-import",
+        action: AuditAction.CREATE,
+        description: `Bulk imported tours: ${created} created, ${updated} updated, ${failed.length} failed`,
+        metadata: {
+          created,
+          updated,
+          failed: failed.length,
+          totalRows: rows.length,
+        },
+      });
+    } catch (auditError) {
+      // Audit log failure should not block the import response
+      console.error("Failed to log audit event for tour import:", auditError);
+    }
 
     return NextResponse.json({
       success: true,
@@ -277,6 +290,8 @@ export async function POST(req: NextRequest) {
         updated,
         failed: failed.length,
       },
+      createdIds,
+      updatedIds,
       failed,
     });
   } catch (error: any) {

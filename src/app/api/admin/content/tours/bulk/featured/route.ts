@@ -50,17 +50,23 @@ export async function POST(req: Request) {
       },
     });
 
-    await logAuditEvent({
-      adminId: session.user.id,
-      entityType: AuditEntityType.OTHER,
-      entityId: "bulk-update",
-      action: AuditAction.UPDATE,
-      description: `Bulk ${featured ? "featured" : "unfeatured"} ${ids.length} tours`,
-      metadata: {
-        count: ids.length,
-        featured,
-      },
-    });
+    // Log audit event (non-blocking)
+    try {
+      await logAuditEvent({
+        adminId: session.user.id,
+        entityType: AuditEntityType.OTHER,
+        entityId: "bulk-update",
+        action: AuditAction.UPDATE,
+        description: `Bulk ${featured ? "featured" : "unfeatured"} ${ids.length} tours`,
+        metadata: {
+          count: ids.length,
+          featured,
+        },
+      });
+    } catch (auditError) {
+      // Audit log failure should not block the operation
+      console.error("Failed to log audit event for bulk featured update:", auditError);
+    }
 
     return NextResponse.json({
       success: true,

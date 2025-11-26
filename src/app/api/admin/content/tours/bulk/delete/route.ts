@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = bulkDeleteSchema.parse(body);
 
-    // Check if any tours have active bookings
+    // Check if any tours have ANY bookings (including cancelled/completed)
     let toursWithBookings: Array<{
       id: string;
       name: string;
@@ -42,11 +42,7 @@ export async function POST(req: Request) {
         where: {
           id: { in: data.ids },
           bookings: {
-            some: {
-              status: {
-                notIn: ["CANCELLED", "COMPLETED"],
-              },
-            },
+            some: {},
           },
         },
         select: {
@@ -54,13 +50,7 @@ export async function POST(req: Request) {
           name: true,
           _count: {
             select: {
-              bookings: {
-                where: {
-                  status: {
-                    notIn: ["CANCELLED", "COMPLETED"],
-                  },
-                },
-              },
+              bookings: true, // Count ALL bookings, not just active ones
             },
           },
         },
@@ -71,13 +61,14 @@ export async function POST(req: Request) {
     }
 
     if (toursWithBookings.length > 0) {
-      const tourNames = toursWithBookings.map((t) => t.name).join(", ");
+      const tourNames = toursWithBookings.map((t) => `${t.name} (${t._count.bookings} booking(s))`).join(", ");
       return NextResponse.json(
         {
-          error: "Cannot delete tours with active bookings",
+          error: "Cannot delete tours with existing bookings",
           details: {
             tours: tourNames,
             count: toursWithBookings.length,
+            message: "Tours with bookings cannot be deleted. Please archive them instead or delete bookings first.",
           },
         },
         { status: 400 }
@@ -112,7 +103,7 @@ export async function POST(req: Request) {
         },
       });
 
-      // Delete TourDay records
+      // Delete TourDay records (must be deleted before Tour due to FK constraint)
       await tx.tourDay.deleteMany({
         where: {
           tourId: { in: data.ids },
@@ -127,6 +118,8 @@ export async function POST(req: Request) {
       });
 
       return result;
+    }, {
+      timeout: 30000, // 30 second timeout for large deletions
     });
 
     return NextResponse.json({
