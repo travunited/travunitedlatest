@@ -49,12 +49,6 @@ const BASE_MENU_ITEMS = [
     roles: ["STAFF_ADMIN", "SUPER_ADMIN"],
   },
   {
-    label: "Reviews",
-    href: "/admin/reviews",
-    icon: MessageSquare,
-    roles: ["STAFF_ADMIN", "SUPER_ADMIN"],
-  },
-  {
     label: "Homepage Reviews",
     href: "/admin/reviews/homepage",
     icon: Star,
