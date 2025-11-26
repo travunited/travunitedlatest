@@ -403,7 +403,11 @@ const handleFaqChange = (
 
       if (!response.ok) {
         const error = await response.json();
-        alert(error.error || "Failed to save visa");
+        const errorMessage = error.missingFields 
+          ? `${error.error || "Failed to save visa"}\n\nMissing fields: ${error.missingFields.join(", ")}`
+          : error.message || error.error || "Failed to save visa";
+        alert(errorMessage);
+        console.error("Visa update error:", error);
         return;
       }
 

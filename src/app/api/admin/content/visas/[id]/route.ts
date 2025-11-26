@@ -162,59 +162,117 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const {
-      countryId = existingVisa.countryId,
-      name = existingVisa.name,
-      slug = existingVisa.slug,
-      subtitle = existingVisa.subtitle,
-      category = existingVisa.category,
-      isActive = existingVisa.isActive,
-      isFeatured = existingVisa.isFeatured,
-      priceInInr = existingVisa.priceInInr,
-      processingTime = existingVisa.processingTime,
-      stayDuration = existingVisa.stayDuration,
-      validity = existingVisa.validity,
-      entryType = existingVisa.entryTypeLegacy,
-      overview = existingVisa.overview,
-      eligibility = existingVisa.eligibility,
-      importantNotes = existingVisa.importantNotes,
-      rejectionReasons = existingVisa.rejectionReasons,
-      whyTravunited = existingVisa.whyTravunited,
-      statistics = existingVisa.statistics,
-      heroImageUrl = existingVisa.heroImageUrl,
-      sampleVisaImageUrl = existingVisa.sampleVisaImageUrl,
-      metaTitle = existingVisa.metaTitle,
-      metaDescription = existingVisa.metaDescription,
-      // New fields
-      stayDurationDays = existingVisa.stayDurationDays,
-      validityDays = existingVisa.validityDays,
-      currency = existingVisa.currency,
-      visaMode = existingVisa.visaMode,
-      structuredEntryType,
-      stayType = existingVisa.stayType,
-      visaSubTypeLabel = existingVisa.visaSubTypeLabel,
-      requirements = [],
-      faqs = [],
-    } = body;
+    
+    // Merge with existing values, but only use provided values (not undefined)
+    // For required fields, treat empty strings as "not provided" to allow partial updates
+    // This allows toggling featured without sending all required fields
+    const countryId = (body.countryId !== undefined && body.countryId !== null && body.countryId !== "") 
+      ? body.countryId 
+      : existingVisa.countryId;
+    const name = (body.name !== undefined && body.name !== null && body.name !== "") 
+      ? body.name 
+      : existingVisa.name;
+    const slug = body.slug !== undefined ? body.slug : existingVisa.slug;
+    const subtitle = body.subtitle !== undefined ? body.subtitle : existingVisa.subtitle;
+    const category = (body.category !== undefined && body.category !== null && body.category !== "") 
+      ? body.category 
+      : existingVisa.category;
+    const isActive = body.isActive !== undefined ? body.isActive : existingVisa.isActive;
+    const isFeatured = body.isFeatured !== undefined ? body.isFeatured : existingVisa.isFeatured;
+    const priceInInr = (body.priceInInr !== undefined && body.priceInInr !== null) 
+      ? body.priceInInr 
+      : existingVisa.priceInInr;
+    const processingTime = (body.processingTime !== undefined && body.processingTime !== null && body.processingTime !== "") 
+      ? body.processingTime 
+      : existingVisa.processingTime;
+    const stayDuration = (body.stayDuration !== undefined && body.stayDuration !== null && body.stayDuration !== "") 
+      ? body.stayDuration 
+      : existingVisa.stayDuration;
+    const validity = (body.validity !== undefined && body.validity !== null && body.validity !== "") 
+      ? body.validity 
+      : existingVisa.validity;
+    const entryType = body.entryType !== undefined ? body.entryType : existingVisa.entryTypeLegacy;
+    const overview = (body.overview !== undefined && body.overview !== null && body.overview !== "") 
+      ? body.overview 
+      : existingVisa.overview;
+    const eligibility = (body.eligibility !== undefined && body.eligibility !== null && body.eligibility !== "") 
+      ? body.eligibility 
+      : existingVisa.eligibility;
+    const importantNotes = body.importantNotes !== undefined ? body.importantNotes : existingVisa.importantNotes;
+    const rejectionReasons = body.rejectionReasons !== undefined ? body.rejectionReasons : existingVisa.rejectionReasons;
+    const whyTravunited = body.whyTravunited !== undefined ? body.whyTravunited : existingVisa.whyTravunited;
+    const statistics = body.statistics !== undefined ? body.statistics : existingVisa.statistics;
+    const heroImageUrl = body.heroImageUrl !== undefined ? body.heroImageUrl : existingVisa.heroImageUrl;
+    const sampleVisaImageUrl = body.sampleVisaImageUrl !== undefined ? body.sampleVisaImageUrl : existingVisa.sampleVisaImageUrl;
+    const metaTitle = body.metaTitle !== undefined ? body.metaTitle : existingVisa.metaTitle;
+    const metaDescription = body.metaDescription !== undefined ? body.metaDescription : existingVisa.metaDescription;
+    const stayDurationDays = body.stayDurationDays !== undefined ? body.stayDurationDays : existingVisa.stayDurationDays;
+    const validityDays = body.validityDays !== undefined ? body.validityDays : existingVisa.validityDays;
+    const currency = body.currency !== undefined ? body.currency : existingVisa.currency;
+    const visaMode = body.visaMode !== undefined ? body.visaMode : existingVisa.visaMode;
+    const structuredEntryType = body.structuredEntryType;
+    const stayType = body.stayType !== undefined ? body.stayType : existingVisa.stayType;
+    const visaSubTypeLabel = body.visaSubTypeLabel !== undefined ? body.visaSubTypeLabel : existingVisa.visaSubTypeLabel;
+    const requirements = body.requirements !== undefined ? body.requirements : [];
+    const faqs = body.faqs !== undefined ? body.faqs : [];
 
-    // Validate required fields (using merged values from existing + new)
+    // Validate required fields using merged values
+    // Since we merge with existing values, empty strings from frontend won't break validation
+    // We only validate the final merged values to ensure they're valid
     const missingFields: string[] = [];
-    if (!countryId) missingFields.push("countryId");
-    if (!name || name.trim() === "") missingFields.push("name");
-    if (!category || category.trim() === "") missingFields.push("category");
-    if (priceInInr === undefined || priceInInr === null) missingFields.push("priceInInr");
-    if (!processingTime || processingTime.trim() === "") missingFields.push("processingTime");
-    if (!stayDuration || stayDuration.trim() === "") missingFields.push("stayDuration");
-    if (!validity || validity.trim() === "") missingFields.push("validity");
-    if (!overview || overview.trim() === "") missingFields.push("overview");
-    if (!eligibility || eligibility.trim() === "") missingFields.push("eligibility");
+    
+    // Check if this is a minimal update (only boolean flags like isFeatured/isActive)
+    // If so, skip validation since we're just toggling flags
+    const providedFields = Object.keys(body).filter(key => {
+      const value = body[key];
+      // Ignore empty strings, null, undefined, and empty arrays
+      if (value === undefined || value === null) return false;
+      if (typeof value === 'string' && value.trim() === '') return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      return true;
+    });
+    
+    const isMinimalUpdate = providedFields.length <= 2 && 
+      (providedFields.includes('isFeatured') || providedFields.includes('isActive'));
+    
+    // For minimal updates (like toggling featured), skip validation
+    // For full updates, validate all required fields using merged values
+    if (!isMinimalUpdate) {
+      if (!countryId || (typeof countryId === 'string' && countryId.trim() === "")) {
+        missingFields.push("countryId");
+      }
+      if (!name || (typeof name === 'string' && name.trim() === "")) {
+        missingFields.push("name");
+      }
+      if (!category || (typeof category === 'string' && category.trim() === "")) {
+        missingFields.push("category");
+      }
+      if (priceInInr === undefined || priceInInr === null) {
+        missingFields.push("priceInInr");
+      }
+      if (!processingTime || (typeof processingTime === 'string' && processingTime.trim() === "")) {
+        missingFields.push("processingTime");
+      }
+      if (!stayDuration || (typeof stayDuration === 'string' && stayDuration.trim() === "")) {
+        missingFields.push("stayDuration");
+      }
+      if (!validity || (typeof validity === 'string' && validity.trim() === "")) {
+        missingFields.push("validity");
+      }
+      if (!overview || (typeof overview === 'string' && overview.trim() === "")) {
+        missingFields.push("overview");
+      }
+      if (!eligibility || (typeof eligibility === 'string' && eligibility.trim() === "")) {
+        missingFields.push("eligibility");
+      }
+    }
 
     if (missingFields.length > 0) {
       return NextResponse.json(
         { 
           error: "Missing required fields",
-          details: missingFields,
-          message: `The following required fields are missing: ${missingFields.join(", ")}`
+          missingFields: missingFields,
+          message: `The following required fields are missing or invalid: ${missingFields.join(", ")}`
         },
         { status: 400 }
       );
