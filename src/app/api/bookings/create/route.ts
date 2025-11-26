@@ -52,6 +52,13 @@ const bookingSchema = z.object({
   policyAccepted: z.boolean(),
   policyVersion: z.string().nullable().optional(),
   customizations: z.record(z.boolean()).nullable().optional(),
+  customisedPackage: z.object({
+    isCustomisedPackage: z.boolean(),
+    customRequestNotes: z.string().min(1, "Custom request notes are required for customised packages"),
+    customBasePrice: z.number().nullable().optional(),
+    customAddOnsPrice: z.number().nullable().optional(),
+    customDiscount: z.number().nullable().optional(),
+  }).nullable().optional(),
   hotelCategory: z.string().nullable().optional(),
 });
 
@@ -339,14 +346,43 @@ export async function POST(req: Request) {
       null;
     const userAgent = req.headers.get("user-agent") || null;
 
+    // Determine booking status based on customised package
+    const isCustomisedPackage = data.customisedPackage?.isCustomisedPackage || false;
+    const initialStatus = isCustomisedPackage ? "REQUEST_RECEIVED" : "DRAFT";
+    
+    // Calculate total amount for customised packages
+    let finalTotalAmount = totalAmount;
+    if (isCustomisedPackage && data.customisedPackage) {
+      const customBase = data.customisedPackage.customBasePrice || baseAmount;
+      const customAddOns = data.customisedPackage.customAddOnsPrice || addOnsTotal;
+      const discount = data.customisedPackage.customDiscount || 0;
+      finalTotalAmount = customBase + customAddOns - discount;
+    }
+
     const booking = await prisma.$transaction(async (tx) => {
+      // Build special requests with custom package info if applicable
+      let specialRequestsText = preferences.specialRequests || "";
+      if (isCustomisedPackage && data.customisedPackage) {
+        const customInfo = `\n\n[CUSTOMISED PACKAGE REQUEST]\n${data.customisedPackage.customRequestNotes}`;
+        if (data.customisedPackage.customBasePrice) {
+          specialRequestsText += `${customInfo}\nCustom Base Price: ₹${data.customisedPackage.customBasePrice.toLocaleString()}`;
+        }
+        if (data.customisedPackage.customAddOnsPrice) {
+          specialRequestsText += `\nCustom Add-ons Price: ₹${data.customisedPackage.customAddOnsPrice.toLocaleString()}`;
+        }
+        if (data.customisedPackage.customDiscount) {
+          specialRequestsText += `\nDiscount: ₹${data.customisedPackage.customDiscount.toLocaleString()}`;
+        }
+        specialRequestsText += customInfo;
+      }
+
       const bookingRecord = await tx.booking.create({
         data: {
           userId,
           tourId: tourRecord.id,
           tourName: data.tourName || tourRecord.name,
-          status: "DRAFT",
-          totalAmount,
+          status: initialStatus,
+          totalAmount: finalTotalAmount,
           currency: "INR",
           travelDate,
           foodPreference: preferences.foodPreference || null,
@@ -354,7 +390,7 @@ export async function POST(req: Request) {
           languagePreference: preferences.languagePreference || null,
           languagePreferenceOther: preferences.languagePreferenceOther || null,
           driverPreference: preferences.driverPreference || null,
-          specialRequests: preferences.specialRequests || null,
+          specialRequests: specialRequestsText || null,
           policyAccepted: true,
           policyAcceptedAt: consentTimestamp,
           policyAcceptedByUserId: userId,
@@ -455,10 +491,89 @@ export async function POST(req: Request) {
       return bookingRecord;
     });
 
+    // Send notifications
+    try {
+      const { notify } = await import("@/lib/notifications");
+      const { sendEmail } = await import("@/lib/email");
+
+      // Notify customer
+      if (isCustomisedPackage) {
+        await notify({
+          userId,
+          type: "TOUR_BOOKING_CREATED",
+          title: "Custom Package Request Received",
+          message: `Your custom package request for ${data.tourName || tourRecord.name} has been received. Our team will review and get back to you soon.`,
+          link: `/dashboard/bookings/${booking.id}`,
+        });
+
+        // Send email to customer
+        await sendEmail({
+          to: data.primaryContact.email,
+          subject: `Custom Package Request Received - ${data.tourName || tourRecord.name}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1>Custom Package Request Received</h1>
+              <p>Thank you for your custom package request for <strong>${data.tourName || tourRecord.name}</strong>.</p>
+              <p>Our team will review your request and get back to you with a personalized quote within 24-48 hours.</p>
+              <p><a href="${process.env.NEXTAUTH_URL}/dashboard/bookings/${booking.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Request</a></p>
+              <p>Best regards,<br>The Travunited Team</p>
+            </div>
+          `,
+        });
+
+        // Notify admins about custom package request
+        await sendEmail({
+          to: "info@travunited.com",
+          subject: `New Custom Package Request - ${data.tourName || tourRecord.name}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1>New Custom Package Request</h1>
+              <p>A new custom package request has been received:</p>
+              <ul>
+                <li><strong>Tour:</strong> ${data.tourName || tourRecord.name}</li>
+                <li><strong>Customer:</strong> ${data.primaryContact.name} (${data.primaryContact.email})</li>
+                <li><strong>Travel Date:</strong> ${new Date(data.travelDate).toLocaleDateString()}</li>
+                <li><strong>Booking ID:</strong> ${booking.id}</li>
+              </ul>
+              <p><strong>Custom Request:</strong></p>
+              <p style="background: #f5f5f5; padding: 15px; border-radius: 4px;">${data.customisedPackage?.customRequestNotes || "N/A"}</p>
+              <p><a href="${process.env.NEXTAUTH_URL}/admin/bookings/${booking.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Review Request</a></p>
+            </div>
+          `,
+        });
+      } else {
+        // Regular booking - notify admins
+        await sendEmail({
+          to: "info@travunited.com",
+          subject: `New Tour Booking - ${data.tourName || tourRecord.name}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h1>New Tour Booking</h1>
+              <p>A new tour booking has been created:</p>
+              <ul>
+                <li><strong>Tour:</strong> ${data.tourName || tourRecord.name}</li>
+                <li><strong>Customer:</strong> ${data.primaryContact.name} (${data.primaryContact.email})</li>
+                <li><strong>Travel Date:</strong> ${new Date(data.travelDate).toLocaleDateString()}</li>
+                <li><strong>Total Amount:</strong> ₹${finalTotalAmount.toLocaleString()}</li>
+                <li><strong>Booking ID:</strong> ${booking.id}</li>
+              </ul>
+              <p><a href="${process.env.NEXTAUTH_URL}/admin/bookings/${booking.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Booking</a></p>
+            </div>
+          `,
+        });
+      }
+    } catch (notifyError) {
+      console.error("Error sending notifications:", notifyError);
+      // Don't fail the request if notifications fail
+    }
+
     return NextResponse.json({
       bookingId: booking.id,
-      totalAmount,
-      message: "Booking created successfully",
+      totalAmount: finalTotalAmount,
+      status: initialStatus,
+      message: isCustomisedPackage 
+        ? "Custom package request submitted successfully. Our team will review and get back to you soon."
+        : "Booking created successfully",
     });
   } catch (error: unknown) {
     // Handle Zod validation errors (should already be caught above, but as a fallback)

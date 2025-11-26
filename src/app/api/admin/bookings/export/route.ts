@@ -66,39 +66,86 @@ export async function GET(req: Request) {
       },
     });
 
-    // Generate CSV
+    // Fetch additional data for enhanced export
+    const bookingsWithDetails = await Promise.all(
+      bookings.map(async (booking) => {
+        const travellers = await prisma.bookingTraveller.findMany({
+          where: { bookingId: booking.id },
+          select: { id: true },
+        });
+        const allPayments = await prisma.payment.findMany({
+          where: { bookingId: booking.id },
+          select: { amount: true, status: true },
+        });
+        
+        const completedPayments = allPayments.filter((p) => p.status === "COMPLETED");
+        const failedPayments = allPayments.filter((p) => p.status === "FAILED");
+        const refundedPayments = allPayments.filter((p) => p.status === "REFUNDED");
+        
+        const amountPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0);
+        const amountRefunded = refundedPayments.reduce((sum, p) => sum + p.amount, 0);
+        const pendingBalance = booking.totalAmount - amountPaid;
+        
+        let paymentStatus = "UNPAID";
+        if (amountRefunded > 0) {
+          paymentStatus = "REFUNDED";
+        } else if (amountPaid >= booking.totalAmount) {
+          paymentStatus = "PAID";
+        } else if (amountPaid > 0) {
+          paymentStatus = "PARTIAL";
+        } else if (failedPayments.length > 0) {
+          paymentStatus = "FAILED";
+        }
+        
+        return {
+          ...booking,
+          travellersCount: travellers.length,
+          paymentStatus,
+          amountPaid,
+          pendingBalance: pendingBalance > 0 ? pendingBalance : 0,
+        };
+      })
+    );
+
+    // Generate CSV with enhanced fields
     const headers = [
       "Booking ID",
+      "Created Date",
       "Tour Name",
+      "Destination",
       "Travel Date",
-      "Status",
+      "Travelers Count",
       "Customer Name",
       "Customer Email",
       "Customer Phone",
       "Total Amount",
       "Amount Paid",
       "Pending Balance",
+      "Payment Status",
+      "Booking Status",
       "Assigned To",
-      "Booked Date",
+      "Source",
       "Updated Date",
     ];
 
-    const rows = bookings.map((booking) => {
-      const amountPaid = booking.payments.reduce((sum, p) => sum + p.amount, 0);
-      const pendingBalance = booking.totalAmount - amountPaid;
+    const rows = bookingsWithDetails.map((booking) => {
       return [
         booking.id,
+        new Date(booking.createdAt).toISOString().split("T")[0],
         booking.tourName || "",
+        "", // Destination would need to be fetched from tour relation
         booking.travelDate ? new Date(booking.travelDate).toISOString().split("T")[0] : "",
-        booking.status,
+        booking.travellersCount?.toString() || "0",
         booking.user.name || "",
         booking.user.email,
         booking.user.phone || "",
         booking.totalAmount.toString(),
-        amountPaid.toString(),
-        (pendingBalance > 0 ? pendingBalance : 0).toString(),
+        booking.amountPaid.toString(),
+        booking.pendingBalance.toString(),
+        booking.paymentStatus,
+        booking.status,
         booking.processedBy?.name || booking.processedBy?.email || "Unassigned",
-        new Date(booking.createdAt).toISOString(),
+        "WEBSITE", // Source - would need to be added to booking model
         new Date(booking.updatedAt).toISOString(),
       ];
     });

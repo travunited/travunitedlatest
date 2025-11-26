@@ -12,9 +12,11 @@ export type NotificationType =
   | "VISA_PAYMENT_FAILED"
   | "VISA_READY"
   // Customer - Tours
+  | "TOUR_BOOKING_CREATED"
   | "TOUR_BOOKING_CONFIRMED"
   | "TOUR_BOOKING_CANCELLED"
   | "TOUR_BOOKING_UPDATED"
+  | "TOUR_BOOKING_STATUS_UPDATE"
   | "TOUR_PAYMENT_SUCCESS"
   | "TOUR_PAYMENT_FAILED"
   | "TOUR_VOUCHERS_READY"
@@ -444,9 +446,11 @@ export async function getNotifications(
         "VISA_READY",
       ],
       tour: [
+        "TOUR_BOOKING_CREATED",
         "TOUR_BOOKING_CONFIRMED",
         "TOUR_BOOKING_CANCELLED",
         "TOUR_BOOKING_UPDATED",
+        "TOUR_BOOKING_STATUS_UPDATE",
         "TOUR_PAYMENT_SUCCESS",
         "TOUR_PAYMENT_FAILED",
         "TOUR_VOUCHERS_READY",

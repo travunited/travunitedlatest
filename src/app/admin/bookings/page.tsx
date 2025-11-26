@@ -16,10 +16,23 @@ interface Booking {
   totalAmount: number;
   travelDate: string | null;
   createdAt: string;
-  processedBy?: { name: string; email: string } | null;
-  user: { name: string; email: string };
+  processedBy?: { id?: string; name: string; email: string } | null;
+  user: { name: string; email: string; phone?: string | null };
   amountPaid?: number;
   pendingBalance?: number;
+  paymentStatus?: string;
+  source?: string;
+  travellersCount?: number;
+  tour?: {
+    id: string;
+    name: string;
+    destination?: string | null;
+    country?: {
+      id: string;
+      name: string;
+      code: string;
+    } | null;
+  } | null;
 }
 
 function AdminBookingsPageContent() {
@@ -36,8 +49,14 @@ function AdminBookingsPageContent() {
   const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "ALL");
   const [tourFilter, setTourFilter] = useState<string>("");
   const [assignedFilter, setAssignedFilter] = useState<string>("ALL");
+  const [assignedAdminFilter, setAssignedAdminFilter] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+  const [travelDateFrom, setTravelDateFrom] = useState<string>("");
+  const [travelDateTo, setTravelDateTo] = useState<string>("");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("ALL");
+  const [destinationFilter, setDestinationFilter] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
 
   const searchParamsKey = useMemo(() => searchParams.toString(), [searchParams]);
 
@@ -49,8 +68,14 @@ function AdminBookingsPageContent() {
       if (tourFilter) params.append("tour", tourFilter);
       if (assignedFilter === "UNASSIGNED") params.append("unassigned", "true");
       if (assignedFilter === "ASSIGNED") params.append("assigned", "true");
+      if (assignedAdminFilter) params.append("assignedAdmin", assignedAdminFilter);
       if (dateFrom) params.append("dateFrom", dateFrom);
       if (dateTo) params.append("dateTo", dateTo);
+      if (travelDateFrom) params.append("travelDateFrom", travelDateFrom);
+      if (travelDateTo) params.append("travelDateTo", travelDateTo);
+      if (paymentStatusFilter !== "ALL") params.append("paymentStatus", paymentStatusFilter);
+      if (destinationFilter) params.append("destination", destinationFilter);
+      if (searchQuery) params.append("search", searchQuery);
 
       const currentParams = new URLSearchParams(searchParamsKey);
       const unconfirmed = currentParams.get("unconfirmed") === "true";
@@ -66,7 +91,7 @@ function AdminBookingsPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, tourFilter, assignedFilter, dateFrom, dateTo, searchParamsKey]);
+  }, [statusFilter, tourFilter, assignedFilter, assignedAdminFilter, dateFrom, dateTo, travelDateFrom, travelDateTo, paymentStatusFilter, destinationFilter, searchQuery, searchParamsKey]);
 
   const [admins, setAdmins] = useState<Array<{ id: string; name: string; email: string }>>([]);
   const [bulkActionMessage, setBulkActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -267,6 +292,7 @@ function AdminBookingsPageContent() {
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       DRAFT: "bg-neutral-200 text-neutral-700",
+      REQUEST_RECEIVED: "bg-purple-100 text-purple-700",
       PAYMENT_PENDING: "bg-yellow-100 text-yellow-700",
       BOOKED: "bg-blue-100 text-blue-700",
       CONFIRMED: "bg-green-100 text-green-700",
@@ -302,62 +328,142 @@ function AdminBookingsPageContent() {
             <Filter size={20} className="text-neutral-400" />
             <h2 className="text-lg font-semibold text-neutral-900">Filters</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
-              >
-                <option value="ALL">All Statuses</option>
+          <div className="space-y-4">
+            {/* First Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Search</label>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Booking ID, phone, email, name"
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Booking Status</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                >
+                  <option value="ALL">All Statuses</option>
                 <option value="DRAFT">Draft</option>
+                <option value="REQUEST_RECEIVED">Request Received</option>
                 <option value="PAYMENT_PENDING">Payment Pending</option>
                 <option value="BOOKED">Booked</option>
                 <option value="CONFIRMED">Confirmed</option>
                 <option value="COMPLETED">Completed</option>
                 <option value="CANCELLED">Cancelled</option>
-              </select>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Payment Status</label>
+                <select
+                  value={paymentStatusFilter}
+                  onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                >
+                  <option value="ALL">All</option>
+                  <option value="UNPAID">Unpaid</option>
+                  <option value="PARTIAL">Partial</option>
+                  <option value="PAID">Paid</option>
+                  <option value="FAILED">Failed</option>
+                  <option value="REFUNDED">Refunded</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Assigned</label>
+                <select
+                  value={assignedFilter}
+                  onChange={(e) => setAssignedFilter(e.target.value)}
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                >
+                  <option value="ALL">All</option>
+                  <option value="ASSIGNED">Assigned</option>
+                  <option value="UNASSIGNED">Unassigned</option>
+                </select>
+              </div>
+              {assignedFilter === "ASSIGNED" && (
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">Assigned Admin</label>
+                  <select
+                    value={assignedAdminFilter}
+                    onChange={(e) => setAssignedAdminFilter(e.target.value)}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                  >
+                    <option value="">All Admins</option>
+                    {admins.map((admin) => (
+                      <option key={admin.id} value={admin.id}>
+                        {admin.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">Tour</label>
-              <input
-                type="text"
-                value={tourFilter}
-                onChange={(e) => setTourFilter(e.target.value)}
-                placeholder="Filter by tour name"
-                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
-              />
+            {/* Second Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Tour Name</label>
+                <input
+                  type="text"
+                  value={tourFilter}
+                  onChange={(e) => setTourFilter(e.target.value)}
+                  placeholder="Filter by tour name"
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Destination</label>
+                <input
+                  type="text"
+                  value={destinationFilter}
+                  onChange={(e) => setDestinationFilter(e.target.value)}
+                  placeholder="Country/State/City"
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Created Date From</label>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Created Date To</label>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Travel Date From</label>
+                <input
+                  type="date"
+                  value={travelDateFrom}
+                  onChange={(e) => setTravelDateFrom(e.target.value)}
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">Assigned</label>
-              <select
-                value={assignedFilter}
-                onChange={(e) => setAssignedFilter(e.target.value)}
-                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
-              >
-                <option value="ALL">All</option>
-                <option value="ASSIGNED">Assigned</option>
-                <option value="UNASSIGNED">Unassigned</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">Date From</label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">Date To</label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
-              />
+            {/* Third Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">Travel Date To</label>
+                <input
+                  type="date"
+                  value={travelDateTo}
+                  onChange={(e) => setTravelDateTo(e.target.value)}
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-sm"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -470,25 +576,37 @@ function AdminBookingsPageContent() {
                       Booking ID
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                       Tour Name
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Customer
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                       Travel Date
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Primary Contact
+                      Travelers
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Amount Paid
+                      Total Amount
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Pending Balance
+                      Paid / Due
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Status
+                      Payment Status
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Booking Status
                     </th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                       Assigned To
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                      Source
                     </th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
                       Actions
@@ -523,26 +641,51 @@ function AdminBookingsPageContent() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-neutral-900">{formatDate(booking.createdAt)}</div>
+                        <div className="text-xs text-neutral-500">{new Date(booking.createdAt).toLocaleTimeString()}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-neutral-900">{booking.tourName || "N/A"}</div>
+                        {booking.tour?.destination && (
+                          <div className="text-xs text-neutral-500">{booking.tour.destination}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-neutral-900">{booking.user.name || "N/A"}</div>
+                        <div className="text-sm text-neutral-500">{booking.user.email}</div>
+                        {booking.user.phone && (
+                          <div className="text-xs text-neutral-500">{booking.user.phone}</div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-neutral-900">
                           {booking.travelDate ? formatDate(booking.travelDate) : "N/A"}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-neutral-900">{booking.user.name || "N/A"}</div>
-                        <div className="text-sm text-neutral-500">{booking.user.email}</div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                        {booking.travellersCount || 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                        ₹{booking.amountPaid?.toLocaleString() || "0"}
+                        ₹{booking.totalAmount?.toLocaleString() || "0"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="text-green-600 font-medium">₹{booking.amountPaid?.toLocaleString() || "0"}</div>
                         {booking.pendingBalance && booking.pendingBalance > 0 ? (
-                          <span className="text-orange-600 font-medium">₹{booking.pendingBalance.toLocaleString()}</span>
+                          <div className="text-orange-600 font-medium">Due: ₹{booking.pendingBalance.toLocaleString()}</div>
                         ) : (
-                          <span className="text-green-600 font-medium">₹0</span>
+                          <div className="text-green-600 text-xs">Fully Paid</div>
                         )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          booking.paymentStatus === "PAID" ? "bg-green-100 text-green-700" :
+                          booking.paymentStatus === "PARTIAL" ? "bg-yellow-100 text-yellow-700" :
+                          booking.paymentStatus === "FAILED" ? "bg-red-100 text-red-700" :
+                          booking.paymentStatus === "REFUNDED" ? "bg-purple-100 text-purple-700" :
+                          "bg-neutral-100 text-neutral-700"
+                        }`}>
+                          {booking.paymentStatus || "UNPAID"}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
@@ -561,6 +704,9 @@ function AdminBookingsPageContent() {
                             <span>Claim</span>
                           </button>
                         )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                        {booking.source || "WEBSITE"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                         <Link

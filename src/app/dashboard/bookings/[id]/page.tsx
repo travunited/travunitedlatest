@@ -20,6 +20,7 @@ interface Booking {
   totalAmount: number;
   travelDate: string | null;
   voucherUrl: string | null;
+  invoiceUrl: string | null;
   createdAt: string;
   travellers: Array<{
     traveller: {
@@ -431,34 +432,17 @@ export default function BookingDetailPage() {
                 >
                   Get Help
                 </Link>
-                {booking.status === "CONFIRMED" || booking.status === "BOOKED" ? (
-                  <button
-                    onClick={async () => {
-                      try {
-                        const response = await fetch(`/api/invoices/booking/${booking.id}`);
-                        if (!response.ok) {
-                          const error = await response.json();
-                          throw new Error(error.error || "Failed to generate invoice");
-                        }
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = `invoice-booking-${booking.id}.pdf`;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        document.body.removeChild(a);
-                      } catch (error) {
-                        console.error("Error downloading invoice:", error);
-                        alert(`Failed to download invoice: ${error instanceof Error ? error.message : "Unknown error"}`);
-                      }
-                    }}
+                {/* Only show invoice if it has been uploaded by admin */}
+                {booking.invoiceUrl && (booking.status === "CONFIRMED" || booking.status === "BOOKED" || booking.status === "COMPLETED") ? (
+                  <a
+                    href={`/api/invoices/download/booking/${booking.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="w-full border border-neutral-300 text-neutral-700 px-4 py-2 rounded-lg hover:bg-neutral-50 transition-colors flex items-center justify-center space-x-2"
                   >
                     <FileText size={18} />
                     <span>Download Invoice</span>
-                  </button>
+                  </a>
                 ) : null}
               </div>
             </div>

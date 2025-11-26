@@ -58,40 +58,57 @@ export async function GET(
       );
     }
 
-    // Generate activity log from booking history
+    // Fetch audit logs for this booking
+    const auditLogs = await prisma.auditLog.findMany({
+      where: {
+        entityType: "BOOKING",
+        entityId: params.id,
+      },
+      include: {
+        admin: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Generate activity log from booking history and audit logs
     const activities: any[] = [
       {
         id: "created",
-        type: "booking_created",
+        action: "CREATE",
         description: `Booking created by ${booking.user.email}`,
-        createdBy: null,
+        adminName: null,
         createdAt: booking.createdAt,
       },
     ];
 
-    // Add status change if updated
-    if (booking.updatedAt > booking.createdAt) {
+    // Add audit log entries
+    auditLogs.forEach((log) => {
       activities.push({
-        id: "updated",
-        type: "status_changed",
-        description: `Status changed to ${booking.status}`,
-        createdBy: booking.processedBy?.name || booking.processedBy?.email || null,
-        createdAt: booking.updatedAt,
+        id: log.id,
+        action: log.action,
+        description: log.description,
+        adminName: log.admin?.name || log.admin?.email || null,
+        createdAt: log.createdAt,
       });
-    }
+    });
 
     // Add payment activities
     booking.payments.forEach((payment) => {
-      if (payment.status === "COMPLETED") {
-        const isAdvance = payment.amount < booking.totalAmount;
-        activities.push({
-          id: payment.id,
-          type: "payment_received",
-          description: `Payment received: ₹${payment.amount.toLocaleString()}${isAdvance ? " (Advance)" : " (Full Payment)"}`,
-          createdBy: null,
-          createdAt: payment.createdAt,
-        });
-      }
+      const isAdvance = payment.amount < booking.totalAmount;
+      activities.push({
+        id: `payment-${payment.id}`,
+        action: payment.status === "COMPLETED" ? "PAYMENT_RECEIVED" : payment.status,
+        description: `Payment ${payment.status.toLowerCase()}: ₹${payment.amount.toLocaleString()}${isAdvance ? " (Advance)" : " (Full Payment)"}`,
+        adminName: null,
+        createdAt: payment.createdAt,
+      });
     });
 
     // Sort by date (newest first)

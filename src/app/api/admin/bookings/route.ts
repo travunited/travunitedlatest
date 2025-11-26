@@ -33,6 +33,12 @@ export async function GET(req: Request) {
     const assigned = searchParams.get("assigned") === "true";
     const dateFrom = searchParams.get("dateFrom");
     const dateTo = searchParams.get("dateTo");
+    const travelDateFrom = searchParams.get("travelDateFrom");
+    const travelDateTo = searchParams.get("travelDateTo");
+    const paymentStatus = searchParams.get("paymentStatus");
+    const assignedAdmin = searchParams.get("assignedAdmin");
+    const destination = searchParams.get("destination");
+    const search = searchParams.get("search");
 
     const where: any = {};
     if (status && status !== "ALL") {
@@ -58,12 +64,17 @@ export async function GET(req: Request) {
       };
     }
     
+    // Filter by assigned admin
+    if (assignedAdmin) {
+      where.processedById = assignedAdmin;
+    }
+    
     // Filter unconfirmed bookings (booked but not confirmed)
     if (unconfirmed) {
       where.status = "BOOKED";
     }
     
-    // Date range filter
+    // Date range filter (created date)
     if (dateFrom || dateTo) {
       where.createdAt = {};
       if (dateFrom) {
@@ -75,6 +86,39 @@ export async function GET(req: Request) {
         where.createdAt.lte = toDate;
       }
     }
+    
+    // Travel date range filter
+    if (travelDateFrom || travelDateTo) {
+      where.travelDate = {};
+      if (travelDateFrom) {
+        where.travelDate.gte = new Date(travelDateFrom);
+      }
+      if (travelDateTo) {
+        const toDate = new Date(travelDateTo);
+        toDate.setHours(23, 59, 59, 999);
+        where.travelDate.lte = toDate;
+      }
+    }
+    
+    // Destination filter
+    if (destination) {
+      where.tour = {
+        destination: {
+          contains: destination,
+          mode: "insensitive",
+        },
+      };
+    }
+    
+    // Search filter (Booking ID, phone, email, customer name)
+    if (search) {
+      where.OR = [
+        { id: { contains: search, mode: "insensitive" } },
+        { user: { email: { contains: search, mode: "insensitive" } } },
+        { user: { name: { contains: search, mode: "insensitive" } } },
+        { user: { phone: { contains: search, mode: "insensitive" } } },
+      ];
+    }
 
     const bookings = await prisma.booking.findMany({
       where,
@@ -83,20 +127,39 @@ export async function GET(req: Request) {
           select: {
             name: true,
             email: true,
+            phone: true,
           },
         },
         processedBy: {
           select: {
+            id: true,
             name: true,
             email: true,
           },
         },
         payments: {
-          where: {
-            status: "COMPLETED",
-          },
           select: {
             amount: true,
+            status: true,
+          },
+        },
+        travellers: {
+          select: {
+            id: true,
+          },
+        },
+        tour: {
+          select: {
+            id: true,
+            name: true,
+            destination: true,
+            country: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+              },
+            },
           },
         },
       },
@@ -105,18 +168,48 @@ export async function GET(req: Request) {
       },
     });
 
-    // Calculate amount paid and pending balance for each booking
+    // Calculate amount paid, pending balance, and payment status for each booking
     const bookingsWithPayment = bookings.map((booking) => {
-      const amountPaid = booking.payments.reduce((sum, p) => sum + p.amount, 0);
+      const completedPayments = booking.payments.filter((p) => p.status === "COMPLETED");
+      const failedPayments = booking.payments.filter((p) => p.status === "FAILED");
+      const refundedPayments = booking.payments.filter((p) => p.status === "REFUNDED");
+      
+      const amountPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0);
+      const amountRefunded = refundedPayments.reduce((sum, p) => sum + p.amount, 0);
       const pendingBalance = booking.totalAmount - amountPaid;
+      
+      // Determine payment status
+      let paymentStatus = "UNPAID";
+      if (amountRefunded > 0) {
+        paymentStatus = "REFUNDED";
+      } else if (amountPaid >= booking.totalAmount) {
+        paymentStatus = "PAID";
+      } else if (amountPaid > 0) {
+        paymentStatus = "PARTIAL";
+      } else if (failedPayments.length > 0) {
+        paymentStatus = "FAILED";
+      }
+      
+      // Determine source (if created by admin, there might be a flag - for now assume all are from website)
+      const source = "WEBSITE"; // TODO: Add source field to Booking model if needed
+      
       return {
         ...booking,
         amountPaid,
         pendingBalance: pendingBalance > 0 ? pendingBalance : 0,
+        paymentStatus,
+        source,
+        travellersCount: booking.travellers.length,
       };
     });
+    
+    // Filter by payment status if provided
+    let filteredBookings = bookingsWithPayment;
+    if (paymentStatus && paymentStatus !== "ALL") {
+      filteredBookings = bookingsWithPayment.filter((b) => b.paymentStatus === paymentStatus);
+    }
 
-    return NextResponse.json(bookingsWithPayment);
+    return NextResponse.json(filteredBookings);
   } catch (error) {
     console.error("Error fetching bookings:", error);
     return NextResponse.json(

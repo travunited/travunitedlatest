@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Eye, Upload, Download, User, Mail, Phone, Calendar, CreditCard, Send, Clock, CheckCircle, X, AlertCircle, ArrowLeft, UserPlus, ChevronDown, FileDown, FileText, MapPin, Globe } from "lucide-react";
+import { Eye, Upload, Download, User, Mail, Phone, Calendar, CreditCard, Send, Clock, CheckCircle, X, AlertCircle, ArrowLeft, UserPlus, ChevronDown, FileDown, FileText, MapPin, Globe, MessageCircle, Ban, DollarSign, AlertTriangle } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
 import { getCountryFlagUrl } from "@/lib/flags";
@@ -136,6 +136,19 @@ export default function AdminBookingDetailPage() {
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [removingInvoice, setRemovingInvoice] = useState(false);
   const [actionMessage, setActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [showOfflinePaymentModal, setShowOfflinePaymentModal] = useState(false);
+  const [offlinePaymentAmount, setOfflinePaymentAmount] = useState("");
+  const [offlinePaymentProof, setOfflinePaymentProof] = useState<File | null>(null);
+  const [allPayments, setAllPayments] = useState<Payment[]>([]);
+  const [auditLogs, setAuditLogs] = useState<Array<{
+    id: string;
+    action: string;
+    description: string;
+    createdAt: string;
+    adminName?: string;
+  }>>([]);
 
   const fetchBooking = useCallback(async () => {
     try {
@@ -147,6 +160,10 @@ export default function AdminBookingDetailPage() {
         setNotes(data.notes || "");
         if (data.processedBy?.id) {
           setSelectedAdminId(data.processedBy.id);
+        }
+        // Set all payments (not just completed)
+        if (data.payments) {
+          setAllPayments(data.payments);
         }
       }
     } catch (error) {
@@ -172,10 +189,23 @@ export default function AdminBookingDetailPage() {
     }
   }, []);
 
+  const fetchAuditLogs = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/admin/bookings/${params.id}/activities`);
+      if (response.ok) {
+        const data = await response.json();
+        setAuditLogs(data);
+      }
+    } catch (error) {
+      console.error("Error fetching audit logs:", error);
+    }
+  }, [params.id]);
+
   useEffect(() => {
     fetchBooking();
     fetchAdmins();
-  }, [fetchBooking, fetchAdmins]);
+    fetchAuditLogs();
+  }, [fetchBooking, fetchAdmins, fetchAuditLogs]);
 
   const handleStatusChange = async () => {
     if (!booking) return;
@@ -346,6 +376,129 @@ export default function AdminBookingDetailPage() {
     await handleResendEmail("payment_reminder");
   };
 
+  const handleConfirmBooking = async () => {
+    if (!booking) return;
+    setUpdating(true);
+    try {
+      const response = await fetch(`/api/admin/bookings/${params.id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CONFIRMED" }),
+      });
+
+      if (response.ok) {
+        await fetchBooking();
+        await fetchAuditLogs();
+        setActionMessage({ type: "success", text: "Booking confirmed successfully. Customer will be notified." });
+        setTimeout(() => setActionMessage(null), 5000);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setActionMessage({ type: "error", text: errorData.error || "Failed to confirm booking" });
+        setTimeout(() => setActionMessage(null), 5000);
+      }
+    } catch (error) {
+      setActionMessage({ type: "error", text: "An error occurred while confirming booking" });
+      setTimeout(() => setActionMessage(null), 5000);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleCancelBooking = async () => {
+    if (!booking || !cancelReason.trim()) return;
+    setUpdating(true);
+    try {
+      const response = await fetch(`/api/admin/bookings/${params.id}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          reason: cancelReason,
+          status: "CANCELLED"
+        }),
+      });
+
+      if (response.ok) {
+        await fetchBooking();
+        await fetchAuditLogs();
+        setShowCancelModal(false);
+        setCancelReason("");
+        setActionMessage({ type: "success", text: "Booking cancelled successfully. Customer will be notified." });
+        setTimeout(() => setActionMessage(null), 5000);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setActionMessage({ type: "error", text: errorData.error || "Failed to cancel booking" });
+        setTimeout(() => setActionMessage(null), 5000);
+      }
+    } catch (error) {
+      setActionMessage({ type: "error", text: "An error occurred while cancelling booking" });
+      setTimeout(() => setActionMessage(null), 5000);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleRecordOfflinePayment = async () => {
+    if (!booking || !offlinePaymentAmount) return;
+    setUpdating(true);
+    try {
+      const formData = new FormData();
+      formData.append("amount", offlinePaymentAmount);
+      if (offlinePaymentProof) {
+        formData.append("proof", offlinePaymentProof);
+      }
+
+      const response = await fetch(`/api/admin/bookings/${params.id}/offline-payment`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.ok) {
+        await fetchBooking();
+        await fetchAuditLogs();
+        setShowOfflinePaymentModal(false);
+        setOfflinePaymentAmount("");
+        setOfflinePaymentProof(null);
+        setActionMessage({ type: "success", text: "Offline payment recorded successfully" });
+        setTimeout(() => setActionMessage(null), 5000);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setActionMessage({ type: "error", text: errorData.error || "Failed to record offline payment" });
+        setTimeout(() => setActionMessage(null), 5000);
+      }
+    } catch (error) {
+      setActionMessage({ type: "error", text: "An error occurred while recording offline payment" });
+      setTimeout(() => setActionMessage(null), 5000);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleSendNotification = async (notificationType: string) => {
+    if (!booking) return;
+    setUpdating(true);
+    try {
+      const response = await fetch(`/api/admin/bookings/${params.id}/notify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationType }),
+      });
+
+      if (response.ok) {
+        setActionMessage({ type: "success", text: "Notification sent successfully" });
+        setTimeout(() => setActionMessage(null), 5000);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        setActionMessage({ type: "error", text: errorData.error || "Failed to send notification" });
+        setTimeout(() => setActionMessage(null), 5000);
+      }
+    } catch (error) {
+      setActionMessage({ type: "error", text: "An error occurred while sending notification" });
+      setTimeout(() => setActionMessage(null), 5000);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   // Parse notes into list (if formatted with timestamps)
   const parseNotes = (notesText: string | null): Array<{ timestamp: string; message: string }> => {
     if (!notesText) return [];
@@ -466,6 +619,7 @@ export default function AdminBookingDetailPage() {
                   booking.status === "COMPLETED" ? "bg-neutral-100 text-neutral-700" :
                   booking.status === "CANCELLED" ? "bg-red-100 text-red-700" :
                   booking.status === "BOOKED" ? "bg-blue-100 text-blue-700" :
+                  booking.status === "REQUEST_RECEIVED" ? "bg-purple-100 text-purple-700" :
                   booking.status === "PAYMENT_PENDING" ? "bg-yellow-100 text-yellow-700" :
                   "bg-neutral-100 text-neutral-700"
                 }`}>
@@ -607,8 +761,8 @@ export default function AdminBookingDetailPage() {
 
             {/* Primary Contact */}
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <h2 className="text-xl font-bold text-neutral-900 mb-4">Primary Contact Information</h2>
-              <div className="grid md:grid-cols-2 gap-4">
+              <h2 className="text-xl font-bold text-neutral-900 mb-4">Customer & Contact Information</h2>
+              <div className="grid md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <div className="text-sm text-neutral-600 mb-1">Full Name</div>
                   <div className="font-medium text-neutral-900">{booking.user.name || "N/A"}</div>
@@ -624,7 +778,55 @@ export default function AdminBookingDetailPage() {
                   </div>
                 )}
               </div>
+              {/* Quick Action Buttons */}
+              <div className="flex flex-wrap gap-2 pt-4 border-t border-neutral-200">
+                {booking.user.phone && (
+                  <>
+                    <a
+                      href={`tel:${booking.user.phone}`}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium"
+                    >
+                      <Phone size={16} />
+                      Call
+                    </a>
+                    <a
+                      href={`https://wa.me/${booking.user.phone.replace(/[^0-9]/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors text-sm font-medium"
+                    >
+                      <MessageCircle size={16} />
+                      WhatsApp
+                    </a>
+                  </>
+                )}
+                <a
+                  href={`mailto:${booking.user.email}`}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+                >
+                  <Mail size={16} />
+                  Email
+                </a>
+              </div>
             </div>
+
+            {/* Custom Package Request */}
+            {booking.status === "REQUEST_RECEIVED" && booking.specialRequests && booking.specialRequests.includes("[CUSTOMISED PACKAGE REQUEST]") && (
+              <div className="bg-purple-50 border-2 border-purple-200 rounded-2xl shadow-medium p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertCircle className="text-purple-600" size={24} />
+                  <h2 className="text-xl font-bold text-purple-900">Custom Package Request</h2>
+                </div>
+                <div className="bg-white rounded-lg p-4 border border-purple-200">
+                  <p className="text-sm text-neutral-700 whitespace-pre-line">
+                    {booking.specialRequests.split("[CUSTOMISED PACKAGE REQUEST]")[1]?.trim() || booking.specialRequests}
+                  </p>
+                </div>
+                <p className="text-sm text-purple-700 mt-3">
+                  This booking requires admin approval. Review the custom request details above and approve or reject accordingly.
+                </p>
+              </div>
+            )}
 
             {(booking.foodPreference ||
               booking.foodPreferenceNotes ||
@@ -752,21 +954,55 @@ export default function AdminBookingDetailPage() {
                             {passportExpiry && (
                               <div>
                                 <span className="text-neutral-500">Passport Expiry:</span>{" "}
-                                <span className="font-medium text-neutral-900">{formatDate(passportExpiry)}</span>
+                                <span className={`font-medium ${(() => {
+                                  if (!booking.travelDate) return "text-neutral-900";
+                                  const expiryDate = new Date(passportExpiry);
+                                  const travelDate = new Date(booking.travelDate);
+                                  const sixMonthsFromTravel = new Date(travelDate);
+                                  sixMonthsFromTravel.setMonth(sixMonthsFromTravel.getMonth() + 6);
+                                  if (expiryDate < sixMonthsFromTravel) {
+                                    return "text-red-600";
+                                  }
+                                  return "text-green-600";
+                                })()}`}>
+                                  {formatDate(passportExpiry)}
+                                </span>
+                                {booking.travelDate && (() => {
+                                  const expiryDate = new Date(passportExpiry);
+                                  const travelDate = new Date(booking.travelDate);
+                                  const sixMonthsFromTravel = new Date(travelDate);
+                                  sixMonthsFromTravel.setMonth(sixMonthsFromTravel.getMonth() + 6);
+                                  if (expiryDate < sixMonthsFromTravel) {
+                                    return (
+                                      <div className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                                        <AlertTriangle size={12} />
+                                        Passport expires less than 6 months from travel date
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                })()}
                               </div>
                             )}
                           </div>
                         )}
                         {t.passportFileKey && (
-                          <a
-                            href={`/api/files?key=${encodeURIComponent(t.passportFileKey)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700 mt-3"
-                          >
-                            <Download size={16} />
-                            Download Passport Copy
-                          </a>
+                          <div className="mt-3 pt-3 border-t border-neutral-200">
+                            <div className="flex items-center justify-between">
+                              <a
+                                href={`/api/files?key=${encodeURIComponent(t.passportFileKey)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700"
+                              >
+                                <Download size={16} />
+                                Download Passport Copy
+                              </a>
+                              <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                                Received
+                              </span>
+                            </div>
+                          </div>
                         )}
                       </div>
                     );
@@ -774,6 +1010,50 @@ export default function AdminBookingDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* Documents Section */}
+            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+              <h2 className="text-xl font-bold text-neutral-900 mb-4">Documents</h2>
+              <div className="space-y-4">
+                {booking.travellers.map((t, index) => {
+                  if (!t.passportFileKey) return null;
+                  return (
+                    <div key={index} className="border border-neutral-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <div className="font-medium text-neutral-900">
+                            {t.firstName || t.traveller.firstName} {t.lastName || t.traveller.lastName} - Passport
+                          </div>
+                          <div className="text-sm text-neutral-500 mt-1">
+                            {t.passportFileName || "passport.pdf"}
+                          </div>
+                        </div>
+                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
+                          Received
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-3">
+                        <a
+                          href={`/api/files?key=${encodeURIComponent(t.passportFileKey)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-sm text-primary-600 hover:text-primary-700"
+                        >
+                          <Download size={16} />
+                          Download
+                        </a>
+                      </div>
+                    </div>
+                  );
+                })}
+                {booking.travellers.every(t => !t.passportFileKey) && (
+                  <div className="text-center py-8 text-neutral-500">
+                    <FileText size={48} className="mx-auto mb-2 text-neutral-300" />
+                    <p className="text-sm">No documents uploaded yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Add-ons */}
             {booking.addOns && booking.addOns.length > 0 && (
@@ -831,16 +1111,40 @@ export default function AdminBookingDetailPage() {
                   </div>
                 </div>
 
-                {/* Payment History */}
-                {completedPayments.length > 0 && (
-                  <div className="pt-4 border-t border-neutral-200">
-                    <h3 className="font-semibold text-neutral-900 mb-3">Payment History</h3>
+                {/* Payment Timeline */}
+                <div className="pt-4 border-t border-neutral-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-neutral-900">Payment Timeline</h3>
+                    <button
+                      onClick={() => setShowOfflinePaymentModal(true)}
+                      className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+                    >
+                      <DollarSign size={16} />
+                      Record Offline Payment
+                    </button>
+                  </div>
+                  {allPayments.length > 0 ? (
                     <div className="space-y-3">
-                      {completedPayments.map((payment, index) => (
-                        <div key={payment.id} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
-                          <div>
-                            <div className="text-sm font-medium text-neutral-900">
-                              Payment {index + 1} - {payment.amount < booking.totalAmount ? "Advance" : "Full Payment"}
+                      {allPayments.map((payment, index) => (
+                        <div key={payment.id} className={`flex items-center justify-between p-3 rounded-lg ${
+                          payment.status === "COMPLETED" ? "bg-green-50 border border-green-200" :
+                          payment.status === "FAILED" ? "bg-red-50 border border-red-200" :
+                          payment.status === "REFUNDED" ? "bg-purple-50 border border-purple-200" :
+                          "bg-neutral-50 border border-neutral-200"
+                        }`}>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="text-sm font-medium text-neutral-900">
+                                Payment {index + 1} - {payment.amount < booking.totalAmount ? "Advance" : "Full Payment"}
+                              </div>
+                              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                                payment.status === "COMPLETED" ? "bg-green-100 text-green-700" :
+                                payment.status === "FAILED" ? "bg-red-100 text-red-700" :
+                                payment.status === "REFUNDED" ? "bg-purple-100 text-purple-700" :
+                                "bg-yellow-100 text-yellow-700"
+                              }`}>
+                                {payment.status}
+                              </span>
                             </div>
                             <div className="text-xs text-neutral-500 mt-1">
                               {formatDate(payment.createdAt)} • {new Date(payment.createdAt).toLocaleTimeString()}
@@ -850,12 +1154,71 @@ export default function AdminBookingDetailPage() {
                                 Transaction ID: {payment.razorpayPaymentId.slice(0, 20)}...
                               </div>
                             )}
+                            {payment.razorpayOrderId && (
+                              <div className="text-xs text-neutral-500 mt-1">
+                                Order ID: {payment.razorpayOrderId}
+                              </div>
+                            )}
                           </div>
-                          <div className="text-lg font-bold text-green-700">₹{payment.amount.toLocaleString()}</div>
+                          <div className={`text-lg font-bold ${
+                            payment.status === "COMPLETED" ? "text-green-700" :
+                            payment.status === "REFUNDED" ? "text-purple-700" :
+                            "text-neutral-700"
+                          }`}>
+                            ₹{payment.amount.toLocaleString()}
+                          </div>
                         </div>
                       ))}
                     </div>
+                  ) : (
+                    <div className="text-center py-4 text-neutral-500 text-sm">
+                      No payment attempts yet
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Cancellation & Refund */}
+            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+              <h2 className="text-xl font-bold text-neutral-900 mb-4">Cancellation & Refund</h2>
+              <div className="space-y-4">
+                {booking.status === "CANCELLED" ? (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertCircle className="text-red-600" size={20} />
+                      <span className="font-medium text-red-900">Booking Cancelled</span>
+                    </div>
+                    <p className="text-sm text-red-700">
+                      This booking has been cancelled. Refund processing will be handled separately.
+                    </p>
                   </div>
+                ) : (
+                  <>
+                    <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
+                      <h3 className="font-semibold text-neutral-900 mb-2">Cancellation Policy</h3>
+                      <p className="text-sm text-neutral-700 mb-3">
+                        Cancellation policies vary by tour. Please refer to the tour's specific cancellation terms.
+                        Refunds, if applicable, will be processed according to the policy.
+                      </p>
+                      {booking.tour?.cancellationTerms && (
+                        <div className="mt-3 p-3 bg-white rounded border border-neutral-200">
+                          <p className="text-sm text-neutral-700 whitespace-pre-line">
+                            {booking.tour.cancellationTerms}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    {booking.status !== "CANCELLED" && (
+                      <button
+                        onClick={() => setShowCancelModal(true)}
+                        className="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Ban size={16} />
+                        Cancel Booking
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -931,6 +1294,125 @@ export default function AdminBookingDetailPage() {
 
           {/* Right Column - Actions */}
           <div className="lg:col-span-1 space-y-6">
+            {/* Quick Actions */}
+            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+              <h3 className="font-semibold text-neutral-900 mb-4">Quick Actions</h3>
+              <div className="space-y-2">
+                {booking.status === "REQUEST_RECEIVED" && (
+                  <>
+                    <button
+                      onClick={async () => {
+                        if (!booking) return;
+                        setUpdating(true);
+                        try {
+                          const response = await fetch(`/api/admin/bookings/${params.id}/status`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ status: "CONFIRMED" }),
+                          });
+
+                          if (response.ok) {
+                            await fetchBooking();
+                            await fetchAuditLogs();
+                            setActionMessage({ type: "success", text: "Custom package request approved. Booking confirmed." });
+                            setTimeout(() => setActionMessage(null), 5000);
+                          } else {
+                            const errorData = await response.json().catch(() => ({}));
+                            setActionMessage({ type: "error", text: errorData.error || "Failed to approve request" });
+                            setTimeout(() => setActionMessage(null), 5000);
+                          }
+                        } catch (error) {
+                          setActionMessage({ type: "error", text: "An error occurred while approving request" });
+                          setTimeout(() => setActionMessage(null), 5000);
+                        } finally {
+                          setUpdating(false);
+                        }
+                      }}
+                      disabled={updating}
+                      className="w-full bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle size={16} />
+                      Approve Custom Package
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!booking) return;
+                        const reason = prompt("Please provide a reason for rejection:");
+                        if (!reason) return;
+                        setUpdating(true);
+                        try {
+                          const response = await fetch(`/api/admin/bookings/${params.id}/cancel`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ reason, status: "CANCELLED" }),
+                          });
+
+                          if (response.ok) {
+                            await fetchBooking();
+                            await fetchAuditLogs();
+                            setActionMessage({ type: "success", text: "Custom package request rejected." });
+                            setTimeout(() => setActionMessage(null), 5000);
+                          } else {
+                            const errorData = await response.json().catch(() => ({}));
+                            setActionMessage({ type: "error", text: errorData.error || "Failed to reject request" });
+                            setTimeout(() => setActionMessage(null), 5000);
+                          }
+                        } catch (error) {
+                          setActionMessage({ type: "error", text: "An error occurred while rejecting request" });
+                          setTimeout(() => setActionMessage(null), 5000);
+                        } finally {
+                          setUpdating(false);
+                        }
+                      }}
+                      disabled={updating}
+                      className="w-full bg-red-100 text-red-700 px-4 py-2 rounded-lg font-medium hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      <X size={16} />
+                      Reject Request
+                    </button>
+                  </>
+                )}
+                {booking.status !== "CONFIRMED" && booking.status !== "CANCELLED" && booking.status !== "REQUEST_RECEIVED" && (
+                  <button
+                    onClick={handleConfirmBooking}
+                    disabled={updating}
+                    className="w-full bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle size={16} />
+                    Confirm Booking
+                  </button>
+                )}
+                {booking.status !== "CANCELLED" && (
+                  <button
+                    onClick={() => setShowCancelModal(true)}
+                    disabled={updating}
+                    className="w-full bg-red-100 text-red-700 px-4 py-2 rounded-lg font-medium hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <Ban size={16} />
+                    Cancel Booking
+                  </button>
+                )}
+                {pendingBalance > 0 && (
+                  <button
+                    onClick={() => setShowOfflinePaymentModal(true)}
+                    disabled={updating}
+                    className="w-full bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-medium hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    <DollarSign size={16} />
+                    Mark as Paid
+                  </button>
+                )}
+                <button
+                  onClick={() => handleSendNotification("status_update")}
+                  disabled={updating}
+                  className="w-full bg-neutral-100 text-neutral-700 px-4 py-2 rounded-lg font-medium hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Send size={16} />
+                  Send Notification
+                </button>
+              </div>
+            </div>
+
             {/* Booking Status Control */}
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
               <h3 className="font-semibold text-neutral-900 mb-4">Change Status</h3>
@@ -941,6 +1423,7 @@ export default function AdminBookingDetailPage() {
                   className="w-full px-4 py-2 border border-neutral-300 rounded-lg text-sm"
                 >
                   <option value="DRAFT">Draft</option>
+                  <option value="REQUEST_RECEIVED">Request Received</option>
                   <option value="PAYMENT_PENDING">Payment Pending</option>
                   <option value="BOOKED">Booked</option>
                   <option value="CONFIRMED">Confirmed</option>
@@ -1202,8 +1685,130 @@ export default function AdminBookingDetailPage() {
                 )}
               </div>
             </div>
+
+            {/* Audit Log */}
+            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+              <h3 className="font-semibold text-neutral-900 mb-4">Audit Log</h3>
+              {auditLogs.length > 0 ? (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {auditLogs.map((log) => (
+                    <div key={log.id} className="text-sm border-l-2 border-neutral-200 pl-3 py-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-neutral-900">{log.action}</span>
+                        <span className="text-xs text-neutral-500">{formatDate(log.createdAt)}</span>
+                      </div>
+                      <div className="text-neutral-700">{log.description}</div>
+                      {log.adminName && (
+                        <div className="text-xs text-neutral-500 mt-1">by {log.adminName}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-neutral-500 text-sm">
+                  No audit logs available
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Cancel Booking Modal */}
+        {showCancelModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-bold text-neutral-900 mb-4">Cancel Booking</h3>
+              <p className="text-sm text-neutral-600 mb-4">
+                Please provide a reason for cancelling this booking. The customer will be notified.
+              </p>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Enter cancellation reason..."
+                className="w-full px-4 py-2 border border-neutral-300 rounded-lg text-sm mb-4"
+                rows={4}
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setCancelReason("");
+                  }}
+                  className="flex-1 px-4 py-2 border border-neutral-300 rounded-lg text-neutral-700 hover:bg-neutral-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCancelBooking}
+                  disabled={!cancelReason.trim() || updating}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {updating ? "Cancelling..." : "Confirm Cancellation"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Offline Payment Modal */}
+        {showOfflinePaymentModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-bold text-neutral-900 mb-4">Record Offline Payment</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Amount (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={offlinePaymentAmount}
+                    onChange={(e) => setOfflinePaymentAmount(e.target.value)}
+                    placeholder="Enter amount"
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg text-sm"
+                    min="0"
+                    max={pendingBalance}
+                  />
+                  {pendingBalance > 0 && (
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Pending balance: ₹{pendingBalance.toLocaleString()}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Payment Proof (Optional)
+                  </label>
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => setOfflinePaymentProof(e.target.files?.[0] || null)}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg text-sm"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowOfflinePaymentModal(false);
+                      setOfflinePaymentAmount("");
+                      setOfflinePaymentProof(null);
+                    }}
+                    className="flex-1 px-4 py-2 border border-neutral-300 rounded-lg text-neutral-700 hover:bg-neutral-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleRecordOfflinePayment}
+                    disabled={!offlinePaymentAmount || updating}
+                    className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {updating ? "Recording..." : "Record Payment"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

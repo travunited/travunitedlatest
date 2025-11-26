@@ -131,6 +131,11 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
     policyAccepted: false,
     travellers: [] as TravellerForm[],
     paymentType: "full" as "full" | "advance",
+    isCustomisedPackage: false,
+    customRequestNotes: "",
+    customBasePrice: "",
+    customAddOnsPrice: "",
+    customDiscount: "",
   });
 
   const createTravellerEntry = useCallback((): TravellerForm => ({
@@ -653,6 +658,13 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
           policyAccepted: formData.policyAccepted,
           policyVersion: tour.updatedAt || null,
           hotelCategory: selectedHotelCategory || null,
+          customisations: formData.isCustomisedPackage ? {
+            isCustomisedPackage: true,
+            customRequestNotes: formData.customRequestNotes,
+            customBasePrice: formData.customBasePrice ? parseFloat(formData.customBasePrice) : null,
+            customAddOnsPrice: formData.customAddOnsPrice ? parseFloat(formData.customAddOnsPrice) : null,
+            customDiscount: formData.customDiscount ? parseFloat(formData.customDiscount) : null,
+          } : null,
         }),
       });
 
