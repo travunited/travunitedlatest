@@ -54,6 +54,11 @@ export async function POST(req: Request) {
     const authError = ensureSuperAdmin(session);
     if (authError) return authError;
 
+    // TypeScript guard: session is guaranteed to be non-null after ensureSuperAdmin check
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const data = policySchema.parse(body);
 

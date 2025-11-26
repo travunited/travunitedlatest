@@ -94,6 +94,7 @@ interface Tour {
   updatedAt?: string | Date | null;
   bookingPolicies?: string | null;
   cancellationTerms?: string | null;
+  childAgeLimit?: number | null;
 }
 
 export default function TourBookingPage({ params }: { params: { id: string } }) {

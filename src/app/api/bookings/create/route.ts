@@ -237,7 +237,7 @@ export async function POST(req: Request) {
 
     // Determine if destination is domestic
     const isDomestic = isDomesticDestination(
-      tourRecord.destinationCountry || tourRecord.country?.code,
+      tourRecord.destinationCountry || null,
       "IN" // Company country - adjust if needed
     );
 

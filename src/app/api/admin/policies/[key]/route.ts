@@ -66,6 +66,11 @@ export async function PATCH(
     const authError = ensureSuperAdmin(session);
     if (authError) return authError;
 
+    // TypeScript guard: session is guaranteed to be non-null after ensureSuperAdmin check
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const data = updatePolicySchema.parse(body);
 
@@ -125,6 +130,11 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
     const authError = ensureSuperAdmin(session);
     if (authError) return authError;
+
+    // TypeScript guard: session is guaranteed to be non-null after ensureSuperAdmin check
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const policy = await prisma.sitePolicy.findUnique({
       where: { key: params.key },

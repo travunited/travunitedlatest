@@ -27,6 +27,11 @@ export async function POST(req: Request) {
     const authError = ensureAdmin(session);
     if (authError) return authError;
 
+    // TypeScript guard: session is guaranteed to be non-null after ensureAdmin check
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const { action, ids } = body;
 

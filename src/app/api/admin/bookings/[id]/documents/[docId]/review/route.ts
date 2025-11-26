@@ -38,6 +38,11 @@ export async function POST(
     const authError = ensureAdmin(session);
     if (authError) return authError;
 
+    // TypeScript guard: session is guaranteed to be non-null after ensureAdmin check
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const data = reviewSchema.parse(body);
 
@@ -103,7 +108,7 @@ export async function POST(
     if (data.status === "REJECTED") {
       await notify({
         userId: booking.userId,
-        type: "BOOKING_DOCUMENT_REJECTED",
+        type: "TOUR_BOOKING_DOCUMENT_REJECTED",
         title: "Document Rejected",
         message: `Your ${document.type} document for booking ${booking.tourName || "tour"} has been rejected. ${data.rejectionReason ? `Reason: ${data.rejectionReason}` : ""}`,
         link: `/dashboard/bookings/${booking.id}`,

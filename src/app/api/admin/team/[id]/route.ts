@@ -81,6 +81,11 @@ export async function PATCH(
     const authError = ensureAdmin(session);
     if (authError) return authError;
 
+    // TypeScript guard: session is guaranteed to be non-null after ensureAdmin check
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const existing = await prisma.teamMember.findUnique({
       where: { id: params.id },
     });
@@ -193,6 +198,11 @@ export async function DELETE(
     const session = await getServerSession(authOptions);
     const authError = ensureAdmin(session);
     if (authError) return authError;
+
+    // TypeScript guard: session is guaranteed to be non-null after ensureAdmin check
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const teamMember = await prisma.teamMember.findUnique({
       where: { id: params.id },
