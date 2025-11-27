@@ -27,6 +27,7 @@ import {
   TrendingUp,
   Briefcase,
   Star,
+  UserCircle,
 } from "lucide-react";
 
 const BASE_MENU_ITEMS = [
@@ -64,6 +65,12 @@ const BASE_MENU_ITEMS = [
     label: "Careers",
     href: "/admin/careers",
     icon: Briefcase,
+    roles: ["STAFF_ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    label: "Teams",
+    href: "/admin/team",
+    icon: UserCircle,
     roles: ["STAFF_ADMIN", "SUPER_ADMIN"],
   },
   {
