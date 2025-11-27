@@ -256,7 +256,7 @@ export async function POST(req: Request) {
       isDomestic
     );
 
-    const travellerValidationErrors: Array<{ field: string; message: string }> = [];
+    const travellerValidationErrors: Array<{ field: string; message: string; code?: string }> = [];
 
     data.travellers.forEach((traveller, index) => {
       const classification = travellerClassifications[index];
