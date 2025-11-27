@@ -12,6 +12,7 @@ import {
   getRequiredDocuments,
   validatePassportExpiry,
 } from "@/lib/booking-helpers";
+import { getTourAdminEmail, getSupportAdminEmail } from "@/lib/admin-contacts";
 export const dynamic = "force-dynamic";
 
 const travellerSchema = z.object({
@@ -685,6 +686,8 @@ export async function POST(req: Request) {
     try {
       const { notify } = await import("@/lib/notifications");
       const { sendEmail } = await import("@/lib/email");
+      const tourAdminEmail = getTourAdminEmail();
+      const supportEmail = getSupportAdminEmail();
 
       // Notify customer
       if (isCustomisedPackage) {
@@ -712,45 +715,55 @@ export async function POST(req: Request) {
         });
 
         // Notify admins about custom package request
-        await sendEmail({
-          to: "info@travunited.com",
-          subject: `New Custom Package Request - ${data.tourName || tourRecord.name}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h1>New Custom Package Request</h1>
-              <p>A new custom package request has been received:</p>
-              <ul>
-                <li><strong>Tour:</strong> ${data.tourName || tourRecord.name}</li>
-                <li><strong>Customer:</strong> ${data.primaryContact.name} (${data.primaryContact.email})</li>
-                <li><strong>Travel Date:</strong> ${new Date(data.travelDate).toLocaleDateString()}</li>
-                <li><strong>Booking ID:</strong> ${booking.id}</li>
-              </ul>
-              <p><strong>Custom Request:</strong></p>
-              <p style="background: #f5f5f5; padding: 15px; border-radius: 4px;">${data.customisedPackage?.customRequestNotes || "N/A"}</p>
-              <p><a href="${process.env.NEXTAUTH_URL}/admin/bookings/${booking.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Review Request</a></p>
-            </div>
-          `,
-        });
+        if (!tourAdminEmail) {
+          console.warn("Tour admin email not configured; skipping custom package admin notification.");
+        } else {
+          await sendEmail({
+            to: tourAdminEmail,
+            subject: `New Custom Package Request - ${data.tourName || tourRecord.name}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h1>New Custom Package Request</h1>
+                <p>A new custom package request has been received:</p>
+                <ul>
+                  <li><strong>Tour:</strong> ${data.tourName || tourRecord.name}</li>
+                  <li><strong>Customer:</strong> ${data.primaryContact.name} (${data.primaryContact.email})</li>
+                  <li><strong>Travel Date:</strong> ${new Date(data.travelDate).toLocaleDateString()}</li>
+                  <li><strong>Booking ID:</strong> ${booking.id}</li>
+                </ul>
+                <p><strong>Custom Request:</strong></p>
+                <p style="background: #f5f5f5; padding: 15px; border-radius: 4px;">${data.customisedPackage?.customRequestNotes || "N/A"}</p>
+                <p><a href="${process.env.NEXTAUTH_URL}/admin/bookings/${booking.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Review Request</a></p>
+              </div>
+            `,
+            category: "tours",
+          });
+        }
       } else {
         // Regular booking - notify admins
-        await sendEmail({
-          to: "info@travunited.com",
-          subject: `New Tour Booking - ${data.tourName || tourRecord.name}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h1>New Tour Booking</h1>
-              <p>A new tour booking has been created:</p>
-              <ul>
-                <li><strong>Tour:</strong> ${data.tourName || tourRecord.name}</li>
-                <li><strong>Customer:</strong> ${data.primaryContact.name} (${data.primaryContact.email})</li>
-                <li><strong>Travel Date:</strong> ${new Date(data.travelDate).toLocaleDateString()}</li>
-                <li><strong>Total Amount:</strong> ₹${finalTotalAmount.toLocaleString()}</li>
-                <li><strong>Booking ID:</strong> ${booking.id}</li>
-              </ul>
-              <p><a href="${process.env.NEXTAUTH_URL}/admin/bookings/${booking.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Booking</a></p>
-            </div>
-          `,
-        });
+        if (!tourAdminEmail) {
+          console.warn("Tour admin email not configured; skipping tour booking admin notification.");
+        } else {
+          await sendEmail({
+            to: tourAdminEmail,
+            subject: `New Tour Booking - ${data.tourName || tourRecord.name}`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h1>New Tour Booking</h1>
+                <p>A new tour booking has been created:</p>
+                <ul>
+                  <li><strong>Tour:</strong> ${data.tourName || tourRecord.name}</li>
+                  <li><strong>Customer:</strong> ${data.primaryContact.name} (${data.primaryContact.email})</li>
+                  <li><strong>Travel Date:</strong> ${new Date(data.travelDate).toLocaleDateString()}</li>
+                  <li><strong>Total Amount:</strong> ₹${finalTotalAmount.toLocaleString()}</li>
+                  <li><strong>Booking ID:</strong> ${booking.id}</li>
+                </ul>
+                <p><a href="${process.env.NEXTAUTH_URL}/admin/bookings/${booking.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Booking</a></p>
+              </div>
+            `,
+            category: "tours",
+          });
+        }
       }
     } catch (notifyError) {
       console.error("Error sending notifications:", notifyError);

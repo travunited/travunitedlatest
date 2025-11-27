@@ -5,6 +5,7 @@ import { sendEmail } from "@/lib/email";
 import { notifyMultiple } from "@/lib/notifications";
 import { AuditAction, AuditEntityType } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
+import { getSupportAdminEmail } from "@/lib/admin-contacts";
 export const dynamic = "force-dynamic";
 
 const contactSchema = z.object({
@@ -114,16 +115,22 @@ export async function POST(req: Request) {
     `;
 
     // Send email with proper subject format: [Support] <subject> - <user email>
-    try {
-      await sendEmail({
-        to: "info@travunited.com",
-        replyTo: data.email, // Set reply-to to user's email
-        subject: `[Support] ${data.subject} - ${data.email}`,
-        html: adminEmailHtml,
-      });
-    } catch (emailError) {
-      console.error("Error sending email for support message:", emailError);
-      // Don't fail the request if email fails - message is already saved
+    const supportEmail = getSupportAdminEmail();
+    if (!supportEmail) {
+      console.warn("Support admin email not configured; skipping help contact email.");
+    } else {
+      try {
+        await sendEmail({
+          to: supportEmail,
+          replyTo: data.email, // Set reply-to to user's email
+          subject: `[Support] ${data.subject} - ${data.email}`,
+          html: adminEmailHtml,
+          category: "general",
+        });
+      } catch (emailError) {
+        console.error("Error sending email for support message:", emailError);
+        // Don't fail the request if email fails - message is already saved
+      }
     }
 
     // Notify admins in-app (non-blocking)

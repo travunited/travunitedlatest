@@ -2,6 +2,10 @@ import { Resend } from "resend";
 import { formatDate } from "./dateFormat";
 import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import {
+  getSupportAdminEmail,
+  getTourAdminEmail,
+} from "./admin-contacts";
 
 export interface EmailOptions {
   to: string | string[];
@@ -91,7 +95,7 @@ export async function getEmailServiceConfig() {
 }
 
 // Central admin inbox - all admin-related emails go here
-const ADMIN_INBOX = "info@travunited.com";
+const ADMIN_INBOX = getSupportAdminEmail();
 
 /**
  * Resolve the recipient email based on user role and routing rules
@@ -592,6 +596,9 @@ export async function sendCorporateLeadAdminEmail(
     createdAt: Date;
   }
 ) {
+  const adminRecipient =
+    getTourAdminEmail() || getSupportAdminEmail() || ADMIN_INBOX;
+
   const subject = `New Corporate Lead - ${leadData.companyName}`;
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -643,7 +650,7 @@ export async function sendCorporateLeadAdminEmail(
 
   // Send directly to admin inbox, not routed through sendUserEmail
   return sendEmail({
-    to: "info@travunited.com",
+    to: adminRecipient,
     subject,
     html,
     category: "general",
@@ -780,7 +787,7 @@ export async function sendAdminWelcomeEmail(
           <li>Contact support immediately if you notice any suspicious activity</li>
         </ul>
         <p style="margin-top: 15px;">
-          If you did not expect this email, please contact <a href="mailto:info@travunited.com">info@travunited.com</a> immediately.
+          If you did not expect this email, please contact <a href="mailto:${ADMIN_INBOX}">${ADMIN_INBOX}</a> immediately.
         </p>
       </div>
     </div>

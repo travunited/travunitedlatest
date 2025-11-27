@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { getSupportAdminEmail } from "@/lib/admin-contacts";
 export const dynamic = "force-dynamic";
 
 const contactSchema = z.object({
@@ -43,11 +44,18 @@ export async function POST(req: Request) {
         </div>
       `;
 
-      await sendEmail({
-        to: "info@travunited.com",
-        subject: `New Contact Form Submission: ${data.subject}`,
-        html: adminEmailHtml,
-      });
+      const adminEmail = getSupportAdminEmail();
+      if (!adminEmail) {
+        console.warn("Support admin email not configured; skipping contact notification email.");
+      } else {
+        await sendEmail({
+          to: adminEmail,
+          subject: `New Contact Form Submission: ${data.subject}`,
+          html: adminEmailHtml,
+          replyTo: data.email,
+          category: "general",
+        });
+      }
     } catch (emailError) {
       // Log email error but don't fail the request since data is already saved
       console.error("Error sending contact form email notification:", emailError);

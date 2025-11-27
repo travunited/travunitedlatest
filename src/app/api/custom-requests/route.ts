@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { sendEmail } from "@/lib/email";
 import { notifyMultiple } from "@/lib/notifications";
+import { getTourAdminEmail, getSupportAdminEmail } from "@/lib/admin-contacts";
 import { AuditAction, AuditEntityType } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
 export const dynamic = "force-dynamic";
@@ -41,6 +42,8 @@ export async function POST(req: Request) {
     });
 
     // Send email to admin
+    const tourAdminEmail = getTourAdminEmail();
+
     try {
       const adminEmailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -56,11 +59,16 @@ export async function POST(req: Request) {
         </div>
       `;
 
-      await sendEmail({
-        to: "info@travunited.com",
-        subject: `New Custom Tour Request from ${data.name}`,
-        html: adminEmailHtml,
-      });
+      if (!tourAdminEmail) {
+        console.warn("Tour admin email not configured; skipping custom request admin email.");
+      } else {
+        await sendEmail({
+          to: tourAdminEmail,
+          subject: `New Custom Tour Request from ${data.name}`,
+          html: adminEmailHtml,
+          category: "tours",
+        });
+      }
     } catch (emailError) {
       console.error("Error sending custom tour request email:", emailError);
       // Don't fail the request if email fails
@@ -68,13 +76,14 @@ export async function POST(req: Request) {
 
     // Send confirmation email to customer
     try {
+      const supportEmail = getSupportAdminEmail();
       const customerEmailHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1>Thank You for Your Custom Tour Request</h1>
           <p>Dear ${data.name},</p>
           <p>We have received your custom tour request and our team will review it and get back to you within 24-48 hours.</p>
           <p>Request ID: <strong>${request.id}</strong></p>
-          <p>If you have any questions, please contact us at info@travunited.com or +91 63603 92398.</p>
+          <p>If you have any questions, please contact us at ${supportEmail} or +91 63603 92398.</p>
           <p>Best regards,<br>The Travunited Team</p>
         </div>
       `;

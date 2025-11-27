@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 
 type AdminRole = "STAFF_ADMIN" | "SUPER_ADMIN";
 
+const DEFAULT_SUPPORT_EMAIL = "info@travunited.com";
+
 export async function getAdminUserIds(
   roles: AdminRole[] = ["STAFF_ADMIN", "SUPER_ADMIN"]
 ) {
@@ -17,25 +19,33 @@ export async function getAdminUserIds(
   return admins.map((admin) => admin.id);
 }
 
+function withFallback(value?: string | null) {
+  return value?.trim() || undefined;
+}
+
 export function getVisaAdminEmail() {
   return (
-    process.env.ADMIN_VISA_EMAIL ||
-    process.env.ADMIN_SUPPORT_EMAIL ||
-    process.env.SUPPORT_EMAIL ||
-    null
+    withFallback(process.env.ADMIN_VISA_EMAIL) ||
+    withFallback(process.env.ADMIN_SUPPORT_EMAIL) ||
+    withFallback(process.env.SUPPORT_EMAIL) ||
+    DEFAULT_SUPPORT_EMAIL
   );
 }
 
 export function getTourAdminEmail() {
   return (
-    process.env.ADMIN_TOURS_EMAIL ||
-    process.env.ADMIN_SUPPORT_EMAIL ||
-    process.env.SUPPORT_EMAIL ||
-    null
+    withFallback(process.env.ADMIN_TOURS_EMAIL) ||
+    withFallback(process.env.ADMIN_SUPPORT_EMAIL) ||
+    withFallback(process.env.SUPPORT_EMAIL) ||
+    DEFAULT_SUPPORT_EMAIL
   );
 }
 
 export function getSupportAdminEmail() {
-  return process.env.ADMIN_SUPPORT_EMAIL || process.env.SUPPORT_EMAIL || null;
+  return (
+    withFallback(process.env.ADMIN_SUPPORT_EMAIL) ||
+    withFallback(process.env.SUPPORT_EMAIL) ||
+    DEFAULT_SUPPORT_EMAIL
+  );
 }
 

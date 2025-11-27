@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { uploadVisaDocument } from "@/lib/minio";
 import { sendEmail } from "@/lib/email";
+import { getSupportAdminEmail } from "@/lib/admin-contacts";
 import crypto from "crypto";
 export const dynamic = "force-dynamic";
 
@@ -91,7 +92,7 @@ export async function POST(req: Request) {
     });
 
     // Send email notification to admin
-    const adminEmail = "info@travunited.com";
+    const adminEmail = getSupportAdminEmail();
     const resumeDownloadUrl = `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/files?key=${encodeURIComponent(fileName)}`;
     
     const emailSubject = `New Career Application – ${positionTitle} – ${name}`;
@@ -158,11 +159,16 @@ export async function POST(req: Request) {
       </div>
     `;
 
-    await sendEmail({
-      to: adminEmail,
-      subject: emailSubject,
-      html: emailHtml,
-    });
+    if (!adminEmail) {
+      console.warn("Support admin email not configured; skipping career application email.");
+    } else {
+      await sendEmail({
+        to: adminEmail,
+        subject: emailSubject,
+        html: emailHtml,
+        category: "general",
+      });
+    }
 
     return NextResponse.json({
       message: "Application submitted successfully",
