@@ -21,6 +21,7 @@ export type NotificationType =
   | "TOUR_PAYMENT_SUCCESS"
   | "TOUR_PAYMENT_FAILED"
   | "TOUR_VOUCHERS_READY"
+  | "CUSTOM_TOUR_REQUEST"
   // Customer - Account & Security
   | "ACCOUNT_NEW_DEVICE_LOGIN"
   | "ACCOUNT_PASSWORD_CHANGED"
