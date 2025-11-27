@@ -39,33 +39,41 @@ export function Footer() {
               className="h-10 w-auto mb-4"
             />
             <p className="text-neutral-400 mb-4 max-w-md">
-              Premium visa services and tour packages for Indian travellers. 
+              Premium visa services and tour packages for global travellers. 
               Trusted by thousands for seamless travel experiences.
             </p>
             <div className="flex space-x-4">
               <a
-                href="#"
+                href="https://www.facebook.com/travunitedindia"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors"
                 aria-label="Facebook"
               >
                 <Facebook size={20} />
               </a>
               <a
-                href="#"
+                href="https://x.com/travunitedin"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors"
                 aria-label="Twitter"
               >
                 <Twitter size={20} />
               </a>
               <a
-                href="#"
+                href="https://www.instagram.com/travunited/"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors"
                 aria-label="Instagram"
               >
                 <Instagram size={20} />
               </a>
               <a
-                href="#"
+                href="https://www.linkedin.com/company/travunited"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors"
                 aria-label="LinkedIn"
               >
