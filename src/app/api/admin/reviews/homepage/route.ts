@@ -25,14 +25,22 @@ function validateLink(link?: string | null): string | null {
 
 const homepageReviewSchema = z.object({
   reviewerName: z.string().min(1, "Reviewer name is required").max(100),
-  title: z.string().min(1, "Title is required").max(200).optional(),
+  title: z.string().max(200).optional().nullable().or(z.literal("")),
   comment: z.string().min(10, "Comment must be at least 10 characters"),
   rating: z.number().int().min(1).max(5),
-  imageKey: z.string().optional().nullable(),
-  imageUrl: z.string().url().optional().nullable(),
+  imageKey: z.string().optional().nullable().or(z.literal("")),
+  imageUrl: z.union([
+    z.string().url(),
+    z.literal(""),
+    z.null(),
+  ]).optional().nullable(),
   isFeatured: z.boolean().default(false),
   isVisible: z.boolean().default(true),
-  link: z.string().url().optional().nullable().or(z.literal("")),
+  link: z.union([
+    z.string().url(),
+    z.literal(""),
+    z.null(),
+  ]).optional().nullable(),
 });
 
 // GET - List homepage reviews
@@ -128,7 +136,7 @@ export async function POST(req: Request) {
       data: {
         type: "VISA", // Default type for homepage reviews (can be changed if needed)
         reviewerName: data.reviewerName,
-        title: data.title || null,
+        title: data.title && data.title.trim() ? data.title.trim() : null,
         comment: data.comment,
         rating: data.rating,
         imageKey: data.imageKey || null,
@@ -158,14 +166,16 @@ export async function POST(req: Request) {
     return NextResponse.json(review, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error("Homepage review validation error:", error.errors);
       return NextResponse.json(
         { error: "Invalid input", details: error.errors },
         { status: 400 }
       );
     }
     console.error("Error creating homepage review:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", details: errorMessage },
       { status: 500 }
     );
   }

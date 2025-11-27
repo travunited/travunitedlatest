@@ -25,14 +25,22 @@ function validateLink(link?: string | null): string | null {
 
 const homepageReviewSchema = z.object({
   reviewerName: z.string().min(1, "Reviewer name is required").max(100).optional(),
-  title: z.string().min(1, "Title is required").max(200).optional().nullable(),
+  title: z.string().max(200).optional().nullable().or(z.literal("")),
   comment: z.string().min(10, "Comment must be at least 10 characters").optional(),
   rating: z.number().int().min(1).max(5).optional(),
-  imageKey: z.string().optional().nullable(),
-  imageUrl: z.string().url().optional().nullable(),
+  imageKey: z.string().optional().nullable().or(z.literal("")),
+  imageUrl: z.union([
+    z.string().url(),
+    z.literal(""),
+    z.null(),
+  ]).optional().nullable(),
   isFeatured: z.boolean().optional(),
   isVisible: z.boolean().optional(),
-  link: z.string().url().optional().nullable().or(z.literal("")),
+  link: z.union([
+    z.string().url(),
+    z.literal(""),
+    z.null(),
+  ]).optional().nullable(),
 });
 
 // GET - Get single homepage review
@@ -147,7 +155,7 @@ export async function PUT(
 
     const updateData: any = {};
     if (data.reviewerName !== undefined) updateData.reviewerName = data.reviewerName;
-    if (data.title !== undefined) updateData.title = data.title;
+    if (data.title !== undefined) updateData.title = data.title && data.title.trim() ? data.title.trim() : null;
     if (data.comment !== undefined) updateData.comment = data.comment;
     if (data.rating !== undefined) updateData.rating = data.rating;
     if (data.imageKey !== undefined) updateData.imageKey = data.imageKey;
@@ -177,14 +185,16 @@ export async function PUT(
     return NextResponse.json(updated);
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error("Homepage review update validation error:", error.errors);
       return NextResponse.json(
         { error: "Invalid input", details: error.errors },
         { status: 400 }
       );
     }
     console.error("Error updating homepage review:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", details: errorMessage },
       { status: 500 }
     );
   }

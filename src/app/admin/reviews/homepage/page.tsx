@@ -149,8 +149,10 @@ export default function AdminHomepageReviewsPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("folder", "reviews");
+      formData.append("scope", "homepage");
       
-      const response = await fetch("/api/media/upload", {
+      const response = await fetch("/api/admin/uploads", {
         method: "POST",
         body: formData,
       });
@@ -160,7 +162,7 @@ export default function AdminHomepageReviewsPage() {
         setFormData(prev => ({
           ...prev,
           imageKey: data.key || "",
-          imageUrl: data.url || "",
+          imageUrl: data.proxyUrl || data.url || "",
         }));
       } else {
         const error = await response.json();

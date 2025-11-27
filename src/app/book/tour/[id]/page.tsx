@@ -813,10 +813,6 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
     try {
       const amount = formData.paymentType === "full" ? finalAmount : advanceAmount;
 
-      if (amount <= 0) {
-        throw new Error("Invalid payment amount");
-      }
-
       const response = await fetch("/api/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -832,7 +828,17 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
         throw new Error(error.error || "Unable to initiate payment.");
       }
 
-      const { orderId, keyId, amount: orderAmount, currency } = await response.json();
+      const responseData = await response.json();
+
+      // Handle free bookings (amount <= 0)
+      if (responseData.isFree || amount <= 0) {
+        setLoading(false);
+        router.push(`/bookings/thank-you?bookingId=${ensuredBookingId}`);
+        return;
+      }
+
+      // Normal payment flow - proceed with Razorpay
+      const { orderId, keyId, amount: orderAmount, currency } = responseData;
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded || !window.Razorpay) {
         throw new Error("Failed to load Razorpay SDK.");
@@ -1697,15 +1703,18 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
 
       case 5:
         const paymentFinalAmount = formData.paymentType === "full" ? finalAmount : advanceAmount;
+        const isFreeBooking = paymentFinalAmount <= 0;
         
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">Signup/Login & Payment</h2>
+            <h2 className="text-2xl font-bold text-neutral-900 mb-4">
+              {isFreeBooking ? "Signup/Login & Confirm Booking" : "Signup/Login & Payment"}
+            </h2>
             
             {!session ? (
               <div className="bg-neutral-50 rounded-lg p-6 space-y-4">
                 <p className="text-neutral-700">
-                  Please create an account or login to complete your payment.
+                  Please create an account or login to {isFreeBooking ? "complete your booking" : "complete your payment"}.
                 </p>
                 <div className="grid md:grid-cols-2 gap-4">
                   <Link
@@ -1740,17 +1749,27 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
                       {formData.paymentType === "full" ? "Total Amount" : "Advance Amount"}
                     </span>
                     <span className="text-2xl font-bold text-primary-600">
-                      ₹{paymentFinalAmount.toLocaleString()}
+                      {isFreeBooking ? "₹0" : `₹${paymentFinalAmount.toLocaleString()}`}
                     </span>
                   </div>
-                  {formData.paymentType === "advance" && (
-                    <p className="text-sm text-neutral-600 mb-4">
-                      Remaining balance of ₹{Math.max(finalAmount - paymentFinalAmount, 0).toLocaleString()} due before departure.
-                    </p>
+                  {isFreeBooking ? (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                      <p className="text-green-700 font-medium">
+                        This package is free to book — no payment required. Click Confirm Booking to complete your reservation.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      {formData.paymentType === "advance" && (
+                        <p className="text-sm text-neutral-600 mb-4">
+                          Remaining balance of ₹{Math.max(finalAmount - paymentFinalAmount, 0).toLocaleString()} due before departure.
+                        </p>
+                      )}
+                      <p className="text-sm text-neutral-600 mb-6">
+                        Secure payment via Razorpay. All major cards, UPI, and net banking accepted.
+                      </p>
+                    </>
                   )}
-                  <p className="text-sm text-neutral-600 mb-6">
-                    Secure payment via Razorpay. All major cards, UPI, and net banking accepted.
-                  </p>
                   <div className="border border-neutral-200 rounded-lg p-4 bg-white mb-6">
                     <h4 className="font-semibold text-neutral-900 mb-2">
                       Refund & Cancellation Policy
@@ -1855,7 +1874,11 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
                     disabled={loading || !formData.policyAccepted}
                     className="w-full bg-primary-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? "Processing..." : "Proceed to Payment"}
+                    {loading 
+                      ? "Processing..." 
+                      : isFreeBooking 
+                        ? "Confirm Booking" 
+                        : "Proceed to Payment"}
                   </button>
                 </div>
               </div>

@@ -960,7 +960,17 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         throw new Error(error.error || "Unable to initiate payment.");
       }
 
-      const { orderId, keyId, amount, currency } = await response.json();
+      const responseData = await response.json();
+
+      // Handle free applications (amount <= 0)
+      if (responseData.isFree || totalAmount <= 0) {
+        setLoading(false);
+        router.push(`/applications/thank-you?applicationId=${draftId}`);
+        return;
+      }
+
+      // Normal payment flow - proceed with Razorpay
+      const { orderId, keyId, amount, currency } = responseData;
       const scriptLoaded = await loadRazorpayScript();
       if (!scriptLoaded || !window.Razorpay) {
         throw new Error("Failed to load Razorpay SDK.");
@@ -1152,7 +1162,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                 <input
                   type="tel"
                   inputMode="numeric"
-                  pattern="[0-9+\s-]*"
+                  pattern="[0-9\\+\\s-]*"
                   maxLength={15}
                   value={formData.primaryContact?.phone || ""}
                   onChange={(e) => {
@@ -1690,14 +1700,19 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         );
 
       case 6:
+        const visaTotalAmount = visaPrice * Math.max(formData.travellers?.length ?? 1, 1);
+        const isFreeVisa = visaTotalAmount <= 0;
+        
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">Signup/Login & Payment</h2>
+            <h2 className="text-2xl font-bold text-neutral-900 mb-4">
+              {isFreeVisa ? "Signup/Login & Submit Application" : "Signup/Login & Payment"}
+            </h2>
             
             {!session ? (
               <div className="bg-neutral-50 rounded-lg p-6 space-y-4">
                 <p className="text-neutral-700">
-                  Please create an account or login to complete your payment.
+                  Please create an account or login to {isFreeVisa ? "submit your application" : "complete your payment"}.
                 </p>
                 <div className="grid md:grid-cols-2 gap-4">
                   <Link
@@ -1725,21 +1740,30 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-lg font-semibold">Total Amount</span>
                     <span className="text-2xl font-bold text-primary-600">
-                      ₹{(
-                        visaPrice *
-                        Math.max(formData.travellers?.length ?? 1, 1)
-                      ).toLocaleString()}
+                      {isFreeVisa ? "₹0" : `₹${visaTotalAmount.toLocaleString()}`}
                     </span>
                   </div>
-                  <p className="text-sm text-neutral-600 mb-6">
-                    Secure payment via Razorpay. All major cards, UPI, and net banking accepted.
-                  </p>
+                  {isFreeVisa ? (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                      <p className="text-green-700 font-medium">
+                        This visa application is free — no payment required. Click Submit Application to complete your submission.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-neutral-600 mb-6">
+                      Secure payment via Razorpay. All major cards, UPI, and net banking accepted.
+                    </p>
+                  )}
                   <button
                     onClick={handleVisaPayment}
                     disabled={loading}
                     className="w-full bg-primary-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? "Processing..." : "Proceed to Payment"}
+                    {loading 
+                      ? "Processing..." 
+                      : isFreeVisa 
+                        ? "Submit Application" 
+                        : "Proceed to Payment"}
                   </button>
                 </div>
               </div>

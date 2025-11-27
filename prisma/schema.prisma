@@ -442,8 +442,11 @@ model Payment {
   amount            Int
   currency          String   @default("INR")
   status            String // PENDING, COMPLETED, FAILED, REFUNDED
+  provider          String?  // RAZORPAY, PAYPAL, STRIPE, NONE
+  method            String?  // CARD, UPI, WALLET, NETBANKING, FREE
   razorpayOrderId   String?
   razorpayPaymentId String?
+  metadata          Json?    // Additional payment metadata
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
