@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -21,6 +21,13 @@ export default function EmailTestPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, EmailTestResult>>({});
   const [testEmail, setTestEmail] = useState("");
+  const [emailConfig, setEmailConfig] = useState<{
+    configured: boolean;
+    resendApiKey: string;
+    emailFrom: string;
+    message: string;
+  } | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
 
   if (status === "loading") {
     return (
@@ -41,6 +48,24 @@ export default function EmailTestPage() {
     router.push("/dashboard");
     return null;
   }
+
+  // Check email configuration on mount
+  useEffect(() => {
+    const checkConfig = async () => {
+      try {
+        const response = await fetch("/api/admin/email-test/config");
+        if (response.ok) {
+          const config = await response.json();
+          setEmailConfig(config);
+        }
+      } catch (error) {
+        console.error("Error checking email configuration:", error);
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+    checkConfig();
+  }, []);
 
   const emailTests = [
     {
@@ -134,6 +159,10 @@ export default function EmailTestPage() {
       alert("Please enter a valid email address");
       return;
     }
+    if (emailConfig && !emailConfig.configured) {
+      alert("Email service is not configured. Please update the Email Service Configuration in settings before sending test emails.");
+      return;
+    }
 
     setLoading(testId);
     setResults((prev) => ({
@@ -192,6 +221,53 @@ export default function EmailTestPage() {
             Test all email functions to ensure they're working correctly. Enter your email address below and click "Send Test" for any email type.
           </p>
         </div>
+
+        {/* Email Configuration Status */}
+        {!configLoading && emailConfig && (
+          <div className={`mb-6 rounded-lg p-4 border ${
+            emailConfig.configured 
+              ? "bg-green-50 border-green-200" 
+              : "bg-red-50 border-red-200"
+          }`}>
+            <div className="flex items-start gap-3">
+              {emailConfig.configured ? (
+                <CheckCircle className="text-green-600 mt-0.5" size={20} />
+              ) : (
+                <AlertCircle className="text-red-600 mt-0.5" size={20} />
+              )}
+              <div className="flex-1">
+                <h3 className={`font-semibold mb-1 ${
+                  emailConfig.configured ? "text-green-900" : "text-red-900"
+                }`}>
+                  Email Service Status: {emailConfig.configured ? "Configured" : "Not Configured"}
+                </h3>
+                <p className={`text-sm mb-2 ${
+                  emailConfig.configured ? "text-green-800" : "text-red-800"
+                }`}>
+                  {emailConfig.message}
+                </p>
+                <div
+                  className={`text-xs space-y-1 mt-3 ${
+                    emailConfig.configured ? "text-green-800" : "text-red-700"
+                  }`}
+                >
+                  <p><strong>Configuration Details:</strong></p>
+                  <ul className="space-y-1 ml-2">
+                    <li>Resend API Key: {emailConfig.resendApiKey}</li>
+                    <li>General Sender: {emailConfig.emailFromGeneral}</li>
+                    <li>Visa Sender: {emailConfig.emailFromVisa}</li>
+                    <li>Tours Sender: {emailConfig.emailFromTours}</li>
+                  </ul>
+                  {!emailConfig.configured && (
+                    <p className="mt-2">
+                      Update these values in <code className="bg-red-100 px-1 rounded">Admin → Settings → Email Service Configuration</code>.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white rounded-lg shadow-medium p-6 mb-6 border border-neutral-200">
           <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -256,7 +332,11 @@ export default function EmailTestPage() {
                         </div>
                         <button
                           onClick={() => handleTestEmail(test.id)}
-                          disabled={!testEmail || isLoading}
+                          disabled={
+                            !testEmail ||
+                            isLoading ||
+                            (emailConfig && !emailConfig.configured)
+                          }
                           className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                           {isLoading ? (
@@ -283,11 +363,19 @@ export default function EmailTestPage() {
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <Mail className="text-blue-600 mt-0.5" size={20} />
-            <div>
+            <div className="flex-1">
               <h3 className="font-semibold text-blue-900 mb-1">Email Configuration</h3>
-              <p className="text-sm text-blue-800">
+              <p className="text-sm text-blue-800 mb-2">
                 Emails are sent via Resend. Make sure <code className="bg-blue-100 px-1 rounded">RESEND_API_KEY</code> and <code className="bg-blue-100 px-1 rounded">EMAIL_FROM</code> are configured in your environment variables.
               </p>
+              <div className="text-xs text-blue-700 space-y-1">
+                <p><strong>Required Environment Variables:</strong></p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li><code>RESEND_API_KEY</code> - Your Resend API key</li>
+                  <li><code>EMAIL_FROM</code> - Sender email address (e.g., "Travunited &lt;noreply@travunited.com&gt;")</li>
+                </ul>
+                <p className="mt-2"><strong>Note:</strong> If emails are not being sent, check your server logs for detailed error messages.</p>
+              </div>
             </div>
           </div>
         </div>

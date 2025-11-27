@@ -16,6 +16,7 @@ import {
   sendTourVouchersReadyEmail,
   sendCorporateLeadAdminEmail,
   sendCorporateLeadConfirmationEmail,
+  getEmailServiceConfig,
 } from "@/lib/email";
 export const dynamic = "force-dynamic";
 
@@ -58,22 +59,56 @@ export async function POST(req: Request) {
     const testResetLink = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/reset-password?token=test-token-123`;
     const testVerificationLink = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/verify-email?token=test-token-123`;
 
+    // Check email configuration first
+    const emailServiceConfig = await getEmailServiceConfig();
+    if (!emailServiceConfig.resendApiKey) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Email service not configured",
+          error:
+            "Resend API key is not set. Please configure it in Admin → Settings → Email Service Configuration.",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!emailServiceConfig.emailFromGeneral) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Email service not configured",
+          error:
+            "General sender email is not set. Please configure it in Admin → Settings → Email Service Configuration.",
+        },
+        { status: 500 }
+      );
+    }
+
     let result: { success: boolean; message: string; error?: string };
 
     try {
+      let emailSent = false;
+      
       switch (testId) {
         case "password-reset":
-          await sendPasswordResetEmail(email, testResetLink);
+          emailSent = await sendPasswordResetEmail(email, testResetLink);
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Password reset email sent successfully" };
           break;
 
         case "email-verification":
-          await sendEmailVerificationEmail(email, testVerificationLink, "Test User");
+          emailSent = await sendEmailVerificationEmail(email, testVerificationLink, "Test User");
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Email verification email sent successfully" };
           break;
 
         case "visa-payment-success":
-          await sendVisaPaymentSuccessEmail(
+          emailSent = await sendVisaPaymentSuccessEmail(
             email,
             testApplicationId,
             testCountry,
@@ -81,22 +116,28 @@ export async function POST(req: Request) {
             testAmount,
             "CUSTOMER"
           );
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Visa payment success email sent successfully" };
           break;
 
         case "visa-status-update":
-          await sendVisaStatusUpdateEmail(
+          emailSent = await sendVisaStatusUpdateEmail(
             email,
             testApplicationId,
             testCountry,
             testVisaType,
             "IN_PROCESS"
           );
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Visa status update email sent successfully" };
           break;
 
         case "visa-document-rejected":
-          await sendVisaDocumentRejectedEmail(
+          emailSent = await sendVisaDocumentRejectedEmail(
             email,
             testApplicationId,
             testCountry,
@@ -106,32 +147,41 @@ export async function POST(req: Request) {
               { type: "Photo", reason: "Photo does not meet requirements. Please use a recent passport-size photo." },
             ]
           );
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Visa document rejected email sent successfully" };
           break;
 
         case "visa-approved":
-          await sendVisaApprovedEmail(
+          emailSent = await sendVisaApprovedEmail(
             email,
             testApplicationId,
             testCountry,
             testVisaType
           );
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Visa approved email sent successfully" };
           break;
 
         case "visa-rejected":
-          await sendVisaRejectedEmail(
+          emailSent = await sendVisaRejectedEmail(
             email,
             testApplicationId,
             testCountry,
             testVisaType,
             "Incomplete documentation provided"
           );
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Visa rejected email sent successfully" };
           break;
 
         case "tour-payment-success":
-          await sendTourPaymentSuccessEmail(
+          emailSent = await sendTourPaymentSuccessEmail(
             email,
             testBookingId,
             testTourName,
@@ -140,42 +190,57 @@ export async function POST(req: Request) {
             0, // pendingBalance
             "CUSTOMER"
           );
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Tour payment success email sent successfully" };
           break;
 
         case "tour-confirmed":
-          await sendTourConfirmedEmail(email, testBookingId, testTourName);
+          emailSent = await sendTourConfirmedEmail(email, testBookingId, testTourName);
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Tour confirmed email sent successfully" };
           break;
 
         case "tour-payment-reminder":
-          await sendTourPaymentReminderEmail(
+          emailSent = await sendTourPaymentReminderEmail(
             email,
             testBookingId,
             testTourName,
             25000, // pendingBalance
             new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
           );
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Tour payment reminder email sent successfully" };
           break;
 
         case "tour-status-update":
-          await sendTourStatusUpdateEmail(
+          emailSent = await sendTourStatusUpdateEmail(
             email,
             testBookingId,
             testTourName,
             "CONFIRMED"
           );
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Tour status update email sent successfully" };
           break;
 
         case "tour-vouchers-ready":
-          await sendTourVouchersReadyEmail(email, testBookingId, testTourName);
+          emailSent = await sendTourVouchersReadyEmail(email, testBookingId, testTourName);
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Tour vouchers ready email sent successfully" };
           break;
 
         case "corporate-lead-admin":
-          await sendCorporateLeadAdminEmail({
+          emailSent = await sendCorporateLeadAdminEmail({
             companyName: "Test Company Ltd",
             contactName: "John Doe",
             email: email,
@@ -183,15 +248,21 @@ export async function POST(req: Request) {
             message: "This is a test corporate lead message. We are interested in corporate travel solutions for our team.",
             createdAt: new Date(),
           });
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Corporate lead admin email sent successfully" };
           break;
 
         case "corporate-lead-confirmation":
-          await sendCorporateLeadConfirmationEmail(
+          emailSent = await sendCorporateLeadConfirmationEmail(
             email,
             "Test Company Ltd",
             "John Doe"
           );
+          if (!emailSent) {
+            throw new Error("Email function returned false. Check server logs for details.");
+          }
           result = { success: true, message: "Corporate lead confirmation email sent successfully" };
           break;
 

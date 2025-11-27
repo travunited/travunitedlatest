@@ -4,6 +4,7 @@ import { AuditAction, AuditEntityType, Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAuditEvent } from "@/lib/audit";
+import { refreshEmailConfigCache } from "@/lib/email";
 export const dynamic = "force-dynamic";
 
 
@@ -12,6 +13,7 @@ const GENERAL_KEY = "GENERAL";
 const EMAIL_SNIPPETS_KEY = "EMAIL_SNIPPETS";
 const ANALYTICS_KEY = "ANALYTICS";
 const SYSTEM_FLAGS_KEY = "SYSTEM_FLAGS";
+const EMAIL_CONFIG_KEY = "EMAIL_CONFIG";
 
 type SettingRecord = Record<string, unknown>;
 
@@ -44,7 +46,7 @@ export async function GET(req: Request) {
     const rows = await prisma.setting.findMany({
       where: {
         key: {
-          in: [GENERAL_KEY, EMAIL_SNIPPETS_KEY, ANALYTICS_KEY, SYSTEM_FLAGS_KEY],
+          in: [GENERAL_KEY, EMAIL_SNIPPETS_KEY, ANALYTICS_KEY, SYSTEM_FLAGS_KEY, EMAIL_CONFIG_KEY],
         },
       },
     });
@@ -58,6 +60,7 @@ export async function GET(req: Request) {
     const emailSnippets = settingsMap[EMAIL_SNIPPETS_KEY] || {};
     const analytics = settingsMap[ANALYTICS_KEY] || {};
     const systemFlags = settingsMap[SYSTEM_FLAGS_KEY] || {};
+    const emailConfig = settingsMap[EMAIL_CONFIG_KEY] || {};
 
     const settings = {
       companyName: (general.companyName as string) || "",
@@ -80,6 +83,10 @@ export async function GET(req: Request) {
       registrationsEnabled: (systemFlags.registrationsEnabled as boolean) ?? true,
       maintenanceMode: (systemFlags.maintenanceMode as boolean) ?? false,
       maintenanceMessage: (systemFlags.maintenanceMessage as string) || "",
+      resendApiKey: (emailConfig.resendApiKey as string) || "",
+      emailFromGeneral: (emailConfig.emailFromGeneral as string) || "",
+      emailFromVisa: (emailConfig.emailFromVisa as string) || "",
+      emailFromTours: (emailConfig.emailFromTours as string) || "",
     };
 
     return NextResponse.json(settings);
@@ -127,6 +134,10 @@ export async function PUT(req: Request) {
       emailTourConfirmed = "",
       emailVouchersReady = "",
       googleAnalyticsId = "",
+      resendApiKey = "",
+      emailFromGeneral = "",
+      emailFromVisa = "",
+      emailFromTours = "",
       metaPixelId = "",
       analyticsEnabled = false,
       registrationsEnabled = true,
@@ -219,7 +230,29 @@ export async function PUT(req: Request) {
           },
         },
       }),
+      prisma.setting.upsert({
+        where: { key: EMAIL_CONFIG_KEY },
+        update: {
+          value: {
+            resendApiKey,
+            emailFromGeneral,
+            emailFromVisa,
+            emailFromTours,
+          },
+        },
+        create: {
+          key: EMAIL_CONFIG_KEY,
+          value: {
+            resendApiKey,
+            emailFromGeneral,
+            emailFromVisa,
+            emailFromTours,
+          },
+        },
+      }),
     ]);
+
+    await refreshEmailConfigCache();
 
     await logAuditEvent({
       adminId: session.user.id,

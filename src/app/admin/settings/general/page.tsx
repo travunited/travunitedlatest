@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Save, Building2, Mail, CreditCard, BarChart3, Lock, AlertCircle } from "lucide-react";
+import { Save, Building2, Mail, CreditCard, BarChart3, Lock, AlertCircle, Settings } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +25,10 @@ interface Settings {
   emailTourBooked: string;
   emailTourConfirmed: string;
   emailVouchersReady: string;
+  resendApiKey: string;
+  emailFromGeneral: string;
+  emailFromVisa: string;
+  emailFromTours: string;
   
   // Payment Settings (view-only)
   razorpayKeyId: string;
@@ -61,6 +65,10 @@ export default function AdminGeneralSettingsPage() {
     emailTourBooked: "",
     emailTourConfirmed: "",
     emailVouchersReady: "",
+    resendApiKey: "",
+    emailFromGeneral: "",
+    emailFromVisa: "",
+    emailFromTours: "",
     razorpayKeyId: "",
     paymentModes: "All modes enabled",
     googleAnalyticsId: "",
@@ -139,7 +147,7 @@ export default function AdminGeneralSettingsPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-neutral-900">General Settings</h1>
           <p className="text-neutral-600 mt-1">
@@ -228,6 +236,86 @@ export default function AdminGeneralSettingsPage() {
                     disabled={isReadOnly}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Email Service Configuration */}
+          <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+            <div className="flex items-center space-x-2 mb-4">
+              <Settings size={24} className="text-primary-600" />
+              <h2 className="text-xl font-bold text-neutral-900">Email Service Configuration</h2>
+            </div>
+            <p className="text-sm text-neutral-600 mb-4">
+              Configure Resend API key and sender email addresses for different modules. These override environment variables.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Resend API Key
+                </label>
+                <input
+                  type="password"
+                  value={settings.resendApiKey}
+                  onChange={(e) => setSettings({ ...settings, resendApiKey: e.target.value })}
+                  disabled={isReadOnly}
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  placeholder="re_xxxxxxxxxxxxxxxxxxxxx"
+                  autoComplete="off"
+                />
+                <p className="text-xs text-neutral-500 mt-1">
+                  Stored securely in the database. Required for sending emails via Resend.
+                </p>
+              </div>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    General Sender Email
+                  </label>
+                  <input
+                    type="email"
+                    value={settings.emailFromGeneral}
+                    onChange={(e) => setSettings({ ...settings, emailFromGeneral: e.target.value })}
+                    disabled={isReadOnly}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                    placeholder="Travunited <noreply@travunited.com>"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Used for notifications and account emails.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Visa Sender Email
+                  </label>
+                  <input
+                    type="email"
+                    value={settings.emailFromVisa}
+                    onChange={(e) => setSettings({ ...settings, emailFromVisa: e.target.value })}
+                    disabled={isReadOnly}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                    placeholder="Visa Desk <visa@travunited.com>"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Used for visa-related communications.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Tours Sender Email
+                  </label>
+                  <input
+                    type="email"
+                    value={settings.emailFromTours}
+                    onChange={(e) => setSettings({ ...settings, emailFromTours: e.target.value })}
+                    disabled={isReadOnly}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                    placeholder="Tours Desk <tours@travunited.com>"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Used for tour booking and itinerary emails.
+                  </p>
                 </div>
               </div>
             </div>

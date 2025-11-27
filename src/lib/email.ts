@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { formatDate } from "./dateFormat";
 import { UserRole } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 
 export interface EmailOptions {
   to: string | string[];
@@ -8,11 +9,85 @@ export interface EmailOptions {
   html: string;
   text?: string;
   replyTo?: string | string[];
+  category?: "general" | "visa" | "tours";
 }
 
-const resendApiKey = process.env.RESEND_API_KEY;
-const emailFrom = process.env.EMAIL_FROM;
-const resendClient = resendApiKey ? new Resend(resendApiKey) : null;
+const EMAIL_CONFIG_KEY = "EMAIL_CONFIG";
+type EmailCategory = "general" | "visa" | "tours";
+
+type EmailConfig = {
+  resendApiKey?: string;
+  emailFromGeneral?: string;
+  emailFromVisa?: string;
+  emailFromTours?: string;
+};
+
+let emailConfigCache: { config: EmailConfig; loadedAt: number } | null = null;
+const EMAIL_CONFIG_CACHE_TTL = 1000 * 60 * 5;
+
+let cachedResendClient: Resend | null = null;
+let cachedResendKey: string | null = null;
+
+async function loadEmailConfig(forceReload = false): Promise<EmailConfig> {
+  if (
+    !forceReload &&
+    emailConfigCache &&
+    Date.now() - emailConfigCache.loadedAt < EMAIL_CONFIG_CACHE_TTL
+  ) {
+    return emailConfigCache.config;
+  }
+
+  const row = await prisma.setting.findUnique({
+    where: { key: EMAIL_CONFIG_KEY },
+  });
+
+  const value =
+    row?.value && typeof row.value === "object" && !Array.isArray(row.value)
+      ? (row.value as EmailConfig)
+      : {};
+
+  const config: EmailConfig = {
+    resendApiKey: value.resendApiKey || process.env.RESEND_API_KEY || undefined,
+    emailFromGeneral: value.emailFromGeneral || process.env.EMAIL_FROM || undefined,
+    emailFromVisa:
+      value.emailFromVisa || value.emailFromGeneral || process.env.EMAIL_FROM || undefined,
+    emailFromTours:
+      value.emailFromTours || value.emailFromGeneral || process.env.EMAIL_FROM || undefined,
+  };
+
+  emailConfigCache = { config, loadedAt: Date.now() };
+  return config;
+}
+
+async function getResendClient(apiKey?: string | null) {
+  if (!apiKey) {
+    return null;
+  }
+
+  if (!cachedResendClient || cachedResendKey !== apiKey) {
+    cachedResendClient = new Resend(apiKey);
+    cachedResendKey = apiKey;
+  }
+
+  return cachedResendClient;
+}
+
+export async function refreshEmailConfigCache() {
+  emailConfigCache = null;
+  cachedResendClient = null;
+  cachedResendKey = null;
+  await loadEmailConfig(true);
+}
+
+export async function getEmailServiceConfig() {
+  const config = await loadEmailConfig();
+  return {
+    resendApiKey: config.resendApiKey ?? null,
+    emailFromGeneral: config.emailFromGeneral ?? null,
+    emailFromVisa: config.emailFromVisa ?? null,
+    emailFromTours: config.emailFromTours ?? null,
+  };
+}
 
 // Central admin inbox - all admin-related emails go here
 const ADMIN_INBOX = "info@travunited.com";
@@ -50,29 +125,40 @@ function stripHtml(html: string) {
 }
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
+  const config = await loadEmailConfig();
+  const resendClient = await getResendClient(config.resendApiKey);
+
   if (!resendClient) {
-    console.warn("[Email] Resend client not initialized. Check RESEND_API_KEY environment variable.");
-    console.log("📧 Email would be sent:", {
-      to: options.to,
-      subject: options.subject,
-      replyTo: options.replyTo,
-    });
-    return false; // Return false when not configured, so callers know email wasn't sent
+    console.warn(
+      "[Email] Resend client not initialized. Configure RESEND_API_KEY in settings or environment."
+    );
+    return false;
   }
 
-  if (!emailFrom) {
-    console.error("[Email] EMAIL_FROM environment variable is not set.");
-    console.log("📧 Email would be sent:", {
-      to: options.to,
-      subject: options.subject,
-      replyTo: options.replyTo,
-    });
+  const determineFromAddress = (category?: EmailCategory) => {
+    if (category === "visa") {
+      return config.emailFromVisa || config.emailFromGeneral;
+    }
+    if (category === "tours") {
+      return config.emailFromTours || config.emailFromGeneral;
+    }
+    return config.emailFromGeneral;
+  };
+
+  const from =
+    (determineFromAddress(options.category) || process.env.EMAIL_FROM || config.emailFromGeneral) ??
+    "";
+
+  if (!from) {
+    console.error(
+      "[Email] Sender email not configured. Set EMAIL_FROM or configure sender addresses in admin settings."
+    );
     return false;
   }
 
   try {
     const result = await resendClient.emails.send({
-      from: emailFrom,
+      from,
       to: options.to,
       subject: options.subject,
       html: options.html,
@@ -117,6 +203,7 @@ export async function sendUserEmail(options: {
   subject: string;
   html: string;
   forceAdmin?: boolean;
+  category?: EmailCategory;
 }): Promise<boolean> {
   const finalTo = resolveRecipientEmail({
     userEmail: options.to,
@@ -128,6 +215,7 @@ export async function sendUserEmail(options: {
     to: finalTo,
     subject: options.subject,
     html: options.html,
+    category: options.category,
   });
 }
 
@@ -153,7 +241,7 @@ export async function sendWelcomeEmail(
     </div>
   `;
   
-  return sendUserEmail({ to: email, role, subject, html });
+  return sendUserEmail({ to: email, role, subject, html, category: "general" });
 }
 
 export async function sendPasswordResetEmail(
@@ -179,6 +267,7 @@ export async function sendPasswordResetEmail(
     to: email,
     subject,
     html,
+    category: "general",
   });
 }
 
@@ -202,7 +291,7 @@ export async function sendVisaPaymentSuccessEmail(
     </div>
   `;
   
-  return sendUserEmail({ to: email, role, subject, html });
+  return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
 
 export async function sendVisaStatusUpdateEmail(
@@ -223,7 +312,7 @@ export async function sendVisaStatusUpdateEmail(
     </div>
   `;
   
-  return sendUserEmail({ to: email, role, subject, html });
+  return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
 
 export async function sendVisaDocumentRejectedEmail(
@@ -247,7 +336,7 @@ export async function sendVisaDocumentRejectedEmail(
     </div>
   `;
   
-  return sendUserEmail({ to: email, role, subject, html });
+  return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
 
 export async function sendVisaApprovedEmail(
@@ -267,7 +356,7 @@ export async function sendVisaApprovedEmail(
     </div>
   `;
   
-  return sendUserEmail({ to: email, role, subject, html });
+  return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
 
 export async function sendVisaRejectedEmail(
@@ -290,7 +379,7 @@ export async function sendVisaRejectedEmail(
     </div>
   `;
   
-  return sendUserEmail({ to: email, role, subject, html });
+  return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
 
 export async function sendTourPaymentSuccessEmail(
@@ -315,7 +404,7 @@ export async function sendTourPaymentSuccessEmail(
     </div>
   `;
   
-  return sendUserEmail({ to: email, role, subject, html });
+  return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
 
 export async function sendTourConfirmedEmail(
@@ -334,7 +423,7 @@ export async function sendTourConfirmedEmail(
     </div>
   `;
   
-  return sendUserEmail({ to: email, role, subject, html });
+  return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
 
 export async function sendTourPaymentReminderEmail(
@@ -357,7 +446,7 @@ export async function sendTourPaymentReminderEmail(
     </div>
   `;
   
-  return sendUserEmail({ to: email, role, subject, html });
+  return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
 
 export async function sendTourStatusUpdateEmail(
@@ -377,7 +466,7 @@ export async function sendTourStatusUpdateEmail(
     </div>
   `;
 
-  return sendUserEmail({ to: email, role, subject, html });
+  return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
 
 export async function sendTourVouchersReadyEmail(
@@ -396,7 +485,7 @@ export async function sendTourVouchersReadyEmail(
     </div>
   `;
 
-  return sendUserEmail({ to: email, role, subject, html });
+  return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
 
 export async function sendEmailVerificationEmail(
@@ -418,7 +507,7 @@ export async function sendEmailVerificationEmail(
     </div>
   `;
   
-  return sendUserEmail({ to: email, role, subject, html });
+  return sendUserEmail({ to: email, role, subject, html, category: "general" });
 }
 
 /**
@@ -488,6 +577,7 @@ export async function sendCorporateLeadAdminEmail(
     to: "info@travunited.com",
     subject,
     html,
+    category: "general",
   });
 }
 
@@ -529,6 +619,7 @@ export async function sendCorporateLeadConfirmationEmail(
     to: userEmail,
     subject,
     html,
+    category: "general",
   });
 }
 
@@ -631,6 +722,7 @@ export async function sendAdminWelcomeEmail(
     to: email,
     subject,
     html,
+    category: "general",
   });
 }
 
