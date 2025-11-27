@@ -103,18 +103,20 @@ export async function POST(req: Request) {
       });
 
       if (admins.length > 0) {
-        await notifyMultiple({
-          userIds: admins.map((a) => a.id),
-          type: "CUSTOM_TOUR_REQUEST",
-          title: "New Custom Tour Request",
-          message: `New custom tour request from ${data.name} (${data.email})`,
-          link: `/admin/custom-requests/${request.id}`,
-          data: {
-            requestId: request.id,
-            name: data.name,
-            email: data.email,
-          },
-        });
+        await notifyMultiple(
+          admins.map((a) => a.id),
+          {
+            type: "CUSTOM_TOUR_REQUEST",
+            title: "New Custom Tour Request",
+            message: `New custom tour request from ${data.name} (${data.email})`,
+            link: `/admin/custom-requests/${request.id}`,
+            data: {
+              requestId: request.id,
+              name: data.name,
+              email: data.email,
+            },
+          }
+        );
       }
     } catch (notificationError) {
       console.error("Error sending notifications:", notificationError);
