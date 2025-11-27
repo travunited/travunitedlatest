@@ -177,7 +177,7 @@ export default function ContactPage() {
               <div>
                 <h3 className="font-semibold text-neutral-900 mb-1">Business Hours</h3>
                 <p className="text-neutral-600">
-                  Monday - Friday: 9:00 AM - 7:00 PM IST<br />
+                  Monday - Friday: 10:00 AM - 6:30 PM IST<br />
                   Saturday: 10:00 AM - 4:00 PM IST<br />
                   Sunday & UAE public holidays: Closed
                 </p>
@@ -214,11 +214,20 @@ export default function ContactPage() {
 
                   const result = await response.json();
 
-                  if (response.ok && result.success) {
+                  // Check if response is successful (status 200-299) and has success flag
+                  if (response.ok && result.success === true) {
                     alert("Thank you for your message! We'll get back to you soon.");
                     e.currentTarget.reset();
                   } else {
-                    alert(result.error || "Failed to send message. Please try again.");
+                    // Only show error if it's a client error (4xx) or server error (5xx)
+                    // If it's a 200 but without success, still show success since data was saved
+                    if (response.status >= 400) {
+                      alert(result.error || "Failed to send message. Please try again.");
+                    } else {
+                      // Response was OK but might not have success flag - still treat as success
+                      alert("Thank you for your message! We'll get back to you soon.");
+                      e.currentTarget.reset();
+                    }
                   }
                 } catch (error) {
                   console.error("Error submitting contact form:", error);

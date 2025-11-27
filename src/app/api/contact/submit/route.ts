@@ -26,27 +26,32 @@ export async function POST(req: Request) {
       },
     });
 
-    // Send email notification to admin inbox
-    const adminEmailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1>New Contact Form Submission</h1>
-        <p><strong>Name:</strong> ${data.name}</p>
-        <p><strong>Email:</strong> ${data.email}</p>
-        ${data.phone ? `<p><strong>Phone:</strong> ${data.phone}</p>` : ''}
-        <p><strong>Subject:</strong> ${data.subject}</p>
-        <p><strong>Message:</strong></p>
-        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
-          ${data.message.replace(/\n/g, "<br>")}
+    // Send email notification to admin inbox (non-blocking - don't fail if email fails)
+    try {
+      const adminEmailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1>New Contact Form Submission</h1>
+          <p><strong>Name:</strong> ${data.name}</p>
+          <p><strong>Email:</strong> ${data.email}</p>
+          ${data.phone ? `<p><strong>Phone:</strong> ${data.phone}</p>` : ''}
+          <p><strong>Subject:</strong> ${data.subject}</p>
+          <p><strong>Message:</strong></p>
+          <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+            ${data.message.replace(/\n/g, "<br>")}
+          </div>
+          <p>Please respond to the customer at: <a href="mailto:${data.email}">${data.email}</a></p>
         </div>
-        <p>Please respond to the customer at: <a href="mailto:${data.email}">${data.email}</a></p>
-      </div>
-    `;
+      `;
 
-    await sendEmail({
-      to: "info@travunited.com",
-      subject: `New Contact Form Submission: ${data.subject}`,
-      html: adminEmailHtml,
-    });
+      await sendEmail({
+        to: "info@travunited.com",
+        subject: `New Contact Form Submission: ${data.subject}`,
+        html: adminEmailHtml,
+      });
+    } catch (emailError) {
+      // Log email error but don't fail the request since data is already saved
+      console.error("Error sending contact form email notification:", emailError);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

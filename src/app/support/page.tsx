@@ -9,7 +9,7 @@ export default function SupportPage() {
       description: "Speak directly with our support team",
       contact: "+91 63603 92398",
       href: "tel:+916360392398",
-      available: "Mon-Fri: 9 AM - 7 PM IST",
+      available: "Mon-Fri: 10:00 AM - 6:30 PM IST",
     },
     {
       icon: MessageCircle,
@@ -17,7 +17,7 @@ export default function SupportPage() {
       description: "Quick assistance via WhatsApp",
       contact: "+91 63603 92398",
       href: "https://wa.me/916360392398",
-      available: "Mon-Fri: 9 AM - 7 PM IST",
+      available: "Mon-Fri: 10:00 AM - 6:30 PM IST",
     },
     {
       icon: Mail,
@@ -161,7 +161,7 @@ export default function SupportPage() {
             <div>
               <h3 className="font-semibold text-neutral-900 mb-2">India Office</h3>
               <p className="text-neutral-700">
-                Monday - Friday: 9:00 AM - 7:00 PM IST<br />
+                Monday - Friday: 10:00 AM - 6:30 PM IST<br />
                 Saturday: 10:00 AM - 4:00 PM IST<br />
                 Sunday: Closed
               </p>
