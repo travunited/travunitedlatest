@@ -130,8 +130,24 @@ function stripHtml(html: string) {
 }
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
+  const startTime = Date.now();
   lastEmailError = null;
-  const config = await loadEmailConfig();
+  
+  // Load config with timeout to prevent delays
+  const configPromise = loadEmailConfig();
+  const configTimeout = new Promise<EmailConfig>((_, reject) => {
+    setTimeout(() => reject(new Error("Email config load timeout")), 5000);
+  });
+  
+  let config: EmailConfig;
+  try {
+    config = await Promise.race([configPromise, configTimeout]);
+  } catch (error) {
+    console.error("[Email] Failed to load email config:", error);
+    lastEmailError = "Failed to load email configuration";
+    return false;
+  }
+  
   const resendClient = await getResendClient(config.resendApiKey);
 
   if (!resendClient) {
@@ -165,7 +181,8 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   }
 
   try {
-    const result = await resendClient.emails.send({
+    // Add timeout to Resend API call to prevent long delays
+    const sendPromise = resendClient.emails.send({
       from,
       to: options.to,
       subject: options.subject,
@@ -173,12 +190,20 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       text: options.text || stripHtml(options.html),
       reply_to: options.replyTo,
     });
+    
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("Resend API timeout after 8 seconds")), 8000);
+    });
+    
+    const result = await Promise.race([sendPromise, timeoutPromise]);
+    const duration = Date.now() - startTime;
 
     if (result.error) {
       const message = `[Email] Resend API returned an error: ${JSON.stringify(result.error)}`;
       console.error(message, {
         to: options.to,
         subject: options.subject,
+        duration: `${duration}ms`,
       });
       lastEmailError = result.error?.message || message;
       return false;
@@ -188,9 +213,11 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       to: options.to,
       subject: options.subject,
       id: result.data?.id,
+      duration: `${duration}ms`,
     });
     return true;
   } catch (error) {
+    const duration = Date.now() - startTime;
     const message =
       error instanceof Error ? error.message : "Unknown error sending email via Resend";
     console.error("[Email] Exception sending email via Resend:", {
@@ -198,6 +225,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       stack: error instanceof Error ? error.stack : undefined,
       to: options.to,
       subject: options.subject,
+      duration: `${duration}ms`,
       resendError: error,
     });
     lastEmailError = message;

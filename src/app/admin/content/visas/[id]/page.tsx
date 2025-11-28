@@ -16,6 +16,7 @@ import {
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { getMediaProxyUrl } from "@/lib/media";
+import { TextInput, NumberInput, TextareaInput, SelectInput, CheckboxInput } from "@/components/admin/MemoizedInputs";
 
 type DocScope = "PER_TRAVELLER" | "PER_APPLICATION";
 
@@ -187,6 +188,11 @@ export default function AdminVisaEditorPage() {
     []
   );
 
+  // Memoize tab click handler to prevent recreating on every render
+  const handleTabClick = useCallback((tabId: string) => {
+    setActiveTab(tabId);
+  }, []);
+
   const fetchCountries = useCallback(async () => {
     try {
       const response = await fetch("/api/admin/content/countries");
@@ -307,7 +313,7 @@ export default function AdminVisaEditorPage() {
     }
   }, [session, status, router, isNew, params.id, cloneSourceId, fetchVisa, fetchCountries]);
 
-  const handleRequirementChange = (
+  const handleRequirementChange = useCallback((
     uidValue: string,
     key: keyof RequirementState,
     value: string | boolean | number
@@ -315,7 +321,7 @@ export default function AdminVisaEditorPage() {
     setRequirements((prev) =>
       prev.map((req) => (req.uid === uidValue ? { ...req, [key]: value } : req))
     );
-  };
+  }, []);
 
   const addRequirement = () => {
     setRequirements((prev) => [
@@ -349,21 +355,21 @@ export default function AdminVisaEditorPage() {
     ]);
   };
 
-const handleFaqChange = (
-  uidValue: string,
-  key: keyof FaqState,
-  value: string | number
-) => {
+  const handleFaqChange = useCallback((
+    uidValue: string,
+    key: keyof FaqState,
+    value: string | number
+  ) => {
     setFaqs((prev) =>
       prev.map((faq) => (faq.uid === uidValue ? { ...faq, [key]: value } : faq))
     );
-  };
+  }, []);
 
   const removeFaq = (uidValue: string) => {
     setFaqs((prev) => prev.filter((faq) => faq.uid !== uidValue));
   };
 
-  const handleSubTypeChange = (
+  const handleSubTypeChange = useCallback((
     uidValue: string,
     field: keyof SubTypeState,
     value: string | number
@@ -371,7 +377,7 @@ const handleFaqChange = (
     setSubTypes((prev) =>
       prev.map((st) => (st.uid === uidValue ? { ...st, [field]: value } : st))
     );
-  };
+  }, []);
 
   const addSubType = () => {
     setSubTypes((prev) => [
@@ -389,10 +395,32 @@ const handleFaqChange = (
     setSubTypes((prev) => prev.filter((st) => st.uid !== uidValue));
   };
 
-  const autoGenerateSlug = () => {
+  const autoGenerateSlug = useCallback(() => {
     if (!formData.name) return;
     setFormData((prev) => ({ ...prev, slug: slugify(prev.name) }));
-  };
+  }, [formData.name]);
+
+  // Memoize updateForm handlers to prevent recreating on every render
+  const updateFormField = useCallback((field: keyof FormState, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }, []);
+  
+  // Memoized handlers for specific fields to prevent inline function creation
+  const updateProcessingTime = useCallback((value: string) => updateFormField("processingTime", value), [updateFormField]);
+  const updateStayDurationDays = useCallback((value: number | null) => {
+    setFormData((prev) => ({ 
+      ...prev, 
+      stayDurationDays: value,
+      stayDuration: value ? `${value} days` : prev.stayDuration
+    }));
+  }, []);
+  const updateValidityDays = useCallback((value: number | null) => {
+    setFormData((prev) => ({ 
+      ...prev, 
+      validityDays: value,
+      validity: value ? `${value} days from issue` : prev.validity
+    }));
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -600,7 +628,7 @@ const handleFaqChange = (
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabClick(tab.id)}
                 className={`px-5 py-3 text-sm font-medium whitespace-nowrap ${
                   activeTab === tab.id
                     ? "text-primary-600 border-b-2 border-primary-600"
@@ -620,11 +648,10 @@ const handleFaqChange = (
                     <label className="text-sm font-medium text-neutral-700">
                       Country <span className="text-red-500">*</span>
                     </label>
-                    <select
+                    <SelectInput
                       required
                       value={formData.countryId}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, countryId: e.target.value }))}
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      onChange={(value) => updateFormField("countryId", value)}
                     >
                       <option value="">Select country</option>
                       {countries.map((country) => (
@@ -632,23 +659,22 @@ const handleFaqChange = (
                           {country.name}
                         </option>
                       ))}
-                    </select>
+                    </SelectInput>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700">
                       Category <span className="text-red-500">*</span>
                     </label>
-                    <select
+                    <SelectInput
                       value={formData.category}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      onChange={(value) => updateFormField("category", value)}
                     >
                       {CATEGORY_OPTIONS.map((category) => (
                         <option key={category} value={category}>
                           {category}
                         </option>
                       ))}
-                    </select>
+                    </SelectInput>
                   </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
@@ -656,12 +682,10 @@ const handleFaqChange = (
                     <label className="text-sm font-medium text-neutral-700">
                       Visa Name <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
+                    <TextInput
                       required
                       value={formData.name}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      onChange={(value) => updateFormField("name", value)}
                       placeholder="UAE Tourist Visa - 30 Days"
                     />
                   </div>
@@ -669,12 +693,10 @@ const handleFaqChange = (
                     <label className="text-sm font-medium text-neutral-700">
                       Slug <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
+                    <TextInput
                       required
                       value={formData.slug}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      onChange={(value) => updateFormField("slug", value)}
                       placeholder="uae-tourist-30-days"
                     />
                     <p className="text-xs text-neutral-500 mt-1">
@@ -686,11 +708,9 @@ const handleFaqChange = (
                   <label className="text-sm font-medium text-neutral-700">
                     Subtitle / Tagline
                   </label>
-                  <input
-                    type="text"
+                  <TextInput
                     value={formData.subtitle}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, subtitle: e.target.value }))}
-                    className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                    onChange={(value) => updateFormField("subtitle", value)}
                     placeholder="Fast approvals for leisure travel"
                   />
                 </div>
@@ -699,67 +719,54 @@ const handleFaqChange = (
                     <label className="text-sm font-medium text-neutral-700">
                       Visa Mode
                     </label>
-                    <select
+                    <SelectInput
                       value={formData.visaMode}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, visaMode: e.target.value }))
-                      }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      onChange={(value) => updateFormField("visaMode", value)}
                     >
                       {VISA_MODE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
                       ))}
-                    </select>
+                    </SelectInput>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700">
                       Entry Type
                     </label>
-                    <select
+                    <SelectInput
                       value={formData.entryType}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, entryType: e.target.value }))
-                      }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      onChange={(value) => updateFormField("entryType", value)}
                     >
                       {ENTRY_TYPE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
                       ))}
-                    </select>
+                    </SelectInput>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700">
                       Stay Type
                     </label>
-                    <select
+                    <SelectInput
                       value={formData.stayType}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, stayType: e.target.value }))
-                      }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      onChange={(value) => updateFormField("stayType", value)}
                     >
                       {STAY_TYPE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
                       ))}
-                    </select>
+                    </SelectInput>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700">
                       Subtype Label
                     </label>
-                    <input
-                      type="text"
+                    <TextInput
                       value={formData.visaSubTypeLabel}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, visaSubTypeLabel: e.target.value }))
-                      }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      onChange={(value) => updateFormField("visaSubTypeLabel", value)}
                       placeholder="Single Entry eVisa – Short Stay"
                     />
                   </div>
@@ -769,13 +776,9 @@ const handleFaqChange = (
                     <label className="text-sm font-medium text-neutral-700">
                       Legacy Entry Display
                     </label>
-                    <input
-                      type="text"
+                    <TextInput
                       value={formData.entryTypeLegacy}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, entryTypeLegacy: e.target.value }))
-                      }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      onChange={(value) => updateFormField("entryTypeLegacy", value)}
                       placeholder="Single Entry"
                     />
                     <p className="text-xs text-neutral-500 mt-1">
@@ -783,13 +786,9 @@ const handleFaqChange = (
                     </p>
                   </div>
                   <label className="flex items-center gap-3 border border-neutral-200 rounded-lg px-4 py-2 mt-6">
-                    <input
-                      type="checkbox"
+                    <CheckboxInput
                       checked={formData.isFeatured}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, isFeatured: e.target.checked }))
-                      }
-                      className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                      onChange={(checked) => updateFormField("isFeatured", checked)}
                     />
                     <span className="text-sm font-medium text-neutral-700 flex items-center gap-1">
                       <Sparkles size={16} className="text-amber-500" />
@@ -797,13 +796,9 @@ const handleFaqChange = (
                     </span>
                   </label>
                   <label className="flex items-center gap-3 border border-neutral-200 rounded-lg px-4 py-2 mt-6">
-                    <input
-                      type="checkbox"
+                    <CheckboxInput
                       checked={formData.isActive}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, isActive: e.target.checked }))
-                      }
-                      className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                      onChange={(checked) => updateFormField("isActive", checked)}
                     />
                     <span className="text-sm font-medium text-neutral-700">
                       Visible to travellers
@@ -824,14 +819,10 @@ const handleFaqChange = (
                     <label className="text-sm font-medium text-neutral-700">
                       Price *
                     </label>
-                    <input
-                      type="number"
+                    <NumberInput
                       min={0}
                       value={formData.priceInInr}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, priceInInr: Number(e.target.value) || 0 }))
-                      }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      onChange={(value) => updateFormField("priceInInr", value ?? 0)}
                       placeholder="0"
                       required
                     />
@@ -840,19 +831,16 @@ const handleFaqChange = (
                     <label className="text-sm font-medium text-neutral-700">
                       Currency
                     </label>
-                    <select
+                    <SelectInput
                       value={formData.currency}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, currency: e.target.value }))
-                      }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      onChange={(value) => updateFormField("currency", value)}
                     >
                       <option value="INR">INR (₹)</option>
                       <option value="USD">USD ($)</option>
                       <option value="EUR">EUR (€)</option>
                       <option value="AED">AED (د.إ)</option>
                       <option value="GBP">GBP (£)</option>
-                    </select>
+                    </SelectInput>
                   </div>
                 </div>
                 {formData.priceInInr > 0 && (
@@ -869,13 +857,9 @@ const handleFaqChange = (
                     <label className="text-sm font-medium text-neutral-700">
                       Processing Time
                     </label>
-                    <input
-                      type="text"
+                    <TextInput
                       value={formData.processingTime}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, processingTime: e.target.value }))
-                      }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      onChange={updateProcessingTime}
                       placeholder="3-5 working days"
                     />
                   </div>
@@ -887,19 +871,10 @@ const handleFaqChange = (
                       <label className="text-sm font-medium text-neutral-700">
                         Stay Duration (Days)
                       </label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min={1}
-                        value={formData.stayDurationDays ?? ""}
-                        onChange={(e) => {
-                          const days = e.target.value ? parseInt(e.target.value) : null;
-                          setFormData((prev) => ({ 
-                            ...prev, 
-                            stayDurationDays: days,
-                            stayDuration: days ? `${days} days` : prev.stayDuration
-                          }));
-                        }}
-                        className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                        value={formData.stayDurationDays}
+                        onChange={updateStayDurationDays}
                         placeholder="30"
                       />
                       <p className="text-xs text-neutral-500 mt-1">Number of days allowed to stay</p>
@@ -908,19 +883,10 @@ const handleFaqChange = (
                       <label className="text-sm font-medium text-neutral-700">
                         Validity (Days from Issue)
                       </label>
-                      <input
-                        type="number"
+                      <NumberInput
                         min={1}
-                        value={formData.validityDays ?? ""}
-                        onChange={(e) => {
-                          const days = e.target.value ? parseInt(e.target.value) : null;
-                          setFormData((prev) => ({ 
-                            ...prev, 
-                            validityDays: days,
-                            validity: days ? `${days} days from issue` : prev.validity
-                          }));
-                        }}
-                        className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                        value={formData.validityDays}
+                        onChange={updateValidityDays}
                         placeholder="60"
                       />
                       <p className="text-xs text-neutral-500 mt-1">Number of days visa is valid from date of issue</p>
@@ -931,30 +897,24 @@ const handleFaqChange = (
                       <label className="text-sm font-medium text-neutral-700">
                         Stay Duration (Legacy Text)
                       </label>
-                      <input
-                        type="text"
+                      <TextInput
                         value={formData.stayDuration}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, stayDuration: e.target.value }))
-                        }
-                        className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500 bg-neutral-50"
+                        onChange={(value) => updateFormField("stayDuration", value)}
+                        className="bg-neutral-50"
                         placeholder="Up to 30 days"
-                        readOnly
+                        disabled
                       />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-neutral-700">
                         Validity (Legacy Text)
                       </label>
-                      <input
-                        type="text"
+                      <TextInput
                         value={formData.validity}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, validity: e.target.value }))
-                        }
-                        className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500 bg-neutral-50"
+                        onChange={(value) => updateFormField("validity", value)}
+                        className="bg-neutral-50"
                         placeholder="60 days from issue"
-                        readOnly
+                        disabled
                       />
                     </div>
                   </div>
@@ -974,13 +934,10 @@ const handleFaqChange = (
                 ].map((field) => (
                   <div key={field.key}>
                     <label className="text-sm font-medium text-neutral-700">{field.label}</label>
-                    <textarea
+                    <TextareaInput
                       rows={field.key === "overview" ? 5 : 3}
-                      value={(formData as any)[field.key]}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, [field.key]: e.target.value }))
-                      }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                      value={(formData as any)[field.key] || ""}
+                      onChange={(value) => updateFormField(field.key as keyof FormState, value)}
                       placeholder={`Markdown or plain text for ${field.label.toLowerCase()}`}
                     />
                   </div>
@@ -1029,67 +986,50 @@ const handleFaqChange = (
                         </button>
                       </div>
                       <div className="grid md:grid-cols-2 gap-3">
-                        <input
-                          type="text"
+                        <TextInput
                           value={req.name}
-                          onChange={(e) =>
-                            handleRequirementChange(req.uid, "name", e.target.value)
-                          }
+                          onChange={(value) => handleRequirementChange(req.uid, "name", value)}
                           placeholder="Passport first & last page"
-                          className="border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                          className="border border-neutral-300 rounded-lg"
                         />
-                        <select
+                        <SelectInput
                           value={req.scope}
-                          onChange={(e) =>
-                            handleRequirementChange(req.uid, "scope", e.target.value as DocScope)
-                          }
-                          className="border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                          onChange={(value) => handleRequirementChange(req.uid, "scope", value as DocScope)}
+                          className="border border-neutral-300 rounded-lg"
                         >
                           {SCOPE_OPTIONS.map((option) => (
                             <option key={option.value} value={option.value}>
                               {option.label}
                             </option>
                           ))}
-                        </select>
+                        </SelectInput>
                       </div>
                       <div className="grid md:grid-cols-3 gap-3">
-                        <input
-                          type="text"
+                        <TextInput
                           value={req.category}
-                          onChange={(e) =>
-                            handleRequirementChange(req.uid, "category", e.target.value)
-                          }
+                          onChange={(value) => handleRequirementChange(req.uid, "category", value)}
                           placeholder="Category (e.g., Identity)"
-                          className="border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                          className="border border-neutral-300 rounded-lg"
                         />
-                        <input
-                          type="number"
+                        <NumberInput
                           value={req.sortOrder}
-                          onChange={(e) =>
-                            handleRequirementChange(req.uid, "sortOrder", Number(e.target.value))
-                          }
-                          className="border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                          onChange={(value) => handleRequirementChange(req.uid, "sortOrder", value ?? 0)}
+                          className="border border-neutral-300 rounded-lg"
                           placeholder="Sort"
                         />
                         <label className="inline-flex items-center gap-2 px-3 py-2 border border-neutral-200 rounded-lg">
-                          <input
-                            type="checkbox"
+                          <CheckboxInput
                             checked={req.isRequired}
-                            onChange={(e) =>
-                              handleRequirementChange(req.uid, "isRequired", e.target.checked)
-                            }
-                            className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                            onChange={(checked) => handleRequirementChange(req.uid, "isRequired", checked)}
                           />
                           <span className="text-sm text-neutral-700">Required</span>
                         </label>
                       </div>
-                      <textarea
+                      <TextareaInput
                         value={req.description}
-                        onChange={(e) =>
-                          handleRequirementChange(req.uid, "description", e.target.value)
-                        }
+                        onChange={(value) => handleRequirementChange(req.uid, "description", value)}
                         placeholder="Extra instructions (file format, DPI, etc.)"
-                        className="w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                        className="w-full border border-neutral-300 rounded-lg"
                       />
                     </div>
                   ))}
@@ -1138,39 +1078,30 @@ const handleFaqChange = (
                         </button>
                       </div>
                       <div className="grid md:grid-cols-2 gap-3">
-                        <input
-                          type="text"
+                        <TextInput
                           value={faq.category}
-                          onChange={(e) => handleFaqChange(faq.uid, "category", e.target.value)}
+                          onChange={(value) => handleFaqChange(faq.uid, "category", value)}
                           placeholder="Category (Optional)"
-                          className="border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                          className="border border-neutral-300 rounded-lg"
                         />
-                        <input
-                          type="number"
+                        <NumberInput
                           value={faq.sortOrder}
-                          onChange={(e) =>
-                            handleFaqChange(
-                              faq.uid,
-                              "sortOrder",
-                              Number(e.target.value) || 0
-                            )
-                          }
-                          className="border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                          onChange={(value) => handleFaqChange(faq.uid, "sortOrder", value ?? 0)}
+                          className="border border-neutral-300 rounded-lg"
                           placeholder="Sort order"
                         />
                       </div>
-                      <input
-                        type="text"
+                      <TextInput
                         value={faq.question}
-                        onChange={(e) => handleFaqChange(faq.uid, "question", e.target.value)}
+                        onChange={(value) => handleFaqChange(faq.uid, "question", value)}
                         placeholder="Question"
-                        className="border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                        className="border border-neutral-300 rounded-lg"
                       />
-                      <textarea
+                      <TextareaInput
                         value={faq.answer}
-                        onChange={(e) => handleFaqChange(faq.uid, "answer", e.target.value)}
+                        onChange={(value) => handleFaqChange(faq.uid, "answer", value)}
                         placeholder="Answer"
-                        className="border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                        className="border border-neutral-300 rounded-lg"
                       />
                     </div>
                   ))}
@@ -1220,35 +1151,26 @@ const handleFaqChange = (
                       </div>
                       <div className="grid md:grid-cols-3 gap-3">
                         <div className="md:col-span-2">
-                          <input
-                            type="text"
+                          <TextInput
                             value={subtype.label}
-                            onChange={(e) => handleSubTypeChange(subtype.uid, "label", e.target.value)}
+                            onChange={(value) => handleSubTypeChange(subtype.uid, "label", value)}
                             placeholder="Subtype Label (e.g., Single Entry eVisa)"
-                            className="w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                            className="w-full border border-neutral-300 rounded-lg"
                           />
                         </div>
                         <div>
-                          <input
-                            type="text"
+                          <TextInput
                             value={subtype.code}
-                            onChange={(e) => handleSubTypeChange(subtype.uid, "code", e.target.value)}
+                            onChange={(value) => handleSubTypeChange(subtype.uid, "code", value)}
                             placeholder="Code (Optional)"
-                            className="w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                            className="w-full border border-neutral-300 rounded-lg"
                           />
                         </div>
                       </div>
-                      <input
-                        type="number"
+                      <NumberInput
                         value={subtype.sortOrder}
-                        onChange={(e) =>
-                          handleSubTypeChange(
-                            subtype.uid,
-                            "sortOrder",
-                            Number(e.target.value) || 0
-                          )
-                        }
-                        className="w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                        onChange={(value) => handleSubTypeChange(subtype.uid, "sortOrder", value ?? 0)}
+                        className="w-full border border-neutral-300 rounded-lg"
                         placeholder="Sort order"
                       />
                     </div>
@@ -1291,13 +1213,11 @@ const handleFaqChange = (
                       </div>
                     </div>
                     {heroImageMode === "url" ? (
-                      <input
+                      <TextInput
                         type="url"
                         value={formData.heroImageUrl}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, heroImageUrl: e.target.value }))
-                        }
-                        className="mt-2 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                        onChange={(value) => updateFormField("heroImageUrl", value)}
+                        className="mt-2"
                         placeholder="https://..."
                       />
                     ) : (
@@ -1348,13 +1268,9 @@ const handleFaqChange = (
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700">Meta Title</label>
-                    <input
-                      type="text"
-                      value={formData.metaTitle}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, metaTitle: e.target.value }))
-                      }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                    <TextInput
+                      value={formData.metaTitle || ""}
+                      onChange={(value) => updateFormField("metaTitle", value)}
                     />
                   </div>
                 </div>
@@ -1390,13 +1306,11 @@ const handleFaqChange = (
                       </div>
                     </div>
                     {sampleVisaImageMode === "url" ? (
-                      <input
+                      <TextInput
                         type="url"
-                        value={formData.sampleVisaImageUrl}
-                        onChange={(e) =>
-                          setFormData((prev) => ({ ...prev, sampleVisaImageUrl: e.target.value }))
-                        }
-                        className="mt-2 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                        value={formData.sampleVisaImageUrl || ""}
+                        onChange={(value) => updateFormField("sampleVisaImageUrl", value)}
+                        className="mt-2"
                         placeholder="https://..."
                       />
                     ) : (
@@ -1464,12 +1378,9 @@ const handleFaqChange = (
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700">Meta Description</label>
-                    <textarea
-                      value={formData.metaDescription}
-                      onChange={(e) =>
-                        setFormData((prev) => ({ ...prev, metaDescription: e.target.value }))
-                      }
-                      className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
+                    <TextareaInput
+                      value={formData.metaDescription || ""}
+                      onChange={(value) => updateFormField("metaDescription", value)}
                       rows={3}
                     />
                   </div>
