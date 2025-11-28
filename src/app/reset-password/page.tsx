@@ -30,8 +30,11 @@ function ResetPasswordContent() {
       }
 
       try {
+        // Token and id should already be URL-encoded from the URL, but ensure they're properly encoded
+        const encodedToken = encodeURIComponent(token || "");
+        const encodedId = encodeURIComponent(resetId || "");
         const response = await fetch(
-          `/api/auth/validate-reset-token?token=${encodeURIComponent(token)}&id=${encodeURIComponent(resetId)}`
+          `/api/auth/validate-reset-token?token=${encodedToken}&id=${encodedId}`
         );
         const data = await response.json();
         if (response.ok && data.valid === true) {

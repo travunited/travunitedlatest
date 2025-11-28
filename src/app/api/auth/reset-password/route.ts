@@ -69,15 +69,19 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if expired
-    const now = new Date();
-    if (now > passwordReset.expiresAt) {
+    // Check if expired - use timestamp comparison for reliability
+    const now = Date.now();
+    const expiresAt = passwordReset.expiresAt.getTime();
+    if (now > expiresAt) {
+      const expiredByMinutes = Math.round((now - expiresAt) / 1000 / 60);
       console.error("[Password Reset] Token expired", {
         resetId,
         userId: passwordReset.userId,
         expiresAt: passwordReset.expiresAt.toISOString(),
-        now: now.toISOString(),
-        expiredBy: Math.round((now.getTime() - passwordReset.expiresAt.getTime()) / 1000 / 60) + " minutes",
+        now: new Date(now).toISOString(),
+        expiredBy: `${expiredByMinutes} minutes`,
+        expiresAtTimestamp: expiresAt,
+        nowTimestamp: now,
       });
       return NextResponse.json(
         { error: "Reset token has expired. Please request a new one." },
@@ -86,11 +90,16 @@ export async function POST(req: Request) {
     }
 
     // Verify token matches hash
-    const tokenMatches = await bcrypt.compare(token, passwordReset.tokenHash);
+    // Ensure token is properly decoded (in case it was double-encoded)
+    const decodedToken = decodeURIComponent(token);
+    const tokenMatches = await bcrypt.compare(decodedToken, passwordReset.tokenHash);
     if (!tokenMatches) {
       console.error("[Password Reset] Token mismatch", {
         resetId,
         userId: passwordReset.userId,
+        tokenLength: token.length,
+        decodedTokenLength: decodedToken.length,
+        // Don't log actual token for security, but log lengths for debugging
       });
       return NextResponse.json(
         { error: "Invalid reset token" },

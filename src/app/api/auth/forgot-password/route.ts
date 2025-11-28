@@ -78,17 +78,30 @@ export async function POST(req: Request) {
     });
 
     // Send email with reset link (includes both token and resetId for easier lookup)
+    // Ensure NEXTAUTH_URL is set correctly
     const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const resetUrl = `${baseUrl}/reset-password?token=${rawToken}&id=${passwordReset.id}`;
+    if (!process.env.NEXTAUTH_URL) {
+      console.warn("[Password Reset] WARNING: NEXTAUTH_URL not set, using fallback:", baseUrl);
+    }
+    
+    // Properly URL-encode the token to prevent issues with special characters
+    const encodedToken = encodeURIComponent(rawToken);
+    const encodedId = encodeURIComponent(passwordReset.id);
+    const resetUrl = `${baseUrl}/reset-password?token=${encodedToken}&id=${encodedId}`;
     
     console.log("[Password Reset] Attempting to send email", {
       userId: user.id,
       userEmail: user.email,
       resetId: passwordReset.id,
       resetUrl: resetUrl,
+      tokenLength: rawToken.length,
       expiresAt: expiresAt.toISOString(),
+      expiresAtTimestamp: expiresAt.getTime(),
+      expiresInMinutes: 60,
       ip: ip || "unknown",
       userAgent: userAgent || "unknown",
+      baseUrl: baseUrl,
+      hasNEXTAUTH_URL: !!process.env.NEXTAUTH_URL,
     });
     
     try {
