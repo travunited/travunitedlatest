@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Download, FileDown, Calendar, TrendingUp, Users, FileText } from "lucide-react";
@@ -55,9 +55,20 @@ export default function TourBookingsReportPage() {
   const dateTo = useMemo(() => filters.dateTo, [filters.dateTo]);
   const filterStatus = useMemo(() => filters.status, [filters.status]);
 
+  // Use ref to prevent multiple simultaneous fetches
+  const isFetchingRef = useRef(false);
+  const mountedRef = useRef(true);
+
   const fetchReport = useCallback(async () => {
+    // Prevent multiple simultaneous fetches
+    if (isFetchingRef.current) {
+      return;
+    }
+
+    isFetchingRef.current = true;
     setLoading(true);
     setError(null);
+    
     try {
       const params = new URLSearchParams();
       if (dateFrom) params.append("dateFrom", dateFrom);
@@ -71,18 +82,27 @@ export default function TourBookingsReportPage() {
         throw new Error(`Failed to load report: ${response.statusText}`);
       }
       const data = await response.json();
-      setSummary(data.summary);
-      setBookings(data.rows || []);
-      setTotalPages(data.pagination?.totalPages || 1);
+      
+      // Only update state if component is still mounted
+      if (mountedRef.current) {
+        setSummary(data.summary);
+        setBookings(data.rows || []);
+        setTotalPages(data.pagination?.totalPages || 1);
+      }
     } catch (error: any) {
       console.error("Error fetching report:", error);
-      setError(error.message || "Failed to load report. Please try again or contact support.");
+      if (mountedRef.current) {
+        setError(error.message || "Failed to load report. Please try again or contact support.");
+      }
     } finally {
-      setLoading(false);
+      if (mountedRef.current) {
+        setLoading(false);
+      }
+      isFetchingRef.current = false;
     }
   }, [dateFrom, dateTo, filterStatus, page]);
 
-  // Fetch report when authenticated
+  // Handle authentication and authorization
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -94,18 +114,24 @@ export default function TourBookingsReportPage() {
         router.push("/admin");
         return;
       }
-      fetchReport();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.role, status]);
+  }, [session?.user?.role, status, router]);
 
-  // Refetch when filters or page change
+  // Single useEffect to handle all data fetching
   useEffect(() => {
+    // Only fetch if authenticated and authorized
     if (status === "authenticated" && session?.user?.role === "SUPER_ADMIN") {
       fetchReport();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateFrom, dateTo, filterStatus, page]);
+  }, [status, session?.user?.role, dateFrom, dateTo, filterStatus, page]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const handleExport = async (format: "xlsx" | "csv" | "pdf") => {
     try {
