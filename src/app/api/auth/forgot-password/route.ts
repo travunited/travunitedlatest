@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { sendPasswordResetEmail } from "@/lib/email";
+import { sendPasswordResetEmail, getLastEmailError } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -130,7 +130,6 @@ export async function POST(req: Request) {
           },
         });
         // Log the last email error if available
-        const { getLastEmailError } = await import("@/lib/email");
         const lastError = getLastEmailError();
         if (lastError) {
           console.error("[Password Reset] Last email error:", lastError);
@@ -150,14 +149,9 @@ export async function POST(req: Request) {
         },
       });
       // Log the last email error if available
-      try {
-        const { getLastEmailError } = await import("@/lib/email");
-        const lastError = getLastEmailError();
-        if (lastError) {
-          console.error("[Password Reset] Last email error:", lastError);
-        }
-      } catch (e) {
-        // Ignore import errors
+      const lastError = getLastEmailError();
+      if (lastError) {
+        console.error("[Password Reset] Last email error:", lastError);
       }
     }
 
