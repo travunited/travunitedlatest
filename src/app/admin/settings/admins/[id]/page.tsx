@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, Shield, Mail, Calendar, FileText, Plane, Edit, Save, X } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
+import { TextInput, SelectInput } from "@/components/admin/MemoizedInputs";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -38,6 +39,10 @@ export default function AdminDetailPage() {
     name: "",
     role: "STAFF_ADMIN" as "STAFF_ADMIN" | "SUPER_ADMIN",
   });
+
+  const updateEditForm = useCallback((field: keyof typeof editForm, value: string) => {
+    setEditForm((prev) => ({ ...prev, [field]: value }));
+  }, []);
 
   const fetchAdmin = useCallback(async () => {
     try {
@@ -255,11 +260,11 @@ export default function AdminDetailPage() {
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Name</label>
                   {editing ? (
-                    <input
+                    <TextInput
                       type="text"
                       value={editForm.name}
-                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      onChange={(value) => updateEditForm("name", value)}
+                      className="w-full px-4 py-2"
                     />
                   ) : (
                     <div className="text-neutral-900 font-medium">{admin.name || "N/A"}</div>
@@ -268,14 +273,14 @@ export default function AdminDetailPage() {
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">Role</label>
                   {editing ? (
-                    <select
+                    <SelectInput
                       value={editForm.role}
-                      onChange={(e) => setEditForm({ ...editForm, role: e.target.value as "STAFF_ADMIN" | "SUPER_ADMIN" })}
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                      onChange={(value) => updateEditForm("role", value)}
+                      className="w-full px-4 py-2"
                     >
                       <option value="STAFF_ADMIN">Staff Admin</option>
                       <option value="SUPER_ADMIN">Super Admin</option>
-                    </select>
+                    </SelectInput>
                   ) : (
                     <div className="text-neutral-900 font-medium">
                       {admin.role === "SUPER_ADMIN" ? "Super Admin" : "Staff Admin"}

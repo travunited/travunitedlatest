@@ -409,7 +409,7 @@ export default function AdminHomepageReviewsPage() {
                   <input
                     type="text"
                     value={formData.reviewerName}
-                    onChange={(e) => setFormData({ ...formData, reviewerName: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, reviewerName: e.target.value }))}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
                       errors.reviewerName ? "border-red-300" : "border-neutral-300"
                     }`}
@@ -428,7 +428,7 @@ export default function AdminHomepageReviewsPage() {
                   <input
                     type="text"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     placeholder="Great experience!"
                   />
@@ -441,7 +441,7 @@ export default function AdminHomepageReviewsPage() {
                   </label>
                   <textarea
                     value={formData.comment}
-                    onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, comment: e.target.value }))}
                     rows={4}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
                       errors.comment ? "border-red-300" : "border-neutral-300"
@@ -463,7 +463,7 @@ export default function AdminHomepageReviewsPage() {
                       <button
                         key={star}
                         type="button"
-                        onClick={() => setFormData({ ...formData, rating: star })}
+                        onClick={() => setFormData((prev) => ({ ...prev, rating: star }))}
                         className="focus:outline-none"
                       >
                         <Star
@@ -517,7 +517,7 @@ export default function AdminHomepageReviewsPage() {
                         <input
                           type="url"
                           value={formData.imageUrl}
-                          onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, imageUrl: e.target.value }))}
                           placeholder="Or enter image URL"
                           className="mt-2 w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                         />
@@ -537,7 +537,7 @@ export default function AdminHomepageReviewsPage() {
                   <input
                     type="url"
                     value={formData.link}
-                    onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, link: e.target.value }))}
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 ${
                       errors.link ? "border-red-300" : "border-neutral-300"
                     }`}
@@ -555,7 +555,7 @@ export default function AdminHomepageReviewsPage() {
                     <input
                       type="checkbox"
                       checked={formData.isFeatured}
-                      onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, isFeatured: e.target.checked }))}
                       className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
                     />
                     <span className="text-sm text-neutral-700">Featured (show on homepage)</span>
@@ -564,7 +564,7 @@ export default function AdminHomepageReviewsPage() {
                     <input
                       type="checkbox"
                       checked={formData.isVisible}
-                      onChange={(e) => setFormData({ ...formData, isVisible: e.target.checked })}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, isVisible: e.target.checked }))}
                       className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
                     />
                     <span className="text-sm text-neutral-700">Active</span>

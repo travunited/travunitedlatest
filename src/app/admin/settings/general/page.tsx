@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Save, Building2, Mail, CreditCard, BarChart3, Lock, AlertCircle, Settings } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
+import { TextInput, TextareaInput, CheckboxInput } from "@/components/admin/MemoizedInputs";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -109,6 +110,10 @@ export default function AdminGeneralSettingsPage() {
     }
   };
 
+  const updateSetting = useCallback((field: keyof Settings, value: string | boolean) => {
+    setSettings((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
   const handleSave = async () => {
     if (isReadOnly) return;
 
@@ -175,66 +180,66 @@ export default function AdminGeneralSettingsPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Company Name</label>
-                  <input
+                  <TextInput
                     type="text"
                     value={settings.companyName}
-                    onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
+                    onChange={(value) => updateSetting("companyName", value)}
                     disabled={isReadOnly}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Company Logo URL</label>
-                  <input
+                  <TextInput
                     type="url"
                     value={settings.companyLogo}
-                    onChange={(e) => setSettings({ ...settings, companyLogo: e.target.value })}
+                    onChange={(value) => updateSetting("companyLogo", value)}
                     disabled={isReadOnly}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                     placeholder="https://..."
+                    className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">Company Address</label>
-                <textarea
+                <TextareaInput
                   value={settings.companyAddress}
-                  onChange={(e) => setSettings({ ...settings, companyAddress: e.target.value })}
+                  onChange={(value) => updateSetting("companyAddress", value)}
                   disabled={isReadOnly}
                   rows={3}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                 />
               </div>
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">GSTIN</label>
-                  <input
+                  <TextInput
                     type="text"
                     value={settings.gstin}
-                    onChange={(e) => setSettings({ ...settings, gstin: e.target.value })}
+                    onChange={(value) => updateSetting("gstin", value)}
                     disabled={isReadOnly}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                     placeholder="29ABCDE1234F1Z5"
+                    className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Support Email</label>
-                  <input
+                  <TextInput
                     type="email"
                     value={settings.supportEmail}
-                    onChange={(e) => setSettings({ ...settings, supportEmail: e.target.value })}
+                    onChange={(value) => updateSetting("supportEmail", value)}
                     disabled={isReadOnly}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Support Phone</label>
-                  <input
+                  <TextInput
                     type="tel"
                     value={settings.supportPhone}
-                    onChange={(e) => setSettings({ ...settings, supportPhone: e.target.value })}
+                    onChange={(value) => updateSetting("supportPhone", value)}
                     disabled={isReadOnly}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -255,14 +260,13 @@ export default function AdminGeneralSettingsPage() {
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
                   Resend API Key
                 </label>
-                <input
+                <TextInput
                   type="password"
                   value={settings.resendApiKey}
-                  onChange={(e) => setSettings({ ...settings, resendApiKey: e.target.value })}
+                  onChange={(value) => updateSetting("resendApiKey", value)}
                   disabled={isReadOnly}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   placeholder="re_xxxxxxxxxxxxxxxxxxxxx"
-                  autoComplete="off"
+                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                 />
                 <p className="text-xs text-neutral-500 mt-1">
                   Stored securely in the database. Required for sending emails via Resend.
@@ -273,13 +277,13 @@ export default function AdminGeneralSettingsPage() {
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
                     General Sender Email
                   </label>
-                  <input
+                  <TextInput
                     type="email"
                     value={settings.emailFromGeneral}
-                    onChange={(e) => setSettings({ ...settings, emailFromGeneral: e.target.value })}
+                    onChange={(value) => updateSetting("emailFromGeneral", value)}
                     disabled={isReadOnly}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                     placeholder="Travunited <noreply@travunited.com>"
+                    className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   />
                   <p className="text-xs text-neutral-500 mt-1">
                     Used for notifications and account emails.
@@ -289,13 +293,13 @@ export default function AdminGeneralSettingsPage() {
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Visa Sender Email
                   </label>
-                  <input
+                  <TextInput
                     type="email"
                     value={settings.emailFromVisa}
-                    onChange={(e) => setSettings({ ...settings, emailFromVisa: e.target.value })}
+                    onChange={(value) => updateSetting("emailFromVisa", value)}
                     disabled={isReadOnly}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                     placeholder="Visa Desk <visa@travunited.com>"
+                    className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   />
                   <p className="text-xs text-neutral-500 mt-1">
                     Used for visa-related communications.
@@ -305,13 +309,13 @@ export default function AdminGeneralSettingsPage() {
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Tours Sender Email
                   </label>
-                  <input
+                  <TextInput
                     type="email"
                     value={settings.emailFromTours}
-                    onChange={(e) => setSettings({ ...settings, emailFromTours: e.target.value })}
+                    onChange={(value) => updateSetting("emailFromTours", value)}
                     disabled={isReadOnly}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                     placeholder="Tours Desk <tours@travunited.com>"
+                    className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   />
                   <p className="text-xs text-neutral-500 mt-1">
                     Used for tour booking and itinerary emails.
@@ -331,68 +335,68 @@ export default function AdminGeneralSettingsPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">Visa Submitted Email</label>
-                <textarea
+                <TextareaInput
                   value={settings.emailVisaSubmitted}
-                  onChange={(e) => setSettings({ ...settings, emailVisaSubmitted: e.target.value })}
+                  onChange={(value) => updateSetting("emailVisaSubmitted", value)}
                   disabled={isReadOnly}
                   rows={2}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   placeholder="Subject line and intro text..."
+                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">Docs Rejected Email</label>
-                <textarea
+                <TextareaInput
                   value={settings.emailDocsRejected}
-                  onChange={(e) => setSettings({ ...settings, emailDocsRejected: e.target.value })}
+                  onChange={(value) => updateSetting("emailDocsRejected", value)}
                   disabled={isReadOnly}
                   rows={2}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   placeholder="Subject line and intro text..."
+                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">Visa Approved Email</label>
-                <textarea
+                <TextareaInput
                   value={settings.emailVisaApproved}
-                  onChange={(e) => setSettings({ ...settings, emailVisaApproved: e.target.value })}
+                  onChange={(value) => updateSetting("emailVisaApproved", value)}
                   disabled={isReadOnly}
                   rows={2}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   placeholder="Subject line and intro text..."
+                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">Tour Booked Email</label>
-                <textarea
+                <TextareaInput
                   value={settings.emailTourBooked}
-                  onChange={(e) => setSettings({ ...settings, emailTourBooked: e.target.value })}
+                  onChange={(value) => updateSetting("emailTourBooked", value)}
                   disabled={isReadOnly}
                   rows={2}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   placeholder="Subject line and intro text..."
+                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">Tour Confirmed Email</label>
-                <textarea
+                <TextareaInput
                   value={settings.emailTourConfirmed}
-                  onChange={(e) => setSettings({ ...settings, emailTourConfirmed: e.target.value })}
+                  onChange={(value) => updateSetting("emailTourConfirmed", value)}
                   disabled={isReadOnly}
                   rows={2}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   placeholder="Subject line and intro text..."
+                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">Vouchers Ready Email</label>
-                <textarea
+                <TextareaInput
                   value={settings.emailVouchersReady}
-                  onChange={(e) => setSettings({ ...settings, emailVouchersReady: e.target.value })}
+                  onChange={(value) => updateSetting("emailVouchersReady", value)}
                   disabled={isReadOnly}
                   rows={2}
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   placeholder="Subject line and intro text..."
+                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -437,10 +441,9 @@ export default function AdminGeneralSettingsPage() {
             </div>
             <div className="space-y-4">
               <div className="flex items-center space-x-2 mb-4">
-                <input
-                  type="checkbox"
+                <CheckboxInput
                   checked={settings.analyticsEnabled}
-                  onChange={(e) => setSettings({ ...settings, analyticsEnabled: e.target.checked })}
+                  onChange={(checked) => updateSetting("analyticsEnabled", checked)}
                   disabled={isReadOnly}
                   className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500 disabled:cursor-not-allowed"
                 />
@@ -449,24 +452,24 @@ export default function AdminGeneralSettingsPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Google Analytics ID</label>
-                  <input
+                  <TextInput
                     type="text"
                     value={settings.googleAnalyticsId}
-                    onChange={(e) => setSettings({ ...settings, googleAnalyticsId: e.target.value })}
+                    onChange={(value) => updateSetting("googleAnalyticsId", value)}
                     disabled={isReadOnly || !settings.analyticsEnabled}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                     placeholder="G-XXXXXXXXXX"
+                    className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Meta Pixel ID</label>
-                  <input
+                  <TextInput
                     type="text"
                     value={settings.metaPixelId}
-                    onChange={(e) => setSettings({ ...settings, metaPixelId: e.target.value })}
+                    onChange={(value) => updateSetting("metaPixelId", value)}
                     disabled={isReadOnly || !settings.analyticsEnabled}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                     placeholder="123456789012345"
+                    className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -481,20 +484,18 @@ export default function AdminGeneralSettingsPage() {
             </div>
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <CheckboxInput
                   checked={settings.registrationsEnabled}
-                  onChange={(e) => setSettings({ ...settings, registrationsEnabled: e.target.checked })}
+                  onChange={(checked) => updateSetting("registrationsEnabled", checked)}
                   disabled={isReadOnly}
                   className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500 disabled:cursor-not-allowed"
                 />
                 <label className="text-sm font-medium text-neutral-700">Allow New Registrations</label>
               </div>
               <div className="flex items-center space-x-2 mb-4">
-                <input
-                  type="checkbox"
+                <CheckboxInput
                   checked={settings.maintenanceMode}
-                  onChange={(e) => setSettings({ ...settings, maintenanceMode: e.target.checked })}
+                  onChange={(checked) => updateSetting("maintenanceMode", checked)}
                   disabled={isReadOnly}
                   className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500 disabled:cursor-not-allowed"
                 />
@@ -503,13 +504,13 @@ export default function AdminGeneralSettingsPage() {
               {settings.maintenanceMode && (
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Maintenance Message</label>
-                  <textarea
+                  <TextareaInput
                     value={settings.maintenanceMessage}
-                    onChange={(e) => setSettings({ ...settings, maintenanceMessage: e.target.value })}
+                    onChange={(value) => updateSetting("maintenanceMessage", value)}
                     disabled={isReadOnly}
                     rows={3}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                     placeholder="Message shown to users during maintenance..."
+                    className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   />
                   <p className="text-xs text-neutral-500 mt-1">This message will appear as a global banner on the frontend</p>
                 </div>

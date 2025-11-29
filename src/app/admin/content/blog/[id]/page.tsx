@@ -460,7 +460,7 @@ export default function AdminBlogEditPage() {
                     type="text"
                     required
                     value={formData.slug || ""}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 font-mono text-sm"
                     placeholder="blog-post-slug"
                   />
@@ -498,7 +498,7 @@ export default function AdminBlogEditPage() {
                     <input
                       type="url"
                       value={formData.coverImage || ""}
-                      onChange={(e) => setFormData({ ...formData, coverImage: e.target.value })}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, coverImage: e.target.value }))}
                       className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                       placeholder="https://..."
                     />
@@ -540,7 +540,7 @@ export default function AdminBlogEditPage() {
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Excerpt / Summary</label>
                   <textarea
                     value={formData.excerpt || ""}
-                    onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, excerpt: e.target.value }))}
                     rows={3}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     placeholder="Short summary shown on listings..."
@@ -552,7 +552,7 @@ export default function AdminBlogEditPage() {
                     <input
                       type="text"
                       value={formData.category || ""}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, category: e.target.value }))}
                       className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                       placeholder="Visa Guide, Travel Tips..."
                     />
@@ -562,7 +562,7 @@ export default function AdminBlogEditPage() {
                     <input
                       type="text"
                       value={formData.readTime || ""}
-                      onChange={(e) => setFormData({ ...formData, readTime: e.target.value })}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, readTime: e.target.value }))}
                       className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                       placeholder="e.g., 6 min read"
                     />
@@ -578,7 +578,7 @@ export default function AdminBlogEditPage() {
               </label>
               <RichTextEditor
                 content={formData.content || ""}
-                onChange={(html) => setFormData({ ...formData, content: html })}
+                onChange={(html) => setFormData((prev) => ({ ...prev, content: html }))}
                 placeholder="Start writing your blog post..."
               />
               <p className="text-xs text-neutral-500 mt-2">
@@ -597,7 +597,7 @@ export default function AdminBlogEditPage() {
                   <input
                     type="text"
                     value={formData.metaTitle || ""}
-                    onChange={(e) => setFormData({ ...formData, metaTitle: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, metaTitle: e.target.value }))}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     placeholder="SEO title for search engines..."
                   />
@@ -611,7 +611,7 @@ export default function AdminBlogEditPage() {
                   </label>
                   <textarea
                     value={formData.metaDescription || ""}
-                    onChange={(e) => setFormData({ ...formData, metaDescription: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, metaDescription: e.target.value }))}
                     rows={3}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     placeholder="SEO description for search engines..."
@@ -627,7 +627,7 @@ export default function AdminBlogEditPage() {
                   <input
                     type="text"
                     value={formData.focusKeyword || ""}
-                    onChange={(e) => setFormData({ ...formData, focusKeyword: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, focusKeyword: e.target.value }))}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     placeholder="Primary keyword for SEO..."
                   />
@@ -639,7 +639,7 @@ export default function AdminBlogEditPage() {
                   <input
                     type="text"
                     value={formData.author || ""}
-                    onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, author: e.target.value }))}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                     placeholder="Author name..."
                   />
@@ -672,12 +672,12 @@ export default function AdminBlogEditPage() {
                         newPublishedAt = tomorrow.toISOString().slice(0, 16);
                       }
                       
-                      setFormData({ 
-                        ...formData, 
+                      setFormData((prev) => ({ 
+                        ...prev, 
                         status: newStatus,
                         published: newStatus === "PUBLISHED",
                         publishedAt: newPublishedAt
-                      });
+                      }));
                     }}
                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                   >
@@ -700,10 +700,10 @@ export default function AdminBlogEditPage() {
                             const date = e.target.value;
                             const existingDateTime = formData.publishedAt ? new Date(formData.publishedAt) : new Date();
                             const time = existingDateTime.toTimeString().slice(0, 5); // HH:mm
-                            setFormData({ 
-                              ...formData, 
+                            setFormData((prev) => ({ 
+                              ...prev, 
                               publishedAt: date ? `${date}T${time}` : null 
-                            });
+                            }));
                           }}
                           className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                         />
@@ -713,10 +713,10 @@ export default function AdminBlogEditPage() {
                           onChange={(e) => {
                             const time = e.target.value;
                             const existingDate = formData.publishedAt ? formData.publishedAt.split('T')[0] : new Date().toISOString().split('T')[0];
-                            setFormData({ 
-                              ...formData, 
+                            setFormData((prev) => ({ 
+                              ...prev, 
                               publishedAt: existingDate ? `${existingDate}T${time}` : null 
-                            });
+                            }));
                           }}
                           className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                         />
@@ -730,7 +730,7 @@ export default function AdminBlogEditPage() {
                       <input
                         type="date"
                         value={formData.publishedAt ? formData.publishedAt.split('T')[0] : ""}
-                        onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, publishedAt: e.target.value }))}
                         className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                       />
                     )}

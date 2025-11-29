@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Plus, Edit, Shield, Mail, Calendar, CheckCircle, X, Eye, ArrowRight } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
+import { TextInput, SelectInput, CheckboxInput } from "@/components/admin/MemoizedInputs";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -168,6 +169,14 @@ export default function AdminManagementPage() {
     }
   };
 
+  const updateCreateForm = useCallback((field: keyof typeof createForm, value: string | boolean) => {
+    setCreateForm((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  const updateEditForm = useCallback((field: keyof typeof editForm, value: string) => {
+    setEditForm((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
   const openEditModal = (admin: Admin) => {
     setSelectedAdmin(admin);
     setEditForm({
@@ -303,52 +312,51 @@ export default function AdminManagementPage() {
               <form onSubmit={handleCreateAdmin} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Name</label>
-                  <input
+                  <TextInput
                     type="text"
                     required
                     value={createForm.name}
-                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    onChange={(value) => updateCreateForm("name", value)}
+                    className="w-full px-4 py-2"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Email</label>
-                  <input
+                  <TextInput
                     type="email"
                     required
                     value={createForm.email}
-                    onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    onChange={(value) => updateCreateForm("email", value)}
+                    className="w-full px-4 py-2"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Role</label>
-                  <select
+                  <SelectInput
                     value={createForm.role}
-                    onChange={(e) => setCreateForm({ ...createForm, role: e.target.value as "STAFF_ADMIN" | "SUPER_ADMIN" })}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    onChange={(value) => updateCreateForm("role", value as "STAFF_ADMIN" | "SUPER_ADMIN")}
+                    className="w-full px-4 py-2"
                   >
                     <option value="STAFF_ADMIN">Staff Admin</option>
                     <option value="SUPER_ADMIN">Super Admin</option>
-                  </select>
+                  </SelectInput>
                 </div>
                 <div>
                   <label className="flex items-center space-x-2 mb-2">
-                    <input
-                      type="checkbox"
+                    <CheckboxInput
                       checked={createForm.generatePassword}
-                      onChange={(e) => setCreateForm({ ...createForm, generatePassword: e.target.checked })}
+                      onChange={(checked) => updateCreateForm("generatePassword", checked)}
                       className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
                     />
                     <span className="text-sm font-medium text-neutral-700">Auto-generate temporary password</span>
                   </label>
                   {!createForm.generatePassword && (
-                    <input
+                    <TextInput
                       type="password"
                       required={!createForm.generatePassword}
                       value={createForm.password}
-                      onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 mt-2"
+                      onChange={(value) => updateCreateForm("password", value)}
+                      className="w-full px-4 py-2 mt-2"
                       placeholder="Enter password"
                     />
                   )}
@@ -391,23 +399,23 @@ export default function AdminManagementPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Name</label>
-                  <input
+                  <TextInput
                     type="text"
                     value={editForm.name}
-                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    onChange={(value) => updateEditForm("name", value)}
+                    className="w-full px-4 py-2"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">Role</label>
-                  <select
+                  <SelectInput
                     value={editForm.role}
-                    onChange={(e) => setEditForm({ ...editForm, role: e.target.value as "STAFF_ADMIN" | "SUPER_ADMIN" })}
-                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    onChange={(value) => updateEditForm("role", value)}
+                    className="w-full px-4 py-2"
                   >
                     <option value="STAFF_ADMIN">Staff Admin</option>
                     <option value="SUPER_ADMIN">Super Admin</option>
-                  </select>
+                  </SelectInput>
                 </div>
                 <div className="pt-4 space-y-2">
                   <button
