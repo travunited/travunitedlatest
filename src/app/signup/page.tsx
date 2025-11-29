@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { motion } from "framer-motion";
+
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -67,12 +67,7 @@ function SignupPageContent() {
 
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="max-w-md w-full"
-      >
+      <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-large p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-neutral-900 mb-2">Create Account</h1>
@@ -193,7 +188,7 @@ function SignupPageContent() {
             </p>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     // Generate reset token (64 character hex string)
     const rawToken = crypto.randomBytes(32).toString("hex");
     const tokenHash = await bcrypt.hash(rawToken, 10);
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     // Get IP and user agent for logging
     const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || undefined;
@@ -83,12 +83,12 @@ export async function POST(req: Request) {
     if (!process.env.NEXTAUTH_URL) {
       console.warn("[Password Reset] WARNING: NEXTAUTH_URL not set, using fallback:", baseUrl);
     }
-    
+
     // Properly URL-encode the token to prevent issues with special characters
     const encodedToken = encodeURIComponent(rawToken);
     const encodedId = encodeURIComponent(passwordReset.id);
     const resetUrl = `${baseUrl}/reset-password?token=${encodedToken}&id=${encodedId}`;
-    
+
     console.log("[Password Reset] Attempting to send email", {
       userId: user.id,
       userEmail: user.email,
@@ -97,18 +97,19 @@ export async function POST(req: Request) {
       tokenLength: rawToken.length,
       expiresAt: expiresAt.toISOString(),
       expiresAtTimestamp: expiresAt.getTime(),
-      expiresInMinutes: 60,
+      expiresInHours: 24,
       ip: ip || "unknown",
       userAgent: userAgent || "unknown",
       baseUrl: baseUrl,
       hasNEXTAUTH_URL: !!process.env.NEXTAUTH_URL,
     });
-    
+
     // Send email - await it to ensure it's sent before responding
     // This ensures we catch errors and can log them properly
+    let emailSent = false;
     try {
-      const emailSent = await sendPasswordResetEmail(user.email, resetUrl, user.role);
-      
+      emailSent = await sendPasswordResetEmail(user.email, resetUrl, user.role);
+
       if (emailSent) {
         console.log("[Password Reset] Email sent successfully", {
           userId: user.id,
@@ -153,6 +154,15 @@ export async function POST(req: Request) {
       if (lastError) {
         console.error("[Password Reset] Last email error:", lastError);
       }
+    }
+
+    // In development, return the link in the response for easier testing
+    if (process.env.NODE_ENV === "development") {
+      return NextResponse.json({
+        message: "If an account exists with this email, a reset link has been sent.",
+        devLink: resetUrl, // Only for development/debugging
+        emailSent,
+      });
     }
 
     return NextResponse.json({

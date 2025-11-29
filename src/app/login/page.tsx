@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -32,13 +32,13 @@ export default function LoginPage() {
         // Wait a moment for session to update, then check role and redirect
         setTimeout(async () => {
           router.refresh();
-          
+
           // Fetch session to get user role
           const sessionRes = await fetch("/api/auth/session");
           const session = await sessionRes.json();
-          
+
           const role = session?.user?.role;
-          
+
           // Redirect based on role
           if (role === "STAFF_ADMIN" || role === "SUPER_ADMIN") {
             router.push("/admin");
@@ -56,61 +56,56 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="max-w-md w-full"
-      >
+      <div className="max-w-md w-full">
         <div className="bg-white rounded-2xl shadow-large p-8">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-neutral-900 mb-2">Welcome Back</h1>
             <p className="text-neutral-600">Sign in to your Travunited account</p>
           </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 text-red-700">
-                  <AlertCircle size={20} />
-                  <span className="text-sm">{error}</span>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={loading}
-                    className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
-                    placeholder="your.email@example.com"
-                  />
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 text-red-700">
+                <AlertCircle size={20} />
+                <span className="text-sm">{error}</span>
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={loading}
-                    className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
-                    placeholder="Enter your password"
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+                  placeholder="your.email@example.com"
+                />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+                  placeholder="Enter your password"
+                />
+              </div>
+            </div>
 
             <div className="flex items-center justify-between">
               <label className="flex items-center">
@@ -141,7 +136,7 @@ export default function LoginPage() {
             </p>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

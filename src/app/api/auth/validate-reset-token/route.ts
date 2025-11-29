@@ -56,6 +56,7 @@ export async function GET(req: Request) {
         expiredBy: `${expiredByMinutes} minutes`,
         expiresAtTimestamp: expiresAt,
         nowTimestamp: now,
+        tokenHashPrefix: passwordReset.tokenHash.substring(0, 10) + "...",
       });
       return NextResponse.json(
         { valid: false, error: "Reset link has expired" },
@@ -73,6 +74,10 @@ export async function GET(req: Request) {
         userId: passwordReset.userId,
         tokenLength: token.length,
         decodedTokenLength: decodedToken.length,
+        tokenHashPrefix: passwordReset.tokenHash.substring(0, 10) + "...",
+        // Log first few chars of token for debugging (safe as it's already invalid/mismatched)
+        tokenPrefix: token.substring(0, 5) + "...",
+        decodedTokenPrefix: decodedToken.substring(0, 5) + "...",
       });
       return NextResponse.json(
         { valid: false, error: "Invalid reset token" },
