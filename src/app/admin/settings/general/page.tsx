@@ -88,6 +88,36 @@ export default function AdminGeneralSettingsPage() {
     maintenanceMessage: "",
   });
 
+  const checkEmailConfigStatus = useCallback(async () => {
+    try {
+      const response = await fetch("/api/admin/email-test/config");
+      if (response.ok) {
+        const config = await response.json();
+        setEmailConfigStatus({
+          configured: config.configured,
+          message: config.message,
+        });
+      }
+    } catch (error) {
+      console.error("Error checking email config:", error);
+    }
+  }, []);
+
+  const fetchSettings = useCallback(async () => {
+    try {
+      const response = await fetch("/api/admin/settings/general");
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(data);
+        checkEmailConfigStatus();
+      }
+    } catch (error) {
+      console.error("Error fetching settings:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [checkEmailConfigStatus]);
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -102,37 +132,7 @@ export default function AdminGeneralSettingsPage() {
         fetchSettings();
       }
     }
-  }, [session, status, router]);
-
-  const fetchSettings = async () => {
-    try {
-      const response = await fetch("/api/admin/settings/general");
-      if (response.ok) {
-        const data = await response.json();
-        setSettings(data);
-        checkEmailConfigStatus();
-      }
-    } catch (error) {
-      console.error("Error fetching settings:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkEmailConfigStatus = async () => {
-    try {
-      const response = await fetch("/api/admin/email-test/config");
-      if (response.ok) {
-        const config = await response.json();
-        setEmailConfigStatus({
-          configured: config.configured,
-          message: config.message,
-        });
-      }
-    } catch (error) {
-      console.error("Error checking email config:", error);
-    }
-  };
+  }, [session, status, router, fetchSettings]);
 
   const testEmailCredentials = async () => {
     if (!settings.awsAccessKeyId || !settings.awsSecretAccessKey || !settings.awsRegion || !settings.emailFromGeneral) {
@@ -566,8 +566,8 @@ export default function AdminGeneralSettingsPage() {
                     <li>Create an IAM user in AWS Console with SES permissions</li>
                     <li>Generate Access Key ID and Secret Access Key</li>
                     <li>Verify your sender email addresses in AWS SES</li>
-                    <li>Request production access if you're in sandbox mode</li>
-                    <li>Enter credentials above and click "Test Email" to verify</li>
+                    <li>Request production access if you&apos;re in sandbox mode</li>
+                    <li>Enter credentials above and click &quot;Test Email&quot; to verify</li>
                   </ol>
                   <p className="text-xs text-blue-700 mt-2">
                     <a 

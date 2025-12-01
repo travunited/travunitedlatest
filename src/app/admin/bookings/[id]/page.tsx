@@ -1200,7 +1200,7 @@ export default function AdminBookingDetailPage() {
                     <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg">
                       <h3 className="font-semibold text-neutral-900 mb-2">Cancellation Policy</h3>
                       <p className="text-sm text-neutral-700 mb-3">
-                        Cancellation policies vary by tour. Please refer to the tour's specific cancellation terms.
+                        Cancellation policies vary by tour. Please refer to the tour&apos;s specific cancellation terms.
                         Refunds, if applicable, will be processed according to the policy.
                       </p>
                       {booking.tour?.cancellationTerms && (

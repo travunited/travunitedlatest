@@ -33,6 +33,24 @@ export default function EmailTestPage() {
   } | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
 
+  // Check email configuration on mount (must be before early returns)
+  useEffect(() => {
+    const checkConfig = async () => {
+      try {
+        const response = await fetch("/api/admin/email-test/config");
+        if (response.ok) {
+          const config = await response.json();
+          setEmailConfig(config);
+        }
+      } catch (error) {
+        console.error("Error checking email configuration:", error);
+      } finally {
+        setConfigLoading(false);
+      }
+    };
+    checkConfig();
+  }, []);
+
   if (status === "loading") {
     return (
       <AdminLayout>
@@ -52,24 +70,6 @@ export default function EmailTestPage() {
     router.push("/dashboard");
     return null;
   }
-
-  // Check email configuration on mount
-  useEffect(() => {
-    const checkConfig = async () => {
-      try {
-        const response = await fetch("/api/admin/email-test/config");
-        if (response.ok) {
-          const config = await response.json();
-          setEmailConfig(config);
-        }
-      } catch (error) {
-        console.error("Error checking email configuration:", error);
-      } finally {
-        setConfigLoading(false);
-      }
-    };
-    checkConfig();
-  }, []);
 
   const emailTests = [
     {
@@ -222,7 +222,7 @@ export default function EmailTestPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-neutral-900 mb-2">Email Test Center</h1>
           <p className="text-neutral-600">
-            Test all email functions to ensure they're working correctly. Enter your email address below and click "Send Test" for any email type.
+            Test all email functions to ensure they&apos;re working correctly. Enter your email address below and click &quot;Send Test&quot; for any email type.
           </p>
         </div>
 
@@ -380,7 +380,7 @@ export default function EmailTestPage() {
                   <li><code>AWS_ACCESS_KEY_ID</code> - Your AWS access key ID</li>
                   <li><code>AWS_SECRET_ACCESS_KEY</code> - Your AWS secret access key</li>
                   <li><code>AWS_REGION</code> - AWS region where SES is configured (e.g., us-east-1, ap-south-1)</li>
-                  <li><code>EMAIL_FROM</code> - Sender email address (e.g., "Travunited &lt;noreply@travunited.com&gt;")</li>
+                  <li><code>EMAIL_FROM</code> - Sender email address (e.g., &quot;Travunited &lt;noreply@travunited.com&gt;&quot;)</li>
                 </ul>
                 <p className="mt-2"><strong>Note:</strong> If emails are not being sent, check your server logs for detailed error messages. Ensure your AWS SES account is out of sandbox mode to send emails to any recipient.</p>
               </div>
