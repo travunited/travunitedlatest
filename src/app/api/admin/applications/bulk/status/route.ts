@@ -3,8 +3,9 @@ import { getServerSession } from "next-auth";
 import { AuditAction, AuditEntityType } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendVisaStatusUpdateEmail } from "@/lib/email";
+import { sendVisaStatusUpdateEmail, sendVisaApprovedEmail, sendVisaRejectedEmail } from "@/lib/email";
 import { logAuditEvent } from "@/lib/audit";
+import { notify } from "@/lib/notifications";
 export const dynamic = "force-dynamic";
 
 
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get applications with user emails for notifications
+    // Get applications with user info for notifications
     const applications = await prisma.application.findMany({
       where: {
         id: {
@@ -55,7 +56,9 @@ export async function POST(req: Request) {
       include: {
         user: {
           select: {
+            id: true,
             email: true,
+            name: true,
           },
         },
       },
@@ -73,31 +76,79 @@ export async function POST(req: Request) {
       },
     });
 
-    // Send email notifications and log
+    // Send email notifications, in-app notifications, and log
     for (const app of applications) {
       try {
-        await sendVisaStatusUpdateEmail(
-          app.user.email,
-          app.id,
-          app.country || "",
-          app.visaType || "",
-          status
-        );
+        const previousStatus = app.status;
+        
+        // Send appropriate email based on status
+        if (status === "APPROVED") {
+          await sendVisaApprovedEmail(
+            app.user.email,
+            app.id,
+            app.country || "",
+            app.visaType || ""
+          );
+        } else if (status === "REJECTED") {
+          await sendVisaRejectedEmail(
+            app.user.email,
+            app.id,
+            app.country || "",
+            app.visaType || "",
+            ""
+          );
+        } else {
+          await sendVisaStatusUpdateEmail(
+            app.user.email,
+            app.id,
+            app.country || "",
+            app.visaType || "",
+            status
+          );
+        }
+
+        // Send in-app notification
+        let notificationTitle = "Visa Application Status Updated";
+        let notificationMessage = `Your visa application for ${app.country || ""} ${app.visaType || ""} is now ${status}.`;
+        
+        if (status === "APPROVED") {
+          notificationTitle = "Visa Application Approved";
+          notificationMessage = `Good news! Your visa application for ${app.country || ""} ${app.visaType || ""} has been approved.`;
+        } else if (status === "REJECTED") {
+          notificationTitle = "Visa Application Rejected";
+          notificationMessage = `Unfortunately, your visa application for ${app.country || ""} ${app.visaType || ""} was rejected.`;
+        }
+
+        await notify({
+          userId: app.userId,
+          type: "VISA_STATUS_CHANGED",
+          title: notificationTitle,
+          message: notificationMessage,
+          link: `/dashboard/applications/${app.id}`,
+          data: {
+            applicationId: app.id,
+            status,
+            country: app.country,
+            visaType: app.visaType,
+            previousStatus,
+          },
+          sendEmail: false, // Email already sent above
+        });
 
         await logAuditEvent({
           adminId: session.user.id,
           entityType: AuditEntityType.APPLICATION,
           entityId: app.id,
           action: AuditAction.STATUS_CHANGE,
-          description: `Application status changed via bulk action to ${status}`,
+          description: `Application status changed via bulk action from ${previousStatus} to ${status}`,
           metadata: {
-            previousStatus: app.status,
+            previousStatus,
             newStatus: status,
             bulk: true,
           },
         });
       } catch (error) {
-        console.error(`Error sending email for application ${app.id}:`, error);
+        console.error(`Error processing notification for application ${app.id}:`, error);
       }
     }
 

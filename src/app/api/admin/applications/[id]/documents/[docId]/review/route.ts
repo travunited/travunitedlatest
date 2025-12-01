@@ -89,8 +89,24 @@ export async function PUT(
       },
     });
 
-    // If rejected, send email notification and in-app notification
-    if (normalizedStatus === "REJECTED" && rejectionReason) {
+    // Send notifications based on status
+    if (normalizedStatus === "APPROVED") {
+      // Notify user when document is approved
+      await notify({
+        userId: document.application.userId,
+        type: "VISA_DOCUMENT_UPLOADED",
+        title: "Document Approved",
+        message: `Your document "${document.documentType || "Document"}" has been approved for your ${document.application.country || ""} ${document.application.visaType || ""} application.`,
+        link: `/dashboard/applications/${document.applicationId}`,
+        data: {
+          applicationId: document.applicationId,
+          documentType: document.documentType,
+          documentId: document.id,
+          status: "APPROVED",
+        },
+        sendEmail: true,
+      });
+    } else if (normalizedStatus === "REJECTED" && rejectionReason) {
       await sendVisaDocumentRejectedEmail(
         document.application.user.email,
         document.applicationId,

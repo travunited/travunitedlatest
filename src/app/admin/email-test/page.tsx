@@ -23,7 +23,9 @@ export default function EmailTestPage() {
   const [testEmail, setTestEmail] = useState("");
   const [emailConfig, setEmailConfig] = useState<{
     configured: boolean;
-    resendApiKey: string;
+    awsAccessKeyId: string;
+    awsSecretAccessKey: string;
+    awsRegion: string;
     emailFromGeneral: string;
     emailFromVisa: string;
     emailFromTours: string;
@@ -255,7 +257,9 @@ export default function EmailTestPage() {
                 >
                   <p><strong>Configuration Details:</strong></p>
                   <ul className="space-y-1 ml-2">
-                    <li>Resend API Key: {emailConfig.resendApiKey}</li>
+                    <li>AWS Access Key ID: {emailConfig.awsAccessKeyId}</li>
+                    <li>AWS Secret Access Key: {emailConfig.awsSecretAccessKey}</li>
+                    <li>AWS Region: {emailConfig.awsRegion}</li>
                     <li>General Sender: {emailConfig.emailFromGeneral}</li>
                     <li>Visa Sender: {emailConfig.emailFromVisa}</li>
                     <li>Tours Sender: {emailConfig.emailFromTours}</li>
@@ -368,15 +372,17 @@ export default function EmailTestPage() {
             <div className="flex-1">
               <h3 className="font-semibold text-blue-900 mb-1">Email Configuration</h3>
               <p className="text-sm text-blue-800 mb-2">
-                Emails are sent via Resend. Make sure <code className="bg-blue-100 px-1 rounded">RESEND_API_KEY</code> and <code className="bg-blue-100 px-1 rounded">EMAIL_FROM</code> are configured in your environment variables.
+                Emails are sent via AWS SES. Make sure <code className="bg-blue-100 px-1 rounded">AWS_ACCESS_KEY_ID</code>, <code className="bg-blue-100 px-1 rounded">AWS_SECRET_ACCESS_KEY</code>, <code className="bg-blue-100 px-1 rounded">AWS_REGION</code>, and <code className="bg-blue-100 px-1 rounded">EMAIL_FROM</code> are configured in your environment variables.
               </p>
               <div className="text-xs text-blue-700 space-y-1">
                 <p><strong>Required Environment Variables:</strong></p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
-                  <li><code>RESEND_API_KEY</code> - Your Resend API key</li>
+                  <li><code>AWS_ACCESS_KEY_ID</code> - Your AWS access key ID</li>
+                  <li><code>AWS_SECRET_ACCESS_KEY</code> - Your AWS secret access key</li>
+                  <li><code>AWS_REGION</code> - AWS region where SES is configured (e.g., us-east-1, ap-south-1)</li>
                   <li><code>EMAIL_FROM</code> - Sender email address (e.g., "Travunited &lt;noreply@travunited.com&gt;")</li>
                 </ul>
-                <p className="mt-2"><strong>Note:</strong> If emails are not being sent, check your server logs for detailed error messages.</p>
+                <p className="mt-2"><strong>Note:</strong> If emails are not being sent, check your server logs for detailed error messages. Ensure your AWS SES account is out of sandbox mode to send emails to any recipient.</p>
               </div>
             </div>
           </div>

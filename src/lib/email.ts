@@ -1,4 +1,4 @@
-import { Resend } from "resend";
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { formatDate } from "./dateFormat";
 import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -20,7 +20,9 @@ const EMAIL_CONFIG_KEY = "EMAIL_CONFIG";
 type EmailCategory = "general" | "visa" | "tours";
 
 type EmailConfig = {
-  resendApiKey?: string;
+  awsAccessKeyId?: string;
+  awsSecretAccessKey?: string;
+  awsRegion?: string;
   emailFromGeneral?: string;
   emailFromVisa?: string;
   emailFromTours?: string;
@@ -29,8 +31,8 @@ type EmailConfig = {
 let emailConfigCache: { config: EmailConfig; loadedAt: number } | null = null;
 const EMAIL_CONFIG_CACHE_TTL = 1000 * 60 * 5;
 
-let cachedResendClient: Resend | null = null;
-let cachedResendKey: string | null = null;
+let cachedSESClient: SESClient | null = null;
+let cachedSESConfig: { accessKeyId: string; secretAccessKey: string; region: string } | null = null;
 let lastEmailError: string | null = null;
 
 async function loadEmailConfig(forceReload = false): Promise<EmailConfig> {
@@ -52,7 +54,9 @@ async function loadEmailConfig(forceReload = false): Promise<EmailConfig> {
       : {};
 
   const config: EmailConfig = {
-    resendApiKey: value.resendApiKey || process.env.RESEND_API_KEY || undefined,
+    awsAccessKeyId: value.awsAccessKeyId || process.env.AWS_ACCESS_KEY_ID || undefined,
+    awsSecretAccessKey: value.awsSecretAccessKey || process.env.AWS_SECRET_ACCESS_KEY || undefined,
+    awsRegion: value.awsRegion || process.env.AWS_REGION || process.env.AWS_SES_REGION || "us-east-1",
     emailFromGeneral: value.emailFromGeneral || process.env.EMAIL_FROM || undefined,
     emailFromVisa:
       value.emailFromVisa || value.emailFromGeneral || process.env.EMAIL_FROM || undefined,
@@ -64,30 +68,49 @@ async function loadEmailConfig(forceReload = false): Promise<EmailConfig> {
   return config;
 }
 
-async function getResendClient(apiKey?: string | null) {
-  if (!apiKey) {
+async function getSESClient(
+  accessKeyId?: string | null,
+  secretAccessKey?: string | null,
+  region?: string | null
+): Promise<SESClient | null> {
+  if (!accessKeyId || !secretAccessKey || !region) {
     return null;
   }
 
-  if (!cachedResendClient || cachedResendKey !== apiKey) {
-    cachedResendClient = new Resend(apiKey);
-    cachedResendKey = apiKey;
+  const configKey = `${accessKeyId}:${secretAccessKey}:${region}`;
+  if (
+    !cachedSESClient ||
+    !cachedSESConfig ||
+    cachedSESConfig.accessKeyId !== accessKeyId ||
+    cachedSESConfig.secretAccessKey !== secretAccessKey ||
+    cachedSESConfig.region !== region
+  ) {
+    cachedSESClient = new SESClient({
+      region,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
+    cachedSESConfig = { accessKeyId, secretAccessKey, region };
   }
 
-  return cachedResendClient;
+  return cachedSESClient;
 }
 
 export async function refreshEmailConfigCache() {
   emailConfigCache = null;
-  cachedResendClient = null;
-  cachedResendKey = null;
+  cachedSESClient = null;
+  cachedSESConfig = null;
   await loadEmailConfig(true);
 }
 
 export async function getEmailServiceConfig() {
   const config = await loadEmailConfig();
   return {
-    resendApiKey: config.resendApiKey ?? null,
+    awsAccessKeyId: config.awsAccessKeyId ?? null,
+    awsSecretAccessKey: config.awsSecretAccessKey ? "***configured***" : null,
+    awsRegion: config.awsRegion ?? null,
     emailFromGeneral: config.emailFromGeneral ?? null,
     emailFromVisa: config.emailFromVisa ?? null,
     emailFromTours: config.emailFromTours ?? null,
@@ -151,25 +174,36 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     return false;
   }
   
-  // Check if API key is configured
-  if (!config.resendApiKey) {
-    const message = "Resend API key not configured. Set RESEND_API_KEY in environment variables or admin email settings.";
+  // Check if AWS credentials are configured
+  if (!config.awsAccessKeyId || !config.awsSecretAccessKey || !config.awsRegion) {
+    const message = "AWS SES credentials not configured. Set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION in environment variables or admin email settings.";
     lastEmailError = message;
     console.error("[Email]", message, {
-      hasEnvVar: !!process.env.RESEND_API_KEY,
-      hasConfigKey: !!config.resendApiKey,
+      hasAccessKeyId: !!config.awsAccessKeyId,
+      hasSecretAccessKey: !!config.awsSecretAccessKey,
+      hasRegion: !!config.awsRegion,
+      hasEnvVars: {
+        AWS_ACCESS_KEY_ID: !!process.env.AWS_ACCESS_KEY_ID,
+        AWS_SECRET_ACCESS_KEY: !!process.env.AWS_SECRET_ACCESS_KEY,
+        AWS_REGION: !!process.env.AWS_REGION,
+      },
     });
     return false;
   }
   
-  const resendClient = await getResendClient(config.resendApiKey);
+  const sesClient = await getSESClient(
+    config.awsAccessKeyId,
+    config.awsSecretAccessKey,
+    config.awsRegion
+  );
 
-  if (!resendClient) {
-    const message = "Resend client not initialized. Check RESEND_API_KEY configuration.";
+  if (!sesClient) {
+    const message = "AWS SES client not initialized. Check AWS credentials configuration.";
     lastEmailError = message;
     console.error("[Email]", message, {
-      hasApiKey: !!config.resendApiKey,
-      apiKeyLength: config.resendApiKey?.length || 0,
+      hasAccessKeyId: !!config.awsAccessKeyId,
+      hasSecretAccessKey: !!config.awsSecretAccessKey,
+      hasRegion: !!config.awsRegion,
     });
     return false;
   }
@@ -208,56 +242,70 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     from,
     subject: options.subject,
     category: options.category || "general",
-    hasApiKey: !!config.resendApiKey,
+    hasCredentials: !!(config.awsAccessKeyId && config.awsSecretAccessKey),
+    region: config.awsRegion,
   });
 
   try {
-    // Add timeout to Resend API call to prevent long delays
-    const sendPromise = resendClient.emails.send({
-      from,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-      text: options.text || stripHtml(options.html),
-      reply_to: options.replyTo,
-    });
+    // Convert recipients to array if needed
+    const recipients = Array.isArray(options.to) ? options.to : [options.to];
+    
+    // Prepare email parameters for AWS SES
+    const emailParams = {
+      Source: from,
+      Destination: {
+        ToAddresses: recipients,
+      },
+      Message: {
+        Subject: {
+          Data: options.subject,
+          Charset: "UTF-8",
+        },
+        Body: {
+          Html: {
+            Data: options.html,
+            Charset: "UTF-8",
+          },
+          Text: {
+            Data: options.text || stripHtml(options.html),
+            Charset: "UTF-8",
+          },
+        },
+      },
+      ...(options.replyTo && {
+        ReplyToAddresses: Array.isArray(options.replyTo) ? options.replyTo : [options.replyTo],
+      }),
+    };
+
+    // Add timeout to AWS SES API call to prevent long delays
+    const sendCommand = new SendEmailCommand(emailParams);
+    const sendPromise = sesClient.send(sendCommand);
     
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error("Resend API timeout after 8 seconds")), 8000);
+      setTimeout(() => reject(new Error("AWS SES API timeout after 10 seconds")), 10000);
     });
     
     const result = await Promise.race([sendPromise, timeoutPromise]);
     const duration = Date.now() - startTime;
 
-    if (result.error) {
-      const message = `[Email] Resend API returned an error: ${JSON.stringify(result.error)}`;
-      console.error(message, {
-        to: options.to,
-        subject: options.subject,
-        duration: `${duration}ms`,
-      });
-      lastEmailError = result.error?.message || message;
-      return false;
-    }
-
     console.log("[Email] Sent successfully", {
       to: options.to,
       subject: options.subject,
-      id: result.data?.id,
+      messageId: result.MessageId,
       duration: `${duration}ms`,
     });
     return true;
   } catch (error) {
     const duration = Date.now() - startTime;
     const message =
-      error instanceof Error ? error.message : "Unknown error sending email via Resend";
-    console.error("[Email] Exception sending email via Resend:", {
+      error instanceof Error ? error.message : "Unknown error sending email via AWS SES";
+    console.error("[Email] Exception sending email via AWS SES:", {
       error: message,
       stack: error instanceof Error ? error.stack : undefined,
       to: options.to,
       subject: options.subject,
       duration: `${duration}ms`,
-      resendError: error,
+      sesError: error,
     });
     lastEmailError = message;
     return false;

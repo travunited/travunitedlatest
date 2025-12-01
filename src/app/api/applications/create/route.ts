@@ -343,11 +343,11 @@ export async function POST(req: Request) {
           category: "visa",
         });
 
-        // Notify admins in-app
+        // Notify admins in-app (email already sent above)
         const adminIds = await getAdminUserIds();
         if (adminIds.length > 0) {
           await notifyMultiple(adminIds, {
-            type: "ADMIN_VISA_DOCUMENT_UPLOADED",
+            type: "ADMIN_APPLICATION_ASSIGNED", // Using this type as it's the closest match for new applications
             title: "New Visa Application",
             message: `New visa application for ${application.country || ""} ${application.visaType || ""} from ${data.primaryContact.name}`,
             link: `/admin/applications/${application.id}`,
@@ -356,6 +356,8 @@ export async function POST(req: Request) {
               country: application.country,
               visaType: application.visaType,
             },
+            sendEmail: false, // Email already sent above
+            roleScope: "STAFF_ADMIN",
           });
         }
       }

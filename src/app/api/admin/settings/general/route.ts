@@ -83,7 +83,9 @@ export async function GET(req: Request) {
       registrationsEnabled: (systemFlags.registrationsEnabled as boolean) ?? true,
       maintenanceMode: (systemFlags.maintenanceMode as boolean) ?? false,
       maintenanceMessage: (systemFlags.maintenanceMessage as string) || "",
-      resendApiKey: (emailConfig.resendApiKey as string) || "",
+      awsAccessKeyId: (emailConfig.awsAccessKeyId as string) || "",
+      awsSecretAccessKey: (emailConfig.awsSecretAccessKey as string) || "",
+      awsRegion: (emailConfig.awsRegion as string) || "",
       emailFromGeneral: (emailConfig.emailFromGeneral as string) || "",
       emailFromVisa: (emailConfig.emailFromVisa as string) || "",
       emailFromTours: (emailConfig.emailFromTours as string) || "",
@@ -134,7 +136,9 @@ export async function PUT(req: Request) {
       emailTourConfirmed = "",
       emailVouchersReady = "",
       googleAnalyticsId = "",
-      resendApiKey = "",
+      awsAccessKeyId = "",
+      awsSecretAccessKey = "",
+      awsRegion = "",
       emailFromGeneral = "",
       emailFromVisa = "",
       emailFromTours = "",
@@ -234,7 +238,9 @@ export async function PUT(req: Request) {
         where: { key: EMAIL_CONFIG_KEY },
         update: {
           value: {
-            resendApiKey,
+            awsAccessKeyId,
+            awsSecretAccessKey,
+            awsRegion,
             emailFromGeneral,
             emailFromVisa,
             emailFromTours,
@@ -243,7 +249,9 @@ export async function PUT(req: Request) {
         create: {
           key: EMAIL_CONFIG_KEY,
           value: {
-            resendApiKey,
+            awsAccessKeyId,
+            awsSecretAccessKey,
+            awsRegion,
             emailFromGeneral,
             emailFromVisa,
             emailFromTours,

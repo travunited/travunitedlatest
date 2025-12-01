@@ -72,7 +72,7 @@ export async function POST(
       if (!emailSent) {
         console.error("Failed to send password reset email to", admin.email);
         console.error("Reset URL:", resetLink);
-        console.error("Check RESEND_API_KEY and EMAIL_FROM environment variables");
+        console.error("Check AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, and EMAIL_FROM environment variables");
         return NextResponse.json(
           { error: "Failed to send password reset email. Please check server logs." },
           { status: 500 }

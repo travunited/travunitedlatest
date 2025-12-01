@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadVisaDocument } from "@/lib/minio";
+import { notify } from "@/lib/notifications";
+import { logAuditEvent } from "@/lib/audit";
+import { AuditAction, AuditEntityType } from "@prisma/client";
 export const dynamic = "force-dynamic";
 
 export async function POST(
@@ -29,6 +32,15 @@ export async function POST(
 
     const application = await prisma.application.findUnique({
       where: { id: params.id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
     });
 
     if (!application) {
@@ -81,6 +93,39 @@ export async function POST(
       },
     });
 
+    // Log audit event
+    await logAuditEvent({
+      adminId: session.user.id,
+      entityType: AuditEntityType.APPLICATION,
+      entityId: params.id,
+      action: AuditAction.UPDATE,
+      description: "Invoice uploaded",
+      metadata: {
+        invoiceKey: key,
+      },
+    });
+
+    // Notify user
+    try {
+      await notify({
+        userId: application.userId,
+        type: "VISA_STATUS_CHANGED",
+        title: "Invoice Available",
+        message: `An invoice has been generated for your ${application.country || ""} ${application.visaType || ""} application. You can download it from your application dashboard.`,
+        link: `/dashboard/applications/${params.id}`,
+        data: {
+          applicationId: params.id,
+          country: application.country,
+          visaType: application.visaType,
+          hasInvoice: true,
+        },
+        sendEmail: true,
+      });
+    } catch (notifyError) {
+      console.error("Error sending notification for invoice upload:", notifyError);
+      // Don't fail the request if notification fails
+    }
+
     return NextResponse.json({ 
       message: "Invoice uploaded successfully",
       invoiceUrl: key 
@@ -118,6 +163,15 @@ export async function DELETE(
 
     const application = await prisma.application.findUnique({
       where: { id: params.id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+          },
+        },
+      },
     });
 
     if (!application) {
@@ -136,6 +190,35 @@ export async function DELETE(
         invoiceUploadedByAdminId: null,
       },
     });
+
+    // Log audit event
+    await logAuditEvent({
+      adminId: session.user.id,
+      entityType: AuditEntityType.APPLICATION,
+      entityId: params.id,
+      action: AuditAction.UPDATE,
+      description: "Invoice removed",
+    });
+
+    // Notify user
+    try {
+      await notify({
+        userId: application.userId,
+        type: "VISA_STATUS_CHANGED",
+        title: "Invoice Removed",
+        message: `The invoice for your ${application.country || ""} ${application.visaType || ""} application has been removed. A new invoice will be generated if needed.`,
+        link: `/dashboard/applications/${params.id}`,
+        data: {
+          applicationId: params.id,
+          country: application.country,
+          visaType: application.visaType,
+        },
+        sendEmail: true,
+      });
+    } catch (notifyError) {
+      console.error("Error sending notification for invoice removal:", notifyError);
+      // Don't fail the request if notification fails
+    }
 
     return NextResponse.json({ message: "Invoice removed successfully" });
   } catch (error) {

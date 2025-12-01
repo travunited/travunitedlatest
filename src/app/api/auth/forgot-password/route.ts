@@ -117,16 +117,26 @@ export async function POST(req: Request) {
 
     // Validate email configuration before attempting to send
     const emailServiceConfig = await getEmailServiceConfig();
-    if (!emailServiceConfig.resendApiKey) {
-      const errorMsg = "Email service not configured - Resend API key missing. Configure it in Admin → Settings → Email Service Configuration or set RESEND_API_KEY environment variable.";
+    if (!emailServiceConfig.awsAccessKeyId || !emailServiceConfig.awsSecretAccessKey || !emailServiceConfig.awsRegion) {
+      const errorMsg = "Email service not configured - AWS SES credentials missing. Configure it in Admin → Settings → Email Service Configuration or set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_REGION environment variables.";
       console.error("[Password Reset]", errorMsg, {
         userId: user.id,
         userEmail: user.email,
         resetId: passwordReset.id,
-        hasEnvVar: !!process.env.RESEND_API_KEY,
-        hasConfigKey: !!emailServiceConfig.resendApiKey,
+        hasEnvVars: {
+          AWS_ACCESS_KEY_ID: !!process.env.AWS_ACCESS_KEY_ID,
+          AWS_SECRET_ACCESS_KEY: !!process.env.AWS_SECRET_ACCESS_KEY,
+          AWS_REGION: !!process.env.AWS_REGION,
+        },
+        hasConfig: {
+          awsAccessKeyId: !!emailServiceConfig.awsAccessKeyId,
+          awsSecretAccessKey: !!emailServiceConfig.awsSecretAccessKey,
+          awsRegion: !!emailServiceConfig.awsRegion,
+        },
         configDetails: {
-          resendApiKey: emailServiceConfig.resendApiKey ? "SET" : "MISSING",
+          awsAccessKeyId: emailServiceConfig.awsAccessKeyId ? "SET" : "MISSING",
+          awsSecretAccessKey: emailServiceConfig.awsSecretAccessKey ? "SET" : "MISSING",
+          awsRegion: emailServiceConfig.awsRegion ? "SET" : "MISSING",
           emailFromGeneral: emailServiceConfig.emailFromGeneral ? "SET" : "MISSING",
         },
       });
@@ -159,7 +169,8 @@ export async function POST(req: Request) {
       userId: user.id,
       userEmail: user.email,
       resetId: passwordReset.id,
-      hasResendApiKey: !!emailServiceConfig.resendApiKey,
+      hasAWSCredentials: !!(emailServiceConfig.awsAccessKeyId && emailServiceConfig.awsSecretAccessKey),
+      hasRegion: !!emailServiceConfig.awsRegion,
       hasEmailFrom: !!emailServiceConfig.emailFromGeneral,
       emailFrom: emailServiceConfig.emailFromGeneral?.substring(0, 50) + "...",
     });
@@ -185,7 +196,9 @@ export async function POST(req: Request) {
           resetUrl: resetUrl,
           error: "sendPasswordResetEmail returned false",
           checkEnvVars: {
-            RESEND_API_KEY: process.env.RESEND_API_KEY ? "SET" : "MISSING",
+            AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID ? "SET" : "MISSING",
+            AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY ? "SET" : "MISSING",
+            AWS_REGION: process.env.AWS_REGION || "MISSING",
             EMAIL_FROM: process.env.EMAIL_FROM || "MISSING",
             NEXTAUTH_URL: baseUrl,
           },
@@ -205,7 +218,9 @@ export async function POST(req: Request) {
         error: emailError instanceof Error ? emailError.message : String(emailError),
         stack: emailError instanceof Error ? emailError.stack : undefined,
         checkEnvVars: {
-          RESEND_API_KEY: process.env.RESEND_API_KEY ? "SET" : "MISSING",
+          AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID ? "SET" : "MISSING",
+          AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY ? "SET" : "MISSING",
+          AWS_REGION: process.env.AWS_REGION || "MISSING",
           EMAIL_FROM: process.env.EMAIL_FROM || "MISSING",
         },
       });

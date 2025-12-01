@@ -17,17 +17,19 @@ export async function GET(req: Request) {
     }
 
     const config = await getEmailServiceConfig();
-    const configured = !!(config.resendApiKey && config.emailFromGeneral);
+    const configured = !!(config.awsAccessKeyId && config.awsSecretAccessKey && config.awsRegion && config.emailFromGeneral);
 
     return NextResponse.json({
       configured,
-      resendApiKey: config.resendApiKey ? "***configured***" : "not set",
+      awsAccessKeyId: config.awsAccessKeyId ? "***configured***" : "not set",
+      awsSecretAccessKey: config.awsSecretAccessKey ? "***configured***" : "not set",
+      awsRegion: config.awsRegion || "not set",
       emailFromGeneral: config.emailFromGeneral || "not set",
       emailFromVisa: config.emailFromVisa || "(defaults to general sender)",
       emailFromTours: config.emailFromTours || "(defaults to general sender)",
       message: configured
         ? "Email service is configured and ready to send emails."
-        : "Email service is not fully configured. Please set the Resend API key and sender addresses in Admin → Settings → Email Service Configuration.",
+        : "Email service is not fully configured. Please set the AWS SES credentials (Access Key ID, Secret Access Key, Region) and sender addresses in Admin → Settings → Email Service Configuration.",
     });
   } catch (error) {
     console.error("Error checking email configuration:", error);

@@ -141,7 +141,7 @@ export async function notify(params: NotificationParams): Promise<void> {
 }
 
 /**
- * Send notification email via Resend with role-based routing
+ * Send notification email via AWS SES with role-based routing
  */
 async function sendNotificationEmail({
   to,

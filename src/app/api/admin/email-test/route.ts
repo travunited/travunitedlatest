@@ -62,13 +62,13 @@ export async function POST(req: Request) {
 
     // Check email configuration first
     const emailServiceConfig = await getEmailServiceConfig();
-    if (!emailServiceConfig.resendApiKey) {
+    if (!emailServiceConfig.awsAccessKeyId || !emailServiceConfig.awsSecretAccessKey || !emailServiceConfig.awsRegion) {
       return NextResponse.json(
         {
           success: false,
           message: "Email service not configured",
           error:
-            "Resend API key is not set. Please configure it in Admin → Settings → Email Service Configuration.",
+            "AWS SES credentials are not set. Please configure AWS Access Key ID, Secret Access Key, and Region in Admin → Settings → Email Service Configuration.",
         },
         { status: 500 }
       );
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
       const lastError = getLastEmailError();
       throw new Error(
         lastError ||
-          "Email provider rejected the request. Check Resend configuration or server logs."
+          "Email provider rejected the request. Check AWS SES configuration or server logs."
       );
     };
 
