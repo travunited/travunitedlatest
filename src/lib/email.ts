@@ -6,6 +6,7 @@ import {
   getSupportAdminEmail,
   getTourAdminEmail,
 } from "./admin-contacts";
+import { replaceTemplateVariables, getDefaultEmailTemplate, EmailTemplateVariables } from "./email-templates";
 
 export interface EmailOptions {
   to: string | string[];
@@ -17,6 +18,7 @@ export interface EmailOptions {
 }
 
 const EMAIL_CONFIG_KEY = "EMAIL_CONFIG";
+const EMAIL_SNIPPETS_KEY = "EMAIL_SNIPPETS";
 type EmailCategory = "general" | "visa" | "tours";
 
 type EmailConfig = {
@@ -29,6 +31,7 @@ type EmailConfig = {
 };
 
 let emailConfigCache: { config: EmailConfig; loadedAt: number } | null = null;
+let emailTemplatesCache: { templates: Record<string, string>; loadedAt: number } | null = null;
 const EMAIL_CONFIG_CACHE_TTL = 1000 * 60 * 5;
 
 let cachedSESClient: SESClient | null = null;
@@ -100,9 +103,39 @@ async function getSESClient(
 
 export async function refreshEmailConfigCache() {
   emailConfigCache = null;
+  emailTemplatesCache = null;
   cachedSESClient = null;
   cachedSESConfig = null;
   await loadEmailConfig(true);
+}
+
+async function loadEmailTemplates(forceReload = false): Promise<Record<string, string>> {
+  if (
+    !forceReload &&
+    emailTemplatesCache &&
+    Date.now() - emailTemplatesCache.loadedAt < EMAIL_CONFIG_CACHE_TTL
+  ) {
+    return emailTemplatesCache.templates;
+  }
+
+  const row = await prisma.setting.findUnique({
+    where: { key: EMAIL_SNIPPETS_KEY },
+  });
+
+  const templates =
+    row?.value && typeof row.value === "object" && !Array.isArray(row.value)
+      ? (row.value as Record<string, string>)
+      : {};
+
+  emailTemplatesCache = { templates, loadedAt: Date.now() };
+  return templates;
+}
+
+function getEmailTemplate(templateKey: string, customTemplate?: string): string {
+  // Use custom template if provided, otherwise use default
+  return customTemplate && customTemplate.trim() 
+    ? customTemplate 
+    : getDefaultEmailTemplate(templateKey);
 }
 
 export async function getEmailServiceConfig() {
@@ -348,21 +381,20 @@ export async function sendWelcomeEmail(
   name?: string,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("welcomeEmail", templates.emailWelcome);
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  
+  const variables: EmailTemplateVariables = {
+    name,
+    email,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+    dashboardUrl: `${baseUrl}/dashboard`,
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = "Welcome to Travunited!";
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Welcome to Travunited${name ? `, ${name}` : ""}!</h1>
-      <p>Thank you for joining Travunited. We're here to make your travel dreams come true.</p>
-      <p>You can now:</p>
-      <ul>
-        <li>Apply for visas to multiple countries</li>
-        <li>Book amazing tour packages</li>
-        <li>Track your applications and bookings</li>
-      </ul>
-      <p>Get started by browsing our <a href="${process.env.NEXTAUTH_URL}/visas">visa services</a> or <a href="${process.env.NEXTAUTH_URL}/tours">tour packages</a>.</p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
   
   return sendUserEmail({ to: email, role, subject, html, category: "general" });
 }
@@ -404,17 +436,23 @@ export async function sendVisaPaymentSuccessEmail(
   amount: number,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("visaPaymentSuccessEmail", templates.emailVisaPaymentSuccess);
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    applicationId,
+    country,
+    visaType,
+    amount,
+    applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = `Payment Successful - ${country} ${visaType}`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Payment Successful!</h1>
-      <p>Your payment for ${country} ${visaType} has been received successfully.</p>
-      <p><strong>Amount Paid:</strong> ₹${amount.toLocaleString()}</p>
-      <p><strong>Application ID:</strong> ${applicationId.slice(0, 8)}...</p>
-      <p>Your application is now submitted and will be processed shortly. You can track the status in your <a href="${process.env.NEXTAUTH_URL}/dashboard/applications/${applicationId}">dashboard</a>.</p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
   
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
@@ -428,17 +466,24 @@ export async function sendVisaPaymentFailedEmail(
   reason?: string,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("visaPaymentFailedEmail", templates.emailVisaPaymentFailed);
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    applicationId,
+    country,
+    visaType,
+    amount,
+    reason,
+    applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = `Payment Failed - ${country} ${visaType}`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Payment Failed</h1>
-      <p>Your payment attempt for ${country} ${visaType} could not be completed.</p>
-      <p><strong>Amount:</strong> ₹${amount.toLocaleString()}</p>
-      ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
-      <p>Please try again from your <a href="${process.env.NEXTAUTH_URL}/dashboard/applications/${applicationId}">application dashboard</a>. If the issue persists, contact support.</p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
 
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
@@ -451,15 +496,23 @@ export async function sendVisaStatusUpdateEmail(
   status: string,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("visaStatusUpdateEmail", templates.emailVisaStatusUpdate);
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    applicationId,
+    country,
+    visaType,
+    status,
+    applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = `Status Update - ${country} ${visaType}`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Application Status Updated</h1>
-      <p>Your ${country} ${visaType} application status has been updated to: <strong>${status}</strong></p>
-      <p>View details in your <a href="${process.env.NEXTAUTH_URL}/dashboard/applications/${applicationId}">dashboard</a>.</p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
   
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
@@ -472,28 +525,26 @@ export async function sendVisaDocumentRejectedEmail(
   rejectedDocs: Array<{ type: string; reason: string; documentId?: string }>,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
-  const subject = `Documents Need Re-upload - ${country} ${visaType}`;
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("visaDocumentRejectedEmail", templates.emailVisaDocumentRejected);
+  const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Documents Rejected</h1>
-      <p>Some documents for your ${country} ${visaType} application need to be re-uploaded:</p>
-      <ul>
-        ${rejectedDocs
-          .map(
-            (doc) =>
-              `<li><strong>${doc.type}:</strong> ${doc.reason}${
-                doc.documentId
-                  ? `<br/><a href="${baseUrl}/dashboard/applications/${applicationId}?requiredDoc=${doc.documentId}">Re-upload this document</a>`
-                  : ""
-              }</li>`
-          )
-          .join("")}
-      </ul>
-      <p><a href="${baseUrl}/dashboard/applications/${applicationId}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Open Application</a></p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    applicationId,
+    country,
+    visaType,
+    rejectedDocs: rejectedDocs.map(doc => ({
+      ...doc,
+      documentId: doc.documentId,
+    })),
+    applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
+  const subject = `Documents Need Re-upload - ${country} ${visaType}`;
   
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
@@ -505,15 +556,22 @@ export async function sendVisaApprovedEmail(
   visaType: string,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("visaApprovedEmail", templates.emailVisaApproved);
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    applicationId,
+    country,
+    visaType,
+    applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = `Visa Approved! - ${country} ${visaType}`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>🎉 Your Visa is Approved!</h1>
-      <p>Great news! Your ${country} ${visaType} has been approved.</p>
-      <p>You can now download your visa from your <a href="${process.env.NEXTAUTH_URL}/dashboard/applications/${applicationId}">dashboard</a>.</p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
   
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
@@ -526,17 +584,23 @@ export async function sendVisaRejectedEmail(
   reason: string,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("visaRejectedEmail", templates.emailVisaRejected);
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    applicationId,
+    country,
+    visaType,
+    reason,
+    applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = `Visa Application Update - ${country} ${visaType}`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Application Status Update</h1>
-      <p>Your ${country} ${visaType} application has been ${reason ? "rejected" : "updated"}.</p>
-      ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
-      <p>View details in your <a href="${process.env.NEXTAUTH_URL}/dashboard/applications/${applicationId}">dashboard</a>.</p>
-      <p>If you have questions, please contact our support team.</p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
   
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
@@ -550,18 +614,24 @@ export async function sendTourPaymentSuccessEmail(
   pendingBalance?: number,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("tourPaymentSuccessEmail", templates.emailTourPaymentSuccess);
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    bookingId,
+    tourName,
+    amount,
+    isAdvance,
+    pendingBalance,
+    bookingUrl: `${baseUrl}/dashboard/bookings/${bookingId}`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = `Payment Successful - ${tourName}`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Payment Successful!</h1>
-      <p>Your payment for ${tourName} has been received successfully.</p>
-      <p><strong>Amount Paid:</strong> ₹${amount.toLocaleString()}</p>
-      ${isAdvance && pendingBalance ? `<p><strong>Pending Balance:</strong> ₹${pendingBalance.toLocaleString()}</p>` : ""}
-      <p><strong>Booking ID:</strong> ${bookingId.slice(0, 8)}...</p>
-      <p>View your booking in your <a href="${process.env.NEXTAUTH_URL}/dashboard/bookings/${bookingId}">dashboard</a>.</p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
   
   return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
@@ -574,17 +644,23 @@ export async function sendTourPaymentFailedEmail(
   reason?: string,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("tourPaymentFailedEmail", templates.emailTourPaymentFailed);
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    bookingId,
+    tourName,
+    amount,
+    reason,
+    bookingUrl: `${baseUrl}/dashboard/bookings/${bookingId}`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = `Payment Failed - ${tourName}`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Payment Failed</h1>
-      <p>Your payment attempt for ${tourName} could not be completed.</p>
-      <p><strong>Amount:</strong> ₹${amount.toLocaleString()}</p>
-      ${reason ? `<p><strong>Reason:</strong> ${reason}</p>` : ""}
-      <p>Please try again from your <a href="${process.env.NEXTAUTH_URL}/dashboard/bookings/${bookingId}">booking dashboard</a>. If the issue persists, contact support.</p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
 
   return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
@@ -595,15 +671,21 @@ export async function sendTourConfirmedEmail(
   tourName: string,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("tourConfirmedEmail", templates.emailTourConfirmed);
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    bookingId,
+    tourName,
+    bookingUrl: `${baseUrl}/dashboard/bookings/${bookingId}`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = `Tour Confirmed! - ${tourName}`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>🎉 Your Tour is Confirmed!</h1>
-      <p>Great news! Your ${tourName} booking has been confirmed.</p>
-      <p>You can now download your vouchers and itinerary from your <a href="${process.env.NEXTAUTH_URL}/dashboard/bookings/${bookingId}">dashboard</a>.</p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
   
   return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
@@ -616,17 +698,23 @@ export async function sendTourPaymentReminderEmail(
   dueDate?: string,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("tourPaymentReminderEmail", templates.emailTourPaymentReminder);
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    bookingId,
+    tourName,
+    pendingBalance,
+    dueDate: dueDate ? formatDate(dueDate) : undefined,
+    bookingUrl: `${baseUrl}/dashboard/bookings/${bookingId}`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = `Payment Reminder - ${tourName}`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Payment Reminder</h1>
-      <p>This is a reminder that you have a pending balance for ${tourName}.</p>
-      <p><strong>Pending Balance:</strong> ₹${pendingBalance.toLocaleString()}</p>
-      ${dueDate ? `<p><strong>Due Date:</strong> ${formatDate(dueDate)}</p>` : ""}
-      <p><a href="${process.env.NEXTAUTH_URL}/dashboard/bookings/${bookingId}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Pay Now</a></p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
   
   return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
@@ -638,15 +726,22 @@ export async function sendTourStatusUpdateEmail(
   status: string,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("tourStatusUpdateEmail", templates.emailTourStatusUpdate);
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    bookingId,
+    tourName,
+    status,
+    bookingUrl: `${baseUrl}/dashboard/bookings/${bookingId}`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = `Tour Status Update - ${tourName}`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Status Update</h1>
-      <p>Your booking for ${tourName} is now <strong>${status}</strong>.</p>
-      <p>You can view full details in your <a href="${process.env.NEXTAUTH_URL}/dashboard/bookings/${bookingId}">dashboard</a>.</p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
 
   return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
@@ -657,15 +752,21 @@ export async function sendTourVouchersReadyEmail(
   tourName: string,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("tourVouchersReadyEmail", templates.emailTourVouchersReady);
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    bookingId,
+    tourName,
+    bookingUrl: `${baseUrl}/dashboard/bookings/${bookingId}`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = `Your Vouchers Are Ready - ${tourName}`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Vouchers Ready</h1>
-      <p>Your vouchers and itinerary for ${tourName} are ready for download.</p>
-      <p>Access them from your <a href="${process.env.NEXTAUTH_URL}/dashboard/bookings/${bookingId}">dashboard</a>.</p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
 
   return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
@@ -676,18 +777,19 @@ export async function sendEmailVerificationEmail(
   name?: string,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("emailVerificationEmail", templates.emailVerification);
+  const config = await loadEmailConfig();
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    name,
+    verificationLink,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = "Verify Your Travunited Email";
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1>Verify Your Email Address</h1>
-      <p>Hi${name ? ` ${name}` : ""},</p>
-      <p>Thank you for signing up with Travunited! Please verify your email address by clicking the link below:</p>
-      <p><a href="${verificationLink}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">Verify Email</a></p>
-      <p>This link will expire in 7 days.</p>
-      <p>If you didn't create an account, please ignore this email.</p>
-      <p>Best regards,<br>The Travunited Team</p>
-    </div>
-  `;
   
   return sendUserEmail({ to: email, role, subject, html, category: "general" });
 }
@@ -708,54 +810,23 @@ export async function sendCorporateLeadAdminEmail(
   const adminRecipient =
     getTourAdminEmail() || getSupportAdminEmail() || ADMIN_INBOX;
 
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("corporateLeadAdminEmail", templates.emailCorporateLeadAdmin);
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  
+  const variables: EmailTemplateVariables = {
+    email: leadData.email,
+    companyNameLead: leadData.companyName,
+    contactName: leadData.contactName,
+    message: leadData.message || "",
+    createdAt: leadData.createdAt,
+    dashboardUrl: `${baseUrl}/admin/corporate-leads`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = `New Corporate Lead - ${leadData.companyName}`;
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1 style="color: #0066cc;">New Corporate Lead</h1>
-      <p>A new corporate lead has been submitted through the corporate page.</p>
-      
-      <div style="background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
-        <h2 style="margin-top: 0; color: #333;">Lead Details</h2>
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr>
-            <td style="padding: 8px 0; font-weight: bold; width: 150px;">Company Name:</td>
-            <td style="padding: 8px 0;">${leadData.companyName}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; font-weight: bold;">Contact Person:</td>
-            <td style="padding: 8px 0;">${leadData.contactName}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; font-weight: bold;">Email:</td>
-            <td style="padding: 8px 0;"><a href="mailto:${leadData.email}">${leadData.email}</a></td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; font-weight: bold;">Phone:</td>
-            <td style="padding: 8px 0;">${leadData.phone || "Not provided"}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; font-weight: bold;">Submitted:</td>
-            <td style="padding: 8px 0;">${formatDate(leadData.createdAt.toString())}</td>
-          </tr>
-        </table>
-        
-        ${leadData.message ? `
-          <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
-            <strong>Requirement/Message:</strong>
-            <div style="background-color: white; padding: 10px; border-radius: 3px; margin-top: 8px; white-space: pre-wrap;">${leadData.message.replace(/\n/g, "<br>")}</div>
-          </div>
-        ` : ""}
-      </div>
-      
-      <p style="margin-top: 20px;">
-        <a href="${process.env.NEXTAUTH_URL}/admin/corporate-leads" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View in Admin Panel</a>
-      </p>
-      
-      <p style="color: #666; font-size: 12px; margin-top: 30px;">
-        This is an automated notification from Travunited.
-      </p>
-    </div>
-  `;
 
   // Send directly to admin inbox, not routed through sendUserEmail
   return sendEmail({
@@ -774,30 +845,21 @@ export async function sendCorporateLeadConfirmationEmail(
   companyName: string,
   contactName: string
 ) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("corporateLeadConfirmationEmail", templates.emailCorporateLeadConfirmation);
+  const config = await loadEmailConfig();
+  
+  const variables: EmailTemplateVariables = {
+    email: userEmail,
+    companyNameLead: companyName,
+    contactName,
+    supportEmail: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "corporate@travunited.com",
+    supportPhone: "+91 63603 92398",
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
   const subject = "We received your corporate request";
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1 style="color: #0066cc;">Thank You for Your Interest!</h1>
-      
-      <p>Dear ${contactName},</p>
-      
-      <p>We have received your corporate travel inquiry for <strong>${companyName}</strong>. Our corporate travel team is reviewing your requirements and will get back to you within 24 hours.</p>
-      
-      <p>In the meantime, if you have any urgent questions, feel free to contact us directly:</p>
-      <ul>
-        <li><strong>Email:</strong> <a href="mailto:corporate@travunited.com">corporate@travunited.com</a></li>
-        <li><strong>Phone:</strong> <a href="tel:+916360392398">+91 63603 92398</a></li>
-      </ul>
-      
-      <p>We look forward to helping your organization with its travel needs!</p>
-      
-      <p>Best regards,<br>The Travunited Corporate Team</p>
-      
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px;">
-        <p>This is an automated confirmation email. Please do not reply to this message.</p>
-      </div>
-    </div>
-  `;
 
   // Send directly to user's email
   return sendEmail({
@@ -819,88 +881,45 @@ export async function sendAdminWelcomeEmail(
   tempPassword: string | null,
   loginUrl: string
 ) {
-  const subject = "Welcome to Travunited Admin Panel";
-  const resetPasswordUrl = `${loginUrl}?reset=true`;
+  const templates = await loadEmailTemplates();
+  let template = getEmailTemplate("adminWelcomeEmail", templates.emailAdminWelcome);
+  const config = await loadEmailConfig();
   
-  const passwordSection = tempPassword
-    ? `
-      <div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; padding: 15px; margin: 20px 0;">
+  const roleDisplay = role === "SUPER_ADMIN" ? "Super Admin" : "Staff Admin";
+  const companyName = config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited";
+  
+  // Handle conditional password section - replace template conditionals with actual values
+  if (tempPassword) {
+    // Replace conditional password section with actual password display
+    template = template.replace(
+      /\{tempPassword \? `<div[\s\S]*?<\/div>` : `[\s\S]*?`\}/g,
+      `<div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; padding: 15px; margin: 20px 0;">
         <h3 style="margin-top: 0; color: #856404;">Your Temporary Password</h3>
-        <p style="font-size: 18px; font-weight: bold; color: #856404; font-family: monospace; letter-spacing: 2px; margin: 10px 0;">
-          ${tempPassword}
-        </p>
-        <p style="margin-bottom: 0; color: #856404;">
-          <strong>Please change this password immediately after your first login.</strong>
-        </p>
-      </div>
-    `
-    : `
-      <div style="background-color: #d1ecf1; border: 1px solid #0c5460; border-radius: 5px; padding: 15px; margin: 20px 0;">
-        <p style="margin: 0; color: #0c5460;">
-          Please use the password provided by your administrator or request a password reset.
-        </p>
-      </div>
-    `;
-
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h1 style="color: #0066cc;">Welcome to Travunited Admin Panel!</h1>
-      
-      <p>Dear ${name},</p>
-      
-      <p>Your admin account has been successfully created for the Travunited platform.</p>
-      
-      <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <h3 style="margin-top: 0; color: #333;">Account Details</h3>
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr>
-            <td style="padding: 8px 0; font-weight: bold; width: 120px;">Email:</td>
-            <td style="padding: 8px 0;">${email}</td>
-          </tr>
-          <tr>
-            <td style="padding: 8px 0; font-weight: bold;">Role:</td>
-            <td style="padding: 8px 0;">${role === "SUPER_ADMIN" ? "Super Admin" : "Staff Admin"}</td>
-          </tr>
-        </table>
-      </div>
-      
-      ${passwordSection}
-      
-      <div style="margin: 30px 0;">
-        <p><strong>Getting Started:</strong></p>
-        <ol style="line-height: 1.8;">
-          <li>Log in to the admin panel using your email and ${tempPassword ? "the temporary password above" : "your password"}</li>
-          <li>Once logged in, navigate to your account settings</li>
-          <li>Change your password to something secure and memorable</li>
-        </ol>
-      </div>
-      
-      <p style="margin-top: 30px; text-align: center;">
-        <a href="${loginUrl}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">
-          Log In to Admin Panel
-        </a>
-      </p>
-      
-      <p style="margin-top: 20px;">
-        <a href="${resetPasswordUrl}" style="color: #0066cc; text-decoration: underline;">
-          Or reset your password here
-        </a>
-      </p>
-      
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px;">
-        <p><strong>Security Reminder:</strong></p>
-        <ul style="margin: 10px 0; padding-left: 20px;">
-          <li>Never share your login credentials with anyone</li>
-          <li>Use a strong, unique password</li>
-          <li>Log out when finished, especially on shared devices</li>
-          <li>Contact support immediately if you notice any suspicious activity</li>
-        </ul>
-        <p style="margin-top: 15px;">
-          If you did not expect this email, please contact <a href="mailto:${ADMIN_INBOX}">${ADMIN_INBOX}</a> immediately.
-        </p>
-      </div>
-    </div>
-  `;
+        <p style="font-size: 18px; font-weight: bold; color: #856404; font-family: monospace; letter-spacing: 2px; margin: 10px 0;">{tempPassword}</p>
+        <p style="margin-bottom: 0; color: #856404;"><strong>Please change this password immediately after your first login.</strong></p>
+      </div>`
+    );
+  } else {
+    // Replace conditional password section with no password message
+    template = template.replace(
+      /\{tempPassword \? `<div[\s\S]*?<\/div>` : `[\s\S]*?`\}/g,
+      `<div style="background-color: #d1ecf1; border: 1px solid #0c5460; border-radius: 5px; padding: 15px; margin: 20px 0;">
+        <p style="margin: 0; color: #0c5460;">Please use the password provided by your administrator or request a password reset.</p>
+      </div>`
+    );
+  }
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    name,
+    role: roleDisplay,
+    tempPassword: tempPassword || "",
+    loginUrl,
+    companyName,
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
+  const subject = "Welcome to Travunited Admin Panel";
 
   // Send directly to admin's email (not routed through admin inbox)
   return sendEmail({

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Save, Building2, Mail, CreditCard, BarChart3, Lock, AlertCircle, Settings, CheckCircle, Eye, EyeOff, Loader2, ExternalLink } from "lucide-react";
+import { Save, Building2, Mail, CreditCard, BarChart3, Lock, AlertCircle, Settings, CheckCircle, Eye, EyeOff, Loader2, ExternalLink, FileText, User, Plane, Briefcase } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { TextInput, TextareaInput, CheckboxInput } from "@/components/admin/MemoizedInputs";
 
@@ -19,13 +19,33 @@ interface Settings {
   supportEmail: string;
   supportPhone: string;
   
-  // Email Basics
-  emailVisaSubmitted: string;
-  emailDocsRejected: string;
+  // Email Basics - General
+  emailWelcome: string;
+  emailPasswordReset: string;
+  emailVerification: string;
+  
+  // Email Basics - Visa
+  emailVisaPaymentSuccess: string;
+  emailVisaPaymentFailed: string;
+  emailVisaStatusUpdate: string;
+  emailVisaDocumentRejected: string;
   emailVisaApproved: string;
-  emailTourBooked: string;
+  emailVisaRejected: string;
+  
+  // Email Basics - Tours
+  emailTourPaymentSuccess: string;
+  emailTourPaymentFailed: string;
   emailTourConfirmed: string;
-  emailVouchersReady: string;
+  emailTourPaymentReminder: string;
+  emailTourStatusUpdate: string;
+  emailTourVouchersReady: string;
+  
+  // Email Basics - Admin & Corporate
+  emailAdminWelcome: string;
+  emailCorporateLeadAdmin: string;
+  emailCorporateLeadConfirmation: string;
+  
+  // Email Service Configuration
   awsAccessKeyId: string;
   awsSecretAccessKey: string;
   awsRegion: string;
@@ -58,6 +78,7 @@ export default function AdminGeneralSettingsPage() {
   const [testingEmail, setTestingEmail] = useState(false);
   const [emailTestResult, setEmailTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [emailConfigStatus, setEmailConfigStatus] = useState<{ configured: boolean; message: string } | null>(null);
+  const [activeEmailTab, setActiveEmailTab] = useState<"general" | "visa" | "tours" | "admin">("general");
 
   const [settings, setSettings] = useState<Settings>({
     companyName: "",
@@ -66,12 +87,29 @@ export default function AdminGeneralSettingsPage() {
     gstin: "",
     supportEmail: "",
     supportPhone: "",
-    emailVisaSubmitted: "",
-    emailDocsRejected: "",
+    // General emails
+    emailWelcome: "",
+    emailPasswordReset: "",
+    emailVerification: "",
+    // Visa emails
+    emailVisaPaymentSuccess: "",
+    emailVisaPaymentFailed: "",
+    emailVisaStatusUpdate: "",
+    emailVisaDocumentRejected: "",
     emailVisaApproved: "",
-    emailTourBooked: "",
+    emailVisaRejected: "",
+    // Tour emails
+    emailTourPaymentSuccess: "",
+    emailTourPaymentFailed: "",
     emailTourConfirmed: "",
-    emailVouchersReady: "",
+    emailTourPaymentReminder: "",
+    emailTourStatusUpdate: "",
+    emailTourVouchersReady: "",
+    // Admin & Corporate emails
+    emailAdminWelcome: "",
+    emailCorporateLeadAdmin: "",
+    emailCorporateLeadConfirmation: "",
+    // Email service config
     awsAccessKeyId: "",
     awsSecretAccessKey: "",
     awsRegion: "",
@@ -586,77 +624,355 @@ export default function AdminGeneralSettingsPage() {
 
           {/* Email Basics */}
           <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-            <div className="flex items-center space-x-2 mb-4">
-              <Mail size={24} className="text-primary-600" />
-              <h2 className="text-xl font-bold text-neutral-900">Email Basics</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <Mail size={24} className="text-primary-600" />
+                <h2 className="text-xl font-bold text-neutral-900">Email Templates</h2>
+              </div>
             </div>
-            <p className="text-sm text-neutral-600 mb-4">Editable text snippets for key emails (subject/intro lines)</p>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">Visa Submitted Email</label>
-                <TextareaInput
-                  value={settings.emailVisaSubmitted}
-                  onChange={(value) => updateSetting("emailVisaSubmitted", value)}
-                  disabled={isReadOnly}
-                  rows={2}
-                  placeholder="Subject line and intro text..."
-                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
-                />
+            <p className="text-sm text-neutral-600 mb-4">
+              Customize email templates with HTML. Use variables like {"{"}name{"}"}, {"{"}applicationId{"}"}, {"{"}country{"}"}, etc. Leave empty to use default templates.
+            </p>
+            
+            {/* Tab Navigation */}
+            <div className="flex space-x-1 mb-6 border-b border-neutral-200">
+              <button
+                type="button"
+                onClick={() => setActiveEmailTab("general")}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeEmailTab === "general"
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-neutral-600 hover:text-neutral-900"
+                }`}
+              >
+                <User size={16} className="inline mr-2" />
+                General
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveEmailTab("visa")}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeEmailTab === "visa"
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-neutral-600 hover:text-neutral-900"
+                }`}
+              >
+                <Plane size={16} className="inline mr-2" />
+                Visa
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveEmailTab("tours")}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeEmailTab === "tours"
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-neutral-600 hover:text-neutral-900"
+                }`}
+              >
+                <FileText size={16} className="inline mr-2" />
+                Tours
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveEmailTab("admin")}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  activeEmailTab === "admin"
+                    ? "border-primary-600 text-primary-600"
+                    : "border-transparent text-neutral-600 hover:text-neutral-900"
+                }`}
+              >
+                <Briefcase size={16} className="inline mr-2" />
+                Admin & Corporate
+              </button>
+            </div>
+
+            {/* General Email Templates */}
+            {activeEmailTab === "general" && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Welcome Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}name{"}"}, {"{"}companyName{"}"}, {"{"}dashboardUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailWelcome}
+                    onChange={(value) => updateSetting("emailWelcome", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Password Reset Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}resetLink{"}"}, {"{"}companyName{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailPasswordReset}
+                    onChange={(value) => updateSetting("emailPasswordReset", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Email Verification Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}name{"}"}, {"{"}verificationLink{"}"}, {"{"}companyName{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailVerification}
+                    onChange={(value) => updateSetting("emailVerification", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">Docs Rejected Email</label>
-                <TextareaInput
-                  value={settings.emailDocsRejected}
-                  onChange={(value) => updateSetting("emailDocsRejected", value)}
-                  disabled={isReadOnly}
-                  rows={2}
-                  placeholder="Subject line and intro text..."
-                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
-                />
+            )}
+
+            {/* Visa Email Templates */}
+            {activeEmailTab === "visa" && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Visa Payment Success Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}country{"}"}, {"{"}visaType{"}"}, {"{"}amount{"}"}, {"{"}applicationId{"}"}, {"{"}applicationUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailVisaPaymentSuccess}
+                    onChange={(value) => updateSetting("emailVisaPaymentSuccess", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Visa Payment Failed Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}country{"}"}, {"{"}visaType{"}"}, {"{"}amount{"}"}, {"{"}reason{"}"}, {"{"}applicationUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailVisaPaymentFailed}
+                    onChange={(value) => updateSetting("emailVisaPaymentFailed", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Visa Status Update Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}country{"}"}, {"{"}visaType{"}"}, {"{"}status{"}"}, {"{"}applicationUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailVisaStatusUpdate}
+                    onChange={(value) => updateSetting("emailVisaStatusUpdate", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Visa Document Rejected Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}country{"}"}, {"{"}visaType{"}"}, {"{"}rejectedDocsList{"}"}, {"{"}applicationUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailVisaDocumentRejected}
+                    onChange={(value) => updateSetting("emailVisaDocumentRejected", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Visa Approved Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}country{"}"}, {"{"}visaType{"}"}, {"{"}applicationUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailVisaApproved}
+                    onChange={(value) => updateSetting("emailVisaApproved", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Visa Rejected Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}country{"}"}, {"{"}visaType{"}"}, {"{"}reason{"}"}, {"{"}applicationUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailVisaRejected}
+                    onChange={(value) => updateSetting("emailVisaRejected", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">Visa Approved Email</label>
-                <TextareaInput
-                  value={settings.emailVisaApproved}
-                  onChange={(value) => updateSetting("emailVisaApproved", value)}
-                  disabled={isReadOnly}
-                  rows={2}
-                  placeholder="Subject line and intro text..."
-                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
-                />
+            )}
+
+            {/* Tour Email Templates */}
+            {activeEmailTab === "tours" && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Tour Payment Success Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}tourName{"}"}, {"{"}amount{"}"}, {"{"}pendingBalance{"}"}, {"{"}bookingId{"}"}, {"{"}bookingUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailTourPaymentSuccess}
+                    onChange={(value) => updateSetting("emailTourPaymentSuccess", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Tour Payment Failed Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}tourName{"}"}, {"{"}amount{"}"}, {"{"}reason{"}"}, {"{"}bookingUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailTourPaymentFailed}
+                    onChange={(value) => updateSetting("emailTourPaymentFailed", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Tour Confirmed Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}tourName{"}"}, {"{"}bookingUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailTourConfirmed}
+                    onChange={(value) => updateSetting("emailTourConfirmed", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Tour Payment Reminder Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}tourName{"}"}, {"{"}pendingBalance{"}"}, {"{"}dueDate{"}"}, {"{"}bookingUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailTourPaymentReminder}
+                    onChange={(value) => updateSetting("emailTourPaymentReminder", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Tour Status Update Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}tourName{"}"}, {"{"}status{"}"}, {"{"}bookingUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailTourStatusUpdate}
+                    onChange={(value) => updateSetting("emailTourStatusUpdate", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Tour Vouchers Ready Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}tourName{"}"}, {"{"}bookingUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailTourVouchersReady}
+                    onChange={(value) => updateSetting("emailTourVouchersReady", value)}
+                    disabled={isReadOnly}
+                    rows={8}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">Tour Booked Email</label>
-                <TextareaInput
-                  value={settings.emailTourBooked}
-                  onChange={(value) => updateSetting("emailTourBooked", value)}
-                  disabled={isReadOnly}
-                  rows={2}
-                  placeholder="Subject line and intro text..."
-                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
-                />
+            )}
+
+            {/* Admin & Corporate Email Templates */}
+            {activeEmailTab === "admin" && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Admin Welcome Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}name{"}"}, {"{"}email{"}"}, {"{"}role{"}"}, {"{"}tempPassword{"}"}, {"{"}loginUrl{"}"}, {"{"}companyName{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailAdminWelcome}
+                    onChange={(value) => updateSetting("emailAdminWelcome", value)}
+                    disabled={isReadOnly}
+                    rows={10}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Corporate Lead Admin Notification Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}companyNameLead{"}"}, {"{"}contactName{"}"}, {"{"}email{"}"}, {"{"}message{"}"}, {"{"}createdAt{"}"}, {"{"}dashboardUrl{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailCorporateLeadAdmin}
+                    onChange={(value) => updateSetting("emailCorporateLeadAdmin", value)}
+                    disabled={isReadOnly}
+                    rows={10}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Corporate Lead Confirmation Email
+                    <span className="text-xs text-neutral-500 ml-2">Variables: {"{"}contactName{"}"}, {"{"}companyNameLead{"}"}, {"{"}supportEmail{"}"}, {"{"}supportPhone{"}"}, {"{"}companyName{"}"}</span>
+                  </label>
+                  <TextareaInput
+                    value={settings.emailCorporateLeadConfirmation}
+                    onChange={(value) => updateSetting("emailCorporateLeadConfirmation", value)}
+                    disabled={isReadOnly}
+                    rows={10}
+                    placeholder="Leave empty to use default template..."
+                    className="w-full px-4 py-2 font-mono text-sm disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">Tour Confirmed Email</label>
-                <TextareaInput
-                  value={settings.emailTourConfirmed}
-                  onChange={(value) => updateSetting("emailTourConfirmed", value)}
-                  disabled={isReadOnly}
-                  rows={2}
-                  placeholder="Subject line and intro text..."
-                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">Vouchers Ready Email</label>
-                <TextareaInput
-                  value={settings.emailVouchersReady}
-                  onChange={(value) => updateSetting("emailVouchersReady", value)}
-                  disabled={isReadOnly}
-                  rows={2}
-                  placeholder="Subject line and intro text..."
-                  className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
-                />
+            )}
+
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-xs text-blue-800 mb-2">
+                <strong>Template Variables Guide:</strong>
+              </p>
+              <div className="text-xs text-blue-700 space-y-1">
+                <p><strong>User:</strong> {"{"}name{"}"}, {"{"}email{"}"}</p>
+                <p><strong>Application:</strong> {"{"}applicationId{"}"}, {"{"}applicationIdShort{"}"}, {"{"}country{"}"}, {"{"}visaType{"}"}, {"{"}status{"}"}, {"{"}amount{"}"}, {"{"}reason{"}"}</p>
+                <p><strong>Booking:</strong> {"{"}bookingId{"}"}, {"{"}bookingIdShort{"}"}, {"{"}tourName{"}"}, {"{"}pendingBalance{"}"}, {"{"}dueDate{"}"}</p>
+                <p><strong>Links:</strong> {"{"}resetLink{"}"}, {"{"}verificationLink{"}"}, {"{"}dashboardUrl{"}"}, {"{"}applicationUrl{"}"}, {"{"}bookingUrl{"}"}</p>
+                <p><strong>Company:</strong> {"{"}companyName{"}"}, {"{"}supportEmail{"}"}, {"{"}supportPhone{"}"}</p>
+                <p><strong>Special:</strong> {"{"}rejectedDocsList{"}"} (for document rejection emails)</p>
               </div>
             </div>
           </div>
