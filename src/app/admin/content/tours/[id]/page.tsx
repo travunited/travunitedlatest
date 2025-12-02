@@ -1231,28 +1231,20 @@ export default function AdminTourEditorPage() {
         </label>
 
         <div className="grid md:grid-cols-2 gap-4">
-          <label className="inline-flex items-center gap-2 border border-neutral-200 rounded-lg px-3 py-2">
-            <input
-              type="checkbox"
+          <div className="border border-neutral-200 rounded-lg px-3 py-2">
+            <CheckboxInput
               checked={formData.isFeatured}
-              onChange={(e) => updateForm("isFeatured", e.target.checked)}
-              className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+              onChange={(checked) => updateForm("isFeatured", checked)}
+              label="Featured package"
             />
-            <span className="text-sm font-medium text-neutral-700">
-              Featured package
-            </span>
-          </label>
-          <label className="inline-flex items-center gap-2 border border-neutral-200 rounded-lg px-3 py-2">
-            <input
-              type="checkbox"
+          </div>
+          <div className="border border-neutral-200 rounded-lg px-3 py-2">
+            <CheckboxInput
               checked={formData.isActive}
-              onChange={(e) => updateForm("isActive", e.target.checked)}
-              className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+              onChange={(checked) => updateForm("isActive", checked)}
+              label="Visible to travellers"
             />
-            <span className="text-sm font-medium text-neutral-700">
-              Visible to travellers
-            </span>
-          </label>
+          </div>
         </div>
       </div>
     );
@@ -1545,20 +1537,17 @@ export default function AdminTourEditorPage() {
           )}
         </div>
 
-        <label className="inline-flex items-start gap-3 border border-neutral-200 rounded-lg px-3 py-3">
-          <input
-            type="checkbox"
+        <div className="border border-neutral-200 rounded-lg px-3 py-3">
+          <CheckboxInput
             checked={formData.requiresPassport}
-            onChange={(e) => updateForm("requiresPassport", e.target.checked)}
-            className="mt-1 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+            onChange={(checked) => updateForm("requiresPassport", checked)}
+            label="Passport required for this tour"
+            className="items-start"
           />
-          <span className="text-sm text-neutral-700">
-            <span className="font-medium block">Passport required for this tour</span>
-            <span className="text-neutral-500">
-              Enforce passport collection even for domestic packages.
-            </span>
+          <span className="text-sm text-neutral-500 block mt-1">
+            Enforce passport collection even for domestic packages.
           </span>
-        </label>
+        </div>
       </div>
     );
   }
