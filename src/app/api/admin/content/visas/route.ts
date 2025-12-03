@@ -85,16 +85,16 @@ export async function GET(req: Request) {
         ...(status === "active"
           ? { isActive: true }
           : status === "inactive"
-          ? { isActive: false }
-          : {}),
+            ? { isActive: false }
+            : {}),
         ...(search
           ? {
-              OR: [
-                { name: { contains: search, mode: "insensitive" } },
-                { slug: { contains: search, mode: "insensitive" } },
-                { subtitle: { contains: search, mode: "insensitive" } },
-              ],
-            }
+            OR: [
+              { name: { contains: search, mode: "insensitive" } },
+              { slug: { contains: search, mode: "insensitive" } },
+              { subtitle: { contains: search, mode: "insensitive" } },
+            ],
+          }
           : {}),
       },
       include: {
@@ -167,22 +167,22 @@ export async function POST(req: Request) {
       faqs = [],
     } = body;
 
-    if (
-      !countryId ||
-      !name ||
-      !category ||
-      !priceInInr ||
-      !processingTime ||
-      !stayDuration ||
-      !validity ||
-      !overview ||
-      !eligibility
-    ) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+    // if (
+    //   !countryId ||
+    //   !name ||
+    //   !category ||
+    //   !priceInInr ||
+    //   !processingTime ||
+    //   !stayDuration ||
+    //   !validity ||
+    //   !overview ||
+    //   !eligibility
+    // ) {
+    //   return NextResponse.json(
+    //     { error: "Missing required fields" },
+    //     { status: 400 }
+    //   );
+    // }
 
     const resolvedSlug = await ensureUniqueSlug(
       slug?.trim() || slugify(name)
@@ -239,50 +239,50 @@ export async function POST(req: Request) {
         currency: currency || "INR",
         requirements: requirements.length
           ? {
-              create: requirements.map(
-                (req: {
-                  name: string;
-                  description?: string;
-                  scope: DocScope;
-                  isRequired?: boolean;
-                  category?: string;
-                  sortOrder?: number;
-                }, index: number) => ({
-                  name: req.name,
-                  description: req.description || null,
-                  scope: req.scope || DocScope.PER_APPLICATION,
-                  isRequired: req.isRequired ?? true,
-                  category: req.category || null,
-                  sortOrder:
-                    typeof req.sortOrder === "number"
-                      ? req.sortOrder
-                      : index,
-                })
-              ),
-            }
+            create: requirements.map(
+              (req: {
+                name: string;
+                description?: string;
+                scope: DocScope;
+                isRequired?: boolean;
+                category?: string;
+                sortOrder?: number;
+              }, index: number) => ({
+                name: req.name,
+                description: req.description || null,
+                scope: req.scope || DocScope.PER_APPLICATION,
+                isRequired: req.isRequired ?? true,
+                category: req.category || null,
+                sortOrder:
+                  typeof req.sortOrder === "number"
+                    ? req.sortOrder
+                    : index,
+              })
+            ),
+          }
           : undefined,
         faqs: faqs.length
           ? {
-              create: faqs.map(
-                (
-                  faq: {
-                    category?: string;
-                    question: string;
-                    answer: string;
-                    sortOrder?: number;
-                  },
-                  index: number
-                ) => ({
-                  category: faq.category || null,
-                  question: faq.question,
-                  answer: faq.answer,
-                  sortOrder:
-                    typeof faq.sortOrder === "number"
-                      ? faq.sortOrder
-                      : index,
-                })
-              ),
-            }
+            create: faqs.map(
+              (
+                faq: {
+                  category?: string;
+                  question: string;
+                  answer: string;
+                  sortOrder?: number;
+                },
+                index: number
+              ) => ({
+                category: faq.category || null,
+                question: faq.question,
+                answer: faq.answer,
+                sortOrder:
+                  typeof faq.sortOrder === "number"
+                    ? faq.sortOrder
+                    : index,
+              })
+            ),
+          }
           : undefined,
       },
       include: {

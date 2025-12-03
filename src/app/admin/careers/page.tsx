@@ -30,6 +30,7 @@ function AdminCareersPageContent() {
   const searchParams = useSearchParams();
   const [applications, setApplications] = useState<CareerApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoad, setInitialLoad] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [positionFilter, setPositionFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -51,6 +52,7 @@ function AdminCareersPageContent() {
       console.error("Error fetching career applications:", error);
     } finally {
       setLoading(false);
+      setInitialLoad(false);
     }
   }, [statusFilter, positionFilter, searchQuery]);
 
@@ -83,7 +85,7 @@ function AdminCareersPageContent() {
     return Array.from(positions).sort();
   }, [applications]);
 
-  if (loading) {
+  if (initialLoad) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-64">
@@ -183,7 +185,12 @@ function AdminCareersPageContent() {
         </div>
 
         {/* Applications Table */}
-        <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden relative">
+          {loading && (
+            <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center backdrop-blur-sm">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+            </div>
+          )}
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-neutral-50 border-b border-neutral-200">

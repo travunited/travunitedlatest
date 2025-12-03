@@ -404,19 +404,19 @@ export default function AdminVisaEditorPage() {
   const updateFormField = useCallback((field: keyof FormState, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
-  
+
   // Memoized handlers for specific fields to prevent inline function creation
   const updateProcessingTime = useCallback((value: string) => updateFormField("processingTime", value), [updateFormField]);
   const updateStayDurationDays = useCallback((value: number | null) => {
-    setFormData((prev) => ({ 
-      ...prev, 
+    setFormData((prev) => ({
+      ...prev,
       stayDurationDays: value,
       stayDuration: value ? `${value} days` : prev.stayDuration
     }));
   }, []);
   const updateValidityDays = useCallback((value: number | null) => {
-    setFormData((prev) => ({ 
-      ...prev, 
+    setFormData((prev) => ({
+      ...prev,
       validityDays: value,
       validity: value ? `${value} days from issue` : prev.validity
     }));
@@ -479,7 +479,7 @@ export default function AdminVisaEditorPage() {
 
       if (!response.ok) {
         const error = await response.json();
-        const errorMessage = error.missingFields 
+        const errorMessage = error.missingFields
           ? `${error.error || "Failed to save visa"}\n\nMissing fields: ${error.missingFields.join(", ")}`
           : error.message || error.error || "Failed to save visa";
         alert(errorMessage);
@@ -629,11 +629,10 @@ export default function AdminVisaEditorPage() {
               <button
                 key={tab.id}
                 onClick={() => handleTabClick(tab.id)}
-                className={`px-5 py-3 text-sm font-medium whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? "text-primary-600 border-b-2 border-primary-600"
-                    : "text-neutral-500 hover:text-neutral-900"
-                }`}
+                className={`px-5 py-3 text-sm font-medium whitespace-nowrap ${activeTab === tab.id
+                  ? "text-primary-600 border-b-2 border-primary-600"
+                  : "text-neutral-500 hover:text-neutral-900"
+                  }`}
               >
                 {tab.label}
               </button>
@@ -646,10 +645,9 @@ export default function AdminVisaEditorPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-neutral-700">
-                      Country <span className="text-red-500">*</span>
+                      Country
                     </label>
                     <SelectInput
-                      required
                       value={formData.countryId}
                       onChange={(value) => updateFormField("countryId", value)}
                     >
@@ -663,7 +661,7 @@ export default function AdminVisaEditorPage() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700">
-                      Category <span className="text-red-500">*</span>
+                      Category
                     </label>
                     <SelectInput
                       value={formData.category}
@@ -680,10 +678,9 @@ export default function AdminVisaEditorPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-neutral-700">
-                      Visa Name <span className="text-red-500">*</span>
+                      Visa Name
                     </label>
                     <TextInput
-                      required
                       value={formData.name}
                       onChange={(value) => updateFormField("name", value)}
                       placeholder="UAE Tourist Visa - 30 Days"
@@ -691,10 +688,9 @@ export default function AdminVisaEditorPage() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700">
-                      Slug <span className="text-red-500">*</span>
+                      Slug
                     </label>
                     <TextInput
-                      required
                       value={formData.slug}
                       onChange={(value) => updateFormField("slug", value)}
                       placeholder="uae-tourist-30-days"
@@ -1191,22 +1187,20 @@ export default function AdminVisaEditorPage() {
                         <button
                           type="button"
                           onClick={() => setHeroImageMode("url")}
-                          className={`px-3 py-1.5 ${
-                            heroImageMode === "url"
-                              ? "bg-primary-600 text-white"
-                              : "text-neutral-600"
-                          }`}
+                          className={`px-3 py-1.5 ${heroImageMode === "url"
+                            ? "bg-primary-600 text-white"
+                            : "text-neutral-600"
+                            }`}
                         >
                           Use URL
                         </button>
                         <button
                           type="button"
                           onClick={() => setHeroImageMode("upload")}
-                          className={`px-3 py-1.5 ${
-                            heroImageMode === "upload"
-                              ? "bg-primary-600 text-white"
-                              : "text-neutral-600"
-                          }`}
+                          className={`px-3 py-1.5 ${heroImageMode === "upload"
+                            ? "bg-primary-600 text-white"
+                            : "text-neutral-600"
+                            }`}
                         >
                           Upload
                         </button>
@@ -1255,7 +1249,7 @@ export default function AdminVisaEditorPage() {
                         )}
                       </div>
                     )}
-                        {formData.heroImageUrl && (
+                    {formData.heroImageUrl && (
                       <div className="mt-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -1284,22 +1278,20 @@ export default function AdminVisaEditorPage() {
                         <button
                           type="button"
                           onClick={() => setSampleVisaImageMode("url")}
-                          className={`px-3 py-1.5 ${
-                            sampleVisaImageMode === "url"
-                              ? "bg-primary-600 text-white"
-                              : "text-neutral-600"
-                          }`}
+                          className={`px-3 py-1.5 ${sampleVisaImageMode === "url"
+                            ? "bg-primary-600 text-white"
+                            : "text-neutral-600"
+                            }`}
                         >
                           Use URL
                         </button>
                         <button
                           type="button"
                           onClick={() => setSampleVisaImageMode("upload")}
-                          className={`px-3 py-1.5 ${
-                            sampleVisaImageMode === "upload"
-                              ? "bg-primary-600 text-white"
-                              : "text-neutral-600"
-                          }`}
+                          className={`px-3 py-1.5 ${sampleVisaImageMode === "upload"
+                            ? "bg-primary-600 text-white"
+                            : "text-neutral-600"
+                            }`}
                         >
                           Upload
                         </button>
