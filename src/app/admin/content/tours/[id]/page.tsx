@@ -271,7 +271,7 @@ type FormState = {
   tourType: string;
   tourSubType: string;
   bestFor: string; // JSON array string
-  
+
   // Destination & Categorization
   destination: string;
   primaryDestination: string;
@@ -282,7 +282,7 @@ type FormState = {
   regionTags: string; // JSON array string
   categoryId: string;
   themes: string; // JSON array string
-  
+
   // Duration & Group Size
   duration: string;
   durationDays: number | null;
@@ -292,7 +292,7 @@ type FormState = {
   minimumTravelers: number | null;
   maximumTravelers: number | null;
   difficultyLevel: string;
-  
+
   // Pricing
   price: number;
   basePriceInInr: number;
@@ -300,19 +300,19 @@ type FormState = {
   currency: string;
   packageType: string;
   seasonalPricing: string; // JSON string
-  
+
   // Dates & Availability
   availableDates: string; // JSON array string
   bookingDeadline: string; // ISO date string
   status: string;
   isActive: boolean;
   isFeatured: boolean;
-  
+
   // Advance Payment
   allowAdvance: boolean;
   advancePercentage: number | null;
   requiresPassport: boolean;
-  
+
   // Content
   overview: string;
   highlights: string; // JSON array string
@@ -324,7 +324,7 @@ type FormState = {
   customizationOptions: string; // JSON string
   bookingPolicies: string;
   cancellationTerms: string;
-  
+
   // Images & Media
   imageUrl: string;
   heroImageUrl: string;
@@ -333,7 +333,7 @@ type FormState = {
   images: string; // JSON array string
   ogImage: string;
   twitterImage: string;
-  
+
   // SEO & Social
   metaTitle: string;
   metaDescription: string;
@@ -356,7 +356,7 @@ const defaultForm: FormState = {
   tourType: "",
   tourSubType: "",
   bestFor: "[]",
-  
+
   // Destination & Categorization
   destination: "",
   primaryDestination: "",
@@ -367,7 +367,7 @@ const defaultForm: FormState = {
   regionTags: "[]",
   categoryId: "",
   themes: "[]",
-  
+
   // Duration & Group Size
   duration: "",
   durationDays: null,
@@ -377,7 +377,7 @@ const defaultForm: FormState = {
   minimumTravelers: null,
   maximumTravelers: null,
   difficultyLevel: "",
-  
+
   // Pricing
   price: 0,
   basePriceInInr: 0,
@@ -385,19 +385,19 @@ const defaultForm: FormState = {
   currency: "INR",
   packageType: "",
   seasonalPricing: "{}",
-  
+
   // Dates & Availability
   availableDates: "[]",
   bookingDeadline: "",
   status: "active",
   isActive: true,
   isFeatured: false,
-  
+
   // Advance Payment
   allowAdvance: false,
   advancePercentage: null,
   requiresPassport: false,
-  
+
   // Content
   overview: "",
   highlights: "[]",
@@ -409,7 +409,7 @@ const defaultForm: FormState = {
   customizationOptions: "{}",
   bookingPolicies: "",
   cancellationTerms: "",
-  
+
   // Images & Media
   imageUrl: "",
   heroImageUrl: "",
@@ -418,7 +418,7 @@ const defaultForm: FormState = {
   images: "[]",
   ogImage: "",
   twitterImage: "",
-  
+
   // SEO & Social
   metaTitle: "",
   metaDescription: "",
@@ -522,7 +522,7 @@ export default function AdminTourEditorPage() {
       tourType: data.tourType ?? "",
       tourSubType: data.tourSubType ?? "",
       bestFor: parseJsonField(data.bestFor),
-      
+
       // Destination & Categorization
       destination: data.destination ?? "",
       primaryDestination: data.primaryDestination ?? "",
@@ -533,7 +533,7 @@ export default function AdminTourEditorPage() {
       regionTags: parseJsonField(data.regionTags),
       categoryId: data.categoryId ?? "",
       themes: parseJsonField(data.themes),
-      
+
       // Duration & Group Size
       duration: data.duration ?? "",
       durationDays: data.durationDays ?? null,
@@ -543,7 +543,7 @@ export default function AdminTourEditorPage() {
       minimumTravelers: data.minimumTravelers ?? null,
       maximumTravelers: data.maximumTravelers ?? null,
       difficultyLevel: data.difficultyLevel ?? "",
-      
+
       // Pricing
       price: data.price ?? 0,
       basePriceInInr: data.basePriceInInr ?? data.price ?? 0,
@@ -551,19 +551,19 @@ export default function AdminTourEditorPage() {
       currency: data.currency ?? "INR",
       packageType: data.packageType ?? "",
       seasonalPricing: parseJsonField(data.seasonalPricing, "{}"),
-      
+
       // Dates & Availability
       availableDates: parseJsonField(data.availableDates),
       bookingDeadline: data.bookingDeadline ? new Date(data.bookingDeadline).toISOString().split("T")[0] : "",
       status: data.status ?? (data.isActive ? "active" : "inactive"),
       isActive: data.isActive ?? true,
       isFeatured: data.isFeatured ?? false,
-      
+
       // Advance Payment
       allowAdvance: data.allowAdvance ?? false,
       advancePercentage: data.advancePercentage ?? null,
       requiresPassport: data.requiresPassport ?? false,
-      
+
       // Content
       overview: data.overview ?? "",
       highlights: parseJsonField(data.highlights),
@@ -575,22 +575,22 @@ export default function AdminTourEditorPage() {
       customizationOptions: parseJsonField(data.customizationOptions, "{}"),
       bookingPolicies: data.bookingPolicies ?? "",
       cancellationTerms: data.cancellationTerms ?? "",
-      
+
       // Images & Media
       imageUrl: data.imageUrl ?? "",
       heroImageUrl: data.heroImageUrl ?? "",
       featuredImage: data.featuredImage ?? "",
       galleryImageUrls: data.galleryImageUrls
         ? (() => {
-            try {
-              const parsed = JSON.parse(data.galleryImageUrls);
-              return Array.isArray(parsed) ? parsed.join("\n") : data.galleryImageUrls;
-            } catch {
-              return data.galleryImageUrls;
-            }
-          })()
+          try {
+            const parsed = JSON.parse(data.galleryImageUrls);
+            return Array.isArray(parsed) ? parsed.join("\n") : data.galleryImageUrls;
+          } catch {
+            return data.galleryImageUrls;
+          }
+        })()
         : data.images
-        ? (() => {
+          ? (() => {
             try {
               const parsed = JSON.parse(data.images);
               return Array.isArray(parsed) ? parsed.join("\n") : "";
@@ -598,11 +598,11 @@ export default function AdminTourEditorPage() {
               return "";
             }
           })()
-        : "",
+          : "",
       images: parseJsonField(data.images),
       ogImage: data.ogImage ?? "",
       twitterImage: data.twitterImage ?? "",
-      
+
       // SEO & Social
       metaTitle: data.metaTitle ?? "",
       metaDescription: data.metaDescription ?? "",
@@ -769,7 +769,7 @@ export default function AdminTourEditorPage() {
         tourType: formData.tourType || null,
         tourSubType: formData.tourSubType || null,
         bestFor: parseJsonString(formData.bestFor, []),
-        
+
         // Destination & Categorization
         destination: formData.destination,
         primaryDestination: formData.primaryDestination || null,
@@ -780,7 +780,7 @@ export default function AdminTourEditorPage() {
         regionTags: parseJsonString(formData.regionTags, []),
         categoryId: formData.categoryId || null,
         themes: parseJsonString(formData.themes, []),
-        
+
         // Duration & Group Size
         duration: formData.duration,
         durationDays: formData.durationDays,
@@ -790,7 +790,7 @@ export default function AdminTourEditorPage() {
         minimumTravelers: formData.minimumTravelers,
         maximumTravelers: formData.maximumTravelers,
         difficultyLevel: formData.difficultyLevel || null,
-        
+
         // Pricing
         price: formData.price,
         basePriceInInr: formData.basePriceInInr || formData.price,
@@ -798,19 +798,19 @@ export default function AdminTourEditorPage() {
         currency: formData.currency || "INR",
         packageType: formData.packageType || null,
         seasonalPricing: parseJsonString(formData.seasonalPricing, {}),
-        
+
         // Dates & Availability
         availableDates: parseJsonString(formData.availableDates, []),
         bookingDeadline: formData.bookingDeadline ? new Date(formData.bookingDeadline).toISOString() : null,
         status: formData.status || (formData.isActive ? "active" : "inactive"),
         isActive: formData.isActive,
         isFeatured: formData.isFeatured,
-        
+
         // Advance Payment
         allowAdvance: formData.allowAdvance,
         advancePercentage: formData.advancePercentage,
         requiresPassport: formData.requiresPassport,
-        
+
         // Content
         overview: formData.overview || null,
         highlights: parseJsonString(formData.highlights, []),
@@ -822,7 +822,7 @@ export default function AdminTourEditorPage() {
         customizationOptions: parseJsonString(formData.customizationOptions, {}),
         bookingPolicies: formData.bookingPolicies || null,
         cancellationTerms: formData.cancellationTerms || null,
-        
+
         // Images & Media
         imageUrl: formData.imageUrl || null,
         heroImageUrl: formData.heroImageUrl || null,
@@ -831,7 +831,7 @@ export default function AdminTourEditorPage() {
         images: galleryUrls,
         ogImage: formData.ogImage || null,
         twitterImage: formData.twitterImage || null,
-        
+
         // SEO & Social
         metaTitle: formData.metaTitle || null,
         metaDescription: formData.metaDescription || null,
@@ -841,7 +841,7 @@ export default function AdminTourEditorPage() {
         ogDescription: formData.ogDescription || null,
         twitterTitle: formData.twitterTitle || null,
         twitterDescription: formData.twitterDescription || null,
-        
+
         addOns: addOns.map((addOn, index) => ({
           id: addOn.id,
           name: addOn.name,
@@ -852,7 +852,7 @@ export default function AdminTourEditorPage() {
           isActive: addOn.isActive,
           sortOrder: typeof addOn.sortOrder === "number" ? addOn.sortOrder : index,
         })),
-        
+
         // Itinerary Days
         days: days.map((day, index) => ({
           dayIndex: day.dayIndex || index + 1,
@@ -911,7 +911,7 @@ export default function AdminTourEditorPage() {
 
     const payload = await response.json();
     const imageUrl = payload.proxyUrl || payload.url;
-    
+
     if (!imageUrl) {
       console.error("Upload response missing URL:", payload);
       throw new Error("No image URL returned from upload");
@@ -919,6 +919,36 @@ export default function AdminTourEditorPage() {
 
     console.log(`Upload successful for ${scope}:`, imageUrl);
     return imageUrl;
+  };
+
+  const handleFeaturedImageUpload = async (file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image (JPG, PNG, WEBP).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image too large. Maximum 5 MB allowed.");
+      return;
+    }
+
+    setFeaturedUploading(true);
+    setFeaturedUploadError(null);
+    try {
+      const url = await uploadCmsImage(file, "tours", "featured");
+      if (!url) {
+        throw new Error("No URL returned from upload");
+      }
+      updateForm("featuredImage", url);
+      setFeaturedImageMode("upload");
+    } catch (error: any) {
+      console.error("Featured image upload failed", error);
+      const errorMessage = error.message || "Failed to upload featured image";
+      setFeaturedUploadError(errorMessage);
+      alert(`Featured image upload failed: ${errorMessage}`);
+    } finally {
+      setFeaturedUploading(false);
+    }
   };
 
   const handleCoverImageUpload = async (file: File | null) => {
@@ -988,7 +1018,7 @@ export default function AdminTourEditorPage() {
     try {
       const uploads: string[] = [];
       const fileArray = Array.from(files);
-      
+
       for (let i = 0; i < fileArray.length; i++) {
         const file = fileArray[i];
         if (!file.type.startsWith("image/")) {
@@ -1008,11 +1038,11 @@ export default function AdminTourEditorPage() {
           throw new Error(`Failed to upload "${file.name}": ${uploadError.message || "Unknown error"}`);
         }
       }
-      
+
       if (uploads.length === 0) {
         throw new Error("No images were uploaded successfully.");
       }
-      
+
       const existing = galleryArray;
       const combined = [...existing, ...uploads].join("\n");
       updateForm("galleryImageUrls", combined);
@@ -1081,11 +1111,10 @@ export default function AdminTourEditorPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-3 text-sm font-medium whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? "text-primary-600 border-b-2 border-primary-600"
-                    : "text-neutral-500 hover:text-neutral-900"
-                }`}
+                className={`px-5 py-3 text-sm font-medium whitespace-nowrap ${activeTab === tab.id
+                  ? "text-primary-600 border-b-2 border-primary-600"
+                  : "text-neutral-500 hover:text-neutral-900"
+                  }`}
               >
                 {tab.label}
               </button>
@@ -1093,15 +1122,41 @@ export default function AdminTourEditorPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {activeTab === "basic" && <BasicTab />}
-            {activeTab === "destination" && <DestinationTab />}
-            {activeTab === "duration" && <DurationTab />}
-            {activeTab === "pricing" && <PricingTab />}
-            {activeTab === "addons" && <AddOnsTab />}
-            {activeTab === "availability" && <AvailabilityTab />}
-            {activeTab === "content" && <ContentTab />}
-            {activeTab === "itinerary" && <ItineraryTab />}
-            {activeTab === "media" && <MediaTab />}
+            {activeTab === "basic" && <BasicTab formData={formData} updateForm={updateForm} />}
+            {activeTab === "destination" && <DestinationTab formData={formData} updateForm={updateForm} countries={countries} />}
+            {activeTab === "duration" && <DurationTab formData={formData} updateForm={updateForm} />}
+            {activeTab === "pricing" && <PricingTab formData={formData} updateForm={updateForm} />}
+            {activeTab === "addons" && <AddOnsTab addOns={addOns} updateAddOn={updateAddOn} removeAddOn={removeAddOn} addAddOnRow={addAddOnRow} />}
+            {activeTab === "availability" && <AvailabilityTab formData={formData} updateForm={updateForm} />}
+            {activeTab === "content" && <ContentTab formData={formData} updateForm={updateForm} />}
+            {activeTab === "itinerary" && <ItineraryTab days={days} addDay={addDay} updateDay={updateDay} removeDay={removeDay} />}
+            {activeTab === "media" && <MediaTab
+              formData={formData}
+              updateForm={updateForm}
+              featuredImageMode={featuredImageMode}
+              setFeaturedImageMode={setFeaturedImageMode}
+              handleFeaturedImageUpload={handleFeaturedImageUpload}
+              featuredUploading={featuredUploading}
+              featuredUploadError={featuredUploadError}
+              coverImageMode={coverImageMode}
+              setCoverImageMode={setCoverImageMode}
+              handleCoverImageUpload={handleCoverImageUpload}
+              coverUploading={coverUploading}
+              coverUploadError={coverUploadError}
+              heroImageMode={heroImageMode}
+              setHeroImageMode={setHeroImageMode}
+              handleHeroImageUpload={handleHeroImageUpload}
+              heroUploading={heroUploading}
+              heroUploadError={heroUploadError}
+              handleGalleryUpload={handleGalleryUpload}
+              galleryUploading={galleryUploading}
+              galleryUploadError={galleryUploadError}
+              galleryArray={galleryArray}
+              draggingGalleryIndex={draggingGalleryIndex}
+              setDraggingGalleryIndex={setDraggingGalleryIndex}
+              handleGalleryReorder={handleGalleryReorder}
+              handleGalleryRemove={handleGalleryRemove}
+            />}
 
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-200">
               <Link
@@ -1133,1189 +1188,1243 @@ export default function AdminTourEditorPage() {
       </div>
     </AdminLayout>
   );
+}
 
-  function BasicTab() {
-    return (
-      <div className="space-y-4">
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">
-              Tour Name <span className="text-red-500">*</span>
-            </span>
-            <TextInput
-              required
-              value={formData.name}
-              onChange={(value) => updateForm("name", value)}
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">
-              Slug <span className="text-red-500">*</span>
-            </span>
-            <div className="flex gap-2">
-              <TextInput
-                required
-                value={formData.slug}
-                onChange={(value) => updateForm("slug", value)}
-                placeholder="dubai-deluxe-getaway"
-                className="flex-1"
-              />
-              <button
-                type="button"
-                onClick={() => updateForm("slug", slugify(formData.name))}
-                className="mt-1 px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50"
-              >
-                <RefreshCw size={16} />
-              </button>
-            </div>
-          </label>
-        </div>
-
+const BasicTab = memo(({ formData, updateForm }: {
+  formData: FormState;
+  updateForm: (key: keyof FormState, value: any) => void;
+}) => {
+  return (
+    <div className="space-y-4">
+      <div className="grid md:grid-cols-2 gap-4">
         <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Short Description</span>
-          <TextareaInput
-            rows={3}
-            value={formData.shortDescription}
-            onChange={(value) => updateForm("shortDescription", value)}
-            placeholder="Brief overview (shown in listings)"
-          />
-        </label>
-
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Full Description</span>
-          <TextareaInput
-            rows={6}
-            value={formData.description}
-            onChange={(value) => updateForm("description", value)}
-            placeholder="Detailed tour description"
-          />
-        </label>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Tour Type</span>
-            <SelectInput
-              value={formData.tourType}
-              onChange={(value) => updateForm("tourType", value)}
-            >
-              <option value="">Select type</option>
-              <option value="group">Group Tour</option>
-              <option value="private">Private Tour</option>
-              <option value="fixed_departure">Fixed Departure</option>
-              <option value="on_demand">On Demand</option>
-            </SelectInput>
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Tour Sub Type</span>
-            <SelectInput
-              value={formData.tourSubType}
-              onChange={(value) => updateForm("tourSubType", value)}
-            >
-              <option value="">Select sub type</option>
-              <option value="honeymoon">Honeymoon</option>
-              <option value="family">Family</option>
-              <option value="adventure">Adventure</option>
-              <option value="leisure">Leisure</option>
-              <option value="religious">Religious</option>
-              <option value="wildlife">Wildlife</option>
-            </SelectInput>
-          </label>
-        </div>
-
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Best For (comma-separated)</span>
-          <BestForInput
-            value={formData.bestFor}
-            onChange={(value) => updateForm("bestFor", value)}
-          />
-        </label>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="border border-neutral-200 rounded-lg px-3 py-2">
-            <CheckboxInput
-              checked={formData.isFeatured}
-              onChange={(checked) => updateForm("isFeatured", checked)}
-              label="Featured package"
-            />
-          </div>
-          <div className="border border-neutral-200 rounded-lg px-3 py-2">
-            <CheckboxInput
-              checked={formData.isActive}
-              onChange={(checked) => updateForm("isActive", checked)}
-              label="Visible to travellers"
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  function DestinationTab() {
-    return (
-      <div className="space-y-4">
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">
-              Country <span className="text-red-500">*</span>
-            </span>
-            <SelectInput
-              required
-              value={formData.countryId}
-              onChange={(value) => updateForm("countryId", value)}
-            >
-              <option value="">Select country</option>
-              {countries.map((country) => (
-                <option key={country.id} value={country.id}>
-                  {country.name}
-                </option>
-              ))}
-            </SelectInput>
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">
-              Destination <span className="text-red-500">*</span>
-            </span>
-            <TextInput
-              required
-              value={formData.destination}
-              onChange={(value) => updateForm("destination", value)}
-            />
-          </label>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Primary Destination</span>
-            <TextInput
-              value={formData.primaryDestination}
-              onChange={(value) => updateForm("primaryDestination", value)}
-              placeholder="Main city or location"
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Destination Country</span>
-            <TextInput
-              value={formData.destinationCountry}
-              onChange={(value) => updateForm("destinationCountry", value)}
-            />
-          </label>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Destination State</span>
-            <TextInput
-              value={formData.destinationState}
-              onChange={(value) => updateForm("destinationState", value)}
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Region</span>
-            <TextInput
-              value={formData.region}
-              onChange={(value) => updateForm("region", value)}
-              placeholder="e.g., South East Asia, Europe"
-            />
-          </label>
-        </div>
-
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Cities Covered (comma-separated)</span>
-          <CommaSeparatedInput
-            value={formData.citiesCovered}
-            onChange={(value) => updateForm("citiesCovered", value)}
-            placeholder="Dubai, Abu Dhabi, Sharjah"
-          />
-        </label>
-
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Region Tags (comma-separated)</span>
-          <CommaSeparatedInput
-            value={formData.regionTags}
-            onChange={(value) => updateForm("regionTags", value)}
-            placeholder="Beach, Hills, City"
-          />
-        </label>
-
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Themes (comma-separated)</span>
-          <CommaSeparatedInput
-            value={formData.themes}
-            onChange={(value) => updateForm("themes", value)}
-            placeholder="Honeymoon, Adventure, Beach, Culture"
-          />
-        </label>
-      </div>
-    );
-  }
-
-  function DurationTab() {
-    return (
-      <div className="space-y-4">
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">
-              Duration (Display) <span className="text-red-500">*</span>
-            </span>
-            <TextInput
-              required
-              value={formData.duration}
-              onChange={(value) => updateForm("duration", value)}
-              placeholder="5 Nights / 6 Days"
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Difficulty Level</span>
-            <SelectInput
-              value={formData.difficultyLevel}
-              onChange={(value) => updateForm("difficultyLevel", value)}
-            >
-              <option value="">Select level</option>
-              <option value="Easy">Easy</option>
-              <option value="Moderate">Moderate</option>
-              <option value="Difficult">Difficult</option>
-            </SelectInput>
-          </label>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Duration (Days)</span>
-            <NumberInput
-              min={1}
-              value={formData.durationDays}
-              onChange={(value) => updateForm("durationDays", value)}
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Duration (Nights)</span>
-            <NumberInput
-              min={0}
-              value={formData.durationNights}
-              onChange={(value) => updateForm("durationNights", value)}
-            />
-          </label>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Group Size Min</span>
-            <NumberInput
-              min={1}
-              value={formData.groupSizeMin}
-              onChange={(value) => updateForm("groupSizeMin", value)}
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Group Size Max</span>
-            <NumberInput
-              min={1}
-              value={formData.groupSizeMax}
-              onChange={(value) => updateForm("groupSizeMax", value)}
-            />
-          </label>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Minimum Travelers</span>
-            <NumberInput
-              min={1}
-              value={formData.minimumTravelers}
-              onChange={(value) => updateForm("minimumTravelers", value)}
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Maximum Travelers</span>
-            <NumberInput
-              min={1}
-              value={formData.maximumTravelers}
-              onChange={(value) => updateForm("maximumTravelers", value)}
-            />
-          </label>
-        </div>
-      </div>
-    );
-  }
-
-  function PricingTab() {
-    return (
-      <div className="space-y-4">
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">
-              Price <span className="text-red-500">*</span>
-            </span>
-            <NumberInput
-              min={0}
-              required
-              value={formData.price}
-              onChange={(value) => updateForm("price", value ?? 0)}
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Currency</span>
-            <SelectInput
-              value={formData.currency}
-              onChange={(value) => updateForm("currency", value)}
-            >
-              <option value="INR">INR (₹)</option>
-              <option value="USD">USD ($)</option>
-              <option value="EUR">EUR (€)</option>
-            </SelectInput>
-          </label>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Original Price</span>
-            <NumberInput
-              min={0}
-              value={formData.originalPrice}
-              onChange={(value) => updateForm("originalPrice", value)}
-              placeholder="For showing strikethrough price"
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Base Price Override</span>
-            <NumberInput
-              min={0}
-              value={formData.basePriceInInr}
-              onChange={(value) => updateForm("basePriceInInr", value ?? 0)}
-              placeholder="Defaults to price above"
-            />
-          </label>
-        </div>
-
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Package Type</span>
-          <SelectInput
-            value={formData.packageType}
-            onChange={(value) => updateForm("packageType", value)}
-          >
-            <option value="">Select type</option>
-            <option value="fixed_departure">Fixed Departure</option>
-            <option value="on_demand">On Demand</option>
-            <option value="private">Private</option>
-          </SelectInput>
-        </label>
-
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Seasonal Pricing (JSON)</span>
-          <TextareaInput
-            rows={6}
-            value={formData.seasonalPricing}
-            onChange={(value) => updateForm("seasonalPricing", value)}
-            className="font-mono text-sm"
-            placeholder='{"peak": {"from": "2025-12-15", "to": "2026-01-10", "price": 65000}}'
-          />
-          <p className="text-xs text-neutral-500 mt-1">
-            JSON format: Define seasons with date ranges and price overrides
-          </p>
-        </label>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <div className="border border-neutral-200 rounded-lg px-3 py-2">
-            <CheckboxInput
-              checked={formData.allowAdvance}
-              onChange={(checked) => updateForm("allowAdvance", checked)}
-              label="Allow advance payment"
-            />
-          </div>
-          {formData.allowAdvance && (
-            <label className="flex flex-col">
-              <span className="text-sm font-medium text-neutral-700">
-                Advance percentage
-              </span>
-              <NumberInput
-                min={0}
-                max={100}
-                value={formData.advancePercentage}
-                onChange={(value) => updateForm("advancePercentage", value)}
-              />
-            </label>
-          )}
-        </div>
-
-        <div className="border border-neutral-200 rounded-lg px-3 py-3">
-          <CheckboxInput
-            checked={formData.requiresPassport}
-            onChange={(checked) => updateForm("requiresPassport", checked)}
-            label="Passport required for this tour"
-            className="items-start"
-          />
-          <span className="text-sm text-neutral-500 block mt-1">
-            Enforce passport collection even for domestic packages.
+          <span className="text-sm font-medium text-neutral-700">
+            Tour Name <span className="text-red-500">*</span>
           </span>
-        </div>
-      </div>
-    );
-  }
-
-  function AddOnsTab() {
-    return (
-      <div className="space-y-4">
-        <p className="text-sm text-neutral-600">
-          Configure optional or mandatory add-ons that travellers can choose during checkout.
-        </p>
-
-        {addOns.length === 0 && (
-          <div className="rounded-2xl border-2 border-dashed border-neutral-200 p-6 text-center">
-            <p className="text-neutral-600 mb-3">No add-ons configured yet.</p>
+          <TextInput
+            required
+            value={formData.name}
+            onChange={(value) => updateForm("name", value)}
+          />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">
+            Slug <span className="text-red-500">*</span>
+          </span>
+          <div className="flex gap-2">
+            <TextInput
+              required
+              value={formData.slug}
+              onChange={(value) => updateForm("slug", value)}
+              placeholder="dubai-deluxe-getaway"
+              className="flex-1"
+            />
             <button
               type="button"
-              onClick={addAddOnRow}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition"
+              onClick={() => updateForm("slug", slugify(formData.name))}
+              className="mt-1 px-3 py-2 border border-neutral-200 rounded-lg text-sm text-neutral-600 hover:bg-neutral-50"
             >
-              <Plus size={16} />
-              Add first add-on
+              <RefreshCw size={16} />
             </button>
           </div>
-        )}
+        </label>
+      </div>
 
-        <div className="space-y-4">
-          {addOns.map((addOn, index) => (
-            <div
-              key={addOn.uid}
-              className="border border-neutral-200 rounded-2xl p-4 shadow-sm bg-white"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm font-semibold text-neutral-900">
-                    Add-on #{index + 1}
-                  </p>
-                  <p className="text-xs text-neutral-500">
-                    {addOn.id ? "Existing item" : "New item"}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeAddOn(addOn.uid)}
-                  className="text-sm text-red-600 hover:text-red-700 inline-flex items-center gap-1"
-                >
-                  <Trash2 size={14} />
-                  Remove
-                </button>
-              </div>
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Short Description</span>
+        <TextareaInput
+          rows={3}
+          value={formData.shortDescription}
+          onChange={(value) => updateForm("shortDescription", value)}
+          placeholder="Brief overview (shown in listings)"
+        />
+      </label>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <label className="flex flex-col">
-                  <span className="text-sm font-medium text-neutral-700">Name</span>
-                  <TextInput
-                    value={addOn.name}
-                    onChange={(value) => updateAddOn(addOn.uid, "name", value)}
-                    placeholder="E.g. 4★ Hotel Upgrade"
-                    required
-                  />
-                </label>
-                <label className="flex flex-col">
-                  <span className="text-sm font-medium text-neutral-700">Price (₹)</span>
-                  <NumberInput
-                    min={0}
-                    value={addOn.price}
-                    onChange={(value) => updateAddOn(addOn.uid, "price", value ?? 0)}
-                    placeholder="0 for free add-on"
-                  />
-                </label>
-              </div>
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Full Description</span>
+        <TextareaInput
+          rows={6}
+          value={formData.description}
+          onChange={(value) => updateForm("description", value)}
+          placeholder="Detailed tour description"
+        />
+      </label>
 
-              <label className="flex flex-col mt-4">
-                <span className="text-sm font-medium text-neutral-700">Description</span>
-                <TextareaInput
-                  rows={2}
-                  value={addOn.description}
-                  onChange={(value) => updateAddOn(addOn.uid, "description", value)}
-                  placeholder="Short description that appears to travellers"
-                />
-              </label>
+      <div className="grid md:grid-cols-2 gap-4">
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Tour Type</span>
+          <SelectInput
+            value={formData.tourType}
+            onChange={(value) => updateForm("tourType", value)}
+          >
+            <option value="">Select type</option>
+            <option value="group">Group Tour</option>
+            <option value="private">Private Tour</option>
+            <option value="fixed_departure">Fixed Departure</option>
+            <option value="on_demand">On Demand</option>
+          </SelectInput>
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Tour Sub Type</span>
+          <SelectInput
+            value={formData.tourSubType}
+            onChange={(value) => updateForm("tourSubType", value)}
+          >
+            <option value="">Select sub type</option>
+            <option value="honeymoon">Honeymoon</option>
+            <option value="family">Family</option>
+            <option value="adventure">Adventure</option>
+            <option value="leisure">Leisure</option>
+            <option value="religious">Religious</option>
+            <option value="wildlife">Wildlife</option>
+          </SelectInput>
+        </label>
+      </div>
 
-              <div className="grid md:grid-cols-3 gap-4 mt-4">
-                <label className="flex flex-col">
-                  <span className="text-sm font-medium text-neutral-700">Pricing Type</span>
-                  <SelectInput
-                    value={addOn.pricingType}
-                    onChange={(value) =>
-                      updateAddOn(
-                        addOn.uid,
-                        "pricingType",
-                        value as "PER_BOOKING" | "PER_PERSON"
-                      )
-                    }
-                  >
-                    <option value="PER_BOOKING">Per booking</option>
-                    <option value="PER_PERSON">Per traveller</option>
-                  </SelectInput>
-                </label>
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Best For (comma-separated)</span>
+        <BestForInput
+          value={formData.bestFor}
+          onChange={(value) => updateForm("bestFor", value)}
+        />
+      </label>
 
-                <label className="flex flex-col">
-                  <span className="text-sm font-medium text-neutral-700">Sort order</span>
-                  <NumberInput
-                    value={addOn.sortOrder}
-                    onChange={(value) =>
-                      updateAddOn(
-                        addOn.uid,
-                        "sortOrder",
-                        value ?? 0
-                      )
-                    }
-                  />
-                </label>
-
-                <div className="flex flex-col gap-2">
-                  <div className="border border-neutral-200 rounded-lg px-3 py-2">
-                    <CheckboxInput
-                      checked={addOn.isRequired}
-                      onChange={(checked) => updateAddOn(addOn.uid, "isRequired", checked)}
-                      label="Required"
-                    />
-                  </div>
-                  <div className="border border-neutral-200 rounded-lg px-3 py-2">
-                    <CheckboxInput
-                      checked={addOn.isActive}
-                      onChange={(checked) => updateAddOn(addOn.uid, "isActive", checked)}
-                      label="Active"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="border border-neutral-200 rounded-lg px-3 py-2">
+          <CheckboxInput
+            checked={formData.isFeatured}
+            onChange={(checked) => updateForm("isFeatured", checked)}
+            label="Featured package"
+          />
         </div>
+        <div className="border border-neutral-200 rounded-lg px-3 py-2">
+          <CheckboxInput
+            checked={formData.isActive}
+            onChange={(checked) => updateForm("isActive", checked)}
+            label="Visible to travellers"
+          />
+        </div>
+      </div>
+    </div>
+  );
+});
+BasicTab.displayName = "BasicTab";
 
-        {addOns.length > 0 && (
+const DestinationTab = memo(({ formData, updateForm, countries }: {
+  formData: FormState;
+  updateForm: (key: keyof FormState, value: any) => void;
+  countries: CountryOption[];
+}) => {
+  return (
+    <div className="space-y-4">
+      <div className="grid md:grid-cols-2 gap-4">
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">
+            Country <span className="text-red-500">*</span>
+          </span>
+          <SelectInput
+            required
+            value={formData.countryId}
+            onChange={(value) => updateForm("countryId", value)}
+          >
+            <option value="">Select country</option>
+            {countries.map((country) => (
+              <option key={country.id} value={country.id}>
+                {country.name}
+              </option>
+            ))}
+          </SelectInput>
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">
+            Destination <span className="text-red-500">*</span>
+          </span>
+          <TextInput
+            required
+            value={formData.destination}
+            onChange={(value) => updateForm("destination", value)}
+          />
+        </label>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Primary Destination</span>
+          <TextInput
+            value={formData.primaryDestination}
+            onChange={(value) => updateForm("primaryDestination", value)}
+            placeholder="Main city or location"
+          />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Destination Country</span>
+          <TextInput
+            value={formData.destinationCountry}
+            onChange={(value) => updateForm("destinationCountry", value)}
+          />
+        </label>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Destination State</span>
+          <TextInput
+            value={formData.destinationState}
+            onChange={(value) => updateForm("destinationState", value)}
+          />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Region</span>
+          <TextInput
+            value={formData.region}
+            onChange={(value) => updateForm("region", value)}
+            placeholder="e.g., South East Asia, Europe"
+          />
+        </label>
+      </div>
+
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Cities Covered (comma-separated)</span>
+        <CommaSeparatedInput
+          value={formData.citiesCovered}
+          onChange={(value) => updateForm("citiesCovered", value)}
+          placeholder="Dubai, Abu Dhabi, Sharjah"
+        />
+      </label>
+
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Region Tags (comma-separated)</span>
+        <CommaSeparatedInput
+          value={formData.regionTags}
+          onChange={(value) => updateForm("regionTags", value)}
+          placeholder="Beach, Hills, City"
+        />
+      </label>
+
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Themes (comma-separated)</span>
+        <CommaSeparatedInput
+          value={formData.themes}
+          onChange={(value) => updateForm("themes", value)}
+          placeholder="Honeymoon, Adventure, Beach, Culture"
+        />
+      </label>
+    </div>
+  );
+});
+DestinationTab.displayName = "DestinationTab";
+
+const DurationTab = memo(({ formData, updateForm }: {
+  formData: FormState;
+  updateForm: (key: keyof FormState, value: any) => void;
+}) => {
+  return (
+    <div className="space-y-4">
+      <div className="grid md:grid-cols-2 gap-4">
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">
+            Duration (Display) <span className="text-red-500">*</span>
+          </span>
+          <TextInput
+            required
+            value={formData.duration}
+            onChange={(value) => updateForm("duration", value)}
+            placeholder="5 Nights / 6 Days"
+          />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Difficulty Level</span>
+          <SelectInput
+            value={formData.difficultyLevel}
+            onChange={(value) => updateForm("difficultyLevel", value)}
+          >
+            <option value="">Select level</option>
+            <option value="Easy">Easy</option>
+            <option value="Moderate">Moderate</option>
+            <option value="Difficult">Difficult</option>
+          </SelectInput>
+        </label>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Duration (Days)</span>
+          <NumberInput
+            min={1}
+            value={formData.durationDays}
+            onChange={(value) => updateForm("durationDays", value)}
+          />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Duration (Nights)</span>
+          <NumberInput
+            min={0}
+            value={formData.durationNights}
+            onChange={(value) => updateForm("durationNights", value)}
+          />
+        </label>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Group Size Min</span>
+          <NumberInput
+            min={1}
+            value={formData.groupSizeMin}
+            onChange={(value) => updateForm("groupSizeMin", value)}
+          />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Group Size Max</span>
+          <NumberInput
+            min={1}
+            value={formData.groupSizeMax}
+            onChange={(value) => updateForm("groupSizeMax", value)}
+          />
+        </label>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Minimum Travelers</span>
+          <NumberInput
+            min={1}
+            value={formData.minimumTravelers}
+            onChange={(value) => updateForm("minimumTravelers", value)}
+          />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Maximum Travelers</span>
+          <NumberInput
+            min={1}
+            value={formData.maximumTravelers}
+            onChange={(value) => updateForm("maximumTravelers", value)}
+          />
+        </label>
+      </div>
+    </div>
+  );
+});
+DurationTab.displayName = "DurationTab";
+
+const PricingTab = memo(({ formData, updateForm }: {
+  formData: FormState;
+  updateForm: (key: keyof FormState, value: any) => void;
+}) => {
+  return (
+    <div className="space-y-4">
+      <div className="grid md:grid-cols-2 gap-4">
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">
+            Price <span className="text-red-500">*</span>
+          </span>
+          <NumberInput
+            min={0}
+            required
+            value={formData.price}
+            onChange={(value) => updateForm("price", value ?? 0)}
+          />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Currency</span>
+          <SelectInput
+            value={formData.currency}
+            onChange={(value) => updateForm("currency", value)}
+          >
+            <option value="INR">INR (₹)</option>
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+          </SelectInput>
+        </label>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Original Price</span>
+          <NumberInput
+            min={0}
+            value={formData.originalPrice}
+            onChange={(value) => updateForm("originalPrice", value)}
+            placeholder="For showing strikethrough price"
+          />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Base Price Override</span>
+          <NumberInput
+            min={0}
+            value={formData.basePriceInInr}
+            onChange={(value) => updateForm("basePriceInInr", value ?? 0)}
+            placeholder="Defaults to price above"
+          />
+        </label>
+      </div>
+
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Package Type</span>
+        <SelectInput
+          value={formData.packageType}
+          onChange={(value) => updateForm("packageType", value)}
+        >
+          <option value="">Select type</option>
+          <option value="fixed_departure">Fixed Departure</option>
+          <option value="on_demand">On Demand</option>
+          <option value="private">Private</option>
+        </SelectInput>
+      </label>
+
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Seasonal Pricing (JSON)</span>
+        <TextareaInput
+          rows={6}
+          value={formData.seasonalPricing}
+          onChange={(value) => updateForm("seasonalPricing", value)}
+          className="font-mono text-sm"
+          placeholder='{"peak": {"from": "2025-12-15", "to": "2026-01-10", "price": 65000}}'
+        />
+        <p className="text-xs text-neutral-500 mt-1">
+          JSON format: Define seasons with date ranges and price overrides
+        </p>
+      </label>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <div className="border border-neutral-200 rounded-lg px-3 py-2">
+          <CheckboxInput
+            checked={formData.allowAdvance}
+            onChange={(checked) => updateForm("allowAdvance", checked)}
+            label="Allow advance payment"
+          />
+        </div>
+        {formData.allowAdvance && (
+          <label className="flex flex-col">
+            <span className="text-sm font-medium text-neutral-700">
+              Advance percentage
+            </span>
+            <NumberInput
+              min={0}
+              max={100}
+              value={formData.advancePercentage}
+              onChange={(value) => updateForm("advancePercentage", value)}
+            />
+          </label>
+        )}
+      </div>
+
+      <div className="border border-neutral-200 rounded-lg px-3 py-3">
+        <CheckboxInput
+          checked={formData.requiresPassport}
+          onChange={(checked) => updateForm("requiresPassport", checked)}
+          label="Passport required for this tour"
+          className="items-start"
+        />
+        <span className="text-sm text-neutral-500 block mt-1">
+          Enforce passport collection even for domestic packages.
+        </span>
+      </div>
+    </div>
+  );
+});
+PricingTab.displayName = "PricingTab";
+
+const AddOnsTab = memo(({ addOns, updateAddOn, removeAddOn, addAddOnRow }: {
+  addOns: AddOnForm[];
+  updateAddOn: (uid: string, key: keyof Omit<AddOnForm, "uid">, value: any) => void;
+  removeAddOn: (uid: string) => void;
+  addAddOnRow: () => void;
+}) => {
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-neutral-600">
+        Configure optional or mandatory add-ons that travellers can choose during checkout.
+      </p>
+
+      {addOns.length === 0 && (
+        <div className="rounded-2xl border-2 border-dashed border-neutral-200 p-6 text-center">
+          <p className="text-neutral-600 mb-3">No add-ons configured yet.</p>
           <button
             type="button"
             onClick={addAddOnRow}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-neutral-300 text-sm font-medium hover:border-neutral-400 transition"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition"
           >
             <Plus size={16} />
-            Add another add-on
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  function AvailabilityTab() {
-    return (
-      <div className="space-y-4">
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Status</span>
-          <SelectInput
-            value={formData.status}
-            onChange={(value) => {
-              updateForm("status", value);
-              updateForm("isActive", value === "active");
-            }}
-          >
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="draft">Draft</option>
-          </SelectInput>
-        </label>
-
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Available Dates (comma-separated or JSON array)</span>
-          <JsonArrayTextarea
-            value={formData.availableDates}
-            onChange={(value) => updateForm("availableDates", value)}
-            rows={4}
-            className="font-mono text-sm"
-            placeholder="2025-12-15&#10;2025-12-22&#10;2026-01-05"
-          />
-          <p className="text-xs text-neutral-500 mt-1">
-            One date per line (YYYY-MM-DD format) for fixed departure tours
-          </p>
-        </label>
-
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Booking Deadline</span>
-          <TextInput
-            type="date"
-            value={formData.bookingDeadline}
-            onChange={(value) => updateForm("bookingDeadline", value)}
-          />
-          <p className="text-xs text-neutral-500 mt-1">
-            Last date for booking (leave empty for no deadline)
-          </p>
-        </label>
-      </div>
-    );
-  }
-
-  function ContentTab() {
-    return (
-      <div className="space-y-4">
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Overview</span>
-          <TextareaInput
-            rows={5}
-            value={formData.overview}
-            onChange={(value) => updateForm("overview", value)}
-          />
-        </label>
-
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Highlights (one per line)</span>
-          <JsonArrayTextarea
-            value={formData.highlights}
-            onChange={(value) => updateForm("highlights", value)}
-            rows={6}
-            placeholder="Key highlights of the tour"
-          />
-        </label>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Inclusions (one per line)</span>
-            <JsonArrayTextarea
-              value={formData.inclusions}
-              onChange={(value) => updateForm("inclusions", value)}
-              rows={6}
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Exclusions (one per line)</span>
-            <JsonArrayTextarea
-              value={formData.exclusions}
-              onChange={(value) => updateForm("exclusions", value)}
-              rows={6}
-            />
-          </label>
-        </div>
-
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Hotel Categories (comma-separated)</span>
-          <CommaSeparatedInput
-            value={formData.hotelCategories}
-            onChange={(value) => updateForm("hotelCategories", value)}
-            placeholder="3-star, 4-star, 5-star"
-          />
-        </label>
-
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Customization Options (JSON)</span>
-          <TextareaInput
-            rows={6}
-            value={formData.customizationOptions}
-            onChange={(value) => updateForm("customizationOptions", value)}
-            className="font-mono text-sm"
-            placeholder='{"Private Transfers": {"price": 5000, "type": "per_person"}, "Extra Night": {"price": 3000, "type": "flat"}}'
-          />
-          <p className="text-xs text-neutral-500 mt-1">
-            JSON format: Define customization options with pricing
-          </p>
-        </label>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Booking Policies</span>
-            <TextareaInput
-              rows={4}
-              value={formData.bookingPolicies}
-              onChange={(value) => updateForm("bookingPolicies", value)}
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Cancellation Terms</span>
-            <TextareaInput
-              rows={4}
-              value={formData.cancellationTerms}
-              onChange={(value) => updateForm("cancellationTerms", value)}
-            />
-          </label>
-        </div>
-
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">Important Notes</span>
-          <TextareaInput
-            rows={3}
-            value={formData.importantNotes}
-            onChange={(value) => updateForm("importantNotes", value)}
-          />
-        </label>
-      </div>
-    );
-  }
-
-  function ItineraryTab() {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-neutral-900">Day cards</h3>
-            <p className="text-sm text-neutral-500">
-              These show up as an itinerary timeline on the tour page.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={addDay}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-lg font-medium"
-          >
-            <Plus size={16} />
-            Add day
+            Add first add-on
           </button>
         </div>
-        {days.length === 0 && (
-          <p className="text-sm text-neutral-500">
-            Start by adding at least one itinerary day.
-          </p>
-        )}
-        <div className="space-y-4">
-          {days.map((day) => (
-            <div
-              key={day.uid}
-              className="border border-neutral-200 rounded-xl p-4 space-y-3"
-            >
-              <div className="grid md:grid-cols-3 gap-3">
-                <label className="flex flex-col">
-                  <span className="text-xs font-medium text-neutral-600">
-                    Day number
-                  </span>
-                  <NumberInput
-                    min={1}
-                    value={day.dayIndex}
-                    onChange={(value) =>
-                      updateDay(day.uid, "dayIndex", value ?? 1)
-                    }
-                    className="text-sm"
-                  />
-                </label>
-                <label className="flex flex-col md:col-span-2">
-                  <span className="text-xs font-medium text-neutral-600">
-                    Title
-                  </span>
-                  <TextInput
-                    value={day.title}
-                    onChange={(value) => updateDay(day.uid, "title", value)}
-                    className="text-sm"
-                    placeholder="Arrival & Marina Cruise"
-                  />
-                </label>
+      )}
+
+      <div className="space-y-4">
+        {addOns.map((addOn, index) => (
+          <div
+            key={addOn.uid}
+            className="border border-neutral-200 rounded-2xl p-4 shadow-sm bg-white"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm font-semibold text-neutral-900">
+                  Add-on #{index + 1}
+                </p>
+                <p className="text-xs text-neutral-500">
+                  {addOn.id ? "Existing item" : "New item"}
+                </p>
               </div>
-              <label className="flex flex-col">
-                <span className="text-xs font-medium text-neutral-600">
-                  Description
-                </span>
-                <TextareaInput
-                  rows={3}
-                  value={day.content}
-                  onChange={(value) => updateDay(day.uid, "content", value)}
-                  className="text-sm"
-                  placeholder="Outline activities, transfers, dining, etc."
-                />
-              </label>
               <button
                 type="button"
-                onClick={() => removeDay(day.uid)}
-                className="inline-flex items-center gap-2 text-sm text-red-600 hover:text-red-700"
+                onClick={() => removeAddOn(addOn.uid)}
+                className="text-sm text-red-600 hover:text-red-700 inline-flex items-center gap-1"
               >
                 <Trash2 size={14} />
-                Remove day
+                Remove
               </button>
             </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
 
-  const handleFeaturedImageUpload = async (file: File | null) => {
-      if (!file) return;
-      if (!file.type.startsWith("image/")) {
-        alert("Please select a valid image (JPG, PNG, WEBP).");
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Image too large. Maximum 5 MB allowed.");
-        return;
-      }
+            <div className="grid md:grid-cols-2 gap-4">
+              <label className="flex flex-col">
+                <span className="text-sm font-medium text-neutral-700">Name</span>
+                <TextInput
+                  value={addOn.name}
+                  onChange={(value) => updateAddOn(addOn.uid, "name", value)}
+                  placeholder="E.g. 4★ Hotel Upgrade"
+                  required
+                />
+              </label>
+              <label className="flex flex-col">
+                <span className="text-sm font-medium text-neutral-700">Price (₹)</span>
+                <NumberInput
+                  min={0}
+                  value={addOn.price}
+                  onChange={(value) => updateAddOn(addOn.uid, "price", value ?? 0)}
+                  placeholder="0 for free add-on"
+                />
+              </label>
+            </div>
 
-      setFeaturedUploading(true);
-      setFeaturedUploadError(null);
-      try {
-        const url = await uploadCmsImage(file, "tours", "featured");
-        if (!url) {
-          throw new Error("No URL returned from upload");
-        }
-        updateForm("featuredImage", url);
-        setFeaturedImageMode("upload");
-      } catch (error: any) {
-        console.error("Featured image upload failed", error);
-        const errorMessage = error.message || "Failed to upload featured image";
-        setFeaturedUploadError(errorMessage);
-        alert(`Featured image upload failed: ${errorMessage}`);
-      } finally {
-        setFeaturedUploading(false);
-      }
-    };
+            <label className="flex flex-col mt-4">
+              <span className="text-sm font-medium text-neutral-700">Description</span>
+              <TextareaInput
+                rows={2}
+                value={addOn.description}
+                onChange={(value) => updateAddOn(addOn.uid, "description", value)}
+                placeholder="Short description that appears to travellers"
+              />
+            </label>
 
-  function MediaTab() {
-    return (
-      <div className="space-y-4">
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-neutral-700">
-                Featured Image
-              </span>
-              <div className="inline-flex rounded-lg border border-neutral-200 overflow-hidden text-xs font-medium">
-                <button
-                  type="button"
-                  onClick={() => setFeaturedImageMode("url")}
-                  className={`px-3 py-1.5 ${
-                    featuredImageMode === "url" ? "bg-primary-600 text-white" : "text-neutral-600"
-                  }`}
+            <div className="grid md:grid-cols-3 gap-4 mt-4">
+              <label className="flex flex-col">
+                <span className="text-sm font-medium text-neutral-700">Pricing Type</span>
+                <SelectInput
+                  value={addOn.pricingType}
+                  onChange={(value) =>
+                    updateAddOn(
+                      addOn.uid,
+                      "pricingType",
+                      value as "PER_BOOKING" | "PER_PERSON"
+                    )
+                  }
                 >
-                  Use URL
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFeaturedImageMode("upload")}
-                  className={`px-3 py-1.5 ${
-                    featuredImageMode === "upload" ? "bg-primary-600 text-white" : "text-neutral-600"
-                  }`}
-                >
-                  Upload
-                </button>
+                  <option value="PER_BOOKING">Per booking</option>
+                  <option value="PER_PERSON">Per traveller</option>
+                </SelectInput>
+              </label>
+
+              <label className="flex flex-col">
+                <span className="text-sm font-medium text-neutral-700">Sort order</span>
+                <NumberInput
+                  value={addOn.sortOrder}
+                  onChange={(value) =>
+                    updateAddOn(
+                      addOn.uid,
+                      "sortOrder",
+                      value ?? 0
+                    )
+                  }
+                />
+              </label>
+
+              <div className="flex flex-col gap-2">
+                <div className="border border-neutral-200 rounded-lg px-3 py-2">
+                  <CheckboxInput
+                    checked={addOn.isRequired}
+                    onChange={(checked) => updateAddOn(addOn.uid, "isRequired", checked)}
+                    label="Required"
+                  />
+                </div>
+                <div className="border border-neutral-200 rounded-lg px-3 py-2">
+                  <CheckboxInput
+                    checked={addOn.isActive}
+                    onChange={(checked) => updateAddOn(addOn.uid, "isActive", checked)}
+                    label="Active"
+                  />
+                </div>
               </div>
             </div>
-            {featuredImageMode === "url" ? (
-              <TextInput
-                type="url"
-                value={formData.featuredImage}
-                onChange={(value) => updateForm("featuredImage", value)}
-                className="mt-2"
-                placeholder="https://..."
-              />
-            ) : (
-              <div className="mt-2 space-y-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFeaturedImageUpload(e.target.files?.[0] || null)}
-                  className="w-full px-4 py-3 border border-dashed border-neutral-300 rounded-lg text-sm text-neutral-600 hover:border-primary-400 cursor-pointer"
-                />
-                <p className="text-xs text-neutral-500">JPG, PNG or WEBP up to 5 MB.</p>
-                {featuredUploading && (
-                  <div className="flex items-center gap-2 text-sm text-neutral-600">
-                    <Loader2 size={16} className="animate-spin" />
-                    Uploading featured image...
-                  </div>
-                )}
-                {featuredUploadError && (
-                  <p className="text-sm text-red-600">{featuredUploadError}</p>
-                )}
-              </div>
-            )}
-            {formData.featuredImage && (
-              <div className="mt-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={getMediaProxyUrl(formData.featuredImage)}
-                  alt="Featured preview"
-                  className="w-full max-h-48 object-cover rounded-lg border border-neutral-200"
-                />
-              </div>
-            )}
           </div>
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-neutral-700">
-                Cover Image
+        ))}
+      </div>
+
+      {addOns.length > 0 && (
+        <button
+          type="button"
+          onClick={addAddOnRow}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-neutral-300 text-sm font-medium hover:border-neutral-400 transition"
+        >
+          <Plus size={16} />
+          Add another add-on
+        </button>
+      )}
+    </div>
+  );
+});
+AddOnsTab.displayName = "AddOnsTab";
+
+const AvailabilityTab = memo(({ formData, updateForm }: {
+  formData: FormState;
+  updateForm: (key: keyof FormState, value: any) => void;
+}) => {
+  return (
+    <div className="space-y-4">
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Status</span>
+        <SelectInput
+          value={formData.status}
+          onChange={(value) => {
+            updateForm("status", value);
+            updateForm("isActive", value === "active");
+          }}
+        >
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+          <option value="draft">Draft</option>
+        </SelectInput>
+      </label>
+
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Available Dates (comma-separated or JSON array)</span>
+        <JsonArrayTextarea
+          value={formData.availableDates}
+          onChange={(value) => updateForm("availableDates", value)}
+          rows={4}
+          className="font-mono text-sm"
+          placeholder="2025-12-15&#10;2025-12-22&#10;2026-01-05"
+        />
+        <p className="text-xs text-neutral-500 mt-1">
+          One date per line (YYYY-MM-DD format) for fixed departure tours
+        </p>
+      </label>
+
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Booking Deadline</span>
+        <TextInput
+          type="date"
+          value={formData.bookingDeadline}
+          onChange={(value) => updateForm("bookingDeadline", value)}
+        />
+        <p className="text-xs text-neutral-500 mt-1">
+          Last date for booking (leave empty for no deadline)
+        </p>
+      </label>
+    </div>
+  );
+});
+AvailabilityTab.displayName = "AvailabilityTab";
+
+const ContentTab = memo(({ formData, updateForm }: {
+  formData: FormState;
+  updateForm: (key: keyof FormState, value: any) => void;
+}) => {
+  return (
+    <div className="space-y-4">
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Overview</span>
+        <TextareaInput
+          rows={5}
+          value={formData.overview}
+          onChange={(value) => updateForm("overview", value)}
+        />
+      </label>
+
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Highlights (one per line)</span>
+        <JsonArrayTextarea
+          value={formData.highlights}
+          onChange={(value) => updateForm("highlights", value)}
+          rows={6}
+          placeholder="Key highlights of the tour"
+        />
+      </label>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Inclusions (one per line)</span>
+          <JsonArrayTextarea
+            value={formData.inclusions}
+            onChange={(value) => updateForm("inclusions", value)}
+            rows={6}
+          />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Exclusions (one per line)</span>
+          <JsonArrayTextarea
+            value={formData.exclusions}
+            onChange={(value) => updateForm("exclusions", value)}
+            rows={6}
+          />
+        </label>
+      </div>
+
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Hotel Categories (comma-separated)</span>
+        <CommaSeparatedInput
+          value={formData.hotelCategories}
+          onChange={(value) => updateForm("hotelCategories", value)}
+          placeholder="3-star, 4-star, 5-star"
+        />
+      </label>
+
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Customization Options (JSON)</span>
+        <TextareaInput
+          rows={6}
+          value={formData.customizationOptions}
+          onChange={(value) => updateForm("customizationOptions", value)}
+          className="font-mono text-sm"
+          placeholder='{"Private Transfers": {"price": 5000, "type": "per_person"}, "Extra Night": {"price": 3000, "type": "flat"}}'
+        />
+        <p className="text-xs text-neutral-500 mt-1">
+          JSON format: Define customization options with pricing
+        </p>
+      </label>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Booking Policies</span>
+          <TextareaInput
+            rows={4}
+            value={formData.bookingPolicies}
+            onChange={(value) => updateForm("bookingPolicies", value)}
+          />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Cancellation Terms</span>
+          <TextareaInput
+            rows={4}
+            value={formData.cancellationTerms}
+            onChange={(value) => updateForm("cancellationTerms", value)}
+          />
+        </label>
+      </div>
+
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">Important Notes</span>
+        <TextareaInput
+          rows={3}
+          value={formData.importantNotes}
+          onChange={(value) => updateForm("importantNotes", value)}
+        />
+      </label>
+    </div>
+  );
+});
+ContentTab.displayName = "ContentTab";
+
+const ItineraryTab = memo(({ days, addDay, updateDay, removeDay }: {
+  days: DayState[];
+  addDay: () => void;
+  updateDay: (uid: string, key: keyof DayState, value: any) => void;
+  removeDay: (uid: string) => void;
+}) => {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-neutral-900">Day cards</h3>
+          <p className="text-sm text-neutral-500">
+            These show up as an itinerary timeline on the tour page.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={addDay}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-lg font-medium"
+        >
+          <Plus size={16} />
+          Add day
+        </button>
+      </div>
+      {days.length === 0 && (
+        <p className="text-sm text-neutral-500">
+          Start by adding at least one itinerary day.
+        </p>
+      )}
+      <div className="space-y-4">
+        {days.map((day) => (
+          <div
+            key={day.uid}
+            className="border border-neutral-200 rounded-xl p-4 space-y-3"
+          >
+            <div className="grid md:grid-cols-3 gap-3">
+              <label className="flex flex-col">
+                <span className="text-xs font-medium text-neutral-600">
+                  Day number
+                </span>
+                <NumberInput
+                  min={1}
+                  value={day.dayIndex}
+                  onChange={(value) =>
+                    updateDay(day.uid, "dayIndex", value ?? 1)
+                  }
+                  className="text-sm"
+                />
+              </label>
+              <label className="flex flex-col md:col-span-2">
+                <span className="text-xs font-medium text-neutral-600">
+                  Title
+                </span>
+                <TextInput
+                  value={day.title}
+                  onChange={(value) => updateDay(day.uid, "title", value)}
+                  className="text-sm"
+                  placeholder="Arrival & Marina Cruise"
+                />
+              </label>
+            </div>
+            <label className="flex flex-col">
+              <span className="text-xs font-medium text-neutral-600">
+                Description
               </span>
-              <div className="inline-flex rounded-lg border border-neutral-200 overflow-hidden text-xs font-medium">
+              <TextareaInput
+                rows={3}
+                value={day.content}
+                onChange={(value) => updateDay(day.uid, "content", value)}
+                className="text-sm"
+                placeholder="Outline activities, transfers, dining, etc."
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => removeDay(day.uid)}
+              className="inline-flex items-center gap-2 text-sm text-red-600 hover:text-red-700"
+            >
+              <Trash2 size={14} />
+              Remove day
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+ItineraryTab.displayName = "ItineraryTab";
+
+
+
+const MediaTab = memo(({
+  formData,
+  updateForm,
+  featuredImageMode,
+  setFeaturedImageMode,
+  handleFeaturedImageUpload,
+  featuredUploading,
+  featuredUploadError,
+  coverImageMode,
+  setCoverImageMode,
+  handleCoverImageUpload,
+  coverUploading,
+  coverUploadError,
+  heroImageMode,
+  setHeroImageMode,
+  handleHeroImageUpload,
+  heroUploading,
+  heroUploadError,
+  handleGalleryUpload,
+  galleryUploading,
+  galleryUploadError,
+  galleryArray,
+  draggingGalleryIndex,
+  setDraggingGalleryIndex,
+  handleGalleryReorder,
+  handleGalleryRemove,
+}: {
+  formData: FormState;
+  updateForm: (key: keyof FormState, value: any) => void;
+  featuredImageMode: "url" | "upload";
+  setFeaturedImageMode: (mode: "url" | "upload") => void;
+  handleFeaturedImageUpload: (file: File | null) => void;
+  featuredUploading: boolean;
+  featuredUploadError: string | null;
+  coverImageMode: "url" | "upload";
+  setCoverImageMode: (mode: "url" | "upload") => void;
+  handleCoverImageUpload: (file: File | null) => void;
+  coverUploading: boolean;
+  coverUploadError: string | null;
+  heroImageMode: "url" | "upload";
+  setHeroImageMode: (mode: "url" | "upload") => void;
+  handleHeroImageUpload: (file: File | null) => void;
+  heroUploading: boolean;
+  heroUploadError: string | null;
+  handleGalleryUpload: (files: FileList | null) => void;
+  galleryUploading: boolean;
+  galleryUploadError: string | null;
+  galleryArray: string[];
+  draggingGalleryIndex: number | null;
+  setDraggingGalleryIndex: (index: number | null) => void;
+  handleGalleryReorder: (from: number, to: number) => void;
+  handleGalleryRemove: (index: number) => void;
+}) => {
+  return (
+    <div className="space-y-4">
+      <div className="grid md:grid-cols-2 gap-4">
+        <div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-neutral-700">
+              Featured Image
+            </span>
+            <div className="inline-flex rounded-lg border border-neutral-200 overflow-hidden text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setFeaturedImageMode("url")}
+                className={`px-3 py-1.5 ${featuredImageMode === "url" ? "bg-primary-600 text-white" : "text-neutral-600"
+                  }`}
+              >
+                Use URL
+              </button>
+              <button
+                type="button"
+                onClick={() => setFeaturedImageMode("upload")}
+                className={`px-3 py-1.5 ${featuredImageMode === "upload" ? "bg-primary-600 text-white" : "text-neutral-600"
+                  }`}
+              >
+                Upload
+              </button>
+            </div>
+          </div>
+          {featuredImageMode === "url" ? (
+            <TextInput
+              type="url"
+              value={formData.featuredImage}
+              onChange={(value) => updateForm("featuredImage", value)}
+              className="mt-2"
+              placeholder="https://..."
+            />
+          ) : (
+            <div className="mt-2 space-y-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFeaturedImageUpload(e.target.files?.[0] || null)}
+                className="w-full px-4 py-3 border border-dashed border-neutral-300 rounded-lg text-sm text-neutral-600 hover:border-primary-400 cursor-pointer"
+              />
+              <p className="text-xs text-neutral-500">JPG, PNG or WEBP up to 5 MB.</p>
+              {featuredUploading && (
+                <div className="flex items-center gap-2 text-sm text-neutral-600">
+                  <Loader2 size={16} className="animate-spin" />
+                  Uploading featured image...
+                </div>
+              )}
+              {featuredUploadError && (
+                <p className="text-sm text-red-600">{featuredUploadError}</p>
+              )}
+            </div>
+          )}
+          {formData.featuredImage && (
+            <div className="mt-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={getMediaProxyUrl(formData.featuredImage)}
+                alt="Featured preview"
+                className="w-full max-h-48 object-cover rounded-lg border border-neutral-200"
+              />
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-neutral-700">
+              Cover Image
+            </span>
+            <div className="inline-flex rounded-lg border border-neutral-200 overflow-hidden text-xs font-medium">
               <button
                 type="button"
                 onClick={() => setCoverImageMode("url")}
-                className={`px-3 py-1.5 ${
-                  coverImageMode === "url" ? "bg-primary-600 text-white" : "text-neutral-600"
-                }`}
+                className={`px-3 py-1.5 ${coverImageMode === "url" ? "bg-primary-600 text-white" : "text-neutral-600"
+                  }`}
               >
                 Use URL
               </button>
               <button
                 type="button"
                 onClick={() => setCoverImageMode("upload")}
-                className={`px-3 py-1.5 ${
-                  coverImageMode === "upload" ? "bg-primary-600 text-white" : "text-neutral-600"
-                }`}
+                className={`px-3 py-1.5 ${coverImageMode === "upload" ? "bg-primary-600 text-white" : "text-neutral-600"
+                  }`}
               >
                 Upload
               </button>
             </div>
-            </div>
-            {coverImageMode === "url" ? (
-              <TextInput
-                type="url"
-                value={formData.imageUrl}
-                onChange={(value) => updateForm("imageUrl", value)}
-                className="mt-2"
-                placeholder="https://..."
-              />
-            ) : (
-              <div className="mt-2 space-y-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleCoverImageUpload(e.target.files?.[0] || null)}
-                  className="w-full px-4 py-3 border border-dashed border-neutral-300 rounded-lg text-sm text-neutral-600 hover:border-primary-400 cursor-pointer"
-                />
-                <p className="text-xs text-neutral-500">JPG, PNG or WEBP up to 5 MB.</p>
-                {coverUploading && (
-                  <div className="flex items-center gap-2 text-sm text-neutral-600">
-                    <Loader2 size={16} className="animate-spin" />
-                    Uploading cover image...
-                  </div>
-                )}
-                {coverUploadError && (
-                  <p className="text-sm text-red-600">{coverUploadError}</p>
-                )}
-              </div>
-            )}
-            {formData.imageUrl && (
-              <div className="mt-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={getMediaProxyUrl(formData.imageUrl)}
-                  alt="Cover preview"
-                  className="w-full max-h-48 object-cover rounded-lg border border-neutral-200"
-                />
-              </div>
-            )}
           </div>
-          <div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-neutral-700">
-                Hero Image
-              </span>
-              <div className="inline-flex rounded-lg border border-neutral-200 overflow-hidden text-xs font-medium">
-                <button
-                  type="button"
-                  onClick={() => setHeroImageMode("url")}
-                  className={`px-3 py-1.5 ${
-                    heroImageMode === "url" ? "bg-primary-600 text-white" : "text-neutral-600"
-                  }`}
-                >
-                  Use URL
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setHeroImageMode("upload")}
-                  className={`px-3 py-1.5 ${
-                    heroImageMode === "upload" ? "bg-primary-600 text-white" : "text-neutral-600"
-                  }`}
-                >
-                  Upload
-                </button>
-              </div>
-            </div>
-            {heroImageMode === "url" ? (
-              <TextInput
-                type="url"
-                value={formData.heroImageUrl}
-                onChange={(value) => updateForm("heroImageUrl", value)}
-                className="mt-2"
-                placeholder="https://..."
-              />
-            ) : (
-              <div className="mt-2 space-y-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleHeroImageUpload(e.target.files?.[0] || null)}
-                  className="w-full px-4 py-3 border border-dashed border-neutral-300 rounded-lg text-sm text-neutral-600 hover:border-primary-400 cursor-pointer"
-                />
-                <p className="text-xs text-neutral-500">JPG, PNG or WEBP up to 5 MB.</p>
-                {heroUploading && (
-                  <div className="flex items-center gap-2 text-sm text-neutral-600">
-                    <Loader2 size={16} className="animate-spin" />
-                    Uploading hero image...
-                  </div>
-                )}
-                {heroUploadError && (
-                  <p className="text-sm text-red-600">{heroUploadError}</p>
-                )}
-              </div>
-            )}
-            {formData.heroImageUrl && (
-              <div className="mt-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={getMediaProxyUrl(formData.heroImageUrl)}
-                  alt="Hero preview"
-                  className="w-full max-h-48 object-cover rounded-lg border border-neutral-200"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-        <label className="flex flex-col">
-          <span className="text-sm font-medium text-neutral-700">
-            Gallery image URLs (one per line)
-          </span>
-          <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => handleGalleryUpload(e.target.files)}
-              className="px-3 py-2 border border-dashed border-neutral-300 rounded-lg text-sm text-neutral-600 hover:border-primary-400 cursor-pointer"
-            />
-            {galleryUploading && (
-              <div className="flex items-center gap-2 text-sm text-neutral-600">
-                <Loader2 size={16} className="animate-spin" />
-                Uploading gallery images...
-              </div>
-            )}
-            {galleryUploadError && (
-              <p className="text-sm text-red-600">{galleryUploadError}</p>
-            )}
-          </div>
-          <TextareaInput
-            rows={4}
-            value={formData.galleryImageUrls}
-            onChange={(value) => updateForm("galleryImageUrls", value)}
-            placeholder="https://example.com/photo1.jpg"
-          />
-          {galleryArray.length > 0 && (
-            <div className="mt-4 space-y-2">
-              {galleryArray.map((url, index) => (
-                <div
-                  key={`${url}-${index}`}
-                  draggable
-                  onDragStart={() => setDraggingGalleryIndex(index)}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    if (draggingGalleryIndex === null || draggingGalleryIndex === index) return;
-                    handleGalleryReorder(draggingGalleryIndex, index);
-                    setDraggingGalleryIndex(index);
-                  }}
-                  onDragEnd={() => setDraggingGalleryIndex(null)}
-                  className={`flex items-center gap-3 border border-neutral-200 rounded-lg p-3 bg-white ${
-                    draggingGalleryIndex === index ? "opacity-70 border-primary-300" : ""
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={getMediaProxyUrl(url)}
-                    alt={`Gallery ${index + 1}`}
-                    className="h-16 w-16 object-cover rounded-md border border-neutral-200 flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-800 truncate">{url}</p>
-                    <p className="text-xs text-neutral-500">Drag to reorder</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleGalleryRemove(index)}
-                    className="text-red-600 hover:text-red-700 text-sm font-medium"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </label>
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-neutral-900">SEO Metadata</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <label className="flex flex-col">
-              <span className="text-sm font-medium text-neutral-700">Meta Title</span>
-              <TextInput
-                value={formData.metaTitle}
-                onChange={(value) => updateForm("metaTitle", value)}
-              />
-            </label>
-            <label className="flex flex-col">
-              <span className="text-sm font-medium text-neutral-700">Meta Keywords</span>
-              <TextInput
-                value={formData.metaKeywords}
-                onChange={(value) => updateForm("metaKeywords", value)}
-                placeholder="comma, separated, keywords"
-              />
-            </label>
-          </div>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Meta Description</span>
-            <TextareaInput
-              rows={3}
-              value={formData.metaDescription}
-              onChange={(value) => updateForm("metaDescription", value)}
-            />
-          </label>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Canonical URL</span>
+          {coverImageMode === "url" ? (
             <TextInput
               type="url"
-              value={formData.canonicalUrl}
-              onChange={(value) => updateForm("canonicalUrl", value)}
-              placeholder="https://travunited.com/tours/slug"
+              value={formData.imageUrl}
+              onChange={(value) => updateForm("imageUrl", value)}
+              className="mt-2"
+              placeholder="https://..."
             />
-          </label>
+          ) : (
+            <div className="mt-2 space-y-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleCoverImageUpload(e.target.files?.[0] || null)}
+                className="w-full px-4 py-3 border border-dashed border-neutral-300 rounded-lg text-sm text-neutral-600 hover:border-primary-400 cursor-pointer"
+              />
+              <p className="text-xs text-neutral-500">JPG, PNG or WEBP up to 5 MB.</p>
+              {coverUploading && (
+                <div className="flex items-center gap-2 text-sm text-neutral-600">
+                  <Loader2 size={16} className="animate-spin" />
+                  Uploading cover image...
+                </div>
+              )}
+              {coverUploadError && (
+                <p className="text-sm text-red-600">{coverUploadError}</p>
+              )}
+            </div>
+          )}
+          {formData.imageUrl && (
+            <div className="mt-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={getMediaProxyUrl(formData.imageUrl)}
+                alt="Cover preview"
+                className="w-full max-h-48 object-cover rounded-lg border border-neutral-200"
+              />
+            </div>
+          )}
         </div>
-
-        <div className="space-y-4 border-t border-neutral-200 pt-4">
-          <h3 className="text-lg font-semibold text-neutral-900">Open Graph (Facebook/LinkedIn)</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <label className="flex flex-col">
-              <span className="text-sm font-medium text-neutral-700">OG Title</span>
-              <TextInput
-                value={formData.ogTitle}
-                onChange={(value) => updateForm("ogTitle", value)}
-              />
-            </label>
-            <label className="flex flex-col">
-              <span className="text-sm font-medium text-neutral-700">OG Image URL</span>
-              <TextInput
-                type="url"
-                value={formData.ogImage}
-                onChange={(value) => updateForm("ogImage", value)}
-              />
-            </label>
+        <div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-neutral-700">
+              Hero Image
+            </span>
+            <div className="inline-flex rounded-lg border border-neutral-200 overflow-hidden text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setHeroImageMode("url")}
+                className={`px-3 py-1.5 ${heroImageMode === "url" ? "bg-primary-600 text-white" : "text-neutral-600"
+                  }`}
+              >
+                Use URL
+              </button>
+              <button
+                type="button"
+                onClick={() => setHeroImageMode("upload")}
+                className={`px-3 py-1.5 ${heroImageMode === "upload" ? "bg-primary-600 text-white" : "text-neutral-600"
+                  }`}
+              >
+                Upload
+              </button>
+            </div>
           </div>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">OG Description</span>
-            <TextareaInput
-              rows={2}
-              value={formData.ogDescription}
-              onChange={(value) => updateForm("ogDescription", value)}
+          {heroImageMode === "url" ? (
+            <TextInput
+              type="url"
+              value={formData.heroImageUrl}
+              onChange={(value) => updateForm("heroImageUrl", value)}
+              className="mt-2"
+              placeholder="https://..."
             />
-          </label>
-        </div>
-
-        <div className="space-y-4 border-t border-neutral-200 pt-4">
-          <h3 className="text-lg font-semibold text-neutral-900">Twitter Cards</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <label className="flex flex-col">
-              <span className="text-sm font-medium text-neutral-700">Twitter Title</span>
-              <TextInput
-                value={formData.twitterTitle}
-                onChange={(value) => updateForm("twitterTitle", value)}
+          ) : (
+            <div className="mt-2 space-y-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleHeroImageUpload(e.target.files?.[0] || null)}
+                className="w-full px-4 py-3 border border-dashed border-neutral-300 rounded-lg text-sm text-neutral-600 hover:border-primary-400 cursor-pointer"
               />
-            </label>
-            <label className="flex flex-col">
-              <span className="text-sm font-medium text-neutral-700">Twitter Image URL</span>
-              <TextInput
-                type="url"
-                value={formData.twitterImage}
-                onChange={(value) => updateForm("twitterImage", value)}
+              <p className="text-xs text-neutral-500">JPG, PNG or WEBP up to 5 MB.</p>
+              {heroUploading && (
+                <div className="flex items-center gap-2 text-sm text-neutral-600">
+                  <Loader2 size={16} className="animate-spin" />
+                  Uploading hero image...
+                </div>
+              )}
+              {heroUploadError && (
+                <p className="text-sm text-red-600">{heroUploadError}</p>
+              )}
+            </div>
+          )}
+          {formData.heroImageUrl && (
+            <div className="mt-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={getMediaProxyUrl(formData.heroImageUrl)}
+                alt="Hero preview"
+                className="w-full max-h-48 object-cover rounded-lg border border-neutral-200"
               />
-            </label>
-          </div>
-          <label className="flex flex-col">
-            <span className="text-sm font-medium text-neutral-700">Twitter Description</span>
-            <TextareaInput
-              rows={2}
-              value={formData.twitterDescription}
-              onChange={(value) => updateForm("twitterDescription", value)}
-            />
-          </label>
+            </div>
+          )}
         </div>
       </div>
-    );
-  }
-}
+      <label className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700">
+          Gallery image URLs (one per line)
+        </span>
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => handleGalleryUpload(e.target.files)}
+            className="px-3 py-2 border border-dashed border-neutral-300 rounded-lg text-sm text-neutral-600 hover:border-primary-400 cursor-pointer"
+          />
+          {galleryUploading && (
+            <div className="flex items-center gap-2 text-sm text-neutral-600">
+              <Loader2 size={16} className="animate-spin" />
+              Uploading gallery images...
+            </div>
+          )}
+          {galleryUploadError && (
+            <p className="text-sm text-red-600">{galleryUploadError}</p>
+          )}
+        </div>
+        <TextareaInput
+          rows={4}
+          value={formData.galleryImageUrls}
+          onChange={(value) => updateForm("galleryImageUrls", value)}
+          placeholder="https://example.com/photo1.jpg"
+        />
+        {galleryArray.length > 0 && (
+          <div className="mt-4 space-y-2">
+            {galleryArray.map((url, index) => (
+              <div
+                key={`${url}-${index}`}
+                draggable
+                onDragStart={() => setDraggingGalleryIndex(index)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (draggingGalleryIndex === null || draggingGalleryIndex === index) return;
+                  handleGalleryReorder(draggingGalleryIndex, index);
+                  setDraggingGalleryIndex(index);
+                }}
+                onDragEnd={() => setDraggingGalleryIndex(null)}
+                className={`flex items-center gap-3 border border-neutral-200 rounded-lg p-3 bg-white ${draggingGalleryIndex === index ? "opacity-70 border-primary-300" : ""
+                  }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getMediaProxyUrl(url)}
+                  alt={`Gallery ${index + 1}`}
+                  className="h-16 w-16 object-cover rounded-md border border-neutral-200 flex-shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-neutral-800 truncate">{url}</p>
+                  <p className="text-xs text-neutral-500">Drag to reorder</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleGalleryRemove(index)}
+                  className="text-red-600 hover:text-red-700 text-sm font-medium"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </label>
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-neutral-900">SEO Metadata</h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          <label className="flex flex-col">
+            <span className="text-sm font-medium text-neutral-700">Meta Title</span>
+            <TextInput
+              value={formData.metaTitle}
+              onChange={(value) => updateForm("metaTitle", value)}
+            />
+          </label>
+          <label className="flex flex-col">
+            <span className="text-sm font-medium text-neutral-700">Meta Keywords</span>
+            <TextInput
+              value={formData.metaKeywords}
+              onChange={(value) => updateForm("metaKeywords", value)}
+              placeholder="comma, separated, keywords"
+            />
+          </label>
+        </div>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Meta Description</span>
+          <TextareaInput
+            rows={3}
+            value={formData.metaDescription}
+            onChange={(value) => updateForm("metaDescription", value)}
+          />
+        </label>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Canonical URL</span>
+          <TextInput
+            type="url"
+            value={formData.canonicalUrl}
+            onChange={(value) => updateForm("canonicalUrl", value)}
+            placeholder="https://travunited.com/tours/slug"
+          />
+        </label>
+      </div>
 
+      <div className="space-y-4 border-t border-neutral-200 pt-4">
+        <h3 className="text-lg font-semibold text-neutral-900">Open Graph (Facebook/LinkedIn)</h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          <label className="flex flex-col">
+            <span className="text-sm font-medium text-neutral-700">OG Title</span>
+            <TextInput
+              value={formData.ogTitle}
+              onChange={(value) => updateForm("ogTitle", value)}
+            />
+          </label>
+          <label className="flex flex-col">
+            <span className="text-sm font-medium text-neutral-700">OG Image URL</span>
+            <TextInput
+              type="url"
+              value={formData.ogImage}
+              onChange={(value) => updateForm("ogImage", value)}
+            />
+          </label>
+        </div>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">OG Description</span>
+          <TextareaInput
+            rows={2}
+            value={formData.ogDescription}
+            onChange={(value) => updateForm("ogDescription", value)}
+          />
+        </label>
+      </div>
+
+      <div className="space-y-4 border-t border-neutral-200 pt-4">
+        <h3 className="text-lg font-semibold text-neutral-900">Twitter Cards</h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          <label className="flex flex-col">
+            <span className="text-sm font-medium text-neutral-700">Twitter Title</span>
+            <TextInput
+              value={formData.twitterTitle}
+              onChange={(value) => updateForm("twitterTitle", value)}
+            />
+          </label>
+          <label className="flex flex-col">
+            <span className="text-sm font-medium text-neutral-700">Twitter Image URL</span>
+            <TextInput
+              type="url"
+              value={formData.twitterImage}
+              onChange={(value) => updateForm("twitterImage", value)}
+            />
+          </label>
+        </div>
+        <label className="flex flex-col">
+          <span className="text-sm font-medium text-neutral-700">Twitter Description</span>
+          <TextareaInput
+            rows={2}
+            value={formData.twitterDescription}
+            onChange={(value) => updateForm("twitterDescription", value)}
+          />
+        </label>
+      </div>
+    </div>
+  );
+});
+MediaTab.displayName = "MediaTab";
