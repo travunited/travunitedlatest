@@ -25,10 +25,10 @@ const OFFICES = [
 ];
 
 const OTHER_CHANNELS = [
-  { label: "B2B Partnerships", email: "b2b@travunited.com" },
-  { label: "Visa Support", email: "visa@travunited.com" },
-  { label: "Corporate Travel", email: "corporate@travunited.com" },
-  { label: "Media / PR", email: "media@travunited.com" },
+  { label: "B2B Partnerships", email: "b2b@travunited.in" },
+  { label: "Visa Support", email: "visa@travunited.in" },
+  { label: "Corporate Travel", email: "corporate@travunited.in" },
+  { label: "Media / PR", email: "media@travunited.in" },
 ];
 
 const FUTURE_OFFICES = ["Riyadh, Saudi Arabia", "Delaware, United States", "Berlin, Germany"];
@@ -101,10 +101,10 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-semibold text-neutral-900 mb-1">General Email</h3>
                     <a
-                      href="mailto:info@travunited.com"
+                      href="mailto:info@travunited.in"
                       className="text-primary-600 hover:text-primary-700 font-medium"
                     >
-                      info@travunited.com
+                      info@travunited.in
                     </a>
                     <p className="text-sm text-neutral-600 mt-1">
                       We respond within one business day.

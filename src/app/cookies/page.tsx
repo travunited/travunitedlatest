@@ -84,8 +84,8 @@ export default function CookiesPage() {
             <h2 className="text-2xl font-semibold text-neutral-900 mb-4">Contact Us</h2>
             <p className="text-neutral-700 leading-relaxed">
               If you have any questions about our Cookie Policy, please contact us at{" "}
-              <a href="mailto:info@travunited.com" className="text-primary-600 hover:text-primary-700 underline">
-                info@travunited.com
+              <a href="mailto:info@travunited.in" className="text-primary-600 hover:text-primary-700 underline">
+                info@travunited.in
               </a>
             </p>
           </section>

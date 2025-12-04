@@ -56,7 +56,7 @@ const faqs: FAQItem[] = [
   },
   {
     question: "How can I contact customer support?",
-    answer: "You can reach us via phone at +91 63603 92398, email at support@travunited.com, or through the contact form on our website. We're available Monday-Friday, 10:00 AM-6:30 PM IST, and Saturday, 10 AM-4 PM IST.",
+    answer: "You can reach us via phone at +91 63603 92398, email at support@travunited.in, or through the contact form on our website. We're available Monday-Friday, 10:00 AM-6:30 PM IST, and Saturday, 10 AM-4 PM IST.",
   },
 ];
 

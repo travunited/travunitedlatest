@@ -144,8 +144,8 @@ export default function RefundPage() {
             <h2 className="text-2xl font-semibold text-neutral-900 mb-4">How to Request a Refund</h2>
             <ol className="list-decimal pl-6 space-y-3 text-neutral-700">
               <li>Contact our customer support team at{" "}
-                <a href="mailto:support@travunited.com" className="text-primary-600 hover:text-primary-700 underline">
-                  support@travunited.com
+                <a href="mailto:support@travunited.in" className="text-primary-600 hover:text-primary-700 underline">
+                  support@travunited.in
                 </a>
               </li>
               <li>Provide your application/booking reference number</li>
@@ -166,8 +166,8 @@ export default function RefundPage() {
             <h2 className="text-2xl font-semibold text-neutral-900 mb-4">Contact Us</h2>
             <p className="text-neutral-700 leading-relaxed">
               If you have any questions about our Refund Policy, please contact us at{" "}
-              <a href="mailto:support@travunited.com" className="text-primary-600 hover:text-primary-700 underline">
-                support@travunited.com
+              <a href="mailto:support@travunited.in" className="text-primary-600 hover:text-primary-700 underline">
+                support@travunited.in
               </a>
               {" "}or call us at{" "}
               <a href="tel:+916360392398" className="text-primary-600 hover:text-primary-700 underline">

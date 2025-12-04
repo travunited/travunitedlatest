@@ -326,7 +326,7 @@ export async function POST(req: Request) {
 export async function GET() {
   return NextResponse.json({ 
     message: "Razorpay webhook endpoint is active",
-    webhookUrl: "https://travunited.com/api/webhooks/razorpay",
+    webhookUrl: "https://travunited.in/api/webhooks/razorpay",
     timestamp: new Date().toISOString(),
   });
 }

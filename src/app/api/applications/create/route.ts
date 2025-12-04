@@ -336,7 +336,7 @@ export async function POST(req: Request) {
               <h3>Travellers:</h3>
               <p>${travellersList}</p>
               <p><strong>Note:</strong> Documents will be uploaded separately. Please check the application dashboard for document uploads.</p>
-              <p><a href="${process.env.NEXTAUTH_URL || "https://travunited.com"}/admin/applications/${application.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Application</a></p>
+              <p><a href="${process.env.NEXTAUTH_URL || "https://travunited.in"}/admin/applications/${application.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Application</a></p>
               <p>Best regards,<br>Travunited System</p>
             </div>
           `,

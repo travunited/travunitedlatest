@@ -79,7 +79,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Send admin email notification to info@travunited.com
+    // Send admin email notification to info@travunited.in
     try {
       await sendCorporateLeadAdminEmail({
         companyName: lead.companyName,

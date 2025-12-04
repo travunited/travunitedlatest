@@ -61,7 +61,7 @@ export function replaceTemplateVariables(
   if (!template) return template;
   
   let result = template;
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   // Replace common variables
   const replacements: Record<string, string> = {
@@ -85,7 +85,7 @@ export function replaceTemplateVariables(
     "{applicationUrl}": variables.applicationUrl || (variables.applicationId ? `${baseUrl}/dashboard/applications/${variables.applicationId}` : ""),
     "{bookingUrl}": variables.bookingUrl || (variables.bookingId ? `${baseUrl}/dashboard/bookings/${variables.bookingId}` : ""),
     "{companyName}": variables.companyName || "Travunited",
-    "{supportEmail}": variables.supportEmail || "support@travunited.com",
+    "{supportEmail}": variables.supportEmail || "support@travunited.in",
     "{supportPhone}": variables.supportPhone || "",
     "{contactName}": variables.contactName || "",
     "{companyNameLead}": variables.companyNameLead || "",

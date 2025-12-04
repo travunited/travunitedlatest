@@ -23,8 +23,8 @@ export default function SupportPage() {
       icon: Mail,
       title: "Email Support",
       description: "Send us a detailed message",
-      contact: "support@travunited.com",
-      href: "mailto:support@travunited.com",
+      contact: "support@travunited.in",
+      href: "mailto:support@travunited.in",
       available: "Response within 24 hours",
     },
   ];
@@ -145,7 +145,7 @@ export default function SupportPage() {
                 Experiencing payment issues? Contact our billing support team for immediate assistance.
               </p>
               <a
-                href="mailto:billing@travunited.com"
+                href="mailto:billing@travunited.in"
                 className="text-primary-600 hover:text-primary-700 font-medium"
               >
                 Email Billing Support →

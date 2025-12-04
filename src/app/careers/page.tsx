@@ -259,8 +259,8 @@ export default function CareersPage() {
               <p className="text-neutral-600 mb-4">We don&apos;t have any open positions at the moment.</p>
               <p className="text-neutral-600">
                 Check back soon or send us your resume at{" "}
-                <a href="mailto:careers@travunited.com" className="text-primary-600 hover:text-primary-700">
-                  careers@travunited.com
+                <a href="mailto:careers@travunited.in" className="text-primary-600 hover:text-primary-700">
+                  careers@travunited.in
                 </a>
               </p>
             </div>
@@ -277,8 +277,8 @@ export default function CareersPage() {
             <ol className="list-decimal pl-6 space-y-3">
               <li>Browse our open positions above and find a role that matches your skills and interests.</li>
               <li>Click &quot;Apply Now&quot; on the position you&apos;re interested in, or send your resume directly to{" "}
-                <a href="mailto:careers@travunited.com" className="text-primary-600 hover:text-primary-700">
-                  careers@travunited.com
+                <a href="mailto:careers@travunited.in" className="text-primary-600 hover:text-primary-700">
+                  careers@travunited.in
                 </a>
               </li>
               <li>Include your resume, cover letter, and any relevant portfolio or work samples.</li>

@@ -166,7 +166,7 @@ export async function PUT(
               <p><strong>Document:</strong> ${document.documentType || "Document"}</p>
               <p><strong>Reason:</strong> ${rejectionReason}</p>
               <p>
-                <a href="${process.env.NEXTAUTH_URL || "https://travunited.com"}/admin/applications/${
+                <a href="${process.env.NEXTAUTH_URL || "https://travunited.in"}/admin/applications/${
             document.applicationId
           }" style="display:inline-block;padding:10px 16px;background:#dc2626;color:#fff;text-decoration:none;border-radius:6px;">
                   Review application

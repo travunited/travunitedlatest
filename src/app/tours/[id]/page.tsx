@@ -34,7 +34,7 @@ export async function generateMetadata({
     return {};
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://travunited.com";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://travunited.in";
   const canonical = tour.canonicalUrl || `${siteUrl}/tours/${tour.slug}`;
   const ogImage = tour.ogImage
     ? getMediaProxyUrl(tour.ogImage)

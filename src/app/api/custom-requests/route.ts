@@ -55,7 +55,7 @@ export async function POST(req: Request) {
           ${data.pax ? `<p><strong>Number of Passengers:</strong> ${data.pax}</p>` : ''}
           ${data.budget ? `<p><strong>Budget:</strong> ₹${(data.budget / 100).toLocaleString()}</p>` : ''}
           ${data.message ? `<p><strong>Message:</strong></p><div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">${data.message.replace(/\n/g, "<br>")}</div>` : ''}
-          <p><a href="${process.env.NEXTAUTH_URL || 'https://travunited.com'}/admin/custom-requests/${request.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Request</a></p>
+          <p><a href="${process.env.NEXTAUTH_URL || 'https://travunited.in'}/admin/custom-requests/${request.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Request</a></p>
         </div>
       `;
 

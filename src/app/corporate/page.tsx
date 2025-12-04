@@ -41,7 +41,7 @@ export default function CorporatePage() {
         setError("Failed to submit. Please try again or contact us directly.");
       }
     } catch (err) {
-      setError("An error occurred. Please contact us directly at corporate@travunited.com");
+      setError("An error occurred. Please contact us directly at corporate@travunited.in");
     } finally {
       setLoading(false);
     }
@@ -245,10 +245,10 @@ export default function CorporatePage() {
                 <p className="text-sm text-neutral-600 text-center">
                   Or contact us directly:{" "}
                   <a
-                    href="mailto:corporate@travunited.com"
+                    href="mailto:corporate@travunited.in"
                     className="text-primary-600 hover:text-primary-700 font-medium"
                   >
-                    corporate@travunited.com
+                    corporate@travunited.in
                   </a>{" "}
                   |{" "}
                   <a

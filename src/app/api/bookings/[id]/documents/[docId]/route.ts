@@ -11,7 +11,7 @@ import { getAdminUserIds, getTourAdminEmail } from "@/lib/admin-contacts";
 
 export const dynamic = "force-dynamic";
 
-const APP_BASE_URL = process.env.NEXTAUTH_URL || "https://travunited.com";
+const APP_BASE_URL = process.env.NEXTAUTH_URL || "https://travunited.in";
 
 export async function PATCH(
   req: Request,

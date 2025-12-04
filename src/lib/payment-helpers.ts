@@ -248,7 +248,7 @@ export async function notifyAdminsOfPaymentSuccess(payment: PaymentWithRelations
           <p><strong>${context.label}:</strong> ${context.reference}</p>
           <p><strong>Customer:</strong> ${context.customer}</p>
           <p>
-            <a href="${process.env.NEXTAUTH_URL || "https://travunited.com"}${context.adminLink}" style="display:inline-block;padding:10px 16px;background:#16a34a;color:#fff;text-decoration:none;border-radius:6px;">
+            <a href="${process.env.NEXTAUTH_URL || "https://travunited.in"}${context.adminLink}" style="display:inline-block;padding:10px 16px;background:#16a34a;color:#fff;text-decoration:none;border-radius:6px;">
               View details
             </a>
           </p>
@@ -306,7 +306,7 @@ export async function notifyAdminsOfPaymentFailure(
           <p><strong>Customer:</strong> ${context.customer}</p>
           <p><strong>Reason:</strong> ${reason}</p>
           <p>
-            <a href="${process.env.NEXTAUTH_URL || "https://travunited.com"}${context.adminLink}" style="display:inline-block;padding:10px 16px;background:#dc2626;color:#fff;text-decoration:none;border-radius:6px;">
+            <a href="${process.env.NEXTAUTH_URL || "https://travunited.in"}${context.adminLink}" style="display:inline-block;padding:10px 16px;background:#dc2626;color:#fff;text-decoration:none;border-radius:6px;">
               Review payment
             </a>
           </p>

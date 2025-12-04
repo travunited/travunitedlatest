@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 type AdminRole = "STAFF_ADMIN" | "SUPER_ADMIN";
 
-const DEFAULT_SUPPORT_EMAIL = "info@travunited.com";
+const DEFAULT_SUPPORT_EMAIL = "info@travunited.in";
 
 export async function getAdminUserIds(
   roles: AdminRole[] = ["STAFF_ADMIN", "SUPER_ADMIN"]

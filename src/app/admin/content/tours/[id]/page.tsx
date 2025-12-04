@@ -2362,7 +2362,7 @@ const MediaTab = memo(({
             type="url"
             value={formData.canonicalUrl}
             onChange={(value) => updateForm("canonicalUrl", value)}
-            placeholder="https://travunited.com/tours/slug"
+            placeholder="https://travunited.in/tours/slug"
           />
         </label>
       </div>

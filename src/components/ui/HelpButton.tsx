@@ -60,14 +60,14 @@ export function HelpButton() {
 
               <div className="space-y-3">
                 <a
-                  href="mailto:info@travunited.com"
+                  href="mailto:info@travunited.in"
                   className="flex items-center space-x-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors"
                 >
                   <Mail size={20} className="text-primary-600" />
                   <div>
                     <div className="font-medium text-neutral-900">Email Us</div>
                     <div className="text-sm text-neutral-600">
-                      info@travunited.com
+                      info@travunited.in
                     </div>
                   </div>
                 </a>

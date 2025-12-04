@@ -800,7 +800,7 @@ export async function POST(req: Request) {
                 <p>${documentsInfo || "No documents uploaded yet"}</p>
                 ${data.preferences?.specialRequests ? `<p><strong>Special Requests:</strong> ${data.preferences.specialRequests}</p>` : ""}
                 ${data.preferences?.foodPreference ? `<p><strong>Food Preference:</strong> ${data.preferences.foodPreference}</p>` : ""}
-                <p><a href="${process.env.NEXTAUTH_URL || "https://travunited.com"}/admin/bookings/${booking.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Booking</a></p>
+                <p><a href="${process.env.NEXTAUTH_URL || "https://travunited.in"}/admin/bookings/${booking.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Booking</a></p>
                 <p>Best regards,<br>Travunited System</p>
               </div>
             `,

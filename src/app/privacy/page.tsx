@@ -143,12 +143,12 @@ export default function PrivacyPage() {
             <p className="text-neutral-700 leading-relaxed">
               If you have any questions about this Privacy Policy or wish to exercise your rights, 
               please contact us at{" "}
-              <a href="mailto:privacy@travunited.com" className="text-primary-600 hover:text-primary-700 underline">
-                privacy@travunited.com
+              <a href="mailto:privacy@travunited.in" className="text-primary-600 hover:text-primary-700 underline">
+                privacy@travunited.in
               </a>
               {" "}or{" "}
-              <a href="mailto:info@travunited.com" className="text-primary-600 hover:text-primary-700 underline">
-                info@travunited.com
+              <a href="mailto:info@travunited.in" className="text-primary-600 hover:text-primary-700 underline">
+                info@travunited.in
               </a>
             </p>
           </section>

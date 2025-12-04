@@ -420,7 +420,7 @@ export async function sendWelcomeEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("welcomeEmail", templates.emailWelcome);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     name: name || "",
@@ -483,7 +483,7 @@ export async function sendVisaPaymentSuccessEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("visaPaymentSuccessEmail", templates.emailVisaPaymentSuccess);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     email,
@@ -513,7 +513,7 @@ export async function sendVisaPaymentFailedEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("visaPaymentFailedEmail", templates.emailVisaPaymentFailed);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     email,
@@ -543,7 +543,7 @@ export async function sendVisaStatusUpdateEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("visaStatusUpdateEmail", templates.emailVisaStatusUpdate);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     email,
@@ -572,7 +572,7 @@ export async function sendVisaDocumentRejectedEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("visaDocumentRejectedEmail", templates.emailVisaDocumentRejected);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     email,
@@ -603,7 +603,7 @@ export async function sendVisaApprovedEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("visaApprovedEmail", templates.emailVisaApproved);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     email,
@@ -631,7 +631,7 @@ export async function sendVisaRejectedEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("visaRejectedEmail", templates.emailVisaRejected);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     email,
@@ -661,7 +661,7 @@ export async function sendTourPaymentSuccessEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("tourPaymentSuccessEmail", templates.emailTourPaymentSuccess);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     email,
@@ -691,7 +691,7 @@ export async function sendTourPaymentFailedEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("tourPaymentFailedEmail", templates.emailTourPaymentFailed);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     email,
@@ -718,7 +718,7 @@ export async function sendTourConfirmedEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("tourConfirmedEmail", templates.emailTourConfirmed);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     email,
@@ -745,7 +745,7 @@ export async function sendTourPaymentReminderEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("tourPaymentReminderEmail", templates.emailTourPaymentReminder);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     email,
@@ -773,7 +773,7 @@ export async function sendTourStatusUpdateEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("tourStatusUpdateEmail", templates.emailTourStatusUpdate);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     email,
@@ -799,7 +799,7 @@ export async function sendTourVouchersReadyEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("tourVouchersReadyEmail", templates.emailTourVouchersReady);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     email,
@@ -868,7 +868,7 @@ export async function sendCorporateLeadAdminEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("corporateLeadAdminEmail", templates.emailCorporateLeadAdmin);
   const config = await loadEmailConfig();
-  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
   
   const variables: EmailTemplateVariables = {
     email: leadData.email,
@@ -919,7 +919,7 @@ export async function sendCorporateLeadConfirmationEmail(
     email: userEmail,
     companyNameLead: companyName,
     contactName,
-    supportEmail: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "corporate@travunited.com",
+    supportEmail: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "corporate@travunited.in",
     supportPhone: "+91 63603 92398",
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
