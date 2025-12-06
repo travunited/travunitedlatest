@@ -179,7 +179,7 @@ export async function POST(req: Request) {
             AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY ? "SET" : "MISSING",
             AWS_REGION: process.env.AWS_REGION || "MISSING",
             EMAIL_FROM: process.env.EMAIL_FROM || "MISSING",
-            NEXTAUTH_URL: baseUrl,
+            NEXTAUTH_URL: process.env.NEXTAUTH_URL || "MISSING",
           },
         });
         // Log the last email error if available
@@ -193,7 +193,6 @@ export async function POST(req: Request) {
         userId: user.id,
         userEmail: user.email,
         resetId: passwordReset.id,
-        resetUrl: resetUrl,
         error: emailError instanceof Error ? emailError.message : String(emailError),
         stack: emailError instanceof Error ? emailError.stack : undefined,
         checkEnvVars: {
