@@ -57,15 +57,23 @@ async function loadEmailConfig(forceReload = false): Promise<EmailConfig> {
       ? (row.value as EmailConfig)
       : {};
 
+  // Helper to fix .com domain to .in
+  const fixDomain = (email: string | undefined | null): string | undefined => {
+    if (!email) return undefined;
+    // Replace .com with .in if present
+    const fixed = email.replace(/@travunited\.com/g, "@travunited.in").replace(/travunited\.com/g, "travunited.in");
+    return fixed || undefined;
+  };
+
   const config: EmailConfig = {
     awsAccessKeyId: value.awsAccessKeyId || process.env.AWS_ACCESS_KEY_ID || undefined,
     awsSecretAccessKey: value.awsSecretAccessKey || process.env.AWS_SECRET_ACCESS_KEY || undefined,
     awsRegion: value.awsRegion || process.env.AWS_REGION || process.env.AWS_SES_REGION || "us-east-1",
-    emailFromGeneral: value.emailFromGeneral || process.env.EMAIL_FROM || undefined,
+    emailFromGeneral: fixDomain(value.emailFromGeneral) || fixDomain(process.env.EMAIL_FROM) || "no-reply@travunited.in",
     emailFromVisa:
-      value.emailFromVisa || value.emailFromGeneral || process.env.EMAIL_FROM || undefined,
+      fixDomain(value.emailFromVisa) || fixDomain(value.emailFromGeneral) || fixDomain(process.env.EMAIL_FROM) || fixDomain(process.env.EMAIL_FROM_VISA) || "visa@travunited.in",
     emailFromTours:
-      value.emailFromTours || value.emailFromGeneral || process.env.EMAIL_FROM || undefined,
+      fixDomain(value.emailFromTours) || fixDomain(value.emailFromGeneral) || fixDomain(process.env.EMAIL_FROM) || fixDomain(process.env.EMAIL_FROM_TOURS) || "tours@travunited.in",
   };
 
   emailConfigCache = { config, loadedAt: Date.now() };
@@ -104,13 +112,23 @@ async function getSESClient(
 
 // Helper function to determine sender email
 function determineSenderEmail(config: EmailConfig, category?: EmailCategory): string {
+  // Helper to ensure .in domain and fix .com to .in
+  const fixDomain = (email: string | undefined | null): string => {
+    if (!email) return "";
+    // Replace .com with .in if present
+    return email.replace(/@travunited\.com/g, "@travunited.in").replace(/travunited\.com/g, "travunited.in");
+  };
+
   if (category === "visa") {
-    return config.emailFromVisa || config.emailFromGeneral || process.env.EMAIL_FROM || process.env.EMAIL_FROM_VISA || "";
+    const email = config.emailFromVisa || config.emailFromGeneral || process.env.EMAIL_FROM || process.env.EMAIL_FROM_VISA || "";
+    return fixDomain(email) || "visa@travunited.in";
   }
   if (category === "tours") {
-    return config.emailFromTours || config.emailFromGeneral || process.env.EMAIL_FROM || process.env.EMAIL_FROM_TOURS || "";
+    const email = config.emailFromTours || config.emailFromGeneral || process.env.EMAIL_FROM || process.env.EMAIL_FROM_TOURS || "";
+    return fixDomain(email) || "tours@travunited.in";
   }
-  return config.emailFromGeneral || process.env.EMAIL_FROM || process.env.EMAIL_FROM_GENERAL || "";
+  const email = config.emailFromGeneral || process.env.EMAIL_FROM || process.env.EMAIL_FROM_GENERAL || "";
+  return fixDomain(email) || "no-reply@travunited.in";
 }
 
 export async function refreshEmailConfigCache() {
