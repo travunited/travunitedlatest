@@ -210,7 +210,8 @@ export function resolveRecipientEmail(params: {
   return params.userEmail;
 }
 
-function stripHtml(html: string) {
+function stripHtml(html: string): string {
+  if (!html) return "";
   return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
@@ -330,7 +331,17 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   });
 
   try {
+    // Validate HTML content
+    if (!finalOptions.html || !finalOptions.html.trim()) {
+      const message = "Email HTML content is empty";
+      console.error("[Email]", message);
+      lastEmailError = message;
+      return false;
+    }
+
     // Prepare email parameters for AWS SES
+    const textContent = finalOptions.text || stripHtml(finalOptions.html);
+    
     const emailParams = {
       Source: from,
       Destination: {
@@ -338,7 +349,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       },
       Message: {
         Subject: {
-          Data: finalOptions.subject,
+          Data: finalOptions.subject || "No Subject",
           Charset: "UTF-8",
         },
         Body: {
@@ -347,7 +358,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
             Charset: "UTF-8",
           },
           Text: {
-            Data: finalOptions.text || stripHtml(finalOptions.html),
+            Data: textContent || "Email content",
             Charset: "UTF-8",
           },
         },
@@ -357,37 +368,64 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       }),
     };
 
+    // Validate email parameters
+    if (!emailParams.Source || !emailParams.Destination.ToAddresses || emailParams.Destination.ToAddresses.length === 0) {
+      const message = "Invalid email parameters: missing source or recipients";
+      console.error("[Email]", message, { source: emailParams.Source, recipients: emailParams.Destination.ToAddresses });
+      lastEmailError = message;
+      return false;
+    }
+
     // Add timeout to AWS SES API call to prevent long delays
     const sendCommand = new SendEmailCommand(emailParams);
     const sendPromise = sesClient.send(sendCommand);
     
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error("AWS SES API timeout after 10 seconds")), 10000);
+      setTimeout(() => reject(new Error("AWS SES API timeout after 15 seconds")), 15000);
     });
     
     const result = await Promise.race([sendPromise, timeoutPromise]);
     const duration = Date.now() - startTime;
 
-    console.log("[Email] Sent successfully", {
+    console.log("[Email] ✅ Sent successfully", {
       to: activeRecipients.join(", "),
+      from,
       subject: finalOptions.subject,
       messageId: result.MessageId,
       duration: `${duration}ms`,
+      region: config.awsRegion,
     });
+    lastEmailError = null; // Clear any previous errors
     return true;
   } catch (error) {
     const duration = Date.now() - startTime;
-    const message =
-      error instanceof Error ? error.message : "Unknown error sending email via AWS SES";
-    console.error("[Email] Exception sending email via AWS SES:", {
+    let message = "Unknown error sending email via AWS SES";
+    let errorCode = "UNKNOWN";
+    
+    if (error instanceof Error) {
+      message = error.message;
+      // Extract AWS error code if available
+      if ((error as any).$metadata?.httpStatusCode) {
+        errorCode = `HTTP_${(error as any).$metadata.httpStatusCode}`;
+      }
+      if ((error as any).Code) {
+        errorCode = (error as any).Code;
+      }
+    }
+    
+    console.error("[Email] ❌ Failed to send email via AWS SES:", {
       error: message,
+      errorCode,
       stack: error instanceof Error ? error.stack : undefined,
       to: activeRecipients.join(", "),
+      from,
       subject: finalOptions.subject,
       duration: `${duration}ms`,
-      sesError: error,
+      hasCredentials: !!(config.awsAccessKeyId && config.awsSecretAccessKey),
+      region: config.awsRegion,
+      sesErrorDetails: error,
     });
-    lastEmailError = message;
+    lastEmailError = `${message} (${errorCode})`;
     return false;
   }
 }
@@ -488,24 +526,39 @@ export async function sendPasswordResetOTPEmail(
   otp: string,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
-  const subject = "Your Password Reset OTP";
-  const templates = await loadEmailTemplates();
-  const template = getEmailTemplate("passwordResetOTPEmail", templates.emailPasswordResetOTP);
-  
-  const variables: EmailTemplateVariables = {
-    otp,
-    companyName: "Travunited",
-  };
-  
-  const html = replaceTemplateVariables(template, variables);
-  
-  // Password reset OTP emails should ALWAYS go to the user's actual email address
-  return sendEmail({
-    to: email,
-    subject,
-    html,
-    category: "general",
-  });
+  try {
+    const subject = "Your Password Reset OTP";
+    const templates = await loadEmailTemplates();
+    const template = getEmailTemplate("passwordResetOTPEmail", templates.emailPasswordResetOTP);
+    
+    if (!template || !template.trim()) {
+      console.error("[Email] Password Reset OTP template is empty");
+      return false;
+    }
+    
+    const variables: EmailTemplateVariables = {
+      otp,
+      companyName: "Travunited",
+    };
+    
+    const html = replaceTemplateVariables(template, variables);
+    
+    if (!html || !html.trim()) {
+      console.error("[Email] Generated HTML for Password Reset OTP is empty");
+      return false;
+    }
+    
+    // Password reset OTP emails should ALWAYS go to the user's actual email address
+    return await sendEmail({
+      to: email,
+      subject,
+      html,
+      category: "general",
+    });
+  } catch (error) {
+    console.error("[Email] Error in sendPasswordResetOTPEmail:", error);
+    return false;
+  }
 }
 
 export async function sendVisaPaymentSuccessEmail(
