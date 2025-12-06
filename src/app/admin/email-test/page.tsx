@@ -11,7 +11,6 @@ export default function AdminEmailTestPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [testEmail, setTestEmail] = useState("");
-  const [provider, setProvider] = useState<"smtp" | "sdk">("smtp");
   const [result, setResult] = useState<{
     success: boolean;
     message: string;
@@ -58,7 +57,6 @@ export default function AdminEmailTestPage() {
         },
         body: JSON.stringify({
           to: testEmail,
-          provider,
         }),
       });
 
@@ -121,7 +119,7 @@ export default function AdminEmailTestPage() {
           <div className="text-sm text-blue-800">
             <p className="font-semibold mb-1">Email Configuration Status</p>
             <p>
-              This tool sends a test email to verify your SMTP or AWS SDK email
+              This tool sends a test email to verify your AWS SDK email
               configuration. Check your inbox (and spam folder) after sending.
             </p>
           </div>
@@ -147,41 +145,6 @@ export default function AdminEmailTestPage() {
               </p>
             </div>
 
-            {/* Provider Selection */}
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Email Provider
-              </label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="provider"
-                    value="smtp"
-                    checked={provider === "smtp"}
-                    onChange={(e) => setProvider(e.target.value as "smtp" | "sdk")}
-                    className="text-primary-600 focus:ring-primary-500"
-                  />
-                  <span className="text-sm text-neutral-700">
-                    SMTP (Nodemailer)
-                  </span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="provider"
-                    value="sdk"
-                    checked={provider === "sdk"}
-                    onChange={(e) => setProvider(e.target.value as "smtp" | "sdk")}
-                    className="text-primary-600 focus:ring-primary-500"
-                  />
-                  <span className="text-sm text-neutral-700">AWS SDK</span>
-                </label>
-              </div>
-              <p className="mt-1 text-xs text-neutral-500">
-                Choose which email sending method to test
-              </p>
-            </div>
 
             {/* Send Button */}
             <button
@@ -270,10 +233,6 @@ export default function AdminEmailTestPage() {
           </h3>
           <div className="space-y-2 text-sm text-neutral-700">
             <p>
-              <strong>SMTP Configuration:</strong> Requires SES_SMTP_USER,
-              SES_SMTP_PASS, SES_SMTP_HOST in environment variables
-            </p>
-            <p>
               <strong>AWS SDK Configuration:</strong> Requires AWS_ACCESS_KEY_ID,
               AWS_SECRET_ACCESS_KEY, AWS_REGION
             </p>
@@ -281,7 +240,7 @@ export default function AdminEmailTestPage() {
               <strong>From Address:</strong> Must be verified in Amazon SES
             </p>
             <p>
-              <strong>Documentation:</strong> See SES_SETUP_GUIDE.md in the project root
+              <strong>Documentation:</strong> See SES_DEPLOYMENT_GUIDE.md in the project root
             </p>
           </div>
         </div>
@@ -293,8 +252,8 @@ export default function AdminEmailTestPage() {
             <div className="text-sm text-neutral-600">Email Templates</div>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
-            <div className="text-2xl font-bold text-green-600">2</div>
-            <div className="text-sm text-neutral-600">Providers Available</div>
+            <div className="text-2xl font-bold text-green-600">AWS SDK</div>
+            <div className="text-sm text-neutral-600">Email Provider</div>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <div className="text-2xl font-bold text-blue-600">∞</div>

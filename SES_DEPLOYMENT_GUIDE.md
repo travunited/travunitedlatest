@@ -13,7 +13,7 @@ Your system is already configured to use Amazon SES for all email sending. This 
 - [x] Domain `travunited.in` verified
 - [x] DKIM signing enabled
 - [x] SPF records configured
-- [x] SMTP credentials created
+- [x] AWS credentials configured
 - [x] Custom MAIL FROM domain configured
 
 ---
@@ -27,26 +27,17 @@ Add these to your `.env` file on your production server:
 # AMAZON SES CONFIGURATION (REQUIRED)
 # ============================================
 
-# SMTP Configuration (Primary Method - Recommended)
-EMAIL_PROVIDER=smtp
-SES_SMTP_HOST=email-smtp.ap-south-1.amazonaws.com
-SES_SMTP_PORT=465
-SES_SMTP_SECURE=true
-SES_SMTP_USER=AKIAXXXXX  # Your SES SMTP username
-SES_SMTP_PASS=********   # Your SES SMTP password
+# AWS SDK Configuration (Required)
+AWS_ACCESS_KEY_ID=AKIAXXXXX
+AWS_SECRET_ACCESS_KEY=********
+AWS_REGION=ap-south-1
+AWS_SES_REGION=ap-south-1
 
 # Sender Email Addresses
 EMAIL_FROM=no-reply@travunited.in
 EMAIL_FROM_GENERAL=no-reply@travunited.in
 EMAIL_FROM_VISA=visa@travunited.in
 EMAIL_FROM_TOURS=tours@travunited.in
-
-# AWS SDK Configuration (Fallback - Optional)
-# Only needed if you want AWS SDK as fallback
-AWS_ACCESS_KEY_ID=AKIAXXXXX
-AWS_SECRET_ACCESS_KEY=********
-AWS_REGION=ap-south-1
-AWS_SES_REGION=ap-south-1
 
 # Application URL (for email links)
 NEXTAUTH_URL=https://travunited.in
@@ -66,7 +57,7 @@ All emails in your codebase flow through **ONE** function:
 
 ### Email Flow:
 ```
-Website Event → sendEmail() → SES SMTP → User Inbox
+Website Event → sendEmail() → AWS SDK → Amazon SES → User Inbox
 ```
 
 ### ✅ All Email Types Use SES:
@@ -99,7 +90,7 @@ Website Event → sendEmail() → SES SMTP → User Inbox
 
 **Checked for:**
 - ❌ No direct `mail()` calls
-- ❌ No Gmail SMTP
+- ❌ No Gmail or third-party email services
 - ❌ No third-party email services
 - ❌ No local sendmail
 - ✅ All emails use `sendEmail()` or helper functions that call it
@@ -175,7 +166,8 @@ Website Event → sendEmail() → SES SMTP → User Inbox
 # On your production server
 nano .env
 
-# Add all SES configuration variables (see above)
+# Add AWS SDK configuration variables (see above)
+# Required: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION
 # Save and exit
 ```
 
@@ -230,15 +222,15 @@ curl https://travunited.in/api/webhooks/ses-sns
 
 Before going live, verify:
 
-- [ ] `.env` has all SES credentials
-- [ ] `EMAIL_PROVIDER=smtp` is set
-- [ ] `SES_SMTP_USER` and `SES_SMTP_PASS` are correct
+- [ ] `.env` has AWS credentials configured
+- [ ] `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are set
+- [ ] `AWS_REGION` is set to `ap-south-1`
 - [ ] All sender emails use `@travunited.in` domain
 - [ ] Application restarted after `.env` update
 - [ ] Test email sent successfully
 - [ ] Email received in Gmail/Yahoo/Outlook
 - [ ] SNS webhook configured (optional but recommended)
-- [ ] No old SMTP/mail() code in codebase
+- [ ] No old mail() code in codebase
 - [ ] Database email config cache cleared
 
 ---
@@ -255,8 +247,8 @@ Before going live, verify:
 ### 📝 Recommendations:
 - ✅ Monitor bounce rates in SES console
 - ✅ Review SNS webhook logs regularly
-- ✅ Keep SMTP credentials secure (never commit to git)
-- ✅ Rotate SMTP credentials periodically
+- ✅ Keep AWS credentials secure (never commit to git)
+- ✅ Rotate AWS access keys periodically
 
 ---
 
@@ -268,11 +260,11 @@ Before going live, verify:
 - Check sender email uses `@travunited.in`
 - Clear database email config cache
 
-### Issue: "SMTP connection failed"
+### Issue: "AWS credentials not configured"
 **Solution:**
-- Verify `SES_SMTP_USER` and `SES_SMTP_PASS` are correct
-- Check `SES_SMTP_HOST` is `email-smtp.ap-south-1.amazonaws.com`
-- Verify port `465` is not blocked by firewall
+- Verify `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are set
+- Check `AWS_REGION` is set to `ap-south-1`
+- Verify AWS credentials have SES sending permissions
 
 ### Issue: "Emails not being received"
 **Solution:**
@@ -294,8 +286,8 @@ Before going live, verify:
 ### Application Logs:
 ```bash
 # Look for email-related logs:
-[Email] Using SMTP provider for email sending
-[Email] SMTP email sent successfully
+[Email] Using AWS SDK provider for email sending
+[Email] Sent successfully
 [SES] BOUNCE logged for email@example.com
 ```
 

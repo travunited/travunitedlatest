@@ -2,13 +2,12 @@
  * API Route: Send Email
  * POST /api/email/send
  * 
- * Unified email sending endpoint that supports both SMTP and AWS SDK
+ * Email sending endpoint using AWS SDK
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { sendMailSMTP } from "@/lib/email-smtp";
 import { sendEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
@@ -23,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { to, subject, html, text, cc, bcc, from, provider } = body;
+    const { to, subject, html, text } = body;
 
     // Validate required fields
     if (!to || !subject || !html) {
@@ -33,43 +32,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Determine which provider to use
-    const emailProvider = provider || process.env.EMAIL_PROVIDER || "smtp";
-
-    let messageId: string | undefined;
-
-    if (emailProvider === "smtp") {
-      // Use SMTP/Nodemailer
-      const result = await sendMailSMTP({
-        to,
-        subject,
-        html,
-        text,
-        cc,
-        bcc,
-        from,
-      });
-      messageId = result.messageId;
-    } else {
-      // Use AWS SDK (existing method)
-      const success = await sendEmail({
-        to: Array.isArray(to) ? to : [to],
-        subject,
-        html,
-        text,
-      });
-      
-      if (!success) {
-        throw new Error("Failed to send email via AWS SDK");
-      }
-      
-      messageId = "sent-via-aws-sdk";
+    // Send email via AWS SDK
+    const success = await sendEmail({
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+      text,
+    });
+    
+    if (!success) {
+      throw new Error("Failed to send email via AWS SDK");
     }
 
     return NextResponse.json({
       success: true,
-      messageId,
-      provider: emailProvider,
+      messageId: "sent-via-aws-sdk",
+      provider: "aws-sdk",
     });
   } catch (error: any) {
     console.error("Email send error:", error);

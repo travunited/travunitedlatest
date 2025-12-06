@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { sendMailSMTP, verifySmtpConnection } from "@/lib/email-smtp";
+import { sendEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { to, provider } = body;
+    const { to } = body;
 
     // Default to admin email or session user email
     const testEmail = to || session.user.email || process.env.ADMIN_EMAIL;
@@ -33,24 +33,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    const emailProvider = provider || process.env.EMAIL_PROVIDER || "smtp";
-
-    // Test SMTP connection first
-    if (emailProvider === "smtp") {
-      const isConnected = await verifySmtpConnection();
-      if (!isConnected) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "SMTP connection verification failed. Check your credentials.",
-          },
-          { status: 500 }
-        );
-      }
-    }
-
-    let messageId: string | undefined;
 
     // Send test email
     const testHtml = `
@@ -79,7 +61,7 @@ export async function POST(req: NextRequest) {
               <div class="info">
                 <strong>Configuration Details:</strong>
                 <ul>
-                  <li>Provider: <strong>${emailProvider === "smtp" ? "SMTP (Nodemailer)" : "AWS SDK"}</strong></li>
+                  <li>Provider: <strong>AWS SDK</strong></li>
                   <li>From: <strong>${process.env.EMAIL_FROM || "no-reply@travunited.in"}</strong></li>
                   <li>Sent: <strong>${new Date().toLocaleString()}</strong></li>
                 </ul>
@@ -111,42 +93,29 @@ export async function POST(req: NextRequest) {
       </html>
     `;
 
-    if (emailProvider === "smtp") {
-      const result = await sendMailSMTP({
-        to: testEmail,
-        subject: `✓ TravUnited Email Test - ${emailProvider.toUpperCase()} - ${new Date().toLocaleTimeString()}`,
-        html: testHtml,
-        text: `Email test successful! Your ${emailProvider} configuration is working. Sent at ${new Date().toLocaleString()}`,
-      });
-      messageId = result.messageId;
-    } else {
-      // Use existing AWS SDK method
-      const { sendEmail } = await import("@/lib/email");
-      const success = await sendEmail({
-        to: [testEmail],
-        subject: `✓ TravUnited Email Test - SDK - ${new Date().toLocaleTimeString()}`,
-        html: testHtml,
-        text: `Email test successful! Your AWS SDK configuration is working. Sent at ${new Date().toLocaleString()}`,
-      });
-      
-      if (!success) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Failed to send email via AWS SDK. Check your credentials.",
-          },
-          { status: 500 }
-        );
-      }
-      
-      messageId = "sent-via-aws-sdk";
+    // Send email via AWS SDK
+    const success = await sendEmail({
+      to: [testEmail],
+      subject: `✓ TravUnited Email Test - ${new Date().toLocaleTimeString()}`,
+      html: testHtml,
+      text: `Email test successful! Your AWS SDK configuration is working. Sent at ${new Date().toLocaleString()}`,
+    });
+    
+    if (!success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Failed to send email via AWS SDK. Check your AWS credentials.",
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       success: true,
       message: `Test email sent successfully to ${testEmail}`,
-      messageId,
-      provider: emailProvider,
+      messageId: "sent-via-aws-sdk",
+      provider: "aws-sdk",
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
@@ -166,7 +135,7 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   return NextResponse.json({
     message: "Email test endpoint. Use POST method with optional 'to' parameter.",
-    usage: "POST /api/email/test with body: { to: 'email@example.com', provider: 'smtp' }",
+    usage: "POST /api/email/test with body: { to: 'email@example.com' }",
   });
 }
 

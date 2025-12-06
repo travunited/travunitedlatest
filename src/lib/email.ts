@@ -7,7 +7,6 @@ import {
   getTourAdminEmail,
 } from "./admin-contacts";
 import { replaceTemplateVariables, getDefaultEmailTemplate, EmailTemplateVariables } from "./email-templates";
-import { sendMailSMTP, verifySmtpConnection } from "./email-smtp";
 
 export interface EmailOptions {
   to: string | string[];
@@ -256,42 +255,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     to: activeRecipients.length === 1 ? activeRecipients[0] : activeRecipients,
   };
   
-  // Check if SMTP is preferred and available
-  const emailProvider = process.env.EMAIL_PROVIDER || "smtp";
-  const hasSmtpCredentials = !!(process.env.SES_SMTP_USER && process.env.SES_SMTP_PASS);
-  
-  // Try SMTP first if configured
-  if (emailProvider === "smtp" && hasSmtpCredentials) {
-    try {
-      console.log("[Email] Using SMTP provider for email sending");
-      
-      const config = await loadEmailConfig();
-      const from = determineSenderEmail(config, finalOptions.category);
-      
-      // Send via SMTP
-      await sendMailSMTP({
-        to: activeRecipients,
-        subject: finalOptions.subject,
-        html: finalOptions.html,
-        text: finalOptions.text,
-        from,
-        replyTo: finalOptions.replyTo,
-      });
-      
-      const duration = Date.now() - startTime;
-      console.log(`[Email] SMTP email sent successfully in ${duration}ms`, {
-        to: activeRecipients.join(", "),
-        subject: finalOptions.subject,
-      });
-      
-      return true;
-    } catch (smtpError) {
-      console.error("[Email] SMTP send failed, will try AWS SDK fallback:", smtpError);
-      // Continue to AWS SDK fallback below
-    }
-  }
-  
-  // AWS SDK fallback (original implementation)
+  // Use AWS SDK for email sending
   console.log("[Email] Using AWS SDK provider for email sending");
   
   // Load config with timeout to prevent delays
@@ -314,11 +278,9 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   
   // Check if AWS credentials are configured
   if (!config.awsAccessKeyId || !config.awsSecretAccessKey || !config.awsRegion) {
-    const message = "Email credentials not configured. Set SMTP credentials (SES_SMTP_USER, SES_SMTP_PASS) or AWS credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION) in environment variables.";
+    const message = "Email credentials not configured. Set AWS credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION) in environment variables.";
     lastEmailError = message;
     console.error("[Email]", message, {
-      hasSmtpUser: !!process.env.SES_SMTP_USER,
-      hasSmtpPass: !!process.env.SES_SMTP_PASS,
       hasAccessKeyId: !!config.awsAccessKeyId,
       hasSecretAccessKey: !!config.awsSecretAccessKey,
       hasRegion: !!config.awsRegion,
