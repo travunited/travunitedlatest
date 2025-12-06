@@ -745,17 +745,21 @@ model BookingDocument {
 }
 
 model PasswordReset {
-  id         String   @id @default(cuid())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     String
-  tokenHash  String   // hashed token saved with bcrypt
-  expiresAt  DateTime
-  used       Boolean  @default(false)
-  ip         String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
+  id           String    @id @default(cuid())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  tokenHash    String    // hashed token saved with bcrypt
+  expiresAt    DateTime
+  used         Boolean   @default(false)
+  ip           String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+  otp          String?   // 6-digit OTP for password reset
+  otpExpiresAt DateTime? // OTP expiration time (usually 10 minutes)
 
   @@index([userId])
   @@index([expiresAt])
   @@index([used])
+  @@index([otp])
+  @@index([otpExpiresAt])
 }

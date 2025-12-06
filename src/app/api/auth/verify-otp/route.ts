@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
-const resetPasswordSchema = z.object({
+const verifyOTPSchema = z.object({
   resetId: z.string().min(1, "Reset ID is required"),
   otp: z.string().regex(/^\d{6}$/, "OTP must be 6 digits"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export async function POST(req: Request) {
@@ -33,7 +31,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { resetId, otp, password } = resetPasswordSchema.parse(body);
+    const { resetId, otp } = verifyOTPSchema.parse(body);
 
     // Find password reset record
     const passwordReset = await prisma.passwordReset.findUnique({
@@ -49,7 +47,7 @@ export async function POST(req: Request) {
     });
 
     if (!passwordReset) {
-      console.error("[Password Reset] Record not found", { resetId });
+      console.error("[OTP Verification] Record not found", { resetId });
       return NextResponse.json(
         { error: "Invalid reset request" },
         { status: 400 }
@@ -58,10 +56,9 @@ export async function POST(req: Request) {
 
     // Check if already used
     if (passwordReset.used) {
-      console.error("[Password Reset] Reset already used", {
+      console.error("[OTP Verification] Reset already used", {
         resetId,
         userId: passwordReset.userId,
-        createdAt: passwordReset.createdAt.toISOString(),
       });
       return NextResponse.json(
         { error: "This reset request has already been used. Please request a new one." },
@@ -69,9 +66,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verify OTP
+    // Check if OTP exists
     if (!passwordReset.otp) {
-      console.error("[Password Reset] No OTP found", { resetId });
+      console.error("[OTP Verification] No OTP found", { resetId });
       return NextResponse.json(
         { error: "Invalid reset request" },
         { status: 400 }
@@ -80,7 +77,7 @@ export async function POST(req: Request) {
 
     // Check if OTP is expired
     if (!passwordReset.otpExpiresAt || new Date() > passwordReset.otpExpiresAt) {
-      console.error("[Password Reset] OTP expired", {
+      console.error("[OTP Verification] OTP expired", {
         resetId,
         otpExpiresAt: passwordReset.otpExpiresAt,
       });
@@ -92,7 +89,7 @@ export async function POST(req: Request) {
 
     // Verify OTP (case-sensitive exact match)
     if (passwordReset.otp !== otp) {
-      console.error("[Password Reset] Invalid OTP", {
+      console.error("[OTP Verification] Invalid OTP", {
         resetId,
         providedOtp: otp,
         expectedOtp: passwordReset.otp,
@@ -103,58 +100,24 @@ export async function POST(req: Request) {
       );
     }
 
-    // OTP verified successfully - proceed with password reset
-
-    // Hash new password
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    // Update password and mark reset as used (in a transaction)
-    await prisma.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: passwordReset.userId },
-        data: {
-          passwordHash,
-        },
-      });
-
-      await tx.passwordReset.update({
-        where: { id: resetId },
-        data: {
-          used: true,
-        },
-      });
-    });
-
-    console.log("[Password Reset] Successfully reset password", {
-      userId: passwordReset.userId,
-      userEmail: passwordReset.user.email,
-      resetId,
-      timestamp: new Date().toISOString(),
-    });
-
+    // OTP is valid - return success with resetId for password reset
     return NextResponse.json({
-      message: "Password reset successfully",
+      success: true,
+      message: "OTP verified successfully",
+      resetId: passwordReset.id,
+      userId: passwordReset.userId,
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        {
-          error: "Invalid input",
-          details: error.errors.map((err) => ({
-            field: err.path.join("."),
-            message: err.message,
-          })),
-        },
+        { error: "Invalid input", details: error.errors },
         { status: 400 }
       );
     }
 
-    console.error("[Password Reset] Exception resetting password:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    console.error("Error verifying OTP:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "An error occurred. Please try again." },
       { status: 500 }
     );
   }

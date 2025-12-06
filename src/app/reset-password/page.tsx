@@ -9,9 +9,8 @@ import { Lock, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  // Get raw values - searchParams.get() automatically decodes URL-encoded values
-  const token = searchParams.get("token");
-  const resetId = searchParams.get("id");
+  const resetId = searchParams.get("resetId");
+  const otp = searchParams.get("otp");
   
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -19,82 +18,48 @@ function ResetPasswordContent() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(true);
-  const [tokenValid, setTokenValid] = useState(false);
+  const [otpValid, setOtpValid] = useState(false);
 
   useEffect(() => {
-    // Validate token on mount
-    const validateToken = async () => {
-      // searchParams.get() automatically decodes URL-encoded values
-      // So we get the raw values here
-      let rawToken = searchParams.get("token");
-      let rawResetId = searchParams.get("id");
-
-      // Fallback: Try parsing from URL directly if searchParams didn't work
-      if (!rawToken || !rawResetId) {
-        try {
-          const url = new URL(window.location.href);
-          rawToken = rawToken || url.searchParams.get("token");
-          rawResetId = rawResetId || url.searchParams.get("id");
-        } catch (e) {
-          console.error("[Reset Password] Failed to parse URL:", e);
-        }
-      }
-
-      if (!rawToken || !rawResetId) {
-        console.error("[Reset Password] Missing parameters", {
-          hasToken: !!rawToken,
-          hasId: !!rawResetId,
-          url: window.location.href,
-          searchParamsKeys: Array.from(searchParams.keys()),
-        });
-        setError("Invalid reset link. Missing token or reset ID. Please make sure you copied the entire link from your email.");
+    // Validate OTP on mount
+    const validateOTP = async () => {
+      if (!resetId || !otp) {
+        setError("Invalid reset link. Missing reset ID or OTP.");
         setValidating(false);
         return;
       }
 
       try {
-        // Re-encode for the API call to ensure proper transmission
-        const encodedToken = encodeURIComponent(rawToken);
-        const encodedId = encodeURIComponent(rawResetId);
-        
-        console.log("[Reset Password] Validating token", {
-          hasToken: !!rawToken,
-          hasId: !!rawResetId,
-          tokenLength: rawToken.length,
-          idLength: rawResetId.length,
+        const response = await fetch("/api/auth/verify-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resetId, otp }),
         });
 
-        const response = await fetch(
-          `/api/auth/validate-reset-token?token=${encodedToken}&id=${encodedId}`
-        );
         const data = await response.json();
-        
-        if (response.ok && data.valid === true) {
-          setTokenValid(true);
+
+        if (response.ok && data.success) {
+          setOtpValid(true);
         } else {
-          setError(data.error || "Invalid or expired reset link. Please request a new one.");
+          setError(data.error || "Invalid or expired OTP. Please request a new one.");
         }
       } catch (err) {
-        console.error("Error validating token:", err);
+        console.error("Error validating OTP:", err);
         setError("An error occurred. Please try again.");
       } finally {
         setValidating(false);
       }
     };
 
-    validateToken();
-  }, [searchParams]);
+    validateOTP();
+  }, [resetId, otp]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    // Re-get values from searchParams in case they changed
-    const currentToken = searchParams.get("token");
-    const currentResetId = searchParams.get("id");
-
-    if (!currentToken || !currentResetId) {
-      setError("Invalid reset link. Missing token or reset ID.");
+    if (!resetId || !otp) {
+      setError("Invalid reset session. Please request a new OTP.");
       return;
     }
 
@@ -114,7 +79,7 @@ function ResetPasswordContent() {
       const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: currentResetId, token: currentToken, password }),
+        body: JSON.stringify({ resetId, otp, password }),
       });
 
       const data = await response.json();
@@ -140,17 +105,13 @@ function ResetPasswordContent() {
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-neutral-600">Validating reset link...</p>
+          <p className="text-neutral-600">Validating OTP...</p>
         </div>
       </div>
     );
   }
 
-  // Re-get current values for validation check
-  const currentToken = searchParams.get("token");
-  const currentResetId = searchParams.get("id");
-  
-  if (!tokenValid || !currentToken || !currentResetId) {
+  if (!otpValid || !resetId || !otp) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-large p-8 text-center">
@@ -158,19 +119,16 @@ function ResetPasswordContent() {
             <AlertCircle size={32} className="text-red-600" />
           </div>
           <h1 className="text-2xl font-bold text-neutral-900 mb-2">
-            Invalid Reset Link
+            Invalid Reset Request
           </h1>
           <p className="text-neutral-600 mb-6">
-            {error || "This password reset link is invalid or has expired."}
-          </p>
-          <p className="text-xs text-neutral-500 mb-4">
-            If you copied the link from your email, make sure you copied the entire link including all parameters.
+            {error || "This password reset request is invalid or has expired."}
           </p>
           <Link
             href="/forgot-password"
             className="text-primary-600 hover:text-primary-700 font-medium"
           >
-            Request a new reset link
+            Request a new OTP
           </Link>
         </div>
       </div>
@@ -306,4 +264,3 @@ export default function ResetPasswordPage() {
     </Suspense>
   );
 }
-

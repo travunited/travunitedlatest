@@ -483,6 +483,57 @@ export async function sendPasswordResetEmail(
   });
 }
 
+export async function sendPasswordResetOTPEmail(
+  email: string,
+  otp: string,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
+) {
+  const subject = "Your Password Reset OTP";
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center;">
+        <h1 style="margin: 0; font-size: 28px;">Password Reset OTP</h1>
+      </div>
+      <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+        <p style="font-size: 16px; color: #333; margin-bottom: 20px;">You requested to reset your password. Use the OTP below to verify your identity:</p>
+        
+        <div style="background: white; border: 2px dashed #667eea; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0;">
+          <p style="font-size: 12px; color: #666; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">Your OTP Code</p>
+          <p style="font-size: 36px; font-weight: bold; color: #667eea; margin: 0; letter-spacing: 8px; font-family: 'Courier New', monospace;">${otp}</p>
+        </div>
+        
+        <p style="font-size: 14px; color: #666; margin: 20px 0;">
+          <strong>Important:</strong>
+        </p>
+        <ul style="font-size: 14px; color: #666; margin: 10px 0; padding-left: 20px;">
+          <li>This OTP is valid for <strong>10 minutes</strong> only</li>
+          <li>Do not share this OTP with anyone</li>
+          <li>If you didn't request this, please ignore this email</li>
+        </ul>
+        
+        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <p style="font-size: 13px; color: #856404; margin: 0;">
+            <strong>Security Tip:</strong> Travunited will never ask for your OTP via phone or email. Only enter it on our official website.
+          </p>
+        </div>
+        
+        <p style="font-size: 14px; color: #666; margin-top: 30px;">
+          Best regards,<br>
+          <strong>The Travunited Team</strong>
+        </p>
+      </div>
+    </div>
+  `;
+  
+  // Password reset OTP emails should ALWAYS go to the user's actual email address
+  return sendEmail({
+    to: email,
+    subject,
+    html,
+    category: "general",
+  });
+}
+
 export async function sendVisaPaymentSuccessEmail(
   email: string,
   applicationId: string,
