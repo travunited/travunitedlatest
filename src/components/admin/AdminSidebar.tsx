@@ -29,7 +29,6 @@ import {
   Star,
   UserCircle,
   Mail,
-  Mail,
 } from "lucide-react";
 
 const BASE_MENU_ITEMS = [
