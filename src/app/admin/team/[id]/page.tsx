@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -69,13 +69,7 @@ export default function TeamMemberEditorPage() {
     }
   }, [status, router]);
 
-  useEffect(() => {
-    if (!isNew && status === "authenticated") {
-      fetchTeamMember();
-    }
-  }, [params.id, status, isNew, fetchTeamMember]);
-
-  const fetchTeamMember = async () => {
+  const fetchTeamMember = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/admin/team/${params.id}`);
@@ -108,7 +102,13 @@ export default function TeamMemberEditorPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    if (!isNew && status === "authenticated") {
+      fetchTeamMember();
+    }
+  }, [params.id, status, isNew, fetchTeamMember]);
 
   const handleFileUpload = async (file: File, type: "photo" | "resume") => {
     const formData = new FormData();

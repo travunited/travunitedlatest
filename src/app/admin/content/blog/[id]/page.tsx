@@ -68,24 +68,19 @@ export default function AdminBlogEditPage() {
   }, [draftKey]);
 
   // Save draft to sessionStorage (debounced)
-  const saveDraftDebounced = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout | null = null;
-      return (data: Partial<BlogPost>) => {
-        if (timeoutId) clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          if (typeof window !== "undefined") {
-            try {
-              sessionStorage.setItem(draftKey, JSON.stringify(data));
-            } catch (error) {
-              console.error("Error saving draft to sessionStorage:", error);
-            }
-          }
-        }, 500); // Debounce 500ms
-      };
-    })(),
-    [draftKey]
-  );
+  const saveDraftDebounced = useCallback((data: Partial<BlogPost>) => {
+    if (typeof window === "undefined") return;
+    
+    const timeoutId = setTimeout(() => {
+      try {
+        sessionStorage.setItem(draftKey, JSON.stringify(data));
+      } catch (error) {
+        console.error("Error saving draft to sessionStorage:", error);
+      }
+    }, 500); // Debounce 500ms
+    
+    return () => clearTimeout(timeoutId);
+  }, [draftKey]);
 
   // Clear draft from sessionStorage
   const clearDraft = useCallback(() => {
