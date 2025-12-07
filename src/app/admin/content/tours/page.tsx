@@ -237,7 +237,7 @@ export default function AdminToursPage() {
     if (filters.search !== searchValue) {
       setSearchValue(filters.search);
     }
-  }, [filters.search]);
+  }, [filters.search, searchValue]);
 
   const handleSearchChange = useCallback((value: string) => {
     setSearchValue(value);

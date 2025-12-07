@@ -73,7 +73,7 @@ export default function TeamMemberEditorPage() {
     if (!isNew && status === "authenticated") {
       fetchTeamMember();
     }
-  }, [params.id, status]);
+  }, [params.id, status, isNew, fetchTeamMember]);
 
   const fetchTeamMember = async () => {
     try {
