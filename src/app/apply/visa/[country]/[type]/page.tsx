@@ -287,43 +287,43 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     }
   }, [searchParams]);
 
-  // Load draft from localStorage on mount - only run once on mount or when params change
+  // Auto-draft loading disabled - drafts should not be loaded automatically
   useEffect(() => {
     const editId = searchParams.get("edit");
     const applicationId = searchParams.get("applicationId");
     
     // Skip localStorage if editing existing application
     if (editId || applicationId) {
-      return;
-    }
-    
-    const draft = getDraftFromLocalStorage();
-    if (draft && (draft.country === params.country && draft.visaType === params.type)) {
-      // Ensure travellers have IDs when loading from localStorage
-      const travellersWithIds: FormDataTraveller[] = (draft.travellers || []).map((t, idx) => ({
-        ...t,
-        id: (t as any).id || `traveller-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
-      }));
-      
-      const { travellers: _, ...draftWithoutTravellers } = draft;
-      setFormData((prev) => {
-        // Only update if we don't already have travellers (to prevent overwriting user input)
-        if (prev.travellers && prev.travellers.length > 0) {
-          return prev;
-        }
-        return { 
-          ...prev, 
-          ...draftWithoutTravellers,
-          travellers: travellersWithIds.length > 0 ? travellersWithIds : prev.travellers,
-        };
-      });
-      if (draft.applicationId) {
-        setDraftId(draft.applicationId);
-      }
-      if (draft.travellerIds) {
-        setCreatedTravellerIds(draft.travellerIds);
-      }
+      // Continue to auto-fill for logged-in users even when editing
     } else {
+      // Auto-draft loading disabled - drafts should not be loaded automatically
+      // const draft = getDraftFromLocalStorage();
+      // if (draft && (draft.country === params.country && draft.visaType === params.type)) {
+      //   // Ensure travellers have IDs when loading from localStorage
+      //   const travellersWithIds: FormDataTraveller[] = (draft.travellers || []).map((t, idx) => ({
+      //     ...t,
+      //     id: (t as any).id || `traveller-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
+      //   }));
+      //   
+      //   const { travellers: _, ...draftWithoutTravellers } = draft;
+      //   setFormData((prev) => {
+      //     // Only update if we don't already have travellers (to prevent overwriting user input)
+      //     if (prev.travellers && prev.travellers.length > 0) {
+      //       return prev;
+      //     }
+      //     return { 
+      //       ...prev, 
+      //       ...draftWithoutTravellers,
+      //       travellers: travellersWithIds.length > 0 ? travellersWithIds : prev.travellers,
+      //     };
+      //   });
+      //   if (draft.applicationId) {
+      //     setDraftId(draft.applicationId);
+      //   }
+      //   if (draft.travellerIds) {
+      //     setCreatedTravellerIds(draft.travellerIds);
+      //   }
+      // } else {
       // Initialize with at least one traveller only if we don't have any
       setFormData((prev) => {
         if (prev.travellers && prev.travellers.length > 0) {
@@ -550,15 +550,53 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     }));
   }, []);
 
-  // Auto-save to localStorage on form changes - debounced to prevent excessive saves
+  // Auto-save draft to database when form data changes (debounced)
   useEffect(() => {
-    if (currentStep > 1) {
-      const timeoutId = setTimeout(() => {
-        saveDraftToLocalStorage(formData);
-      }, 300); // Debounce by 300ms
+    // Only save if we have at least primary contact info (email is required)
+    if (currentStep > 1 && formData.primaryContact?.email) {
+      const timeoutId = setTimeout(async () => {
+        try {
+          const draftData = {
+            country: formData.country,
+            visaType: formData.visaType,
+            visaId: formData.visaId,
+            travelDate: formData.travelDate,
+            tripType: formData.tripType,
+            primaryContact: formData.primaryContact,
+            travellers: formData.travellers?.map(t => ({
+              firstName: t.firstName,
+              lastName: t.lastName,
+              dateOfBirth: t.dateOfBirth,
+              gender: t.gender,
+              passportNumber: t.passportNumber,
+              passportIssueDate: t.passportIssueDate,
+              passportExpiryDate: t.passportExpiryDate,
+              nationality: t.nationality,
+              currentCity: t.currentCity,
+            })),
+            draftId: draftId || undefined,
+          };
+
+          const response = await fetch("/api/applications/draft", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(draftData),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.draftId && !draftId) {
+              setDraftId(result.draftId);
+            }
+          }
+        } catch (error) {
+          console.error("Error saving draft:", error);
+          // Silently fail - don't interrupt user experience
+        }
+      }, 2000); // Debounce by 2 seconds to avoid too many API calls
       return () => clearTimeout(timeoutId);
     }
-  }, [formData, currentStep]);
+  }, [formData, currentStep, draftId]);
 
   // Phone number validation helper
   const validatePhoneNumber = (phone: string): string | null => {
@@ -682,7 +720,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
-      saveDraftToLocalStorage(formData);
+      // Auto-save disabled - drafts should not be saved automatically
+      // saveDraftToLocalStorage(formData);
     }
   };
 
@@ -819,16 +858,17 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           await uploadDocuments(data.applicationId, travellerMap);
         }
         
-        // Clear draft but keep application linkage for future uploads
+        // Clear draft - auto-draft saving is disabled
         clearDraftFromLocalStorage();
-        saveDraftToLocalStorage({
-          country: formData.country,
-          visaType: formData.visaType,
-          visaId: formData.visaId || visaInfo?.id,
-          applicationId: data.applicationId,
-          travellerIds: travellerMap,
-          documents: {},
-        });
+        // Auto-draft saving disabled - drafts should not be saved automatically
+        // saveDraftToLocalStorage({
+        //   country: formData.country,
+        //   visaType: formData.visaType,
+        //   visaId: formData.visaId || visaInfo?.id,
+        //   applicationId: data.applicationId,
+        //   travellerIds: travellerMap,
+        //   documents: {},
+        // });
         
         setCurrentStep(6);
       } else {
@@ -1336,10 +1376,10 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                       <input
                         type="text"
                         required
-                        value={traveller.nationality || "Indian"}
+                        value={traveller.nationality || ""}
                         onChange={(e) => updateTravellerField(traveller.id, "nationality", e.target.value)}
                         className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                        placeholder="Indian"
+                        placeholder="Enter nationality (e.g., Indian, American)"
                       />
                     </div>
                     <div>

@@ -298,12 +298,14 @@ function AdminApplicationsPageContent() {
     const awaitingPayment = applications.filter(app => app.status === "PAYMENT_PENDING").length;
     const approved = applications.filter(app => app.status === "APPROVED").length;
     const unassigned = applications.filter(app => !app.processedBy).length;
+    const drafts = applications.filter(app => app.status === "DRAFT").length;
     return {
       totalApplications: applications.length,
       totalValue,
       awaitingPayment,
       approved,
       unassigned,
+      drafts,
     };
   }, [applications]);
 
@@ -362,7 +364,7 @@ function AdminApplicationsPageContent() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {[
               {
                 label: "Total Applications",
@@ -384,13 +386,23 @@ function AdminApplicationsPageContent() {
                 value: stats.unassigned.toString(),
                 accent: "bg-rose-50 text-rose-700 border border-rose-100",
               },
+              {
+                label: "Draft Leads",
+                value: stats.drafts.toString(),
+                accent: "bg-neutral-50 text-neutral-700 border border-neutral-100",
+                onClick: () => {
+                  setStatusFilter("DRAFT");
+                  setAssignedFilter("ALL");
+                },
+              },
             ].map((card, idx) => (
               <motion.div
                 key={card.label}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className={`rounded-2xl px-5 py-4 backdrop-blur shadow-sm ${card.accent}`}
+                onClick={(card as any).onClick}
+                className={`rounded-2xl px-5 py-4 backdrop-blur shadow-sm ${card.accent} ${(card as any).onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
               >
                 <p className="text-sm font-medium uppercase tracking-wide text-neutral-500">{card.label}</p>
                 <p className="text-2xl font-semibold mt-1">{card.value}</p>
@@ -439,6 +451,14 @@ function AdminApplicationsPageContent() {
                   setAssignedFilter("ALL");
                 },
                 active: statusFilter === "REJECTED",
+              },
+              {
+                label: "Drafts (Leads)",
+                action: () => {
+                  setStatusFilter("DRAFT");
+                  setAssignedFilter("ALL");
+                },
+                active: statusFilter === "DRAFT",
               },
               {
                 label: "Unassigned",

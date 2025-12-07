@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendCareerApplicationStatusEmail } from "@/lib/email";
+import { AuditAction, AuditEntityType } from "@prisma/client";
+import { logAuditEvent } from "@/lib/audit";
 export const dynamic = "force-dynamic";
 
 export async function GET(
@@ -96,10 +99,60 @@ export async function PUT(
       );
     }
 
+    // Get the application before updating to check previous status
+    const previousApplication = await prisma.careerApplication.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!previousApplication) {
+      return NextResponse.json(
+        { error: "Application not found" },
+        { status: 404 }
+      );
+    }
+
     const application = await prisma.careerApplication.update({
       where: { id: params.id },
       data: updateData,
     });
+
+    // Send email notification if status changed
+    if (status !== undefined && status !== previousApplication.status) {
+      try {
+        await sendCareerApplicationStatusEmail(
+          application.email,
+          application.name,
+          application.positionTitle,
+          status,
+          application.id
+        );
+      } catch (emailError) {
+        console.error("Error sending career application status email:", emailError);
+        // Don't fail the request if email fails
+      }
+
+      // Log audit event
+      try {
+        await logAuditEvent({
+          adminId: session.user.id,
+          entityType: AuditEntityType.OTHER,
+          entityId: application.id,
+          action: AuditAction.UPDATE,
+          description: `Career application status updated from ${previousApplication.status} to ${status} for ${application.name} (${application.positionTitle})`,
+          metadata: {
+            applicationId: application.id,
+            candidateName: application.name,
+            candidateEmail: application.email,
+            positionTitle: application.positionTitle,
+            previousStatus: previousApplication.status,
+            newStatus: status,
+          },
+        });
+      } catch (auditError) {
+        console.error("Error logging audit event:", auditError);
+        // Don't fail the request if audit logging fails
+      }
+    }
 
     return NextResponse.json(application);
   } catch (error) {

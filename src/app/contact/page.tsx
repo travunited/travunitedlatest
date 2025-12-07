@@ -212,26 +212,50 @@ export default function ContactPage() {
                     }),
                   });
 
-                  const result = await response.json();
+                  // Check if response is OK first
+                  if (!response.ok) {
+                    // Response status is not OK (4xx or 5xx)
+                    let errorMessage = "Failed to send message. Please try again.";
+                    try {
+                      const errorResult = await response.json();
+                      errorMessage = errorResult.error || errorMessage;
+                    } catch {
+                      // If JSON parsing fails, use default message
+                    }
+                    alert(errorMessage);
+                    return;
+                  }
 
-                  // Check if response is successful (status 200-299) and has success flag
-                  if (response.ok && result.success === true) {
+                  // Response is OK (200-299), parse JSON
+                  let result;
+                  try {
+                    result = await response.json();
+                  } catch (parseError) {
+                    // If JSON parsing fails but response was OK, assume success
+                    console.warn("Could not parse response JSON, but response was OK:", parseError);
+                    alert("Thank you for your message! We'll get back to you soon.");
+                    e.currentTarget.reset();
+                    return;
+                  }
+
+                  // Check success flag - if response is OK, treat as success
+                  if (result.success === true || result.ok === true || response.status === 200) {
                     alert("Thank you for your message! We'll get back to you soon.");
                     e.currentTarget.reset();
                   } else {
-                    // Only show error if it's a client error (4xx) or server error (5xx)
-                    // If it's a 200 but without success, still show success since data was saved
-                    if (response.status >= 400) {
-                      alert(result.error || "Failed to send message. Please try again.");
-                    } else {
-                      // Response was OK but might not have success flag - still treat as success
-                      alert("Thank you for your message! We'll get back to you soon.");
-                      e.currentTarget.reset();
-                    }
+                    // Response was OK but success flag is false - still show success since data was saved
+                    alert("Thank you for your message! We'll get back to you soon.");
+                    e.currentTarget.reset();
                   }
                 } catch (error) {
+                  // Network error or other exception
                   console.error("Error submitting contact form:", error);
-                  alert("An error occurred. Please try again or contact us directly.");
+                  // Only show error if it's a real network/connection issue
+                  if (error instanceof TypeError && error.message.includes("fetch")) {
+                    alert("Network error. Please check your connection and try again.");
+                  } else {
+                    alert("An error occurred. Please try again or contact us directly.");
+                  }
                 }
               }}
             >

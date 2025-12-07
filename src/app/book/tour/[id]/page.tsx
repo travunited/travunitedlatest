@@ -1524,11 +1524,14 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
                       const isIndian = (traveller.nationality || "").toLowerCase().trim() === "india" || 
                                        (traveller.nationality || "").toLowerCase().trim() === "indian";
                       const showPassport = requiresPassport || !isIndian;
-                      const showIndianDocs = isIndian && !requiresPassport;
+                      // Show Indian docs (PAN/Aadhaar) for all Indian travellers, regardless of tour type
+                      const showIndianDocs = isIndian;
 
-                      if (showPassport) {
-                        return (
-                          <div className="border border-dashed border-neutral-200 rounded-lg p-4 bg-neutral-50">
+                      return (
+                        <div className="space-y-4">
+                          {/* Passport section - show if tour requires passport OR traveller is not Indian */}
+                          {showPassport && (
+                            <div className="border border-dashed border-neutral-200 rounded-lg p-4 bg-neutral-50">
                             <div className="flex items-center justify-between mb-4">
                               <div>
                                 <h4 className="font-medium text-neutral-900">Passport details</h4>
@@ -1615,18 +1618,21 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
                               </div>
                             </div>
                           </div>
-                        );
-                      } else if (showIndianDocs) {
-                        return (
-                          <div className="border border-dashed border-neutral-200 rounded-lg p-4 bg-neutral-50">
-                            <div className="flex items-center justify-between mb-4">
-                              <div>
-                                <h4 className="font-medium text-neutral-900">Indian ID Documents</h4>
-                                <p className="text-sm text-neutral-600">
-                                  PAN and Aadhaar are required for Indian travellers on domestic tours.
-                                </p>
+                          )}
+
+                          {/* Indian ID Documents section - show for all Indian travellers */}
+                          {showIndianDocs && (
+                            <div className="border border-dashed border-neutral-200 rounded-lg p-4 bg-neutral-50">
+                              <div className="flex items-center justify-between mb-4">
+                                <div>
+                                  <h4 className="font-medium text-neutral-900">Indian ID Documents</h4>
+                                  <p className="text-sm text-neutral-600">
+                                    {requiresPassport 
+                                      ? "PAN and Aadhaar are recommended for Indian travellers (in addition to passport)."
+                                      : "PAN and Aadhaar are required for Indian travellers on domestic tours."}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
                             <div className="grid md:grid-cols-2 gap-4">
                               <div>
                                 <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -1677,9 +1683,9 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
                               </div>
                             </div>
                           </div>
-                        );
-                      }
-                      return null;
+                          )}
+                        </div>
+                      );
                     })()}
                   </div>
                 );

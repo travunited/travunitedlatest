@@ -927,10 +927,11 @@ export default function AdminApplicationDetailPage() {
               </div>
             </div>
 
-            {/* Invoice Management */}
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <h3 className="font-semibold text-neutral-900 mb-4">Invoice</h3>
-              {application.invoiceUrl ? (
+            {/* Invoice Management - Only show when status is APPROVED or REJECTED */}
+            {(application.status === "APPROVED" || application.status === "REJECTED") && (
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <h3 className="font-semibold text-neutral-900 mb-4">Invoice</h3>
+                {application.invoiceUrl ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center space-x-2">
@@ -1065,8 +1066,9 @@ export default function AdminApplicationDetailPage() {
                     </label>
                   </div>
                 </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             {/* Internal Notes */}
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">

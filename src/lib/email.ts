@@ -1034,6 +1034,119 @@ export async function sendCorporateLeadConfirmationEmail(
 }
 
 /**
+ * Send career application status update email to candidate
+ */
+export async function sendCareerApplicationStatusEmail(
+  candidateEmail: string,
+  candidateName: string,
+  positionTitle: string,
+  status: string,
+  applicationId: string
+) {
+  try {
+    const config = await loadEmailConfig();
+    const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
+    
+    // Status-specific messages
+    const statusMessages: Record<string, { subject: string; message: string; color: string }> = {
+      SHORTLISTED: {
+        subject: `Congratulations! You've been shortlisted for ${positionTitle}`,
+        message: `Great news! We're pleased to inform you that your application for the position of <strong>${positionTitle}</strong> has been shortlisted. Our team will be in touch with you soon regarding the next steps in the hiring process.`,
+        color: "#10b981", // green
+      },
+      REVIEWED: {
+        subject: `Application Update: ${positionTitle}`,
+        message: `Your application for the position of <strong>${positionTitle}</strong> has been reviewed. We'll keep you updated on the status of your application.`,
+        color: "#3b82f6", // blue
+      },
+      REJECTED: {
+        subject: `Application Update: ${positionTitle}`,
+        message: `Thank you for your interest in the position of <strong>${positionTitle}</strong>. After careful consideration, we have decided to move forward with other candidates at this time. We appreciate your interest in Travunited and wish you the best in your job search.`,
+        color: "#ef4444", // red
+      },
+      ON_HOLD: {
+        subject: `Application Update: ${positionTitle}`,
+        message: `Your application for the position of <strong>${positionTitle}</strong> is currently on hold. We'll review it again and get back to you soon.`,
+        color: "#f59e0b", // amber
+      },
+    };
+
+    const statusInfo = statusMessages[status] || {
+      subject: `Application Status Update: ${positionTitle}`,
+      message: `Your application status for the position of <strong>${positionTitle}</strong> has been updated to <strong>${status}</strong>.`,
+      color: "#6b7280", // gray
+    };
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+            .status-badge { display: inline-block; padding: 8px 16px; border-radius: 20px; color: white; font-weight: bold; background-color: ${statusInfo.color}; margin: 20px 0; }
+            .info-box { background: white; padding: 20px; border-left: 4px solid ${statusInfo.color}; margin: 20px 0; }
+            .footer { text-align: center; color: #666; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Application Status Update</h1>
+            </div>
+            <div class="content">
+              <p>Dear ${candidateName},</p>
+              
+              <div class="info-box">
+                <p style="margin: 0;">${statusInfo.message}</p>
+              </div>
+
+              <div style="text-align: center; margin: 30px 0;">
+                <span class="status-badge">${status.replace("_", " ")}</span>
+              </div>
+
+              <div style="background: white; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p style="margin: 5px 0;"><strong>Position:</strong> ${positionTitle}</p>
+                <p style="margin: 5px 0;"><strong>Application ID:</strong> ${applicationId.slice(0, 8)}...</p>
+                <p style="margin: 5px 0;"><strong>Status:</strong> ${status.replace("_", " ")}</p>
+              </div>
+
+              ${status === "SHORTLISTED" ? `
+                <p style="background: #ecfdf5; padding: 15px; border-radius: 5px; border-left: 4px solid #10b981; margin: 20px 0;">
+                  <strong>Next Steps:</strong> Our hiring team will contact you shortly to schedule the next round of interviews. Please keep an eye on your email and phone for further communication.
+                </p>
+              ` : ""}
+
+              <p>If you have any questions, please feel free to reach out to us at <a href="mailto:careers@travunited.in">careers@travunited.in</a>.</p>
+
+              <p>Thank you for your interest in joining Travunited!</p>
+
+              <div class="footer">
+                <p><strong>Travunited</strong> - Making travel easier</p>
+                <p>This is an automated email. Please do not reply directly to this message.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    return await sendEmail({
+      to: candidateEmail,
+      subject: statusInfo.subject,
+      html,
+      text: `Dear ${candidateName},\n\n${statusInfo.message.replace(/<[^>]*>/g, "")}\n\nPosition: ${positionTitle}\nApplication ID: ${applicationId.slice(0, 8)}...\nStatus: ${status.replace("_", " ")}\n\nThank you for your interest in Travunited!`,
+      category: "general",
+    });
+  } catch (error) {
+    console.error("[Email] Error sending career application status email:", error);
+    return false;
+  }
+}
+
+/**
  * Send welcome email to newly created admin user
  * Includes temporary password or password reset link
  */
