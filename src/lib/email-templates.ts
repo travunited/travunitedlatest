@@ -78,7 +78,7 @@ export function replaceTemplateVariables(
     "{name}": variables.name || "",
     "{email}": variables.email || "",
     "{applicationId}": variables.applicationId || "",
-    "{applicationIdShort}": variables.applicationId ? variables.applicationId.slice(0, 8) + "..." : "",
+    "{applicationIdShort}": variables.applicationIdShort || (variables.applicationId ? variables.applicationId.slice(0, 8) + "..." : ""),
     "{country}": variables.country || "",
     "{visaType}": variables.visaType || "",
     "{status}": variables.status || "",
@@ -104,6 +104,11 @@ export function replaceTemplateVariables(
     "{tempPassword}": variables.tempPassword || "",
     "{loginUrl}": variables.loginUrl || `${baseUrl}/admin/login`,
     "{otp}": variables.otp || "",
+    "{positionTitle}": variables.positionTitle || "",
+    "{statusColor}": variables.statusColor || "#6b7280",
+    "{statusMessage}": variables.statusMessage || "",
+    "{applicationIdShort}": variables.applicationIdShort || "",
+    "{nextStepsSection}": variables.nextStepsSection || "",
   };
   
   // Replace all variables
