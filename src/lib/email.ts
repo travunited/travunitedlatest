@@ -15,6 +15,7 @@ export interface EmailOptions {
   text?: string;
   replyTo?: string | string[];
   category?: "general" | "visa" | "tours";
+  bypassActiveCheck?: boolean; // Set to true to send even to inactive users (e.g., password reset)
 }
 
 const EMAIL_CONFIG_KEY = "EMAIL_CONFIG";
@@ -223,10 +224,16 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
   const recipients = Array.isArray(options.to) ? options.to : [options.to];
   
   // Check if any recipients are inactive (bounced/complained emails)
-  // Skip sending to inactive users to prevent bounces
+  // Skip sending to inactive users to prevent bounces (unless bypassActiveCheck is true)
   const activeRecipients: string[] = [];
   for (const recipient of recipients) {
     try {
+      // If bypassActiveCheck is true (e.g., for password reset), always send
+      if (options.bypassActiveCheck) {
+        activeRecipients.push(recipient);
+        continue;
+      }
+      
       const user = await prisma.user.findUnique({
         where: { email: recipient.toLowerCase() },
         select: { isActive: true },
@@ -236,7 +243,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       if (!user || user.isActive) {
         activeRecipients.push(recipient);
       } else {
-        console.log(`[Email] Skipping inactive user: ${recipient}`);
+        console.log(`[Email] Skipping inactive user: ${recipient} (use bypassActiveCheck=true to override)`);
       }
     } catch (error) {
       // If user lookup fails, still try to send (might be external email)
@@ -513,11 +520,13 @@ export async function sendPasswordResetEmail(
   
   // Password reset emails should ALWAYS go to the user's actual email address
   // Never route to admin inbox, even for admin users
+  // Bypass active check to ensure password reset emails are sent even if user is inactive
   return sendEmail({
     to: email,
     subject,
     html,
     category: "general",
+    bypassActiveCheck: true, // Always send password reset emails, even to inactive users
   });
 }
 
@@ -549,11 +558,13 @@ export async function sendPasswordResetOTPEmail(
     }
     
     // Password reset OTP emails should ALWAYS go to the user's actual email address
+    // Bypass active check to ensure password reset emails are sent even if user is inactive
     return await sendEmail({
       to: email,
       subject,
       html,
       category: "general",
+      bypassActiveCheck: true, // Always send password reset emails, even to inactive users
     });
   } catch (error) {
     console.error("[Email] Error in sendPasswordResetOTPEmail:", error);

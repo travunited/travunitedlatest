@@ -47,6 +47,12 @@ export async function POST(req: Request) {
     // Find user by email
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        isActive: true, // Check if user is active
+      },
     });
 
     // Don't reveal if user exists or not (security best practice)
@@ -55,6 +61,15 @@ export async function POST(req: Request) {
         { message: "If an account exists with this email, a reset link has been sent." },
         { status: 200 }
       );
+    }
+
+    // Log user status for debugging (but still send email even if inactive)
+    if (!user.isActive) {
+      console.log("[Password Reset] User is inactive, but sending password reset email anyway", {
+        userId: user.id,
+        userEmail: user.email,
+        isActive: user.isActive,
+      });
     }
 
     // Generate 6-digit OTP
@@ -216,9 +231,16 @@ export async function POST(req: Request) {
         devOtp: otp, // Only for development/debugging
         resetId: passwordReset.id, // For OTP verification
         emailSent,
+        debug: {
+          userExists: true,
+          isActive: user.isActive,
+          lastEmailError: getLastEmailError() || null,
+        },
       });
     }
 
+    // In production, still return success even if email failed (security best practice)
+    // But log the error for admin investigation
     return NextResponse.json({
       message: "If an account exists with this email, an OTP has been sent.",
       resetId: passwordReset.id, // Return resetId for OTP verification
