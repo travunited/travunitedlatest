@@ -146,6 +146,7 @@ export default function AdminApplicationDetailPage() {
   const [assigningAdmin, setAssigningAdmin] = useState(false);
   const [activeTravellerTab, setActiveTravellerTab] = useState<string | null>(null);
   const [showAssignDropdown, setShowAssignDropdown] = useState(false);
+  const [uploadingVisa, setUploadingVisa] = useState(false);
   const [uploadingInvoice, setUploadingInvoice] = useState(false);
   const [removingInvoice, setRemovingInvoice] = useState(false);
   const [deletingApplication, setDeletingApplication] = useState(false);
@@ -927,11 +928,127 @@ export default function AdminApplicationDetailPage() {
               </div>
             </div>
 
+            {/* Visa Document Upload - show when in process or approved/rejected */}
+            {(application.status === "IN_PROCESS" || application.status === "APPROVED" || application.status === "REJECTED") && (
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <h3 className="font-semibold text-neutral-900 mb-4">Visa Document</h3>
+
+                {application.visaDocumentUrl ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div>
+                        <div className="flex items-center gap-2 text-green-700 font-medium">
+                          <CheckCircle size={18} />
+                          <span>Visa document uploaded</span>
+                        </div>
+                      </div>
+                      <a
+                        href={getDocumentUrl(application.visaDocumentUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-600 hover:text-primary-700 font-medium text-sm"
+                      >
+                        View
+                      </a>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="application/pdf,image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+
+                            setUploadingVisa(true);
+                            try {
+                              const formData = new FormData();
+                              formData.append("file", file);
+
+                              const response = await fetch(`/api/admin/applications/${params.id}/visa`, {
+                                method: "POST",
+                                body: formData,
+                              });
+
+                              if (response.ok) {
+                                await fetchApplication();
+                              } else {
+                                const error = await response.json().catch(() => ({}));
+                                alert(error.error || "Failed to upload visa document");
+                              }
+                            } catch (error) {
+                              console.error("Error uploading visa document:", error);
+                              alert("An error occurred while uploading visa document");
+                            } finally {
+                              setUploadingVisa(false);
+                              if (e.target) e.target.value = "";
+                            }
+                          }}
+                          disabled={uploadingVisa}
+                        />
+                        <div className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                          {uploadingVisa ? "Uploading..." : "Replace Visa Document"}
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg text-center">
+                      <FileText size={24} className="text-neutral-400 mx-auto mb-2" />
+                      <p className="text-sm text-neutral-600 mb-4">No visa document uploaded</p>
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="application/pdf,image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+
+                            setUploadingVisa(true);
+                            try {
+                              const formData = new FormData();
+                              formData.append("file", file);
+
+                              const response = await fetch(`/api/admin/applications/${params.id}/visa`, {
+                                method: "POST",
+                                body: formData,
+                              });
+
+                              if (response.ok) {
+                                await fetchApplication();
+                              } else {
+                                const error = await response.json().catch(() => ({}));
+                                alert(error.error || "Failed to upload visa document");
+                              }
+                            } catch (error) {
+                              console.error("Error uploading visa document:", error);
+                              alert("An error occurred while uploading visa document");
+                            } finally {
+                              setUploadingVisa(false);
+                              if (e.target) e.target.value = "";
+                            }
+                          }}
+                          disabled={uploadingVisa}
+                        />
+                        <div className="w-full bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-center text-sm">
+                          {uploadingVisa ? "Uploading..." : "Upload Visa (PDF or image)"}
+                        </div>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Invoice Management - Only show when status is APPROVED or REJECTED */}
             {(application.status === "APPROVED" || application.status === "REJECTED") && (
-              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-                <h3 className="font-semibold text-neutral-900 mb-4">Invoice</h3>
-                {application.invoiceUrl ? (
+            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+              <h3 className="font-semibold text-neutral-900 mb-4">Invoice</h3>
+              {application.invoiceUrl ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center space-x-2">
@@ -1066,8 +1183,8 @@ export default function AdminApplicationDetailPage() {
                     </label>
                   </div>
                 </div>
-                )}
-              </div>
+              )}
+            </div>
             )}
 
             {/* Internal Notes */}
