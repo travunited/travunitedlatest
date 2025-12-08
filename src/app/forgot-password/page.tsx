@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, ArrowRight, CheckCircle, AlertCircle, KeyRound } from "lucide-react";
+import { shouldShowErrors } from "@/lib/client-config";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -65,43 +66,29 @@ export default function ForgotPasswordPage() {
       if (response.ok) {
         // Check if resetId is present (required for OTP verification)
         if (!data.resetId) {
-          // This could mean:
-          // 1. User doesn't exist (security: we don't reveal this)
-          // 2. Database error creating reset record
-          // 3. Other server error
           console.error("[Forgot Password] Response missing resetId", { 
             status: response.status,
             message: data.message,
             error: data.error,
           });
-          
-          // Show the success message even if resetId is missing (security best practice)
-          // But don't advance to OTP step since we can't verify it
-          // This prevents the user from getting stuck or seeing a confusing error
-          // Ideally, we should support a flow where we don't confirm existence
-          
-          if (data.error && (process.env.NODE_ENV === "development" || window.location.hostname === "localhost")) {
-             setError(`Dev Error: ${data.error}`);
-          } else {
-             // Show the generic success message but stay on this page? 
-             // Or maybe treating it as a success allows us to avoid "User not found" error.
-             // But without resetId, we can't verify OTP.
-             // So we must tell the user "If an account exists..."
-             // and maybe clear the form?
-             alert(data.message || "If an account exists with this email, a reset link has been sent.");
-             return;
+          if (shouldShowErrors()) {
+            if (data.error && (process.env.NODE_ENV === "development" || window.location.hostname === "localhost")) {
+              setError(`Dev Error: ${data.error}`);
+            } else {
+              setError(data.message || "If an account exists with this email, a reset link has been sent.");
+            }
           }
           return;
         }
         
         // Check if email was actually sent
         if (data.emailSent === false) {
-          // Email sending failed - show warning but still allow OTP entry
-          // (in case email was sent but status wasn't properly returned)
-          setError(
-            "We encountered an issue sending the email. Please check your spam folder, or try resending the OTP. " +
-            (data.error ? `Error: ${data.error}` : "")
-          );
+          if (shouldShowErrors()) {
+            setError(
+              "We encountered an issue sending the email. Please check your spam folder, or try resending the OTP. " +
+              (data.error ? `Error: ${data.error}` : "")
+            );
+          }
           // Still proceed to OTP step in case email was actually sent
         } else {
           // Clear any previous errors if email was sent successfully
