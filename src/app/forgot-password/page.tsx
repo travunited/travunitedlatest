@@ -71,25 +71,25 @@ export default function ForgotPasswordPage() {
           // 3. Other server error
           console.error("[Forgot Password] Response missing resetId", { 
             status: response.status,
-            data: JSON.stringify(data, null, 2),
-            dataKeys: Object.keys(data),
             message: data.message,
             error: data.error,
           });
           
-          // Show a more helpful error message
-          // If there's a server error in development, show it
+          // Show the success message even if resetId is missing (security best practice)
+          // But don't advance to OTP step since we can't verify it
+          // This prevents the user from getting stuck or seeing a confusing error
+          // Ideally, we should support a flow where we don't confirm existence
+          
           if (data.error && (process.env.NODE_ENV === "development" || window.location.hostname === "localhost")) {
-            setError(
-              `We encountered an issue processing your request: ${data.error}. ` +
-              "Please try again or contact support if the problem persists."
-            );
+             setError(`Dev Error: ${data.error}`);
           } else {
-            // Generic message for production - don't mention email existence to avoid confusion
-            setError(
-              "We couldn't process your request at this time. " +
-              "Please try again in a moment, or contact support if the problem persists."
-            );
+             // Show the generic success message but stay on this page? 
+             // Or maybe treating it as a success allows us to avoid "User not found" error.
+             // But without resetId, we can't verify OTP.
+             // So we must tell the user "If an account exists..."
+             // and maybe clear the form?
+             alert(data.message || "If an account exists with this email, a reset link has been sent.");
+             return;
           }
           return;
         }

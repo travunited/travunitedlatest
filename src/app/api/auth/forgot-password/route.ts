@@ -76,25 +76,45 @@ export async function POST(req: Request) {
         searchEmail: normalizedEmail,
       });
       
+      // First try exact match
       user = await prisma.user.findUnique({
         where: { email: normalizedEmail },
         select: {
           id: true,
           email: true,
           role: true,
-          isActive: true, // Check if user is active
+          isActive: true,
         },
       });
+      
+      // If not found, try case-insensitive match
+      if (!user) {
+        console.log("[Password Reset] Exact match failed, trying case-insensitive match");
+        user = await prisma.user.findFirst({
+          where: {
+            email: {
+              equals: normalizedEmail,
+              mode: "insensitive",
+            },
+          },
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            isActive: true,
+          },
+        });
+      }
       
       console.log("[Password Reset] Database query completed", {
         normalizedEmail,
         userFound: !!user,
         userId: user?.id,
         userEmail: user?.email,
-        userEmailFromDb: user?.email,
         isActive: user?.isActive,
         role: user?.role,
       });
+    } catch (dbError) {
     } catch (dbError) {
       console.error("[Password Reset] Database error during user lookup", {
         normalizedEmail,
