@@ -48,6 +48,18 @@ export default function ForgotPasswordPage() {
       });
 
       const data = await response.json();
+      
+      // Log the response for debugging
+      console.log("[Forgot Password] API Response", {
+        status: response.status,
+        ok: response.ok,
+        hasResetId: !!data.resetId,
+        hasEmailSent: typeof data.emailSent !== "undefined",
+        emailSent: data.emailSent,
+        message: data.message,
+        error: data.error,
+        fullResponse: data,
+      });
 
       if (response.ok) {
         // Check if resetId is present (required for OTP verification)
@@ -56,7 +68,11 @@ export default function ForgotPasswordPage() {
           // 1. User doesn't exist (security: we don't reveal this)
           // 2. Database error creating reset record
           // 3. Other server error
-          console.error("Password reset response missing resetId", { data });
+          console.error("[Forgot Password] Response missing resetId", { 
+            status: response.status,
+            data,
+            responseText: await response.text().catch(() => "Could not read response"),
+          });
           setError(
             "We couldn't process your request. This might happen if the email doesn't exist in our system. " +
             "Please check your email address and try again, or contact support if the problem persists."

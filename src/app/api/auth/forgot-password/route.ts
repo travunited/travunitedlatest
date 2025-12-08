@@ -250,6 +250,19 @@ export async function POST(req: Request) {
 
     // Return success with emailSent status so frontend can show appropriate message
     // Still return resetId even if email failed (user might have received it)
+    if (!passwordReset || !passwordReset.id) {
+      console.error("[Password Reset] Password reset record missing ID before response", {
+        userId: user.id,
+        userEmail: user.email,
+        passwordReset: passwordReset ? "exists but no id" : "null",
+      });
+      // Still return success to avoid revealing user existence
+      return NextResponse.json(
+        { message: "If an account exists with this email, a reset link has been sent." },
+        { status: 200 }
+      );
+    }
+    
     const responseData: any = {
       message: emailSent 
         ? "If an account exists with this email, an OTP has been sent."
@@ -262,6 +275,14 @@ export async function POST(req: Request) {
     if (process.env.NODE_ENV !== "production" && !emailSent) {
       responseData.error = getLastEmailError();
     }
+    
+    console.log("[Password Reset] Returning response", {
+      hasResetId: !!responseData.resetId,
+      resetId: responseData.resetId,
+      emailSent: responseData.emailSent,
+      userId: user.id,
+      userEmail: user.email,
+    });
     
     return NextResponse.json(responseData);
   } catch (error) {
