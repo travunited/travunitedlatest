@@ -71,7 +71,11 @@ export async function POST(req: Request) {
     // Find user by email
     let user;
     try {
-      console.log("[Password Reset] Querying database for user", { normalizedEmail });
+      console.log("[Password Reset] Querying database for user", { 
+        normalizedEmail,
+        searchEmail: normalizedEmail,
+      });
+      
       user = await prisma.user.findUnique({
         where: { email: normalizedEmail },
         select: {
@@ -81,18 +85,22 @@ export async function POST(req: Request) {
           isActive: true, // Check if user is active
         },
       });
+      
       console.log("[Password Reset] Database query completed", {
         normalizedEmail,
         userFound: !!user,
         userId: user?.id,
         userEmail: user?.email,
+        userEmailFromDb: user?.email,
         isActive: user?.isActive,
+        role: user?.role,
       });
     } catch (dbError) {
       console.error("[Password Reset] Database error during user lookup", {
         normalizedEmail,
         error: dbError instanceof Error ? dbError.message : String(dbError),
         stack: dbError instanceof Error ? dbError.stack : undefined,
+        errorName: dbError instanceof Error ? dbError.name : typeof dbError,
       });
       // Still return generic success to avoid revealing errors
       return NextResponse.json(
@@ -103,7 +111,7 @@ export async function POST(req: Request) {
 
     // Don't reveal if user exists or not (security best practice)
     if (!user) {
-      console.log("[Password Reset] User not found in database, returning generic success", {
+      console.log("[Password Reset] User not found in database after all attempts, returning generic success", {
         normalizedEmail,
         searchedEmail: normalizedEmail,
       });
@@ -113,10 +121,11 @@ export async function POST(req: Request) {
       );
     }
     
-    console.log("[Password Reset] User found, proceeding with password reset", {
+    console.log("[Password Reset] ✅ User found, proceeding with password reset", {
       userId: user.id,
       userEmail: user.email,
       isActive: user.isActive,
+      role: user.role,
     });
 
     // Log user status for debugging (but still send email even if inactive)
