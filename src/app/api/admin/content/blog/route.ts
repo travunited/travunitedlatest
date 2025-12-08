@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl, normalizeMediaInput } from "@/lib/media";
+import { publishReadyPosts } from "@/lib/blog/publishReady";
 export const dynamic = "force-dynamic";
 
 
@@ -62,6 +63,13 @@ export async function GET(req: Request) {
         { error: "Forbidden - Admin access required" },
         { status: 403 }
       );
+    }
+
+    // Auto-promote any scheduled posts that are ready before listing
+    try {
+      await publishReadyPosts();
+    } catch (autoPublishError) {
+      console.error("Error auto-publishing ready blog posts:", autoPublishError);
     }
 
     const posts = await prisma.blogPost.findMany({
