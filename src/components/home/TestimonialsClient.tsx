@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { Star, Quote } from "lucide-react";
 import { getMediaProxyUrl } from "@/lib/media";
 
@@ -76,10 +77,13 @@ export function TestimonialsClient({ reviews }: TestimonialsClientProps) {
                 </p>
                 <div className="flex items-center space-x-3">
                   {review.imageKey || review.imageUrl ? (
-                    <img
+                    <Image
                       src={review.imageKey ? getMediaProxyUrl(review.imageKey) : review.imageUrl || ""}
                       alt={review.reviewerName || "Reviewer"}
+                      width={48}
+                      height={48}
                       className="w-12 h-12 rounded-full object-cover border border-neutral-200"
+                      unoptimized
                     />
                   ) : null}
                   <div>

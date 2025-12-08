@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { Menu, X, User, ChevronDown, LogOut, Shield } from "lucide-react";
@@ -31,10 +32,13 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <img 
+            <Image 
               src="/logo.png" 
               alt="Travunited Logo" 
+              width={140}
+              height={56}
               className="h-14 w-auto"
+              priority
             />
           </Link>
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone } from "lucide-react";
 
 export function Footer() {
@@ -33,9 +34,11 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <img 
+            <Image 
               src="/white-logo.png" 
               alt="Travunited Logo" 
+              width={160}
+              height={64}
               className="h-16 w-auto mb-4"
             />
             <p className="text-neutral-400 mb-4 max-w-md">

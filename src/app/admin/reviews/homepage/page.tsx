@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { Star, Plus, Edit2, Trash2, ExternalLink, Image as ImageIcon, X } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
@@ -283,10 +284,13 @@ export default function AdminHomepageReviewsPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-3">
                         {review.imageKey || review.imageUrl ? (
-                          <img
+                          <Image
                             src={review.imageKey ? getMediaProxyUrl(review.imageKey) : review.imageUrl || ""}
                             alt={review.reviewerName || "Reviewer"}
+                            width={40}
+                            height={40}
                             className="w-10 h-10 rounded-full object-cover"
+                            unoptimized
                           />
                         ) : (
                           <div className="w-10 h-10 rounded-full bg-neutral-200 flex items-center justify-center">
@@ -486,10 +490,13 @@ export default function AdminHomepageReviewsPage() {
                   </label>
                   <div className="flex items-center space-x-4">
                     {(formData.imageKey || formData.imageUrl) && (
-                      <img
+                      <Image
                         src={formData.imageKey ? getMediaProxyUrl(formData.imageKey) : formData.imageUrl || ""}
                         alt="Reviewer"
+                        width={80}
+                        height={80}
                         className="w-20 h-20 rounded-full object-cover border border-neutral-300"
+                        unoptimized
                       />
                     )}
                     <div className="flex-1">
