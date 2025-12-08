@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -15,6 +15,25 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Suppress harmless browser extension errors
+  useEffect(() => {
+    const originalError = console.error;
+    console.error = (...args: any[]) => {
+      const message = args[0]?.toString() || "";
+      // Suppress runtime.lastError from browser extensions
+      if (message.includes("runtime.lastError") || 
+          message.includes("message port closed") ||
+          message.includes("Extension context invalidated")) {
+        return; // Suppress these harmless errors
+      }
+      originalError.apply(console, args);
+    };
+
+    return () => {
+      console.error = originalError;
+    };
+  }, []);
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +68,7 @@ export default function ForgotPasswordPage() {
         setError(data.error || "Failed to send OTP. Please try again.");
       }
     } catch (err) {
+      console.error("Error sending OTP request:", err);
       setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -88,6 +108,7 @@ export default function ForgotPasswordPage() {
         setError(data.error || "Failed to resend OTP. Please try again.");
       }
     } catch (err) {
+      console.error("Error resending OTP request:", err);
       setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -126,6 +147,7 @@ export default function ForgotPasswordPage() {
         setError(data.error || "Invalid OTP. Please check and try again.");
       }
     } catch (err) {
+      console.error("Error verifying OTP:", err);
       setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
