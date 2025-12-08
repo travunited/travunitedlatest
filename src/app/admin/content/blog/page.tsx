@@ -51,6 +51,7 @@ export default function AdminBlogPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [publishingReady, setPublishingReady] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
@@ -94,6 +95,32 @@ export default function AdminBlogPage() {
       console.error("Error fetching blog posts:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePublishReady = async () => {
+    setPublishingReady(true);
+    try {
+      const response = await fetch("/api/admin/content/blog/publish-ready", {
+        method: "POST",
+      });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok) {
+        await fetchPosts();
+        const promoted = typeof result.promoted === "number" ? result.promoted : 0;
+        alert(
+          promoted > 0
+            ? `Published ${promoted} scheduled post${promoted === 1 ? "" : "s"}.`
+            : "No scheduled posts were ready."
+        );
+      } else {
+        alert(result.error || "Failed to publish ready posts");
+      }
+    } catch (error) {
+      console.error("Error publishing ready blog posts:", error);
+      alert("An error occurred while publishing ready posts");
+    } finally {
+      setPublishingReady(false);
     }
   };
 
@@ -348,13 +375,22 @@ export default function AdminBlogPage() {
               {filteredPosts.length} post{filteredPosts.length !== 1 ? "s" : ""} found
             </p>
           </div>
-          <Link
-            href="/admin/content/blog/new"
-            className="inline-flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors"
-          >
-            <Plus size={20} />
-            <span>New Post</span>
-          </Link>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={handlePublishReady}
+              disabled={publishingReady}
+              className="inline-flex items-center space-x-2 px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium hover:bg-neutral-50 disabled:opacity-50"
+            >
+              {publishingReady ? "Publishing..." : "Publish ready now"}
+            </button>
+            <Link
+              href="/admin/content/blog/new"
+              className="inline-flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+            >
+              <Plus size={20} />
+              <span>New Post</span>
+            </Link>
+          </div>
         </div>
 
         {/* Search and Filters */}
