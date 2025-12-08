@@ -64,11 +64,11 @@ export default function ReportsOverviewPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login");
+      router.replace("/login");
     } else if (status === "authenticated") {
       const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
       if (!isSuperAdmin) {
-        router.push("/admin");
+        router.replace("/admin");
       }
     }
   }, [session, status, router]);
@@ -84,6 +84,11 @@ export default function ReportsOverviewPage() {
         </div>
       </AdminLayout>
     );
+  }
+
+  // Prevent flicker: if not authenticated or not super-admin, bail after redirect
+  if (status !== "authenticated" || session?.user?.role !== "SUPER_ADMIN") {
+    return null;
   }
 
   return (
