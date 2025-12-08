@@ -12,10 +12,12 @@ const forgotPasswordSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  console.log("[Password Reset] Request received");
   try {
     // Ensure we're receiving JSON
     const contentType = req.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
+      console.error("[Password Reset] Invalid content type", { contentType });
       return NextResponse.json(
         { error: "Content-Type must be application/json" },
         { status: 400 }
@@ -25,18 +27,40 @@ export async function POST(req: Request) {
     let body;
     try {
       body = await req.json();
+      console.log("[Password Reset] Request body parsed", { email: body.email });
     } catch (parseError) {
-      console.error("Failed to parse JSON body:", parseError);
+      console.error("[Password Reset] Failed to parse JSON body:", parseError);
       return NextResponse.json(
         { error: "Invalid JSON format" },
         { status: 400 }
       );
     }
 
-    const { email } = forgotPasswordSchema.parse(body);
-    const normalizedEmail = email.trim().toLowerCase();
+    let parsedEmail;
+    try {
+      const parsed = forgotPasswordSchema.parse(body);
+      parsedEmail = parsed.email;
+      console.log("[Password Reset] Email validated", { email: parsedEmail });
+    } catch (validationError) {
+      console.error("[Password Reset] Email validation failed", {
+        error: validationError instanceof Error ? validationError.message : String(validationError),
+        body,
+      });
+      // Still return generic success to avoid email enumeration
+      return NextResponse.json(
+        { message: "If an account exists with this email, a reset link has been sent." },
+        { status: 200 }
+      );
+    }
+    
+    const normalizedEmail = parsedEmail.trim().toLowerCase();
+    console.log("[Password Reset] Email normalized", { 
+      original: parsedEmail, 
+      normalized: normalizedEmail 
+    });
 
     if (!normalizedEmail) {
+      console.log("[Password Reset] Empty email after normalization");
       // Always return success to avoid email enumeration
       return NextResponse.json(
         { message: "If an account exists with this email, a reset link has been sent." },
@@ -45,35 +69,55 @@ export async function POST(req: Request) {
     }
 
     // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        isActive: true, // Check if user is active
-      },
-    });
-
-    // Log user lookup result for debugging
-    console.log("[Password Reset] User lookup", {
-      normalizedEmail,
-      userFound: !!user,
-      userId: user?.id,
-      userEmail: user?.email,
-      isActive: user?.isActive,
-    });
+    let user;
+    try {
+      console.log("[Password Reset] Querying database for user", { normalizedEmail });
+      user = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          isActive: true, // Check if user is active
+        },
+      });
+      console.log("[Password Reset] Database query completed", {
+        normalizedEmail,
+        userFound: !!user,
+        userId: user?.id,
+        userEmail: user?.email,
+        isActive: user?.isActive,
+      });
+    } catch (dbError) {
+      console.error("[Password Reset] Database error during user lookup", {
+        normalizedEmail,
+        error: dbError instanceof Error ? dbError.message : String(dbError),
+        stack: dbError instanceof Error ? dbError.stack : undefined,
+      });
+      // Still return generic success to avoid revealing errors
+      return NextResponse.json(
+        { message: "If an account exists with this email, a reset link has been sent." },
+        { status: 200 }
+      );
+    }
 
     // Don't reveal if user exists or not (security best practice)
     if (!user) {
-      console.log("[Password Reset] User not found, returning generic success", {
+      console.log("[Password Reset] User not found in database, returning generic success", {
         normalizedEmail,
+        searchedEmail: normalizedEmail,
       });
       return NextResponse.json(
         { message: "If an account exists with this email, a reset link has been sent." },
         { status: 200 }
       );
     }
+    
+    console.log("[Password Reset] User found, proceeding with password reset", {
+      userId: user.id,
+      userEmail: user.email,
+      isActive: user.isActive,
+    });
 
     // Log user status for debugging (but still send email even if inactive)
     if (!user.isActive) {
@@ -298,7 +342,18 @@ export async function POST(req: Request) {
     
     return NextResponse.json(responseData);
   } catch (error) {
+    console.error("[Password Reset] Unexpected error in forgot password route", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      errorType: error instanceof z.ZodError ? "ZodError" : typeof error,
+      errorName: error instanceof Error ? error.name : "Unknown",
+    });
+    
     if (error instanceof z.ZodError) {
+      console.error("[Password Reset] Zod validation error details", {
+        errors: error.errors,
+        issues: error.issues,
+      });
       // Still return generic success to avoid email enumeration
       return NextResponse.json(
         { message: "If an account exists with this email, a reset link has been sent." },
@@ -306,7 +361,6 @@ export async function POST(req: Request) {
       );
     }
 
-    console.error("Error in forgot password:", error);
     // Still return success to user (security best practice)
     return NextResponse.json(
       { message: "If an account exists with this email, a reset link has been sent." },
