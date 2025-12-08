@@ -115,7 +115,6 @@ export async function POST(req: Request) {
         role: user?.role,
       });
     } catch (dbError) {
-    } catch (dbError) {
       console.error("[Password Reset] Database error during user lookup", {
         normalizedEmail,
         error: dbError instanceof Error ? dbError.message : String(dbError),
