@@ -135,6 +135,7 @@ export async function POST(
         filePath: key,
         documentType: requirement?.name || documentType,
         status: "PENDING",
+        // @ts-expect-error regenerate Prisma client after adding fileSize
         fileSize: file.size,
       },
     });
