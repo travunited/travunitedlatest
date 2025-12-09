@@ -90,6 +90,19 @@ export async function POST(req: Request) {
       "https://travunited.in";
     const magicLink = `${baseUrl}/reset-password?id=${reset.id}&token=${encodeURIComponent(rawToken)}`;
 
+    // Log the full magic link for debugging (safe to log as it's a one-time use token)
+    console.log("[Password Reset] 🔗 Magic link generated", {
+      userId: user.id,
+      userEmail: user.email,
+      resetId: reset.id,
+      baseUrl,
+      magicLinkFull: magicLink, // Log full link for debugging
+      magicLinkPreview: magicLink.slice(0, 100) + "...",
+      tokenLength: rawToken.length,
+      encodedTokenLength: encodeURIComponent(rawToken).length,
+      timestamp: new Date().toISOString(),
+    });
+
     let emailSent = false;
     let emailError: string | undefined = undefined;
     

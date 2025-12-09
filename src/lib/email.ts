@@ -504,81 +504,176 @@ export async function sendPasswordResetEmail(
   resetLink: string,
   role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
 ) {
-  // Use exact same pattern as contact form - just await sendEmail, let errors throw
-  const subject = "Reset Your Travunited Password";
-  
-  // Escape resetLink for HTML to prevent XSS
-  const escapedResetLink = resetLink.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-  
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <div style="background: linear-gradient(135deg, #0066cc 0%, #004499 100%); padding: 30px; border-radius: 8px 8px 0 0; text-align: center;">
-        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Password Reset Request</h1>
-      </div>
-      <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;">
-        <p style="color: #333; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-          You requested to reset your password for your Travunited account. Click the button below to set a new password:
-        </p>
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${escapedResetLink}" style="background: #0066cc; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px;">Reset Password</a>
-        </div>
-        <p style="color: #666; font-size: 14px; line-height: 1.6; margin: 20px 0;">
-          If the button doesn't work, copy and paste this link into your browser:
-        </p>
-        <p style="background: #f5f5f5; padding: 12px; border-radius: 4px; word-break: break-all; font-size: 12px; color: #555; margin: 10px 0;">
-          ${resetLink}
-        </p>
-        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin: 20px 0; border-radius: 4px;">
-          <p style="color: #856404; font-size: 13px; margin: 0;">
-            <strong>⏰ Important:</strong> This link will expire in <strong>1 hour</strong>. Please reset your password as soon as possible.
-          </p>
-        </div>
-        <p style="color: #999; font-size: 12px; line-height: 1.6; margin: 20px 0 0 0;">
-          If you didn't request this password reset, you can safely ignore this email. Your password will remain unchanged.
-        </p>
-        <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;" />
-        <p style="color: #666; font-size: 12px; margin: 0;">
-          Best regards,<br/>
-          <strong>The Travunited Team</strong>
-        </p>
-      </div>
-    </div>
-  `;
+  try {
+    console.log("[Password Reset Email] 📧 Starting email send", {
+      email,
+      resetLinkPreview: resetLink.slice(0, 80) + "...",
+      resetLinkFull: resetLink, // Log full link for debugging
+      role: role || "not provided",
+      timestamp: new Date().toISOString(),
+    });
 
-  const text = `Reset Your Travunited Password
+    const subject = "Reset Your Travunited Password";
+    
+    // Ensure resetLink is a valid URL
+    if (!resetLink || !resetLink.startsWith("http")) {
+      const error = `Invalid reset link format: ${resetLink}`;
+      console.error("[Password Reset Email] ❌ Invalid reset link", { resetLink, error });
+      lastEmailError = error;
+      return false;
+    }
+    
+    // Escape resetLink for HTML to prevent XSS (but keep original for text version)
+    const escapedResetLink = resetLink
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    
+    // Professional email template with proper reset link
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Your Password</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td style="padding: 20px 0; text-align: center;">
+        <table role="presentation" style="width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #0066cc 0%, #004499 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">Password Reset Request</h1>
+            </td>
+          </tr>
+          
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                Hello,
+              </p>
+              <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
+                You requested to reset your password for your Travunited account. Click the button below to set a new password:
+              </p>
+              
+              <!-- Reset Button -->
+              <table role="presentation" style="width: 100%; margin: 32px 0;">
+                <tr>
+                  <td style="text-align: center;">
+                    <a href="${resetLink}" style="background-color: #0066cc; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px; border: none;">Reset Password</a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 24px 0;">
+                If the button doesn't work, copy and paste this link into your browser:
+              </p>
+              
+              <!-- Reset Link -->
+              <div style="background-color: #f5f5f5; padding: 12px; border-radius: 4px; margin: 16px 0;">
+                <p style="word-break: break-all; font-size: 12px; color: #555555; margin: 0; font-family: monospace;">
+                  ${resetLink}
+                </p>
+              </div>
+              
+              <!-- Warning Box -->
+              <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 16px; margin: 24px 0; border-radius: 4px;">
+                <p style="color: #856404; font-size: 14px; margin: 0; font-weight: 600;">
+                  ⏰ Important: This link will expire in 1 hour.
+                </p>
+                <p style="color: #856404; font-size: 13px; margin: 8px 0 0 0;">
+                  Please reset your password as soon as possible.
+                </p>
+              </div>
+              
+              <p style="color: #999999; font-size: 13px; line-height: 1.6; margin: 24px 0 0 0;">
+                If you didn't request this password reset, you can safely ignore this email. Your password will remain unchanged.
+              </p>
+              
+              <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 32px 0;" />
+              
+              <p style="color: #666666; font-size: 12px; margin: 0;">
+                Best regards,<br/>
+                <strong style="color: #333333;">The Travunited Team</strong>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 
-You requested to reset your password. Click the link below to set a new password:
+    const text = `Reset Your Travunited Password
+
+Hello,
+
+You requested to reset your password for your Travunited account. Click the link below to set a new password:
 
 ${resetLink}
 
-This link expires in 1 hour. If you didn't request this, ignore this email.
+⏰ Important: This link will expire in 1 hour. Please reset your password as soon as possible.
+
+If you didn't request this password reset, you can safely ignore this email. Your password will remain unchanged.
 
 Best regards,
 The Travunited Team`;
 
-  // Use exact same pattern as contact form - just await sendEmail directly
-  // Password reset emails must always go to the user and skip active checks
-  // Note: sendEmail returns boolean, doesn't throw - same as contact form
-  const result = await sendEmail({
-    to: email,
-    subject,
-    html,
-    text,
-    category: "general",
-    bypassActiveCheck: true, // Always send password reset emails, even to inactive users
-  });
-  
-  // Log result for debugging (contact form doesn't check return value, but we do for password reset)
-  if (!result) {
-    const error = getLastEmailError();
-    console.error("[Password Reset Email] sendEmail returned false", {
+    console.log("[Password Reset Email] 📝 Email content prepared", {
       email,
-      error: error || "Unknown error",
+      subject,
+      htmlLength: html.length,
+      textLength: text.length,
+      resetLinkIncluded: html.includes(resetLink) && text.includes(resetLink),
       timestamp: new Date().toISOString(),
     });
+
+    // Use EXACT same pattern as contact form - await sendEmail directly
+    // Password reset emails must always go to the user and skip active checks
+    const result = await sendEmail({
+      to: email,
+      subject,
+      html,
+      text,
+      category: "general",
+      bypassActiveCheck: true, // Always send password reset emails, even to inactive users
+    });
+    
+    if (result) {
+      console.log("[Password Reset Email] ✅ Email sent successfully", {
+        email,
+        resetLinkPreview: resetLink.slice(0, 80) + "...",
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      const error = getLastEmailError();
+      console.error("[Password Reset Email] ❌ Email sending failed", {
+        email,
+        error: error || "Unknown error",
+        resetLinkPreview: resetLink.slice(0, 80) + "...",
+        timestamp: new Date().toISOString(),
+      });
+    }
+    
+    return result;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("[Password Reset Email] ❌ Exception in sendPasswordResetEmail", {
+      email,
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+    });
+    lastEmailError = `Exception: ${errorMessage}`;
+    return false;
   }
-  
-  return result;
 }
 
 // Fallback simple OTP email template (used if template loading fails)
