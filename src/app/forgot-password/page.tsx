@@ -62,14 +62,19 @@ export default function ForgotPasswordPage() {
 
       const data = await response.json();
       
-      // Debug: Log the exact response from API
-      console.log("[Forgot Password] API Response:", {
-        status: response.status,
-        ok: response.ok,
-        data,
-        hasEmailSent: typeof data.emailSent !== "undefined",
-        emailSent: data.emailSent,
-      });
+      // Debug: Log the exact response from API with full details
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("[Forgot Password] 📨 API Response Received:");
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      console.log("Status:", response.status);
+      console.log("OK:", response.ok);
+      console.log("Full Response Data:", JSON.stringify(data, null, 2));
+      console.log("Has emailSent field:", typeof data.emailSent !== "undefined");
+      console.log("emailSent value:", data.emailSent);
+      console.log("emailSent type:", typeof data.emailSent);
+      console.log("Has error field:", typeof data.error !== "undefined");
+      console.log("Error value:", data.error || "none");
+      console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
       if (response.ok) {
         // Check if emailSent is explicitly false (not just undefined)
