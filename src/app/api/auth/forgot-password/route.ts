@@ -54,14 +54,39 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { email } = forgotPasswordSchema.parse(body);
     const normalizedEmail = email.trim().toLowerCase();
-    if (!normalizedEmail) return respond();
+    
+    console.log("[Password Reset] 🔍 Looking up user", {
+      providedEmail: email,
+      normalizedEmail,
+      timestamp: new Date().toISOString(),
+    });
+    
+    if (!normalizedEmail) {
+      console.log("[Password Reset] ⚠️ Empty email after normalization");
+      return respond(undefined, false); // Return emailSent: false
+    }
 
     // 2) Find user (case-insensitive)
     const user = await prisma.user.findFirst({
       where: { email: { equals: normalizedEmail, mode: "insensitive" } },
       select: { id: true, email: true, role: true, isActive: true },
     });
-    if (!user) return respond(); // silent success
+    
+    console.log("[Password Reset] 👤 User lookup result", {
+      found: !!user,
+      userId: user?.id || null,
+      userEmail: user?.email || null,
+      normalizedEmail,
+      timestamp: new Date().toISOString(),
+    });
+    
+    if (!user) {
+      console.log("[Password Reset] ⚠️ User not found - returning silent success", {
+        normalizedEmail,
+        timestamp: new Date().toISOString(),
+      });
+      return respond(undefined, false); // Return emailSent: false for security (avoid enumeration)
+    }
 
     // 3) Generate magic link token (no OTP)
     const rawToken = crypto.randomBytes(32).toString("hex");
@@ -174,12 +199,19 @@ export async function POST(req: Request) {
     
     return NextResponse.json(responseData, { status: 200 });
   } catch (error) {
-    if (error instanceof z.ZodError) return respond();
-    console.error("[Password Reset] Unexpected error", {
+    if (error instanceof z.ZodError) {
+      console.error("[Password Reset] ⚠️ Validation error", {
+        errors: error.errors,
+        timestamp: new Date().toISOString(),
+      });
+      return respond(undefined, false); // Return emailSent: false
+    }
+    console.error("[Password Reset] ❌ Unexpected error", {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
     });
-    return respond();
+    return respond(undefined, false); // Return emailSent: false
   }
 }
 
