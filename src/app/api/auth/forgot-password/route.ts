@@ -12,16 +12,32 @@ const forgotPasswordSchema = z.object({
 });
 
 // Generic success response to avoid email enumeration
+// Always include emailSent as boolean when provided, so frontend can reliably check it
 function respond(resetId?: string, emailSent?: boolean, error?: string) {
-  return NextResponse.json(
-    {
-      message: "If an account exists with this email, a reset link has been sent.",
-      ...(resetId ? { resetId } : {}),
-      ...(typeof emailSent === "boolean" ? { emailSent } : {}),
-      ...(error && process.env.NODE_ENV !== "production" ? { error } : {}),
-    },
-    { status: 200 }
-  );
+  const responseData: {
+    message: string;
+    resetId?: string;
+    emailSent?: boolean;
+    error?: string;
+  } = {
+    message: "If an account exists with this email, a reset link has been sent.",
+  };
+  
+  if (resetId) {
+    responseData.resetId = resetId;
+  }
+  
+  // Always include emailSent as boolean when provided (not undefined)
+  if (typeof emailSent === "boolean") {
+    responseData.emailSent = emailSent;
+  }
+  
+  // Include error in non-production or if explicitly provided
+  if (error && (process.env.NODE_ENV !== "production" || error)) {
+    responseData.error = error;
+  }
+  
+  return NextResponse.json(responseData, { status: 200 });
 }
 
 export async function POST(req: Request) {
@@ -125,7 +141,25 @@ export async function POST(req: Request) {
     }
 
     // 6) Return resetId (even if email failed), plus emailSent flag
-    return respond(reset.id, emailSent, emailError || getLastEmailError() || undefined);
+    // Always include emailSent as boolean so frontend can check it
+    const responseData = {
+      message: "If an account exists with this email, a reset link has been sent.",
+      resetId: reset.id,
+      emailSent: emailSent, // Always include as boolean
+      ...(emailError && process.env.NODE_ENV !== "production" ? { error: emailError } : {}),
+    };
+    
+    // Log the exact response being sent
+    console.log("[Password Reset] 📤 Sending response to client", {
+      resetId: reset.id,
+      emailSent,
+      hasEmailSent: typeof emailSent === "boolean",
+      emailError: emailError || null,
+      responseData,
+      timestamp: new Date().toISOString(),
+    });
+    
+    return NextResponse.json(responseData, { status: 200 });
   } catch (error) {
     if (error instanceof z.ZodError) return respond();
     console.error("[Password Reset] Unexpected error", {

@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, ArrowRight, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { shouldShowErrors } from "@/lib/client-config";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [step, setStep] = useState<"email" | "sent">("email");
   const [error, setError] = useState("");
@@ -16,23 +14,15 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [emailValid, setEmailValid] = useState(true);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Suppress harmless browser extension errors
+  // Clean up timer on unmount
   useEffect(() => {
-    const originalError = console.error;
-    console.error = (...args: any[]) => {
-      const message = args[0]?.toString() || "";
-      // Suppress runtime.lastError from browser extensions
-      if (message.includes("runtime.lastError") || 
-          message.includes("message port closed") ||
-          message.includes("Extension context invalidated")) {
-        return; // Suppress these harmless errors
-      }
-      originalError.apply(console, args);
-    };
-
     return () => {
-      console.error = originalError;
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     };
   }, []);
 
@@ -71,8 +61,18 @@ export default function ForgotPasswordPage() {
       });
 
       const data = await response.json();
+      
+      // Debug: Log the exact response from API
+      console.log("[Forgot Password] API Response:", {
+        status: response.status,
+        ok: response.ok,
+        data,
+        hasEmailSent: typeof data.emailSent !== "undefined",
+        emailSent: data.emailSent,
+      });
 
       if (response.ok) {
+        // Check if emailSent is explicitly false (not just undefined)
         if (data.emailSent === false && shouldShowErrors()) {
           setError(
             "We encountered an issue sending the email. Please check your spam folder, or try again. " +
@@ -84,10 +84,20 @@ export default function ForgotPasswordPage() {
         }
         setStep("sent");
         setResendCooldown(60);
-        const timer = setInterval(() => {
+        
+        // Clear any existing timer
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+        
+        // Start new timer
+        timerRef.current = setInterval(() => {
           setResendCooldown((prev) => {
             if (prev <= 1) {
-              clearInterval(timer);
+              if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+              }
               return 0;
             }
             return prev - 1;
@@ -111,16 +121,19 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
+      // Normalize email same as handleSendLink
+      const normalizedEmail = email.trim().toLowerCase();
+      
       const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: normalizedEmail }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        if (data.emailSent === false) {
+        if (data.emailSent === false && shouldShowErrors()) {
           setError(
             "We encountered an issue sending the email. Please check your spam folder, or try again. " +
             (data.error ? `Error: ${data.error}` : "")
@@ -129,10 +142,20 @@ export default function ForgotPasswordPage() {
           setError("");
         }
         setResendCooldown(60);
-        const timer = setInterval(() => {
+        
+        // Clear any existing timer
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+        
+        // Start new timer
+        timerRef.current = setInterval(() => {
           setResendCooldown((prev) => {
             if (prev <= 1) {
-              clearInterval(timer);
+              if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+              }
               return 0;
             }
             return prev - 1;
@@ -294,6 +317,11 @@ export default function ForgotPasswordPage() {
                 <button
                   type="button"
                   onClick={() => {
+                    // Clear timer when changing email
+                    if (timerRef.current) {
+                      clearInterval(timerRef.current);
+                      timerRef.current = null;
+                    }
                     setStep("email");
                     setError("");
                     setResendCooldown(0);
