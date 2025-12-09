@@ -82,11 +82,17 @@ export async function POST(req: Request) {
     }
 
     // Verify token hash
-    const tokenMatches = await bcrypt.compare(token, passwordReset.tokenHash);
+    // Decode token in case it was URL-encoded (same as validate-reset-token route)
+    const decodedToken = decodeURIComponent(token);
+    const tokenMatches = await bcrypt.compare(decodedToken, passwordReset.tokenHash);
     if (!tokenMatches) {
       console.error("[Password Reset] Invalid token", {
         resetId,
+        tokenLength: token.length,
+        decodedTokenLength: decodedToken.length,
         tokenPrefix: token.slice(0, 6) + "...",
+        decodedTokenPrefix: decodedToken.slice(0, 6) + "...",
+        tokenHashPrefix: passwordReset.tokenHash.substring(0, 10) + "...",
       });
       return NextResponse.json(
         { error: "Invalid reset link. Please request a new one." },

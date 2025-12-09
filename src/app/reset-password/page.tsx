@@ -40,6 +40,15 @@ function ResetPasswordContent() {
         );
 
         const data = await response.json();
+        
+        // Debug: Log validation response
+        console.log("[Reset Password] Token validation response:", {
+          status: response.status,
+          ok: response.ok,
+          data,
+          valid: data.valid,
+          hasError: !!data.error,
+        });
 
         if (response.ok && data.valid) {
           setTokenValid(true);
@@ -106,6 +115,14 @@ function ResetPasswordContent() {
       });
 
       const data = await response.json();
+      
+      // Debug: Log the response
+      console.log("[Reset Password] API Response:", {
+        status: response.status,
+        ok: response.ok,
+        data,
+        hasError: !!data.error,
+      });
 
       if (response.ok) {
         setSuccess(true);
