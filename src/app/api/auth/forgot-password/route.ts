@@ -76,20 +76,25 @@ export async function POST(req: Request) {
 
     let emailSent = false;
     let emailError: string | undefined = undefined;
+    
+    // Send email using the same reliable method as contact form
     try {
-      console.log("[Password Reset] Attempting to send magic link email", {
+      console.log("[Password Reset] 📧 Attempting to send magic link email", {
         userId: user.id,
         userEmail: user.email,
         resetId: reset.id,
-        magicLinkPreview: magicLink.slice(0, 60) + "...",
+        baseUrl,
+        magicLinkPreview: magicLink.slice(0, 80) + "...",
+        timestamp: new Date().toISOString(),
       });
       
+      // Use the same sendEmail function that contact form uses
       emailSent = await sendPasswordResetEmail(user.email, magicLink, user.role);
       
       if (!emailSent) {
         const lastError = getLastEmailError();
         emailError = lastError || "Email sending returned false without specific error";
-        console.error("[Password Reset] ❌ sendPasswordResetEmail returned false", {
+        console.error("[Password Reset] ❌ Email sending failed", {
           userId: user.id,
           userEmail: user.email,
           resetId: reset.id,
