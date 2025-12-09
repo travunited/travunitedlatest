@@ -1077,34 +1077,101 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Number of Adults *
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    required
-                    value={formData.numberOfAdults}
-                    onChange={(e) => setFormData({ ...formData, numberOfAdults: parseInt(e.target.value) || 1 })}
-                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  />
-                  {tour.minimumTravelers && (
-                    <p className="text-xs text-neutral-500 mt-1">
-                      Minimum: {tour.minimumTravelers} traveler(s)
-                    </p>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => {
+                          const next = Math.max(1, prev.numberOfAdults - 1);
+                          return { ...prev, numberOfAdults: next };
+                        })
+                      }
+                      className="p-3 rounded-lg border border-neutral-300 text-neutral-700 hover:bg-neutral-50"
+                      aria-label="Decrease adults"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={formData.numberOfAdults}
+                      onChange={(e) => setFormData({ ...formData, numberOfAdults: parseInt(e.target.value) || 1 })}
+                      className="flex-1 px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-center"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => {
+                          const maxAdults = tour?.maximumTravelers
+                            ? Math.max(1, tour.maximumTravelers - prev.numberOfChildren)
+                            : undefined;
+                          const next = prev.numberOfAdults + 1;
+                          const capped = maxAdults ? Math.min(next, maxAdults) : next;
+                          return { ...prev, numberOfAdults: capped };
+                        })
+                      }
+                      className="p-3 rounded-lg border border-neutral-300 text-neutral-700 hover:bg-neutral-50"
+                      aria-label="Increase adults"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-neutral-500 mt-1">
+                    {tour.minimumTravelers && (
+                      <span>Minimum: {tour.minimumTravelers} traveler(s)</span>
+                    )}
+                    {tour.maximumTravelers && (
+                      <span>Max: {tour.maximumTravelers} traveler(s)</span>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Number of Children
                   </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.numberOfChildren}
-                    onChange={(e) => setFormData({ ...formData, numberOfChildren: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => {
+                          const next = Math.max(0, prev.numberOfChildren - 1);
+                          return { ...prev, numberOfChildren: next };
+                        })
+                      }
+                      className="p-3 rounded-lg border border-neutral-300 text-neutral-700 hover:bg-neutral-50"
+                      aria-label="Decrease children"
+                    >
+                      <Minus size={16} />
+                    </button>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formData.numberOfChildren}
+                      onChange={(e) => setFormData({ ...formData, numberOfChildren: parseInt(e.target.value) || 0 })}
+                      className="flex-1 px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 text-center"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => {
+                          const maxChildren = tour?.maximumTravelers
+                            ? Math.max(0, tour.maximumTravelers - prev.numberOfAdults)
+                            : undefined;
+                          const next = prev.numberOfChildren + 1;
+                          const capped = maxChildren ? Math.min(next, maxChildren) : next;
+                          return { ...prev, numberOfChildren: capped };
+                        })
+                      }
+                      className="p-3 rounded-lg border border-neutral-300 text-neutral-700 hover:bg-neutral-50"
+                      aria-label="Increase children"
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
                   {tour.maximumTravelers && (
                     <p className="text-xs text-neutral-500 mt-1">
-                      Maximum: {tour.maximumTravelers} traveler(s)
+                      Maximum combined travelers: {tour.maximumTravelers}
                     </p>
                   )}
                 </div>

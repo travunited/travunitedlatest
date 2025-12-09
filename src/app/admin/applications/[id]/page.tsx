@@ -164,8 +164,11 @@ export default function AdminApplicationDetailPage() {
           setSelectedAdminId(data.processedBy.id);
         }
         // Set first traveller as active tab by default
+        // Set default tab: first traveller if available, otherwise application docs
         if (data.travellers && data.travellers.length > 0) {
           setActiveTravellerTab(data.travellers[0].traveller.id);
+        } else if (data.documents?.some((doc: Document) => !doc.travellerId)) {
+          setActiveTravellerTab("application");
         }
       }
     } catch (error) {
@@ -803,7 +806,7 @@ export default function AdminApplicationDetailPage() {
               <h2 className="text-xl font-bold text-neutral-900 mb-4">Documents</h2>
               
               {/* Traveller Tabs */}
-              {documentsGrouped.travellers.length > 0 && (
+              {(documentsGrouped.travellers.length > 0 || documentsGrouped.application.length > 0) && (
                 <div className="mb-4 border-b border-neutral-200">
                   <div className="flex flex-wrap gap-2">
                     {documentsGrouped.travellers.map((group) => (
@@ -879,6 +882,24 @@ export default function AdminApplicationDetailPage() {
                 {!activeTravellerTab && documentsGrouped.travellers.length > 0 && (
                   <div className="space-y-3">
                     {documentsGrouped.travellers[0].documents.map((doc) => (
+                      <DocumentCard
+                        key={doc.id}
+                        doc={doc}
+                        applicationId={params.id as string}
+                        documentStatusUpdates={documentStatusUpdates}
+                        setDocumentStatusUpdates={setDocumentStatusUpdates}
+                        handleDocumentStatusChange={handleDocumentStatusChange}
+                        updating={updating}
+                        getDocumentUrl={getDocumentUrl}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Default: show application documents when no traveller docs */}
+                {!activeTravellerTab && documentsGrouped.travellers.length === 0 && documentsGrouped.application.length > 0 && (
+                  <div className="space-y-3">
+                    {documentsGrouped.application.map((doc) => (
                       <DocumentCard
                         key={doc.id}
                         doc={doc}
