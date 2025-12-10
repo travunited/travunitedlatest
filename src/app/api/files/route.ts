@@ -29,7 +29,12 @@ export async function GET(req: Request) {
     }
 
     const key = decodeURIComponent(keyParam);
-    console.log("[Files API] Request received:", { key: key.substring(0, 50), userId: session.user.id, role: session.user.role });
+    console.log("[Files API] Request received:", { 
+      key: key.substring(0, 100), 
+      keyLength: key.length,
+      userId: session.user.id, 
+      role: session.user.role 
+    });
     
     // If the key is already a full URL, just redirect directly (fallback for legacy stored URLs)
     if (key.startsWith("http://") || key.startsWith("https://")) {
@@ -86,18 +91,23 @@ export async function GET(req: Request) {
           if (bookingTraveller?.booking?.userId) {
             ownerId = bookingTraveller.booking.userId;
           } else {
-            // Check for BookingDocument files
-            const bookingDocument = await prisma.bookingDocument.findFirst({
-              where: { key: key },
-              select: {
-                booking: {
-                  select: { userId: true },
+            // Check for BookingDocument files (table may not exist)
+            try {
+              const bookingDocument = await prisma.bookingDocument.findFirst({
+                where: { key: key },
+                select: {
+                  booking: {
+                    select: { userId: true },
+                  },
                 },
-              },
-            });
+              });
 
-            if (bookingDocument?.booking?.userId) {
-              ownerId = bookingDocument.booking.userId;
+              if (bookingDocument?.booking?.userId) {
+                ownerId = bookingDocument.booking.userId;
+              }
+            } catch (bookingDocError) {
+              // Table doesn't exist, skip this check
+              console.log("[Files API] BookingDocument table not available, skipping:", bookingDocError instanceof Error ? bookingDocError.message : String(bookingDocError));
             }
           }
         }
@@ -107,76 +117,81 @@ export async function GET(req: Request) {
     // Check for career application resume
     if (!ownerId) {
       console.log("[Files API] No ownerId found, checking CareerApplication for key:", key);
+      let careerApp = null;
       try {
         // Try exact match first
-        const careerApp = await prisma.careerApplication.findFirst({
+        careerApp = await prisma.careerApplication.findFirst({
           where: { resumeUrl: key },
           select: { id: true, resumeUrl: true },
         });
-
-        console.log("[Files API] CareerApplication query result:", { 
-          found: !!careerApp, 
-          appId: careerApp?.id, 
-          requestedKey: key,
-          storedResumeUrl: careerApp?.resumeUrl,
-          keysMatch: careerApp ? careerApp.resumeUrl === key : false,
-          isAdmin 
+      } catch (careerQueryError) {
+        // If the table doesn't exist or there's a Prisma error, log it but don't fail yet
+        console.error("[Files API] Error querying CareerApplication (exact match):", careerQueryError);
+        const errorMessage = careerQueryError instanceof Error ? careerQueryError.message : String(careerQueryError);
+        console.error("[Files API] CareerApplication query error details:", { 
+          message: errorMessage,
+          error: careerQueryError 
         });
-
-        if (careerApp) {
-          // Career resumes are accessible to admins only
-          if (!isAdmin) {
-            console.log("[Files API] Non-admin trying to access career resume, forbidden");
-            return NextResponse.json(
-              { error: "Forbidden" },
-              { status: 403 }
-            );
-          }
-          // Admin can access, continue to generate signed URL
-          const actualKey = careerApp.resumeUrl || key;
-          
-          if (!actualKey || actualKey.trim() === "") {
-            console.log("[Files API] Career resume URL is empty");
-            return NextResponse.json(
-              { error: "Resume not available" },
-              { status: 404 }
-            );
-          }
-          
-          // Set a flag so we know this is a career resume (no ownerId needed for admins)
-          ownerId = "CAREER_RESUME";
-          console.log("[Files API] Career resume found, setting ownerId flag, will use key:", actualKey);
-        } else {
-          console.log("[Files API] CareerApplication not found for key:", key);
-          // Try to list sample resume URLs for debugging
-          try {
-            const sampleApps = await prisma.careerApplication.findMany({
-              take: 3,
-              select: { id: true, resumeUrl: true },
-            });
-            console.log("[Files API] Sample resume URLs in database:", sampleApps.map(a => ({ id: a.id, url: a.resumeUrl })));
-          } catch (e) {
-            console.error("[Files API] Error fetching sample apps:", e);
-          }
+        
+        // If it's a table not found error, return 404
+        if (errorMessage.includes("does not exist") || errorMessage.includes("CareerApplication")) {
           return NextResponse.json(
-            { error: "File not found" },
+            { 
+              error: "File not found",
+              details: process.env.NODE_ENV === "development" ? "CareerApplication table may not exist" : undefined
+            },
             { status: 404 }
           );
         }
-      } catch (careerError) {
-        console.error("[Files API] Error querying CareerApplication:", careerError);
-        const errorMessage = careerError instanceof Error ? careerError.message : String(careerError);
-        const errorStack = careerError instanceof Error ? careerError.stack : undefined;
-        console.error("[Files API] CareerApplication error details:", { 
-          message: errorMessage, 
-          stack: errorStack,
-          error: careerError 
+        // For other errors, continue to try other methods
+      }
+
+      if (careerApp) {
+        console.log("[Files API] CareerApplication found:", { 
+          appId: careerApp.id, 
+          requestedKey: key,
+          storedResumeUrl: careerApp.resumeUrl,
+          keysMatch: careerApp.resumeUrl === key,
+          isAdmin 
         });
+
+        // Career resumes are accessible to admins only
+        if (!isAdmin) {
+          console.log("[Files API] Non-admin trying to access career resume, forbidden");
+          return NextResponse.json(
+            { error: "Forbidden" },
+            { status: 403 }
+          );
+        }
+        
+        // Admin can access, continue to generate signed URL
+        const actualKey = careerApp.resumeUrl || key;
+        
+        if (!actualKey || actualKey.trim() === "") {
+          console.log("[Files API] Career resume URL is empty");
+          return NextResponse.json(
+            { error: "Resume not available" },
+            { status: 404 }
+          );
+        }
+        
+        // Set a flag so we know this is a career resume (no ownerId needed for admins)
+        ownerId = "CAREER_RESUME";
+        console.log("[Files API] Career resume found, setting ownerId flag, will use key:", actualKey);
+      } else {
+        console.log("[Files API] CareerApplication not found for key:", key);
+        // Try to list sample resume URLs for debugging (only if table exists)
+        try {
+          const sampleApps = await prisma.careerApplication.findMany({
+            take: 3,
+            select: { id: true, resumeUrl: true },
+          });
+          console.log("[Files API] Sample resume URLs in database:", sampleApps.map(a => ({ id: a.id, url: a.resumeUrl })));
+        } catch (sampleError) {
+          console.error("[Files API] Error fetching sample apps (table may not exist):", sampleError);
+        }
         return NextResponse.json(
-          { 
-            error: "File not found", 
-            details: process.env.NODE_ENV === "development" ? errorMessage : undefined 
-          },
+          { error: "File not found" },
           { status: 404 }
         );
       }
@@ -195,27 +210,43 @@ export async function GET(req: Request) {
       const signedUrl = await getSignedDocumentUrl(key, 60);
       console.log("[Files API] Signed URL generated successfully, length:", signedUrl.length);
       return NextResponse.redirect(signedUrl);
-    } catch (error) {
-      console.error("Error generating signed URL for file:", key, error);
+    } catch (minioError) {
+      console.error("[Files API] Error generating signed URL for file:", key, minioError);
+      const errorMessage = minioError instanceof Error ? minioError.message : String(minioError);
+      const errorStack = minioError instanceof Error ? minioError.stack : undefined;
+      console.error("[Files API] MinIO error details:", { 
+        message: errorMessage,
+        stack: errorStack,
+        error: minioError 
+      });
+      
       // Check if it's a career application and provide a better error message
-      try {
-        const careerApp = await prisma.careerApplication.findFirst({
-          where: { resumeUrl: key },
-          select: { id: true },
-        });
-        
-        if (careerApp) {
-          return NextResponse.json(
-            { error: "Resume file not available. The file may have been deleted or moved." },
-            { status: 404 }
-          );
+      if (ownerId === "CAREER_RESUME") {
+        try {
+          const careerApp = await prisma.careerApplication.findFirst({
+            where: { resumeUrl: key },
+            select: { id: true },
+          });
+          
+          if (careerApp) {
+            return NextResponse.json(
+              { 
+                error: "Resume file not available. The file may have been deleted or moved from storage.",
+                details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+              },
+              { status: 404 }
+            );
+          }
+        } catch (careerQueryError) {
+          console.error("[Files API] Error querying CareerApplication in error handler:", careerQueryError);
         }
-      } catch (careerQueryError) {
-        console.error("Error querying CareerApplication in error handler:", careerQueryError);
       }
       
       return NextResponse.json(
-        { error: "File not found or unavailable" },
+        { 
+          error: "File not found or unavailable",
+          details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+        },
         { status: 404 }
       );
     }
