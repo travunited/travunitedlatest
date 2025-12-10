@@ -213,7 +213,7 @@ export async function PUT(
     const validityDays = body.validityDays !== undefined ? body.validityDays : existingVisa.validityDays;
     const currency = body.currency !== undefined ? body.currency : existingVisa.currency;
     const visaMode = body.visaMode !== undefined ? body.visaMode : existingVisa.visaMode;
-    const structuredEntryType = body.structuredEntryType;
+    const structuredEntryType = body.structuredEntryType !== undefined ? body.structuredEntryType : null;
     const stayType = body.stayType !== undefined ? body.stayType : existingVisa.stayType;
     const visaSubTypeLabel = body.visaSubTypeLabel !== undefined ? body.visaSubTypeLabel : existingVisa.visaSubTypeLabel;
     const requirements = body.requirements !== undefined ? body.requirements : [];
@@ -301,10 +301,36 @@ export async function PUT(
     let parsedEntryType: EntryType | null = null;
     let parsedStayType: StayType | null = null;
     try {
-      parsedVisaMode = normalizeEnumInput(visaMode, Object.values(VisaMode), "visaMode");
-      const enumEntrySource = structuredEntryType ?? entryType;
-      parsedEntryType = normalizeEnumInput(enumEntrySource, Object.values(EntryType), "entryType");
-      parsedStayType = normalizeEnumInput(stayType, Object.values(StayType), "stayType");
+      // Only normalize enum values if they are actually provided and not empty
+      if (visaMode !== undefined && visaMode !== null && visaMode !== "") {
+        parsedVisaMode = normalizeEnumInput(visaMode, Object.values(VisaMode), "visaMode");
+      } else {
+        // Use existing visaMode if not being updated
+        parsedVisaMode = existingVisa.visaMode as VisaMode | null;
+      }
+      
+      // Only normalize entryType if it's actually being updated
+      // Check if structuredEntryType or entryType is explicitly provided in the request
+      const isEntryTypeUpdated = body.structuredEntryType !== undefined || body.entryType !== undefined;
+      if (isEntryTypeUpdated) {
+        const enumEntrySource = structuredEntryType ?? entryType;
+        if (enumEntrySource !== undefined && enumEntrySource !== null && enumEntrySource !== "") {
+          parsedEntryType = normalizeEnumInput(enumEntrySource, Object.values(EntryType), "entryType");
+        } else {
+          // If explicitly set to empty/null, set to null
+          parsedEntryType = null;
+        }
+      } else {
+        // Use existing entryType if not being updated
+        parsedEntryType = existingVisa.entryType as EntryType | null;
+      }
+      
+      if (stayType !== undefined && stayType !== null && stayType !== "") {
+        parsedStayType = normalizeEnumInput(stayType, Object.values(StayType), "stayType");
+      } else {
+        // Use existing stayType if not being updated
+        parsedStayType = existingVisa.stayType as StayType | null;
+      }
     } catch (enumError) {
       return NextResponse.json(
         {
