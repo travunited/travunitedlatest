@@ -116,6 +116,24 @@ const SCOPE_OPTIONS: { label: string; value: DocScope }[] = [
   { label: "Per Traveller", value: "PER_TRAVELLER" },
   { label: "Per Application", value: "PER_APPLICATION" },
 ];
+const COMMON_SUBTYPE_LABELS = [
+  "Single Entry eVisa",
+  "Multiple Entry eVisa",
+  "Single Entry Sticker Visa",
+  "Multiple Entry Sticker Visa",
+  "Visa on Arrival (VOA)",
+  "Transit Visa",
+  "Tourist Visa",
+  "Business Visa",
+  "Medical Visa",
+  "Student Visa",
+  "Employment Visa",
+  "Short Stay Visa",
+  "Long Stay Visa",
+  "Single Entry",
+  "Double Entry",
+  "Multiple Entry",
+];
 
 const uid = () => {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
@@ -768,11 +786,30 @@ export default function AdminVisaEditorPage() {
                     <label className="text-sm font-medium text-neutral-700">
                       Subtype Label
                     </label>
-                    <TextInput
-                      value={formData.visaSubTypeLabel}
-                      onChange={(value) => updateFormField("visaSubTypeLabel", value)}
-                      placeholder="Single Entry eVisa – Short Stay"
-                    />
+                    {subTypes.length > 0 ? (
+                      <SelectInput
+                        value={formData.visaSubTypeLabel}
+                        onChange={(value) => updateFormField("visaSubTypeLabel", value)}
+                      >
+                        <option value="">Select a subtype label (optional)</option>
+                        {subTypes.map((subtype) => (
+                          <option key={subtype.uid} value={subtype.label}>
+                            {subtype.label || `Subtype ${subtype.uid.slice(0, 8)}`}
+                          </option>
+                        ))}
+                      </SelectInput>
+                    ) : (
+                      <TextInput
+                        value={formData.visaSubTypeLabel}
+                        onChange={(value) => updateFormField("visaSubTypeLabel", value)}
+                        placeholder="Single Entry eVisa – Short Stay (add subtypes to enable dropdown)"
+                      />
+                    )}
+                    <p className="text-xs text-neutral-500 mt-1">
+                      {subTypes.length > 0 
+                        ? "Select a subtype label from the subtypes you've added below, or leave empty."
+                        : "Add subtypes in the 'Subtypes' tab to enable dropdown selection."}
+                    </p>
                   </div>
                 </div>
                 <div className="grid md:grid-cols-3 gap-4">
@@ -1155,12 +1192,31 @@ export default function AdminVisaEditorPage() {
                       </div>
                       <div className="grid md:grid-cols-3 gap-3">
                         <div className="md:col-span-2">
-                          <TextInput
-                            value={subtype.label}
-                            onChange={(value) => handleSubTypeChange(subtype.uid, "label", value)}
-                            placeholder="Subtype Label (e.g., Single Entry eVisa)"
-                            className="w-full border border-neutral-300 rounded-lg"
-                          />
+                          <div className="space-y-2">
+                            <SelectInput
+                              value={subtype.label}
+                              onChange={(value) => handleSubTypeChange(subtype.uid, "label", value)}
+                              className="w-full border border-neutral-300 rounded-lg"
+                            >
+                              <option value="">Select or type custom label</option>
+                              {COMMON_SUBTYPE_LABELS.map((commonLabel) => (
+                                <option key={commonLabel} value={commonLabel}>
+                                  {commonLabel}
+                                </option>
+                              ))}
+                            </SelectInput>
+                            {!COMMON_SUBTYPE_LABELS.includes(subtype.label) && subtype.label && (
+                              <TextInput
+                                value={subtype.label}
+                                onChange={(value) => handleSubTypeChange(subtype.uid, "label", value)}
+                                placeholder="Or type a custom subtype label"
+                                className="w-full border border-neutral-300 rounded-lg mt-2"
+                              />
+                            )}
+                            <p className="text-xs text-neutral-500">
+                              Select from common options or type a custom label
+                            </p>
+                          </div>
                         </div>
                         <div>
                           <TextInput

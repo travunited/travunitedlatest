@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -20,8 +20,19 @@ export async function GET(
       );
     }
 
+    // Handle both sync and async params (Next.js 15+ uses async params)
+    const resolvedParams = await Promise.resolve(params);
+    const bookingId = resolvedParams.id;
+
+    if (!bookingId) {
+      return NextResponse.json(
+        { error: "Booking ID is required" },
+        { status: 400 }
+      );
+    }
+
     const booking = await prisma.booking.findUnique({
-      where: { id: params.id },
+      where: { id: bookingId },
       include: {
         user: {
           select: {
@@ -63,7 +74,7 @@ export async function GET(
     }
 
     // Get completed payments
-    const completedPayments = booking.payments.filter(p => p.status === "COMPLETED");
+    const completedPayments = booking.payments?.filter(p => p.status === "COMPLETED") || [];
     if (completedPayments.length === 0) {
       return NextResponse.json(
         { error: "No completed payments found for this booking" },
@@ -71,7 +82,7 @@ export async function GET(
       );
     }
 
-    const totalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalPaid = completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
     const latestPayment = completedPayments[0];
 
     // Generate invoice number
@@ -84,6 +95,9 @@ export async function GET(
     const companyPhone = process.env.COMPANY_PHONE;
     const companyEmail = process.env.COMPANY_EMAIL || "support@travunited.in";
     const companyGSTIN = process.env.COMPANY_GSTIN;
+
+    // Safely get traveller count
+    const travellerCount = booking.travellers?.length || 1;
 
     // Prepare invoice data
     const invoiceData = {
@@ -99,21 +113,21 @@ export async function GET(
       companyPhone,
       companyEmail,
       companyGSTIN,
-      customerName: booking.user.name || "Customer",
-      customerEmail: booking.user.email,
-      customerPhone: booking.user.phone || undefined,
+      customerName: booking.user?.name || "Customer",
+      customerEmail: booking.user?.email || "customer@example.com",
+      customerPhone: booking.user?.phone || undefined,
       itemName: booking.tourName || "Tour Package",
       itemDescription: booking.travelDate 
         ? `Travel Date: ${new Date(booking.travelDate).toLocaleDateString("en-IN")}`
         : undefined,
-      quantity: booking.travellers.length,
-      subtotal: booking.totalAmount,
+      quantity: travellerCount,
+      subtotal: booking.totalAmount || 0,
       tax: 0,
-      discount: booking.totalAmount - totalPaid > 0 ? booking.totalAmount - totalPaid : 0,
+      discount: Math.max(0, (booking.totalAmount || 0) - totalPaid),
       total: totalPaid,
       currency: booking.currency || "INR",
       paymentStatus: booking.status === "BOOKED" || booking.status === "CONFIRMED" ? "Paid" : "Partial",
-      paymentDate: latestPayment.createdAt 
+      paymentDate: latestPayment?.createdAt 
         ? new Date(latestPayment.createdAt).toLocaleDateString("en-IN", {
             year: "numeric",
             month: "long",
@@ -121,7 +135,7 @@ export async function GET(
           })
         : undefined,
       paymentMethod: "Online Payment",
-      transactionId: latestPayment.razorpayPaymentId || latestPayment.razorpayOrderId || undefined,
+      transactionId: latestPayment?.razorpayPaymentId || latestPayment?.razorpayOrderId || undefined,
       bookingId: booking.id,
       travelDate: booking.travelDate
         ? new Date(booking.travelDate).toLocaleDateString("en-IN", {
@@ -144,8 +158,14 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error generating invoice:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error("Error details:", { errorMessage, errorStack });
     return NextResponse.json(
-      { error: "Internal server error" },
+      { 
+        error: "Internal server error",
+        message: process.env.NODE_ENV === "development" ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }
