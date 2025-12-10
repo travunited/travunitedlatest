@@ -102,15 +102,6 @@ export default function BookingsPage() {
         href: `/dashboard/bookings/${booking.id}`,
         icon: Eye,
       });
-      // Add Invoice button only if invoiceUrl exists
-      if (booking.invoiceUrl) {
-        actions.push({
-          label: "Download Invoice",
-          href: `/api/invoices/download/booking/${booking.id}`,
-          icon: FileText,
-          download: true,
-        });
-      }
     }
 
     if (booking.status === "COMPLETED") {

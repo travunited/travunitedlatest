@@ -432,18 +432,6 @@ export default function BookingDetailPage() {
                 >
                   Get Help
                 </Link>
-                {/* Only show invoice if it has been uploaded by admin */}
-                {booking.invoiceUrl && (booking.status === "CONFIRMED" || booking.status === "BOOKED" || booking.status === "COMPLETED") ? (
-                  <a
-                    href={`/api/invoices/download/booking/${booking.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full border border-neutral-300 text-neutral-700 px-4 py-2 rounded-lg hover:bg-neutral-50 transition-colors flex items-center justify-center space-x-2"
-                  >
-                    <FileText size={18} />
-                    <span>Download Invoice</span>
-                  </a>
-                ) : null}
               </div>
             </div>
           </div>

@@ -662,37 +662,6 @@ export default function AdminBookingDetailPage() {
                     </div>
                   )}
                 </div>
-                
-                {completedPayments.length > 0 && (
-                  <button
-                    onClick={async () => {
-                      try {
-                        const response = await fetch(`/api/invoices/booking/${booking.id}`);
-                        if (!response.ok) {
-                          const error = await response.json();
-                          throw new Error(error.error || "Failed to generate invoice");
-                        }
-                        const blob = await response.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = `invoice-booking-${booking.id}.pdf`;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        document.body.removeChild(a);
-                      } catch (error) {
-                        console.error("Error downloading invoice:", error);
-                        setActionMessage({ type: "error", text: `Failed to download invoice: ${error instanceof Error ? error.message : "Unknown error"}` });
-                        setTimeout(() => setActionMessage(null), 5000);
-                      }
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-                  >
-                    <FileDown size={16} />
-                    Download Invoice
-                  </button>
-                )}
               </div>
             </div>
           </div>
