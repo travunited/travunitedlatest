@@ -4,22 +4,25 @@
 
 /**
  * Calculate age from date of birth
+ * Returns age in years as a decimal to support infants (e.g., 0.5 for 6 months)
  */
 export function calculateAge(dateOfBirth: Date | string): number {
   const dob = typeof dateOfBirth === "string" ? new Date(dateOfBirth) : dateOfBirth;
   const today = new Date();
   const diff = today.getTime() - dob.getTime();
-  return Math.floor(diff / (365.25 * 24 * 3600 * 1000));
+  // Return precise age in years (decimal) to properly handle infants
+  return diff / (365.25 * 24 * 3600 * 1000);
 }
 
 /**
  * Determine traveller type based on age
- * @param age - Age in years
+ * @param age - Age in years (can be fractional, e.g., 0.5 for 6 months)
  * @param childAgeLimit - Age limit for children (default: 12)
  * @returns "adult" | "child" | "infant"
  */
 export function getTravellerType(age: number, childAgeLimit: number = 12): "adult" | "child" | "infant" {
-  if (age < 2) {
+  // Infants are under 1 year old (including 5-6 month old babies)
+  if (age < 1) {
     return "infant";
   } else if (age < childAgeLimit) {
     return "child";

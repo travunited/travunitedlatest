@@ -206,7 +206,8 @@ export async function POST(req: Request) {
       if (traveller.dateOfBirth) {
         age = calculateAge(traveller.dateOfBirth);
       } else if (traveller.age) {
-        age = parseInt(traveller.age) || 0;
+        // Use parseFloat to handle fractional ages for infants (e.g., 0.5 for 6 months)
+        age = parseFloat(traveller.age) || 0;
       } else {
         age = 18; // Default to adult if no age/DOB provided
       }
@@ -649,7 +650,8 @@ export async function POST(req: Request) {
           age = calculateAge(travellerData.dateOfBirth);
           travellerType = getTravellerType(age, tourRecord.childAgeLimit ?? 12);
         } else if (travellerData.age) {
-          age = parseInt(travellerData.age) || null;
+          // Use parseFloat to handle fractional ages for infants (e.g., 0.5 for 6 months)
+          age = parseFloat(travellerData.age) || null;
           if (age !== null) {
             travellerType = getTravellerType(age, tourRecord.childAgeLimit ?? 12);
           }

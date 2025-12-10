@@ -169,18 +169,24 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
       const travellers = [...prev.travellers];
       const updatedTraveller = { ...travellers[index], [field]: value ?? "" };
       
-      // Auto-calculate age from DOB or vice versa, and detect child/adult
+      // Auto-calculate age from DOB or vice versa, and detect child/adult/infant
       if (field === "dateOfBirth" && value) {
         const dob = new Date(value);
         const today = new Date();
-        const age = Math.floor((today.getTime() - dob.getTime()) / (365.25 * 24 * 3600 * 1000));
-        updatedTraveller.age = age.toString();
+        // Calculate age more precisely to handle infants (months)
+        const ageInYears = (today.getTime() - dob.getTime()) / (365.25 * 24 * 3600 * 1000);
+        // For infants, show fractional age (e.g., 0.5 for 6 months)
+        if (ageInYears < 1) {
+          updatedTraveller.age = ageInYears.toFixed(2);
+        } else {
+          updatedTraveller.age = Math.floor(ageInYears).toString();
+        }
       } else if (field === "age" && value) {
-        const age = parseInt(value) || 0;
-        if (age > 0 && !updatedTraveller.dateOfBirth) {
+        const age = parseFloat(value) || 0;
+        if (age >= 0 && !updatedTraveller.dateOfBirth) {
           // Estimate DOB from age (approximate)
           const today = new Date();
-          const estimatedDOB = new Date(today.getFullYear() - age, today.getMonth(), today.getDate());
+          const estimatedDOB = new Date(today.getFullYear() - Math.floor(age), today.getMonth() - Math.round((age % 1) * 12), today.getDate());
           updatedTraveller.dateOfBirth = estimatedDOB.toISOString().split("T")[0];
         }
       }
@@ -193,12 +199,14 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
   // Helper to get traveller type badge
   const getTravellerTypeBadge = (traveller: TravellerForm) => {
     if (!traveller.dateOfBirth && !traveller.age) return null;
+    // Calculate age more precisely to handle infants (months)
     const age = traveller.dateOfBirth 
-      ? Math.floor((new Date().getTime() - new Date(traveller.dateOfBirth).getTime()) / (365.25 * 24 * 3600 * 1000))
-      : parseInt(traveller.age) || 0;
+      ? (new Date().getTime() - new Date(traveller.dateOfBirth).getTime()) / (365.25 * 24 * 3600 * 1000)
+      : parseFloat(traveller.age) || 0;
     const childAgeLimit = tour?.childAgeLimit || 12;
     
-    if (age < 2) {
+    // Infants are under 1 year old (including 5-6 month old babies)
+    if (age < 1) {
       return { label: "Infant", color: "bg-purple-100 text-purple-800" };
     } else if (age < childAgeLimit) {
       return { label: "Child (under 12)", color: "bg-blue-100 text-blue-800" };
@@ -1482,7 +1490,7 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
               <p className="text-sm text-blue-800">
-                <strong>Note:</strong> Children are considered under {tour?.childAgeLimit || 12} years. Age is automatically calculated from date of birth.
+                <strong>Note:</strong> Infants (under 1 year, including 5-6 month old babies) and children (under {tour?.childAgeLimit || 12} years) are welcome to travel with their parents. Age is automatically calculated from date of birth.
               </p>
             </div>
             <div className="space-y-4">
@@ -1552,11 +1560,15 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
                         <input
                           type="number"
                           min="0"
+                          step="0.1"
                         value={traveller.age}
                           onChange={(e) => updateTraveller(index, "age", e.target.value)}
                         className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                          placeholder="Enter age if DOB unknown"
+                          placeholder="Enter age in years (e.g., 0.5 for 6 months)"
                       />
+                      <p className="text-xs text-neutral-500 mt-1">
+                        For infants, enter fractional age (e.g., 0.5 for 6 months, 0.4 for 5 months)
+                      </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-2">
