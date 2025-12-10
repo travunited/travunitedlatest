@@ -402,7 +402,7 @@ export function getDefaultEmailTemplate(templateKey: string): string {
     {messageSection}
   </div>
   <p style="margin-top: 20px;">
-    <a href="{dashboardUrl}/admin/corporate-leads" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View in Admin Panel</a>
+    <a href="{dashboardUrl}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View in Admin Panel</a>
   </p>
   <p style="color: #666; font-size: 12px; margin-top: 30px;">This is an automated notification from {companyName}.</p>
 </div>`,
