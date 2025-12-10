@@ -145,6 +145,7 @@ export async function POST(req: Request) {
       stayDuration,
       validity,
       entryType,
+      entryTypeLegacy,
       overview,
       eligibility,
       importantNotes,
@@ -165,6 +166,7 @@ export async function POST(req: Request) {
       visaSubTypeLabel,
       requirements = [],
       faqs = [],
+      subTypes = [],
     } = body;
 
     // Provide default values for required fields to prevent DB errors
@@ -202,10 +204,30 @@ export async function POST(req: Request) {
     let parsedEntryType: EntryType | null = null;
     let parsedStayType: StayType | null = null;
     try {
-      parsedVisaMode = normalizeEnumInput(visaMode, Object.values(VisaMode), "visaMode");
-      const enumEntrySource = structuredEntryType ?? entryType;
-      parsedEntryType = normalizeEnumInput(enumEntrySource, Object.values(EntryType), "entryType");
-      parsedStayType = normalizeEnumInput(stayType, Object.values(StayType), "stayType");
+      // Only normalize enum values if they are actually provided and not empty
+      if (visaMode !== undefined && visaMode !== null && visaMode !== "") {
+        parsedVisaMode = normalizeEnumInput(visaMode, Object.values(VisaMode), "visaMode");
+      }
+      
+      // Check if structuredEntryType or entryType is explicitly provided with a non-empty value
+      const hasStructuredEntryType = structuredEntryType !== undefined && 
+                                     structuredEntryType !== null && 
+                                     typeof structuredEntryType === "string" &&
+                                     structuredEntryType.trim() !== "";
+      const hasEntryType = entryType !== undefined && 
+                          entryType !== null && 
+                          typeof entryType === "string" &&
+                          entryType.trim() !== "";
+      
+      if (hasStructuredEntryType) {
+        parsedEntryType = normalizeEnumInput(structuredEntryType, Object.values(EntryType), "entryType");
+      } else if (hasEntryType) {
+        parsedEntryType = normalizeEnumInput(entryType, Object.values(EntryType), "entryType");
+      }
+      
+      if (stayType !== undefined && stayType !== null && stayType !== "") {
+        parsedStayType = normalizeEnumInput(stayType, Object.values(StayType), "stayType");
+      }
     } catch (enumError) {
       return NextResponse.json(
         {
@@ -228,7 +250,7 @@ export async function POST(req: Request) {
         processingTime: safeProcessingTime,
         stayDuration: safeStayDuration,
         validity: safeValidity,
-        entryTypeLegacy: entryType || null,
+        entryTypeLegacy: (entryTypeLegacy !== undefined && entryTypeLegacy !== null && typeof entryTypeLegacy === "string" && entryTypeLegacy.trim() !== "") ? entryTypeLegacy : null,
         visaMode: parsedVisaMode,
         entryType: parsedEntryType,
         stayType: parsedStayType,
@@ -294,17 +316,43 @@ export async function POST(req: Request) {
             ),
           }
           : undefined,
+        subTypes: subTypes.length
+          ? {
+            create: subTypes.map(
+              (
+                subtype: {
+                  label: string;
+                  code?: string;
+                  sortOrder?: number;
+                },
+                index: number
+              ) => ({
+                label: subtype.label,
+                code: subtype.code || null,
+                sortOrder:
+                  typeof subtype.sortOrder === "number"
+                    ? subtype.sortOrder
+                    : index,
+              })
+            ),
+          }
+          : undefined,
       },
       include: {
         country: true,
         requirements: true,
         faqs: true,
+        subTypes: true,
       },
     });
 
     return NextResponse.json(visa);
   } catch (error) {
     console.error("Error creating visa:", error);
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
     
     // Handle Prisma errors
     if (error && typeof error === 'object' && 'code' in error) {
