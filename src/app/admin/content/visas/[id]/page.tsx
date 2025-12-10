@@ -83,7 +83,15 @@ interface CountryOption {
   name: string;
 }
 
-const CATEGORY_OPTIONS = ["Tourist", "Business", "Transit", "Student", "Other"];
+const CATEGORY_OPTIONS = [
+  "Employment",
+  "Business",
+  "Tourist",
+  "Student",
+  "Transit",
+  "Medical",
+  "Other"
+];
 const ENTRY_TYPE_OPTIONS = [
   { value: "", label: "Not specified" },
   { value: "SINGLE", label: "Single Entry" },

@@ -59,7 +59,7 @@ interface CountryOption {
   name: string;
 }
 
-const categories = ["Tourist", "Business", "Transit", "Student", "Other"];
+const categories = ["Employment", "Business", "Tourist", "Student", "Transit", "Medical", "Other"];
 
 const visaModeLabels: Record<string, string> = {
   EVISA: "eVisa",
