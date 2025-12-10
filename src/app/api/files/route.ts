@@ -29,6 +29,10 @@ export async function GET(req: Request) {
     }
 
     const key = decodeURIComponent(keyParam);
+    // If the key is already a full URL, just redirect directly (fallback for legacy stored URLs)
+    if (key.startsWith("http://") || key.startsWith("https://")) {
+      return NextResponse.redirect(key);
+    }
     const isAdmin = session.user.role === "STAFF_ADMIN" || session.user.role === "SUPER_ADMIN";
 
     let ownerId: string | null = null;
