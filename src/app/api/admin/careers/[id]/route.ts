@@ -40,6 +40,13 @@ export async function GET(
       );
     }
 
+    console.log("[Career API] Returning application:", {
+      id: application.id,
+      name: application.name,
+      hasResumeUrl: !!application.resumeUrl,
+      resumeUrl: application.resumeUrl?.substring(0, 50),
+    });
+
     return NextResponse.json(application);
   } catch (error) {
     console.error("Error fetching career application:", error);

@@ -68,11 +68,20 @@ export async function POST(req: Request) {
     const sanitizedPosition = positionTitle.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase();
     const fileName = `careers/${sanitizedPosition}/${timestamp}-${randomString}.${fileExtension}`;
 
+    console.log("[Career Apply] Uploading resume:", {
+      originalName: resumeFile.name,
+      fileName,
+      size: resumeFile.size,
+      type: resumeFile.type,
+      positionTitle,
+    });
+
     // Upload resume to MinIO
     const arrayBuffer = await resumeFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     
     await uploadVisaDocument(fileName, buffer, resumeFile.type);
+    console.log("[Career Apply] Resume uploaded to MinIO successfully:", fileName);
 
     // Create database record
     const application = await prisma.careerApplication.create({
@@ -89,6 +98,12 @@ export async function POST(req: Request) {
         resumeUrl: fileName,
         status: "NEW",
       },
+    });
+
+    console.log("[Career Apply] Career application created:", {
+      id: application.id,
+      name: application.name,
+      resumeUrl: application.resumeUrl,
     });
 
     // Send email notification to admin
