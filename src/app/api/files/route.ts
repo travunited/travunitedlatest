@@ -60,6 +60,39 @@ export async function GET(req: Request) {
 
         if (booking) {
           ownerId = booking.userId;
+        } else {
+          // Check for BookingTraveller passport files
+          const bookingTraveller = await prisma.bookingTraveller.findFirst({
+            where: {
+              OR: [
+                { passportFileKey: key },
+                { aadharFileKey: key },
+              ],
+            },
+            select: {
+              booking: {
+                select: { userId: true },
+              },
+            },
+          });
+
+          if (bookingTraveller?.booking?.userId) {
+            ownerId = bookingTraveller.booking.userId;
+          } else {
+            // Check for BookingDocument files
+            const bookingDocument = await prisma.bookingDocument.findFirst({
+              where: { key: key },
+              select: {
+                booking: {
+                  select: { userId: true },
+                },
+              },
+            });
+
+            if (bookingDocument?.booking?.userId) {
+              ownerId = bookingDocument.booking.userId;
+            }
+          }
         }
       }
     }
