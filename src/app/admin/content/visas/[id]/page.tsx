@@ -464,8 +464,10 @@ export default function AdminVisaEditorPage() {
       const payload = {
         ...restFormData,
         // Only include entryType/structuredEntryType if they have non-empty values
-        ...(entryTypeLegacy && entryTypeLegacy.trim() !== "" ? { entryType: entryTypeLegacy } : {}),
+        // Don't send entryTypeLegacy as entryType - entryType should only come from the structured entryType field
+        // entryTypeLegacy is handled separately in the API
         ...(entryType && entryType.trim() !== "" ? { structuredEntryType: entryType } : {}),
+        ...(entryTypeLegacy && entryTypeLegacy.trim() !== "" ? { entryTypeLegacy } : {}),
         ...(visaMode && visaMode.trim() !== "" ? { visaMode } : {}),
         ...(stayType && stayType.trim() !== "" ? { stayType } : {}),
         ...(visaSubTypeLabel && visaSubTypeLabel.trim() !== "" ? { visaSubTypeLabel } : {}),

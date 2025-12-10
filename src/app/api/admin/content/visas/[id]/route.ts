@@ -206,12 +206,10 @@ export async function PUT(
     const validity = (body.validity !== undefined && body.validity !== null && body.validity !== "")
       ? body.validity
       : existingVisa.validity;
-    // Only use body.entryType if it's explicitly provided as a non-empty string
-    // If it's null, undefined, or empty string, use existing value (but don't use empty string from existing)
-    const entryTypeFromRequest = (body.entryType !== undefined && body.entryType !== null && typeof body.entryType === "string" && body.entryType.trim() !== "")
-      ? body.entryType
-      : null;
-    const entryType = entryTypeFromRequest || (existingVisa.entryTypeLegacy && existingVisa.entryTypeLegacy.trim() !== "" ? existingVisa.entryTypeLegacy : null);
+    // Handle entryTypeLegacy separately - it's a free-form text field
+    const entryTypeLegacy = (body.entryTypeLegacy !== undefined && body.entryTypeLegacy !== null && typeof body.entryTypeLegacy === "string" && body.entryTypeLegacy.trim() !== "")
+      ? body.entryTypeLegacy
+      : (existingVisa.entryTypeLegacy || null);
     const overview = (body.overview !== undefined && body.overview !== null && body.overview !== "")
       ? body.overview
       : existingVisa.overview;
@@ -388,7 +386,7 @@ export async function PUT(
           processingTime,
           stayDuration,
           validity,
-          entryTypeLegacy: (entryType && entryType.trim() !== "") ? entryType : undefined,
+          entryTypeLegacy: (body.entryTypeLegacy !== undefined && body.entryTypeLegacy !== null && typeof body.entryTypeLegacy === "string" && body.entryTypeLegacy.trim() !== "") ? body.entryTypeLegacy : (existingVisa.entryTypeLegacy || undefined),
           visaMode: parsedVisaMode ?? undefined,
           entryType: parsedEntryType ?? undefined,
           stayType: parsedStayType ?? undefined,
