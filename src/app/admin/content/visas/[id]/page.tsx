@@ -476,23 +476,23 @@ export default function AdminVisaEditorPage() {
         // Ensure SEO fields are always included, even if empty
         metaTitle: formData.metaTitle?.trim() || null,
         metaDescription: formData.metaDescription?.trim() || null,
-        requirements: requirements.map((req, index) => ({
-          name: req.name,
+        requirements: requirements.filter(req => req && req.name && req.name.trim() !== "").map((req, index) => ({
+          name: req.name.trim(),
           scope: req.scope,
           isRequired: req.isRequired,
-          category: req.category || null,
-          description: req.description || null,
+          category: (req.category && req.category.trim() !== "") ? req.category.trim() : null,
+          description: (req.description && req.description.trim() !== "") ? req.description.trim() : null,
           sortOrder: index,
         })),
-        faqs: faqs.map((faq, index) => ({
-          category: faq.category || null,
-          question: faq.question,
-          answer: faq.answer,
+        faqs: faqs.filter(faq => faq && faq.question && faq.question.trim() !== "" && faq.answer && faq.answer.trim() !== "").map((faq, index) => ({
+          category: (faq.category && faq.category.trim() !== "") ? faq.category.trim() : null,
+          question: faq.question.trim(),
+          answer: faq.answer.trim(),
           sortOrder: index,
         })),
-        subTypes: subTypes.map((subtype, index) => ({
-          label: subtype.label,
-          code: subtype.code || null,
+        subTypes: subTypes.filter(subtype => subtype && subtype.label && subtype.label.trim() !== "").map((subtype, index) => ({
+          label: subtype.label.trim(),
+          code: (subtype.code && subtype.code.trim() !== "") ? subtype.code.trim() : null,
           sortOrder: index,
         })),
       };

@@ -169,6 +169,27 @@ export async function POST(req: Request) {
       subTypes = [],
     } = body;
 
+    // Validate required fields
+    if (!countryId || (typeof countryId === "string" && countryId.trim() === "")) {
+      return NextResponse.json(
+        { error: "Country is required" },
+        { status: 400 }
+      );
+    }
+
+    // Verify country exists
+    const country = await prisma.country.findUnique({
+      where: { id: countryId },
+      select: { id: true },
+    });
+
+    if (!country) {
+      return NextResponse.json(
+        { error: "Selected country does not exist" },
+        { status: 400 }
+      );
+    }
+
     // Provide default values for required fields to prevent DB errors
     const safeName = name || "Untitled Visa";
     const safeCategory = category || "Tourist";
@@ -195,6 +216,20 @@ export async function POST(req: Request) {
     //     { status: 400 }
     //   );
     // }
+
+    // Debug logging in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Creating visa with data:", {
+        countryId,
+        name: safeName,
+        hasSubTypes: subTypes && subTypes.length > 0,
+        subTypesCount: subTypes?.length || 0,
+        hasRequirements: requirements && requirements.length > 0,
+        requirementsCount: requirements?.length || 0,
+        hasFaqs: faqs && faqs.length > 0,
+        faqsCount: faqs?.length || 0,
+      });
+    }
 
     const resolvedSlug = await ensureUniqueSlug(
       slug?.trim() || slugify(safeName)
@@ -237,8 +272,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const visa = await prisma.visa.create({
-      data: {
+    // Prepare the data object
+    const visaData: any = {
         countryId,
         name: safeName,
         slug: resolvedSlug,
@@ -269,11 +304,13 @@ export async function POST(req: Request) {
         stayDurationDays: stayDurationDays !== undefined && stayDurationDays !== null ? Number(stayDurationDays) : null,
         validityDays: validityDays !== undefined && validityDays !== null ? Number(validityDays) : null,
         currency: currency || "INR",
-        requirements: requirements && requirements.length > 0
-          ? {
-            create: requirements
-              .filter((req: any) => req && req.name && typeof req.name === "string" && req.name.trim() !== "")
-              .map(
+        requirements: (() => {
+          const validRequirements = requirements
+            ? requirements.filter((req: any) => req && req.name && typeof req.name === "string" && req.name.trim() !== "")
+            : [];
+          return validRequirements.length > 0
+            ? {
+              create: validRequirements.map(
                 (req: {
                   name: string;
                   description?: string;
@@ -293,17 +330,20 @@ export async function POST(req: Request) {
                       : index,
                 })
               ),
-          }
-          : undefined,
-        faqs: faqs && faqs.length > 0
-          ? {
-            create: faqs
-              .filter((faq: any) => 
+            }
+            : undefined;
+        })(),
+        faqs: (() => {
+          const validFaqs = faqs
+            ? faqs.filter((faq: any) => 
                 faq && 
                 faq.question && typeof faq.question === "string" && faq.question.trim() !== "" &&
                 faq.answer && typeof faq.answer === "string" && faq.answer.trim() !== ""
               )
-              .map(
+            : [];
+          return validFaqs.length > 0
+            ? {
+              create: validFaqs.map(
                 (
                   faq: {
                     category?: string;
@@ -322,13 +362,16 @@ export async function POST(req: Request) {
                       : index,
                 })
               ),
-          }
-          : undefined,
-        subTypes: subTypes && subTypes.length > 0
-          ? {
-            create: subTypes
-              .filter((subtype: any) => subtype && subtype.label && typeof subtype.label === "string" && subtype.label.trim() !== "")
-              .map(
+            }
+            : undefined;
+        })(),
+        subTypes: (() => {
+          const validSubTypes = subTypes
+            ? subTypes.filter((subtype: any) => subtype && subtype.label && typeof subtype.label === "string" && subtype.label.trim() !== "")
+            : [];
+          return validSubTypes.length > 0
+            ? {
+              create: validSubTypes.map(
                 (
                   subtype: {
                     label: string;
@@ -345,9 +388,23 @@ export async function POST(req: Request) {
                       : index,
                 })
               ),
-          }
-          : undefined,
-      },
+            }
+            : undefined;
+        })(),
+    };
+
+    // Debug log the data being created (without nested arrays for readability)
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Visa data to create:", {
+        ...visaData,
+        requirements: visaData.requirements ? `${visaData.requirements.create?.length || 0} items` : 'none',
+        faqs: visaData.faqs ? `${visaData.faqs.create?.length || 0} items` : 'none',
+        subTypes: visaData.subTypes ? `${visaData.subTypes.create?.length || 0} items` : 'none',
+      });
+    }
+
+    const visa = await prisma.visa.create({
+      data: visaData,
       include: {
         country: true,
         requirements: true,
