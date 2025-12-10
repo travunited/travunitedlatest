@@ -260,24 +260,38 @@ function SidebarNavigation({
             </div>
 
             <div className="mt-4">
-              <button
-                onClick={() => toggleMenu("reports")}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-colors ${
-                  expandedMenus.reports || pathname.startsWith("/admin/reports")
-                    ? "bg-primary-50 text-primary-700"
-                    : "text-neutral-700 hover:bg-neutral-50"
-                }`}
-              >
-                <div className="flex items-center space-x-3">
+              <div className="flex items-center">
+                <Link
+                  href="/admin/reports"
+                  className={`flex-1 flex items-center space-x-3 px-4 py-3 rounded-l-lg font-medium transition-colors ${
+                    pathname.startsWith("/admin/reports")
+                      ? "bg-primary-50 text-primary-700"
+                      : "text-neutral-700 hover:bg-neutral-50"
+                  }`}
+                  onClick={onNavigate}
+                >
                   <BarChart3 size={20} />
                   <span>Reports</span>
-                </div>
-                {expandedMenus.reports ? (
-                  <ChevronDown size={18} />
-                ) : (
-                  <ChevronRight size={18} />
-                )}
-              </button>
+                </Link>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleMenu("reports");
+                  }}
+                  className={`px-2 py-3 rounded-r-lg transition-colors ${
+                    expandedMenus.reports || pathname.startsWith("/admin/reports")
+                      ? "bg-primary-50 text-primary-700 hover:bg-primary-100"
+                      : "text-neutral-700 hover:bg-neutral-50"
+                  }`}
+                >
+                  {expandedMenus.reports ? (
+                    <ChevronDown size={18} />
+                  ) : (
+                    <ChevronRight size={18} />
+                  )}
+                </button>
+              </div>
               <AnimatePresence initial={false}>
                 {expandedMenus.reports && (
                   <motion.div
