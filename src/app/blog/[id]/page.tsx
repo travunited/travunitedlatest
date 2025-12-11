@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { formatDate } from "@/lib/dateFormat";
 import { getMediaProxyUrl } from "@/lib/media";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
+import { ShareButton } from "@/components/ui/ShareButton";
 
 export default async function BlogPostPage({ params }: { params: { id: string } }) {
   const post = await prisma.blogPost.findUnique({
@@ -75,7 +76,16 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
                 </div>
               )}
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold">{post.title}</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">{post.title}</h1>
+            <div className="flex items-center justify-between">
+              <div className="flex-1" />
+              <ShareButton
+                url={`/blog/${post.slug}`}
+                title={post.title}
+                description={post.excerpt || ""}
+                variant="full"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -85,6 +95,14 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
           className="prose prose-lg prose-headings:font-bold prose-headings:text-neutral-900 prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl prose-p:text-neutral-700 prose-p:leading-relaxed prose-a:text-primary-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-neutral-900 prose-ul:list-disc prose-ol:list-decimal prose-li:my-2 prose-blockquote:border-l-4 prose-blockquote:border-primary-300 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-neutral-600 prose-img:rounded-lg prose-img:shadow-medium max-w-none"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
+        <div className="mt-8 pt-8 border-t border-neutral-200 flex items-center justify-center">
+          <ShareButton
+            url={`/blog/${post.slug}`}
+            title={post.title}
+            description={post.excerpt || ""}
+            variant="full"
+          />
+        </div>
       </article>
     </div>
   );

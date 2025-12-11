@@ -8,6 +8,7 @@ import Image from "next/image";
 import { formatDate } from "@/lib/dateFormat";
 import { getMediaProxyUrl } from "@/lib/media";
 import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
+import { ShareButton } from "@/components/ui/ShareButton";
 
 export type BlogClientPost = {
   id: string;
@@ -124,6 +125,17 @@ export function BlogClient({ posts }: { posts: BlogClientPost[] }) {
                       <span>{post.category}</span>
                     </div>
                   )}
+                  <div 
+                    className="absolute top-4 right-4 z-10"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ShareButton
+                      url={`/blog/${post.id}`}
+                      title={post.title}
+                      description={post.excerpt || ""}
+                      variant="icon-only"
+                    />
+                  </div>
                 </div>
                 <div className="p-6">
                   <div className="flex items-center text-neutral-500 text-sm mb-3 space-x-2">

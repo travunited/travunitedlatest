@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { HelpCircle, X, Mail, Phone, MessageCircle } from "lucide-react";
+import { X, Mail, Phone, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
@@ -15,15 +15,15 @@ export function HelpButton() {
 
   return (
     <>
-      {/* Floating Help Button */}
+      {/* Floating WhatsApp Button */}
       <motion.button
         onClick={handleWhatsAppClick}
-        className="fixed bottom-6 right-6 z-50 bg-primary-600 text-white p-4 rounded-full shadow-large hover:bg-primary-700 transition-colors"
+        className="fixed bottom-6 right-6 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-large hover:bg-[#20BA5A] transition-colors"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         aria-label="Chat on WhatsApp"
       >
-        <HelpCircle size={24} />
+        <MessageCircle size={24} />
       </motion.button>
 
       {/* Help Modal */}
