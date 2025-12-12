@@ -945,6 +945,35 @@ export async function sendVisaApprovedEmail(
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
 
+export async function sendVisaFeedbackEmail(
+  email: string,
+  applicationId: string,
+  country: string,
+  visaType: string,
+  googleReviewUrl: string,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
+) {
+  const templates = await loadEmailTemplates();
+  const template = getEmailTemplate("visaFeedbackEmail", (templates as any).emailVisaFeedback || "");
+  const config = await loadEmailConfig();
+  const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
+  
+  const variables: EmailTemplateVariables = {
+    email,
+    applicationId,
+    country,
+    visaType,
+    googleReviewUrl,
+    applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
+    companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+  };
+  
+  const html = replaceTemplateVariables(template, variables);
+  const subject = `We'd Love Your Feedback - ${country} ${visaType}`;
+  
+  return sendUserEmail({ to: email, role, subject, html, category: "visa" });
+}
+
 export async function sendVisaRejectedEmail(
   email: string,
   applicationId: string,

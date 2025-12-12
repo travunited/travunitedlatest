@@ -101,6 +101,8 @@ export async function GET(req: Request) {
       registrationsEnabled: (systemFlags.registrationsEnabled as boolean) ?? true,
       maintenanceMode: (systemFlags.maintenanceMode as boolean) ?? false,
       maintenanceMessage: (systemFlags.maintenanceMessage as string) || "",
+      feedbackEmailsEnabled: (general.feedbackEmailsEnabled as boolean) ?? true,
+      googleReviewUrl: (general.googleReviewUrl as string) || "",
       awsAccessKeyId: (emailConfig.awsAccessKeyId as string) || "",
       awsSecretAccessKey: (emailConfig.awsSecretAccessKey as string) || "",
       awsRegion: (emailConfig.awsRegion as string) || "",
@@ -183,6 +185,8 @@ export async function PUT(req: Request) {
       registrationsEnabled = true,
       maintenanceMode = false,
       maintenanceMessage = "",
+      feedbackEmailsEnabled = true,
+      googleReviewUrl = "",
     } = body;
 
     await prisma.$transaction([
@@ -196,6 +200,8 @@ export async function PUT(req: Request) {
             gstin,
             supportEmail,
             supportPhone,
+            feedbackEmailsEnabled,
+            googleReviewUrl,
           },
         },
         create: {
@@ -207,6 +213,8 @@ export async function PUT(req: Request) {
             gstin,
             supportEmail,
             supportPhone,
+            feedbackEmailsEnabled,
+            googleReviewUrl,
           },
         },
       }),

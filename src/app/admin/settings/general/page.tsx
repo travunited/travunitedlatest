@@ -66,6 +66,10 @@ interface Settings {
   registrationsEnabled: boolean;
   maintenanceMode: boolean;
   maintenanceMessage: string;
+  
+  // Feedback Settings
+  feedbackEmailsEnabled: boolean;
+  googleReviewUrl: string;
 }
 
 export default function AdminGeneralSettingsPage() {
@@ -124,6 +128,9 @@ export default function AdminGeneralSettingsPage() {
     registrationsEnabled: true,
     maintenanceMode: false,
     maintenanceMessage: "",
+    // Feedback Settings
+    feedbackEmailsEnabled: true,
+    googleReviewUrl: "",
   });
 
   const checkEmailConfigStatus = useCallback(async () => {
@@ -1088,6 +1095,76 @@ export default function AdminGeneralSettingsPage() {
                     className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
                   />
                   <p className="text-xs text-neutral-500 mt-1">This message will appear as a global banner on the frontend</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Feedback Email Settings */}
+          <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+            <div className="flex items-center space-x-2 mb-4">
+              <Mail size={24} className="text-primary-600" />
+              <h2 className="text-xl font-bold text-neutral-900">Feedback Email Settings</h2>
+            </div>
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-blue-900">
+                  <strong>How it works:</strong> When a visa is approved and submitted to the user, after 24 hours, a feedback email will be automatically sent asking them to rate your service on Google.
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <CheckboxInput
+                  checked={settings.feedbackEmailsEnabled}
+                  onChange={(checked) => updateSetting("feedbackEmailsEnabled", checked)}
+                  disabled={isReadOnly}
+                  className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500 disabled:cursor-not-allowed"
+                />
+                <div>
+                  <label className="text-sm font-medium text-neutral-700">Enable Feedback Emails</label>
+                  <p className="text-xs text-neutral-500 mt-1">Automatically send feedback emails 24 hours after visa approval</p>
+                </div>
+              </div>
+              {settings.feedbackEmailsEnabled && (
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Google Review URL
+                    <span className="text-xs text-neutral-500 ml-2">(Required if feedback emails are enabled)</span>
+                  </label>
+                  <TextInput
+                    type="url"
+                    value={settings.googleReviewUrl}
+                    onChange={(value) => updateSetting("googleReviewUrl", value)}
+                    disabled={isReadOnly}
+                    placeholder="https://g.page/r/YOUR_GOOGLE_BUSINESS_REVIEW_LINK"
+                    className="w-full px-4 py-2 disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Get your Google Business review link from your Google Business Profile. This link will be included in feedback emails.
+                  </p>
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch("/api/admin/visa-feedback/send", {
+                            method: "GET",
+                          });
+                          const result = await response.json();
+                          if (response.ok) {
+                            alert(`Feedback email test completed.\n\nSent: ${result.sent}\nChecked: ${result.checked}\nErrors: ${result.errors || 0}`);
+                          } else {
+                            alert(`Error: ${result.error || "Failed to send test"}`);
+                          }
+                        } catch (error: any) {
+                          alert(`Error: ${error.message || "Failed to test feedback emails"}`);
+                        }
+                      }}
+                      disabled={isReadOnly}
+                      className="text-sm text-primary-600 hover:text-primary-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Test Feedback Email System
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

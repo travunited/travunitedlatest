@@ -87,6 +87,7 @@ model Application {
   invoiceUploadedAt        DateTime? // When invoice was uploaded
   invoiceUploadedByAdminId String? // Admin who uploaded the invoice
   notes                    String? // Admin notes
+  feedbackEmailSentAt      DateTime? // When feedback email was sent (for approved visas)
   createdAt                DateTime               @default(now())
   updatedAt                DateTime               @updatedAt
   documents                ApplicationDocument[]

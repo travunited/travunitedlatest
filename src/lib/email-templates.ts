@@ -32,6 +32,7 @@ export interface EmailTemplateVariables {
   dashboardUrl?: string;
   applicationUrl?: string;
   bookingUrl?: string;
+  googleReviewUrl?: string;
   
   // OTP variables
   otp?: string;
@@ -94,6 +95,7 @@ export function replaceTemplateVariables(
     "{dashboardUrl}": variables.dashboardUrl || `${baseUrl}/dashboard`,
     "{applicationUrl}": variables.applicationUrl || (variables.applicationId ? `${baseUrl}/dashboard/applications/${variables.applicationId}` : ""),
     "{bookingUrl}": variables.bookingUrl || (variables.bookingId ? `${baseUrl}/dashboard/bookings/${variables.bookingId}` : ""),
+    "{googleReviewUrl}": variables.googleReviewUrl || "",
     "{companyName}": variables.companyName || "Travunited",
     "{supportEmail}": variables.supportEmail || "support@travunited.in",
     "{supportPhone}": variables.supportPhone || "",
@@ -299,6 +301,53 @@ export function getDefaultEmailTemplate(templateKey: string): string {
   <p>View details in your <a href="{applicationUrl}">dashboard</a>.</p>
   <p>If you have questions, please contact our support team.</p>
   <p>Best regards,<br>The {companyName} Team</p>
+</div>`,
+
+    visaFeedbackEmail: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
+  <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <h1 style="color: #1f2937; margin-bottom: 20px;">🌟 We'd Love Your Feedback!</h1>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+      Hi there,
+    </p>
+    
+    <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+      We hope you're enjoying your {country} {visaType}! Your experience matters to us, and we'd be incredibly grateful if you could take a moment to share your feedback.
+    </p>
+    
+    <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 4px;">
+      <p style="color: #92400e; font-size: 15px; line-height: 1.6; margin: 0;">
+        <strong>⭐ Your feedback helps us serve you better!</strong><br>
+        Share your experience by rating us on Google.
+      </p>
+    </div>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="{googleReviewUrl}" 
+         style="display: inline-block; background-color: #4285f4; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; box-shadow: 0 2px 4px rgba(66, 133, 244, 0.3);">
+        Rate Us on Google ⭐
+      </a>
+    </div>
+    
+    <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-top: 24px; margin-bottom: 12px;">
+      Your feedback helps us improve our services and helps future travelers make informed decisions.
+    </p>
+    
+    <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 20px;">
+      Thank you for choosing {companyName}. We appreciate your time!
+    </p>
+    
+    <p style="color: #374151; font-size: 15px; margin-top: 30px; margin-bottom: 0;">
+      Best regards,<br>
+      <strong>The {companyName} Team</strong>
+    </p>
+    
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center;">
+      <p style="color: #9ca3af; font-size: 12px; margin: 0;">
+        View your visa application: <a href="{applicationUrl}" style="color: #4285f4; text-decoration: none;">{applicationUrl}</a>
+      </p>
+    </div>
+  </div>
 </div>`,
 
     // Tour emails
