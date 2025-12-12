@@ -75,19 +75,19 @@ export default async function Home() {
   // Fetch featured blogs (prefer featured, fallback to latest) with error handling
   let featuredBlogs: Prisma.BlogPostGetPayload<{}>[] = [];
   try {
-    const now = new Date();
+    // First, publish any scheduled posts that are ready (runs before fetching)
+    try {
+      const { publishReadyPosts } = await import("@/lib/blog/publishReady");
+      await publishReadyPosts();
+    } catch (publishError) {
+      console.error("Error auto-publishing scheduled blog posts:", publishError);
+      // Continue even if publish fails - don't block page rendering
+    }
     
-    // Fetch posts that are published OR scheduled posts that are ready
+    // Fetch only published posts (scheduled posts are now promoted)
     featuredBlogs = await prisma.blogPost.findMany({
       where: {
-        OR: [
-          { isPublished: true },
-          {
-            // Scheduled posts that are ready (publishedAt <= now)
-            isPublished: false,
-            publishedAt: { lte: now },
-          },
-        ],
+        isPublished: true,
       },
       orderBy: [
         { isFeatured: "desc" }, // Featured first
@@ -95,29 +95,6 @@ export default async function Home() {
       ],
       take: 3,
     });
-
-    // Auto-promote scheduled posts that are ready
-    const readyScheduledPosts = featuredBlogs.filter(
-      (post) => !post.isPublished && post.publishedAt && post.publishedAt <= now
-    );
-
-    if (readyScheduledPosts.length > 0) {
-      await prisma.blogPost.updateMany({
-        where: {
-          id: { in: readyScheduledPosts.map((p) => p.id) },
-        },
-        data: {
-          isPublished: true,
-        },
-      });
-
-      // Update the posts array to reflect the change
-      featuredBlogs = featuredBlogs.map((post) =>
-        readyScheduledPosts.some((p) => p.id === post.id)
-          ? { ...post, isPublished: true }
-          : post
-      );
-    }
   } catch (error) {
     console.error("Error fetching featured blogs:", error);
     // Continue with empty array

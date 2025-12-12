@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { BlogClient } from "./BlogClient";
 import { getMediaProxyUrl } from "@/lib/media";
 import { Prisma } from "@prisma/client";
+import { publishReadyPosts } from "@/lib/blog/publishReady";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -9,45 +10,23 @@ export const revalidate = 0;
 export default async function BlogPage() {
   let posts: Prisma.BlogPostGetPayload<{}>[] = [];
   try {
+    // First, publish any scheduled posts that are ready (runs before fetching)
+    try {
+      await publishReadyPosts();
+    } catch (publishError) {
+      console.error("Error auto-publishing scheduled blog posts:", publishError);
+      // Continue even if publish fails - don't block page rendering
+    }
+
     const now = new Date();
     
-    // Fetch posts that are published OR scheduled posts that are ready
+    // Fetch posts that are published (scheduled posts are now promoted)
     posts = await prisma.blogPost.findMany({
       where: {
-        OR: [
-          { isPublished: true },
-          {
-            // Scheduled posts that are ready (publishedAt <= now)
-            isPublished: false,
-            publishedAt: { lte: now },
-          },
-        ],
+        isPublished: true,
       },
       orderBy: { publishedAt: "desc" },
     });
-
-    // Auto-promote scheduled posts that are ready
-    const readyScheduledPosts = posts.filter(
-      (post) => !post.isPublished && post.publishedAt && post.publishedAt <= now
-    );
-
-    if (readyScheduledPosts.length > 0) {
-      await prisma.blogPost.updateMany({
-        where: {
-          id: { in: readyScheduledPosts.map((p) => p.id) },
-        },
-        data: {
-          isPublished: true,
-        },
-      });
-
-      // Update the posts array to reflect the change
-      posts = posts.map((post) =>
-        readyScheduledPosts.some((p) => p.id === post.id)
-          ? { ...post, isPublished: true }
-          : post
-      );
-    }
   } catch (error) {
     console.error("Error fetching blog posts:", error);
     // Continue with empty array

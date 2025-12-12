@@ -6,8 +6,17 @@ import { formatDate } from "@/lib/dateFormat";
 import { getMediaProxyUrl } from "@/lib/media";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 import { ShareButton } from "@/components/ui/ShareButton";
+import { publishReadyPosts } from "@/lib/blog/publishReady";
 
 export default async function BlogPostPage({ params }: { params: { id: string } }) {
+  // First, publish any scheduled posts that are ready (ensures scheduled posts are published on time)
+  try {
+    await publishReadyPosts();
+  } catch (publishError) {
+    console.error("Error auto-publishing scheduled blog posts:", publishError);
+    // Continue even if publish fails
+  }
+
   const post = await prisma.blogPost.findUnique({
     where: { slug: params.id },
   });
@@ -23,12 +32,19 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
     notFound();
   }
 
-  // Auto-promote scheduled post if it's ready
+  // Double-check: Auto-promote this specific post if it's ready (in case publishReadyPosts missed it)
   if (!post.isPublished && post.publishedAt && post.publishedAt <= now) {
     await prisma.blogPost.update({
       where: { id: post.id },
       data: { isPublished: true },
     });
+    // Refetch the post to get updated data
+    const updatedPost = await prisma.blogPost.findUnique({
+      where: { slug: params.id },
+    });
+    if (updatedPost) {
+      Object.assign(post, updatedPost);
+    }
   }
 
   const publishedDate = formatDate(post.publishedAt ?? post.createdAt);
