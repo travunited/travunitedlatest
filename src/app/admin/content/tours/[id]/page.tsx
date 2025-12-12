@@ -2090,69 +2090,6 @@ const ItineraryTab = memo(({ days, addDay, updateDay, removeDay, onImportCSV }: 
     alert(`Successfully imported ${importedDays.length} day(s).`);
   }, [days.length, onImportCSV]);
 
-  const processCSVRows = useCallback(async (rows: any[]) => {
-    // Validate and convert rows
-    const importedDays: DayState[] = [];
-    const errors: string[] = [];
-
-    rows.forEach((row, index) => {
-      const rowNum = index + 2; // +2 for header and 0-based index
-
-      // Get values (handle different column name variations)
-      const dayNum = row["Day Number"] || row["day number"] || row["Day"] || row["day"] || row["DayNumber"] || row["dayNumber"];
-      const title = row["Title"] || row["title"] || row["Day Title"] || row["day title"];
-      const description = row["Description"] || row["description"] || row["Content"] || row["content"] || row["Day Description"] || row["day description"];
-
-      if (!dayNum && !title && !description) {
-        return; // Skip empty rows
-      }
-
-      const dayIndex = dayNum ? parseInt(String(dayNum), 10) : index + 1;
-      if (isNaN(dayIndex) || dayIndex < 1) {
-        errors.push(`Row ${rowNum}: Invalid day number "${dayNum}". Must be a positive integer.`);
-        return;
-      }
-
-      if (!title || String(title).trim() === "") {
-        errors.push(`Row ${rowNum}: Title is required.`);
-        return;
-      }
-
-      importedDays.push({
-        uid: `${Date.now()}-${index}`,
-        dayIndex,
-        title: String(title).trim(),
-        content: description ? String(description).trim() : "",
-      });
-    });
-
-    if (errors.length > 0) {
-      const errorMsg = `Some rows have errors:\n\n${errors.slice(0, 10).join("\n")}${errors.length > 10 ? `\n... and ${errors.length - 10} more errors.` : ""}\n\nDo you want to import the valid rows anyway?`;
-      if (!confirm(errorMsg)) {
-        return;
-      }
-    }
-
-    if (importedDays.length === 0) {
-      alert("No valid itinerary days found in the CSV.");
-      return;
-    }
-
-    // Sort by dayIndex
-    importedDays.sort((a, b) => a.dayIndex - b.dayIndex);
-
-    // Ask user: replace or merge
-    const replace = days.length === 0 || confirm(
-      `Found ${importedDays.length} day(s) in CSV.\n\n` +
-      `Click OK to REPLACE all existing ${days.length} day(s).\n` +
-      `Click Cancel to MERGE with existing days.`
-    );
-
-    onImportCSV(importedDays, replace);
-    
-    alert(`Successfully imported ${importedDays.length} day(s).`);
-  }, [days.length, onImportCSV]);
-
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
