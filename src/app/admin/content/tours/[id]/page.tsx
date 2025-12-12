@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, memo } from "react";
+import { useCallback, useEffect, useMemo, useState, memo, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -11,9 +11,13 @@ import {
   RefreshCw,
   Save,
   Trash2,
+  Upload,
+  Download,
+  FileText,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { getMediaProxyUrl } from "@/lib/media";
+import { parseCSV } from "@/lib/import-utils";
 
 // Stable component for JSON array textareas to prevent re-render focus loss
 const JsonArrayTextarea = memo(({ value, onChange, rows, placeholder, className }: {
@@ -694,6 +698,17 @@ export default function AdminTourEditorPage() {
     setDays((prev) => prev.filter((day) => day.uid !== uidValue));
   }, []);
 
+  const handleImportCSV = useCallback((newDays: DayState[], replace: boolean) => {
+    if (replace) {
+      setDays(newDays);
+    } else {
+      // Merge: combine existing days with imported days, sorting by dayIndex
+      const combined = [...days, ...newDays];
+      combined.sort((a, b) => a.dayIndex - b.dayIndex);
+      setDays(combined);
+    }
+  }, [days]);
+
   const addAddOnRow = useCallback(() => {
     setAddOns((prev) => [
       ...prev,
@@ -1129,7 +1144,7 @@ export default function AdminTourEditorPage() {
             {activeTab === "addons" && <AddOnsTab addOns={addOns} updateAddOn={updateAddOn} removeAddOn={removeAddOn} addAddOnRow={addAddOnRow} />}
             {activeTab === "availability" && <AvailabilityTab formData={formData} updateForm={updateForm} />}
             {activeTab === "content" && <ContentTab formData={formData} updateForm={updateForm} />}
-            {activeTab === "itinerary" && <ItineraryTab days={days} addDay={addDay} updateDay={updateDay} removeDay={removeDay} />}
+            {activeTab === "itinerary" && <ItineraryTab days={days} addDay={addDay} updateDay={updateDay} removeDay={removeDay} onImportCSV={handleImportCSV} />}
             {activeTab === "media" && <MediaTab
               formData={formData}
               updateForm={updateForm}
@@ -1925,12 +1940,286 @@ const ContentTab = memo(({ formData, updateForm }: {
 });
 ContentTab.displayName = "ContentTab";
 
-const ItineraryTab = memo(({ days, addDay, updateDay, removeDay }: {
+const ItineraryTab = memo(({ days, addDay, updateDay, removeDay, onImportCSV }: {
   days: DayState[];
   addDay: () => void;
   updateDay: (uid: string, key: keyof DayState, value: any) => void;
   removeDay: (uid: string) => void;
+  onImportCSV: (newDays: DayState[], replace: boolean) => void;
 }) => {
+  const [importing, setImporting] = useState(false);
+  const [showPasteMode, setShowPasteMode] = useState(false);
+  const [pastedCSV, setPastedCSV] = useState("");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleDownloadTemplate = () => {
+    const headers = ["Day Number", "Title", "Description"];
+    const exampleRows = [
+      {
+        "Day Number": "1",
+        "Title": "Arrival & Welcome",
+        "Description": "Arrive at the airport and transfer to hotel. Welcome dinner and briefing."
+      },
+      {
+        "Day Number": "2",
+        "Title": "City Tour",
+        "Description": "Morning city tour including main attractions. Afternoon free for exploration."
+      },
+      {
+        "Day Number": "3",
+        "Title": "Cultural Experience",
+        "Description": "Visit local museums and cultural sites. Traditional lunch included."
+      }
+    ];
+
+    const csv = [
+      headers.join(","),
+      ...exampleRows.map(row => 
+        headers.map(h => {
+          const val = row[h as keyof typeof row] || "";
+          if (val.includes(",") || val.includes('"') || val.includes("\n")) {
+            return `"${String(val).replace(/"/g, '""')}"`;
+          }
+          return val;
+        }).join(",")
+      )
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "itinerary-template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportCSV = () => {
+    if (days.length === 0) {
+      alert("No itinerary days to export.");
+      return;
+    }
+
+    const headers = ["Day Number", "Title", "Description"];
+    const csv = [
+      headers.join(","),
+      ...days.map(day => 
+        headers.map(h => {
+          let val = "";
+          if (h === "Day Number") val = String(day.dayIndex);
+          else if (h === "Title") val = day.title;
+          else if (h === "Description") val = day.content;
+
+          if (val.includes(",") || val.includes('"') || val.includes("\n")) {
+            return `"${String(val).replace(/"/g, '""')}"`;
+          }
+          return val;
+        }).join(",")
+      )
+    ].join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `itinerary-export-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const processCSVRows = useCallback(async (rows: any[]) => {
+    // Validate and convert rows
+    const importedDays: DayState[] = [];
+    const errors: string[] = [];
+
+    rows.forEach((row, index) => {
+      const rowNum = index + 2; // +2 for header and 0-based index
+
+      // Get values (handle different column name variations)
+      const dayNum = row["Day Number"] || row["day number"] || row["Day"] || row["day"] || row["DayNumber"] || row["dayNumber"];
+      const title = row["Title"] || row["title"] || row["Day Title"] || row["day title"];
+      const description = row["Description"] || row["description"] || row["Content"] || row["content"] || row["Day Description"] || row["day description"];
+
+      if (!dayNum && !title && !description) {
+        return; // Skip empty rows
+      }
+
+      const dayIndex = dayNum ? parseInt(String(dayNum), 10) : index + 1;
+      if (isNaN(dayIndex) || dayIndex < 1) {
+        errors.push(`Row ${rowNum}: Invalid day number "${dayNum}". Must be a positive integer.`);
+        return;
+      }
+
+      if (!title || String(title).trim() === "") {
+        errors.push(`Row ${rowNum}: Title is required.`);
+        return;
+      }
+
+      importedDays.push({
+        uid: `${Date.now()}-${index}`,
+        dayIndex,
+        title: String(title).trim(),
+        content: description ? String(description).trim() : "",
+      });
+    });
+
+    if (errors.length > 0) {
+      const errorMsg = `Some rows have errors:\n\n${errors.slice(0, 10).join("\n")}${errors.length > 10 ? `\n... and ${errors.length - 10} more errors.` : ""}\n\nDo you want to import the valid rows anyway?`;
+      if (!confirm(errorMsg)) {
+        return;
+      }
+    }
+
+    if (importedDays.length === 0) {
+      alert("No valid itinerary days found in the CSV.");
+      return;
+    }
+
+    // Sort by dayIndex
+    importedDays.sort((a, b) => a.dayIndex - b.dayIndex);
+
+    // Ask user: replace or merge
+    const replace = days.length === 0 || confirm(
+      `Found ${importedDays.length} day(s) in CSV.\n\n` +
+      `Click OK to REPLACE all existing ${days.length} day(s).\n` +
+      `Click Cancel to MERGE with existing days.`
+    );
+
+    onImportCSV(importedDays, replace);
+    
+    alert(`Successfully imported ${importedDays.length} day(s).`);
+  }, [days.length, onImportCSV]);
+
+  const processCSVRows = useCallback(async (rows: any[]) => {
+    // Validate and convert rows
+    const importedDays: DayState[] = [];
+    const errors: string[] = [];
+
+    rows.forEach((row, index) => {
+      const rowNum = index + 2; // +2 for header and 0-based index
+
+      // Get values (handle different column name variations)
+      const dayNum = row["Day Number"] || row["day number"] || row["Day"] || row["day"] || row["DayNumber"] || row["dayNumber"];
+      const title = row["Title"] || row["title"] || row["Day Title"] || row["day title"];
+      const description = row["Description"] || row["description"] || row["Content"] || row["content"] || row["Day Description"] || row["day description"];
+
+      if (!dayNum && !title && !description) {
+        return; // Skip empty rows
+      }
+
+      const dayIndex = dayNum ? parseInt(String(dayNum), 10) : index + 1;
+      if (isNaN(dayIndex) || dayIndex < 1) {
+        errors.push(`Row ${rowNum}: Invalid day number "${dayNum}". Must be a positive integer.`);
+        return;
+      }
+
+      if (!title || String(title).trim() === "") {
+        errors.push(`Row ${rowNum}: Title is required.`);
+        return;
+      }
+
+      importedDays.push({
+        uid: `${Date.now()}-${index}`,
+        dayIndex,
+        title: String(title).trim(),
+        content: description ? String(description).trim() : "",
+      });
+    });
+
+    if (errors.length > 0) {
+      const errorMsg = `Some rows have errors:\n\n${errors.slice(0, 10).join("\n")}${errors.length > 10 ? `\n... and ${errors.length - 10} more errors.` : ""}\n\nDo you want to import the valid rows anyway?`;
+      if (!confirm(errorMsg)) {
+        return;
+      }
+    }
+
+    if (importedDays.length === 0) {
+      alert("No valid itinerary days found in the CSV.");
+      return;
+    }
+
+    // Sort by dayIndex
+    importedDays.sort((a, b) => a.dayIndex - b.dayIndex);
+
+    // Ask user: replace or merge
+    const replace = days.length === 0 || confirm(
+      `Found ${importedDays.length} day(s) in CSV.\n\n` +
+      `Click OK to REPLACE all existing ${days.length} day(s).\n` +
+      `Click Cancel to MERGE with existing days.`
+    );
+
+    onImportCSV(importedDays, replace);
+    
+    alert(`Successfully imported ${importedDays.length} day(s).`);
+  }, [days.length, onImportCSV]);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      alert("Please select a CSV file.");
+      return;
+    }
+
+    setImporting(true);
+    try {
+      const rows = await parseCSV(file);
+      
+      if (rows.length === 0) {
+        alert("CSV file is empty or invalid.");
+        setImporting(false);
+        return;
+      }
+
+      await processCSVRows(rows);
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (error: any) {
+      console.error("CSV import error:", error);
+      alert(`Failed to import CSV: ${error.message || "Unknown error"}`);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handlePasteCSV = async () => {
+    if (!pastedCSV.trim()) {
+      alert("Please paste CSV content first.");
+      return;
+    }
+
+    setImporting(true);
+    try {
+      // Parse CSV text using PapaParse
+      const Papa = (await import("papaparse")).default;
+      const parsed = Papa.parse(pastedCSV, {
+        header: true,
+        skipEmptyLines: true,
+      });
+
+      if (!parsed.data || parsed.data.length === 0) {
+        alert("Pasted CSV is empty or invalid.");
+        setImporting(false);
+        return;
+      }
+
+      await processCSVRows(parsed.data as any[]);
+      
+      // Clear pasted content
+      setPastedCSV("");
+      setShowPasteMode(false);
+    } catch (error: any) {
+      console.error("CSV paste import error:", error);
+      alert(`Failed to import pasted CSV: ${error.message || "Unknown error"}`);
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -1940,18 +2229,120 @@ const ItineraryTab = memo(({ days, addDay, updateDay, removeDay }: {
             These show up as an itinerary timeline on the tour page.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={addDay}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-lg font-medium"
-        >
-          <Plus size={16} />
-          Add day
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleDownloadTemplate}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-neutral-50 text-neutral-700 rounded-lg font-medium hover:bg-neutral-100 text-sm"
+            title="Download CSV template"
+          >
+            <FileText size={16} />
+            Template
+          </button>
+          {days.length > 0 && (
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-neutral-50 text-neutral-700 rounded-lg font-medium hover:bg-neutral-100 text-sm"
+              title="Export current itinerary as CSV"
+            >
+              <Download size={16} />
+              Export CSV
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowPasteMode(!showPasteMode)}
+            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm ${
+              showPasteMode 
+                ? "bg-primary-600 text-white hover:bg-primary-700" 
+                : "bg-neutral-50 text-neutral-700 hover:bg-neutral-100"
+            }`}
+          >
+            {showPasteMode ? <FileText size={16} /> : <Upload size={16} />}
+            {showPasteMode ? "Upload File" : "Paste CSV"}
+          </button>
+          {!showPasteMode && (
+            <label className="inline-flex items-center gap-2 px-3 py-2 bg-primary-50 text-primary-700 rounded-lg font-medium hover:bg-primary-100 text-sm cursor-pointer">
+              <Upload size={16} />
+              {importing ? "Importing..." : "Import CSV"}
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleFileSelect}
+                disabled={importing}
+                className="hidden"
+                ref={fileInputRef}
+              />
+            </label>
+          )}
+          <button
+            type="button"
+            onClick={addDay}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700"
+          >
+            <Plus size={16} />
+            Add day
+          </button>
+        </div>
       </div>
-      {days.length === 0 && (
+      
+      {showPasteMode && (
+        <div className="border border-primary-200 rounded-lg p-4 bg-primary-50/50 space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-neutral-900 mb-2">
+              Paste CSV Content
+            </label>
+            <textarea
+              value={pastedCSV}
+              onChange={(e) => setPastedCSV(e.target.value)}
+              placeholder={`Day Number,Title,Description
+1,Arrival & Welcome,Arrive at the airport and transfer to hotel
+2,City Tour,Morning city tour including main attractions
+3,Cultural Experience,Visit local museums and cultural sites`}
+              rows={8}
+              className="w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
+            />
+            <p className="mt-1 text-xs text-neutral-500">
+              Paste your CSV content here. Include header row: Day Number, Title, Description
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePasteCSV}
+              disabled={importing || !pastedCSV.trim()}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {importing ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <Upload size={16} />
+                  Import Pasted CSV
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPastedCSV("");
+                setShowPasteMode(false);
+              }}
+              className="px-4 py-2 bg-neutral-100 text-neutral-700 rounded-lg font-medium hover:bg-neutral-200"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {days.length === 0 && !showPasteMode && (
         <p className="text-sm text-neutral-500">
-          Start by adding at least one itinerary day.
+          Start by adding at least one itinerary day, or import from CSV.
         </p>
       )}
       <div className="space-y-4">
