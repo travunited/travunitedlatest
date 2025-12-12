@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 type AdminRole = "STAFF_ADMIN" | "SUPER_ADMIN";
 
 // Global fallback for all admin/support notifications
-const DEFAULT_SUPPORT_EMAIL = "travunited3@gmail.com";
+const DEFAULT_SUPPORT_EMAIL = "travunited.root@gmail.com";
 
 export async function getAdminUserIds(
   roles: AdminRole[] = ["STAFF_ADMIN", "SUPER_ADMIN"]
