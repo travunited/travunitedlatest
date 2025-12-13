@@ -866,7 +866,6 @@ export default function AdminTourEditorPage() {
         highlights: parseJsonString(formData.highlights, []),
         inclusions: parseJsonString(formData.inclusions, []),
         exclusions: parseJsonString(formData.exclusions, []),
-        itinerary: parseJsonString(formData.itinerary, []),
         importantNotes: formData.importantNotes || null,
         hotelCategories: parseJsonString(formData.hotelCategories, []),
         customizationOptions: parseJsonString(formData.customizationOptions, {}),
