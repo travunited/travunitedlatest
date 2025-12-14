@@ -2169,6 +2169,19 @@ const ItineraryTab = memo(({ days, addDay, updateDay, removeDay, onImportCSV }: 
     alert(`Successfully imported ${importedDays.length} day(s).`);
   }, [days.length, onImportCSV]);
 
+  // Convert JSON itinerary array to DayState format
+  const convertJSONToDayState = useCallback((jsonData: any[]): DayState[] => {
+    return jsonData.map((item: any, index: number) => ({
+      uid: `${Date.now()}-${index}`,
+      dayIndex: item.day ?? item.dayIndex ?? index + 1,
+      title: item.title ?? "",
+      content: item.description ?? item.content ?? "",
+      activities: Array.isArray(item.activities) ? item.activities : [],
+      meals: Array.isArray(item.meals) ? item.meals : [],
+      accommodation: item.accommodation ?? "",
+    }));
+  }, []);
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -2202,74 +2215,152 @@ const ItineraryTab = memo(({ days, addDay, updateDay, removeDay, onImportCSV }: 
     }
   };
 
+  // Convert JSON itinerary array to DayState format
+  const convertJSONToDayState = useCallback((jsonData: any[]): DayState[] => {
+    return jsonData.map((item: any, index: number) => ({
+      uid: `${Date.now()}-${index}`,
+      dayIndex: item.day ?? item.dayIndex ?? index + 1,
+      title: item.title ?? "",
+      content: item.description ?? item.content ?? "",
+      activities: Array.isArray(item.activities) ? item.activities : [],
+      meals: Array.isArray(item.meals) ? item.meals : [],
+      accommodation: item.accommodation ?? "",
+    }));
+  }, []);
+
   const handlePasteCSV = async () => {
     if (!pastedCSV.trim()) {
-      alert("Please paste CSV content first.");
+      alert("Please paste CSV or JSON content first.");
       return;
     }
 
     setImporting(true);
     try {
-      // Parse CSV text using PapaParse (same way as file upload)
-      const Papa = (await import("papaparse")).default;
+      const trimmedContent = pastedCSV.trim();
       
-      const parsePromise = new Promise<any[]>((resolve, reject) => {
-        Papa.parse(pastedCSV.trim(), {
-          header: true,
-          skipEmptyLines: true,
-          transformHeader: (header) => header.trim(),
-          transform: (value) => {
-            if (typeof value === "string") {
-              return value.trim();
-            }
-            return value;
-          },
-          complete: (results) => {
-            if (results.errors && results.errors.length > 0) {
-              console.warn("CSV parsing warnings:", results.errors);
-            }
-            resolve(results.data || []);
-          },
-          error: (error: Error) => {
-            reject(error);
-          },
-        });
-      });
+      // Check if content is JSON (starts with [ or {)
+      const isJSON = trimmedContent.startsWith("[") || trimmedContent.startsWith("{");
+      
+      if (isJSON) {
+        try {
+          // Try to parse as JSON
+          const jsonData = JSON.parse(trimmedContent);
+          
+          // Handle both array and single object
+          const items = Array.isArray(jsonData) ? jsonData : [jsonData];
+          
+          if (items.length === 0) {
+            alert("JSON is empty. Please provide at least one itinerary day.");
+            setImporting(false);
+            return;
+          }
 
-      const rows = await parsePromise;
-      console.log("Parsed CSV rows:", rows);
+          // Convert JSON format to DayState
+          const importedDays = convertJSONToDayState(items);
+          
+          if (importedDays.length === 0) {
+            alert("No valid itinerary days found in JSON.");
+            setImporting(false);
+            return;
+          }
 
-      if (!rows || rows.length === 0) {
-        alert(`Pasted CSV is empty or invalid.\n\nExpected format:\nDay Number,Title,Description,Activities,Meals,Accommodation\n\nMake sure you include the header row and at least one data row.`);
-        setImporting(false);
-        return;
+          // Validate that we have at least titles
+          const validDays = importedDays.filter(day => day.title && day.title.trim().length > 0);
+          if (validDays.length === 0) {
+            alert("No valid days found. Each day must have a title.");
+            setImporting(false);
+            return;
+          }
+
+          // Sort by dayIndex
+          validDays.sort((a, b) => a.dayIndex - b.dayIndex);
+
+          // Ask user: replace or merge
+          const replace = days.length === 0 || confirm(
+            `Found ${validDays.length} day(s) in JSON.\n\n` +
+            `Click OK to REPLACE all existing ${days.length} day(s).\n` +
+            `Click Cancel to MERGE with existing days.`
+          );
+
+          onImportCSV(validDays, replace);
+          
+          alert(`Successfully imported ${validDays.length} day(s) from JSON.`);
+          
+          // Clear pasted content
+          setPastedCSV("");
+          setShowPasteMode(false);
+          setImporting(false);
+          return; // Exit after successful JSON import
+        } catch (jsonError: any) {
+          console.error("JSON parsing error:", jsonError);
+          // If JSON parsing fails, try CSV as fallback
+          isJSON = false; // Treat as CSV now
+        }
       }
 
-      // Filter out completely empty rows
-      const validRows = rows.filter((row: any) => {
-        if (!row || typeof row !== "object") return false;
-        const hasData = Object.values(row).some((val: any) => {
-          if (val === null || val === undefined) return false;
-          const strVal = String(val).trim();
-          return strVal.length > 0;
+      // If not JSON or JSON parsing failed, try CSV
+      if (!isJSON) {
+        // Parse CSV text using PapaParse
+        const Papa = (await import("papaparse")).default;
+        
+        const parsePromise = new Promise<any[]>((resolve, reject) => {
+          Papa.parse(trimmedContent, {
+            header: true,
+            skipEmptyLines: true,
+            transformHeader: (header) => header.trim(),
+            transform: (value) => {
+              if (typeof value === "string") {
+                return value.trim();
+              }
+              return value;
+            },
+            complete: (results) => {
+              if (results.errors && results.errors.length > 0) {
+                console.warn("CSV parsing warnings:", results.errors);
+              }
+              resolve(results.data || []);
+            },
+            error: (error: Error) => {
+              reject(error);
+            },
+          });
         });
-        return hasData;
-      });
 
-      if (validRows.length === 0) {
-        alert("No valid rows found in the CSV. Please check your data.");
-        setImporting(false);
-        return;
+        const rows = await parsePromise;
+        console.log("Parsed CSV rows:", rows);
+
+        if (!rows || rows.length === 0) {
+          alert(`Pasted content is empty or invalid.\n\nSupported formats:\n1. JSON array with itinerary days\n2. CSV with header: Day Number,Title,Description,Activities,Meals,Accommodation`);
+          setImporting(false);
+          return;
+        }
+
+        // Filter out completely empty rows
+        const validRows = rows.filter((row: any) => {
+          if (!row || typeof row !== "object") return false;
+          const hasData = Object.values(row).some((val: any) => {
+            if (val === null || val === undefined) return false;
+            const strVal = String(val).trim();
+            return strVal.length > 0;
+          });
+          return hasData;
+        });
+
+        if (validRows.length === 0) {
+          alert("No valid rows found in the CSV. Please check your data.");
+          setImporting(false);
+          return;
+        }
+
+        await processCSVRows(validRows as any[]);
+        
+        // Clear pasted content
+        setPastedCSV("");
+        setShowPasteMode(false);
       }
-
-      await processCSVRows(validRows as any[]);
-      
-      // Clear pasted content
-      setPastedCSV("");
-      setShowPasteMode(false);
     } catch (error: any) {
-      console.error("CSV paste import error:", error);
-      alert(`Failed to import pasted CSV: ${error.message || "Unknown error"}\n\nPlease check the CSV format and try again.`);
+      console.error("Import error:", error);
+      alert(`Failed to import: ${error.message || "Unknown error"}\n\nPlease check the format and try again.`);
       setImporting(false);
     }
   };
@@ -2345,20 +2436,28 @@ const ItineraryTab = memo(({ days, addDay, updateDay, removeDay, onImportCSV }: 
         <div className="border border-primary-200 rounded-lg p-4 bg-primary-50/50 space-y-3">
           <div>
             <label className="block text-sm font-medium text-neutral-900 mb-2">
-              Paste CSV Content
+              Paste JSON or CSV Content
             </label>
             <textarea
               value={pastedCSV}
               onChange={(e) => setPastedCSV(e.target.value)}
-              placeholder={`Day Number,Title,Description,Activities,Meals,Accommodation
-1,Arrival & Welcome,Arrive at the airport and transfer to hotel,"Airport pickup; Hotel check-in","Dinner","Hotel Name"
-2,City Tour,Morning city tour including main attractions,"Guided tour; Visit attractions","Breakfast; Lunch","Hotel Name"
-3,Cultural Experience,Visit local museums and cultural sites,"Museum visit; Cultural tour","Breakfast; Lunch",""`}
+              placeholder={`You can paste either JSON or CSV format:
+
+JSON format:
+[{"day":1,"title":"Day 1 – Arrival","description":"Arrive at airport","activities":["Activity 1"],"meals":["Breakfast"],"accommodation":""}]
+
+OR CSV format:
+Day Number,Title,Description,Activities,Meals,Accommodation
+1,Arrival & Welcome,Arrive at the airport,"Airport pickup; Hotel check-in","Dinner","Hotel Name"
+2,City Tour,Morning city tour,"Guided tour","Breakfast; Lunch","Hotel Name"`}
               rows={8}
               className="w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
             />
             <p className="mt-1 text-xs text-neutral-500">
-              Paste your CSV content here. Include header row: Day Number, Title, Description, Activities, Meals, Accommodation. Activities and Meals should be semicolon-separated.
+              Paste your content here. Supports two formats:<br/>
+              1. <strong>JSON</strong> - Array of itinerary objects (automatically detected)<br/>
+              2. <strong>CSV</strong> - With header row: Day Number,Title,Description,Activities,Meals,Accommodation<br/>
+              Activities and Meals in CSV should be semicolon-separated.
             </p>
           </div>
           <div className="flex items-center gap-2">
