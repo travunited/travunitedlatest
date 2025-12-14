@@ -2169,19 +2169,6 @@ const ItineraryTab = memo(({ days, addDay, updateDay, removeDay, onImportCSV }: 
     alert(`Successfully imported ${importedDays.length} day(s).`);
   }, [days.length, onImportCSV]);
 
-  // Convert JSON itinerary array to DayState format
-  const convertJSONToDayState = useCallback((jsonData: any[]): DayState[] => {
-    return jsonData.map((item: any, index: number) => ({
-      uid: `${Date.now()}-${index}`,
-      dayIndex: item.day ?? item.dayIndex ?? index + 1,
-      title: item.title ?? "",
-      content: item.description ?? item.content ?? "",
-      activities: Array.isArray(item.activities) ? item.activities : [],
-      meals: Array.isArray(item.meals) ? item.meals : [],
-      accommodation: item.accommodation ?? "",
-    }));
-  }, []);
-
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -2256,7 +2243,15 @@ const ItineraryTab = memo(({ days, addDay, updateDay, removeDay, onImportCSV }: 
           }
 
           // Convert JSON format to DayState
-          const importedDays = convertJSONToDayState(items);
+          const importedDays = items.map((item: any, index: number) => ({
+            uid: `${Date.now()}-${index}`,
+            dayIndex: item.day ?? item.dayIndex ?? index + 1,
+            title: item.title ?? "",
+            content: item.description ?? item.content ?? "",
+            activities: Array.isArray(item.activities) ? item.activities : [],
+            meals: Array.isArray(item.meals) ? item.meals : [],
+            accommodation: item.accommodation ?? "",
+          }));
           
           if (importedDays.length === 0) {
             alert("No valid itinerary days found in JSON.");
@@ -2293,8 +2288,7 @@ const ItineraryTab = memo(({ days, addDay, updateDay, removeDay, onImportCSV }: 
           return; // Exit after successful JSON import
         } catch (jsonError: any) {
           console.error("JSON parsing error:", jsonError);
-          // If JSON parsing fails, try CSV as fallback
-          isJSON = false; // Treat as CSV now
+          // If JSON parsing fails, continue to CSV parsing as fallback
         }
       }
 
