@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { Menu, X, User, ChevronDown, LogOut, Shield, Home, FileText, Plane, BookOpen, Building2, HelpCircle, Mail } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationBell } from "@/components/ui/NotificationBell";
+import { Logo } from "@/components/ui/Logo";
 
 export function Navbar() {
   const { data: session } = useSession();
@@ -33,14 +33,7 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <Image 
-              src="/logo.png" 
-              alt="Travunited Logo" 
-              width={140}
-              height={56}
-              className="h-14 w-auto"
-              priority
-            />
+            <Logo priority />
           </Link>
 
           {/* Desktop Navigation */}

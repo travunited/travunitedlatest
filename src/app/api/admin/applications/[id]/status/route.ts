@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { AuditAction, AuditEntityType } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { sendVisaStatusUpdateEmail, sendVisaApprovedEmail, sendVisaRejectedEmail } from "@/lib/email";
+import { sendVisaStatusUpdateEmail, sendVisaApprovedEmail, sendVisaRejectedEmail, sendVisaFeedbackEmail } from "@/lib/email";
 import { logAuditEvent } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
 export const dynamic = "force-dynamic";

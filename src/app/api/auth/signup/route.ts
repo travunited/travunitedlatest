@@ -50,8 +50,19 @@ export async function POST(req: Request) {
       },
     });
 
-    // Send verification email (non-blocking)
+    // Send welcome email and verification email (non-blocking)
     try {
+      const { sendWelcomeEmail, sendEmailVerificationEmail } = await import("@/lib/email");
+      
+      // Send welcome email
+      try {
+        await sendWelcomeEmail(user.email, user.name || undefined, user.role);
+      } catch (welcomeError) {
+        console.error("Failed to send welcome email:", welcomeError);
+        // Continue with verification email even if welcome email fails
+      }
+      
+      // Send verification email
       const crypto = await import("crypto");
       const verificationToken = crypto.randomBytes(32).toString("hex");
       const verificationExpires = new Date();
@@ -70,11 +81,10 @@ export async function POST(req: Request) {
       });
       
       const verificationUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/verify-email?token=${verificationToken}`;
-      const { sendEmailVerificationEmail } = await import("@/lib/email");
       await sendEmailVerificationEmail(user.email, verificationUrl, user.name || undefined, user.role);
     } catch (error) {
       // Non-blocking - don't fail signup if email fails
-      console.error("Failed to send verification email:", error);
+      console.error("Failed to send emails:", error);
     }
 
     return NextResponse.json(

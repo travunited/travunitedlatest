@@ -4,7 +4,9 @@ import { AuditAction, AuditEntityType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   sendVisaPaymentSuccessEmail,
+  sendVisaPaymentFailedEmail,
   sendTourPaymentSuccessEmail,
+  sendTourPaymentFailedEmail,
 } from "@/lib/email";
 import { logAuditEvent } from "@/lib/audit";
 import { notify } from "@/lib/notifications";
@@ -255,8 +257,33 @@ export async function POST(req: Request) {
           },
         });
 
-        // Notify user about payment failure
+        // Notify user about payment failure and send email
         if (payment.applicationId && payment.application) {
+          const application = await prisma.application.findUnique({
+            where: { id: payment.applicationId },
+            include: {
+              user: {
+                select: { email: true, role: true },
+              },
+            },
+          });
+          
+          if (application) {
+            try {
+              await sendVisaPaymentFailedEmail(
+                application.user.email,
+                payment.applicationId,
+                application.country || "",
+                application.visaType || "",
+                payment.amount,
+                "Payment was declined or failed. Please try again with a different payment method.",
+                application.user.role || "CUSTOMER"
+              );
+            } catch (emailError) {
+              console.error("Error sending visa payment failed email:", emailError);
+            }
+          }
+          
           await notify({
             userId: payment.application.userId,
             type: "VISA_PAYMENT_FAILED",
@@ -267,11 +294,35 @@ export async function POST(req: Request) {
               applicationId: payment.applicationId,
               amount: payment.amount,
             },
-            sendEmail: true,
+            sendEmail: false, // Email already sent above
           });
         }
 
         if (payment.bookingId && payment.booking) {
+          const booking = await prisma.booking.findUnique({
+            where: { id: payment.bookingId },
+            include: {
+              user: {
+                select: { email: true, role: true },
+              },
+            },
+          });
+          
+          if (booking) {
+            try {
+              await sendTourPaymentFailedEmail(
+                booking.user.email,
+                payment.bookingId,
+                booking.tourName || "",
+                payment.amount,
+                "Payment was declined or failed. Please try again with a different payment method.",
+                booking.user.role || "CUSTOMER"
+              );
+            } catch (emailError) {
+              console.error("Error sending tour payment failed email:", emailError);
+            }
+          }
+          
           await notify({
             userId: payment.booking.userId,
             type: "TOUR_PAYMENT_FAILED",
@@ -282,7 +333,7 @@ export async function POST(req: Request) {
               bookingId: payment.bookingId,
               amount: payment.amount,
             },
-            sendEmail: true,
+            sendEmail: false, // Email already sent above
           });
         }
       }
