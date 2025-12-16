@@ -235,7 +235,7 @@ export default function AuditLogPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
                         <div className="flex items-center space-x-1">
                           <Calendar size={14} className="text-neutral-400" />
-                          <span>{new Date(log.timestamp).toLocaleString()}</span>
+                          <span suppressHydrationWarning>{new Date(log.timestamp).toLocaleString()}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

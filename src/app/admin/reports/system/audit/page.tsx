@@ -187,7 +187,7 @@ export default function AuditLogPage() {
               <tbody className="bg-white divide-y divide-neutral-200">
                 {logs.map((log) => (
                   <tr key={log.id} className="hover:bg-neutral-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900" suppressHydrationWarning>
                       {formatDate(log.timestamp)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{log.actor}</td>
