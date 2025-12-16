@@ -9,6 +9,7 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
+import { ChunkErrorHandler } from "@/components/ChunkErrorHandler";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -43,6 +44,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <ChunkErrorHandler />
         <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
         <MetaPixel pixelId={process.env.NEXT_PUBLIC_META_PIXEL_ID} />
         <SessionProvider>

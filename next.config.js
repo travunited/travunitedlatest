@@ -38,6 +38,27 @@ const nextConfig = {
     // Number of pages that should be kept simultaneously without being disposed
     pagesBufferLength: 2,
   },
+  // Webpack configuration for better chunk handling
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Improve chunk loading reliability
+      if (config.optimization) {
+        config.optimization.splitChunks = {
+          ...config.optimization.splitChunks,
+          chunks: 'all',
+          cacheGroups: {
+            ...config.optimization.splitChunks?.cacheGroups,
+            default: {
+              minChunks: 2,
+              priority: -20,
+              reuseExistingChunk: true,
+            },
+          },
+        };
+      }
+    }
+    return config;
+  },
 }
 
 module.exports = nextConfig

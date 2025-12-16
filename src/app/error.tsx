@@ -14,7 +14,26 @@ export default function Error({
   useEffect(() => {
     // Log error to console for debugging
     console.error("Application error:", error);
+    
+    // Check if it's a ChunkLoadError and automatically reload
+    const isChunkError = 
+      error?.name === "ChunkLoadError" ||
+      error?.message?.includes("Loading chunk") ||
+      error?.message?.includes("Failed to fetch dynamically imported module");
+    
+    if (isChunkError) {
+      console.warn("ChunkLoadError detected, reloading page...");
+      // Reload after a short delay to allow user to see the error message
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    }
   }, [error]);
+  
+  const isChunkError = 
+    error?.name === "ChunkLoadError" ||
+    error?.message?.includes("Loading chunk") ||
+    error?.message?.includes("Failed to fetch dynamically imported module");
 
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4">
@@ -24,11 +43,13 @@ export default function Error({
         </div>
         
         <h1 className="text-2xl font-bold text-neutral-900 mb-2">
-          Something went wrong!
+          {isChunkError ? "Page Update Required" : "Something went wrong!"}
         </h1>
         
         <p className="text-neutral-600 mb-6">
-          We encountered an unexpected error. Please try again or return to the homepage.
+          {isChunkError 
+            ? "The page needs to be refreshed to load the latest version. This usually happens after a site update. The page will reload automatically in a moment."
+            : "We encountered an unexpected error. Please try again or return to the homepage."}
         </p>
         
         {error.digest && (
