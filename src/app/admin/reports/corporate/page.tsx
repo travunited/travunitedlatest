@@ -37,10 +37,10 @@ export default function CorporateLeadsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  
+
   // Debounce search query to avoid excessive API calls
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
-  
+
   // Use ref to track abort controller for canceling previous requests
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -71,7 +71,7 @@ export default function CorporateLeadsPage() {
       const response = await fetch(`/api/admin/reports/corporate?${params.toString()}`, {
         signal: abortSignal,
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setSummary(data.summary);
@@ -112,13 +112,13 @@ export default function CorporateLeadsPage() {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
-      
+
       // Create new abort controller for this request
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
-      
+
       fetchReport(abortController.signal);
-      
+
       // Cleanup: abort request if component unmounts or dependencies change
       return () => {
         abortController.abort();
@@ -226,83 +226,85 @@ export default function CorporateLeadsPage() {
           </button>
         </div>
 
-        {/* Summary Cards */}
-        {summary && (
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-6">
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Total Leads</h3>
-                <Users size={20} className="text-primary-600" />
-              </div>
-              <p className="text-3xl font-bold text-neutral-900">{summary.totalLeads}</p>
-            </div>
-            {Object.entries(summary.statusCounts || {}).map(([status, count]: [string, any]) => (
-              <div key={status} className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+        <div className={loading && summary ? "opacity-50 pointer-events-none transition-opacity" : ""}>
+          {/* Summary Cards */}
+          {summary && (
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-6">
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-neutral-600">{status}</h3>
+                  <h3 className="text-sm font-medium text-neutral-600">Total Leads</h3>
+                  <Users size={20} className="text-primary-600" />
                 </div>
-                <p className="text-3xl font-bold text-neutral-900">{count}</p>
+                <p className="text-3xl font-bold text-neutral-900">{summary.totalLeads}</p>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Leads Table */}
-        <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
-          <div className="p-6 border-b border-neutral-200">
-            <h2 className="text-xl font-bold text-neutral-900">Corporate Leads</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-neutral-200">
-              <thead className="bg-neutral-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Company</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Contact</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Phone</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Created</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-neutral-200">
-                {leads.map((lead) => (
-                  <tr key={lead.id} className="hover:bg-neutral-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{lead.companyName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{lead.contactName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{lead.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{lead.phone || "N/A"}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(lead.status)}`}>
-                        {lead.status.replace(/_/g, " ")}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{formatDate(lead.createdAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-neutral-200 flex items-center justify-between">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <span className="text-sm text-neutral-600">
-                Page {page} of {totalPages}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
+              {Object.entries(summary.statusCounts || {}).map(([status, count]: [string, any]) => (
+                <div key={status} className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-medium text-neutral-600">{status}</h3>
+                  </div>
+                  <p className="text-3xl font-bold text-neutral-900">{count}</p>
+                </div>
+              ))}
             </div>
           )}
+
+          {/* Leads Table */}
+          <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
+            <div className="p-6 border-b border-neutral-200">
+              <h2 className="text-xl font-bold text-neutral-900">Corporate Leads</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-neutral-200">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Company</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Contact</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Phone</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Created</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-neutral-200">
+                  {leads.map((lead) => (
+                    <tr key={lead.id} className="hover:bg-neutral-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{lead.companyName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{lead.contactName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{lead.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{lead.phone || "N/A"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(lead.status)}`}>
+                          {lead.status.replace(/_/g, " ")}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900" suppressHydrationWarning>{formatDate(lead.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-neutral-200 flex items-center justify-between">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-neutral-600">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </AdminLayout>

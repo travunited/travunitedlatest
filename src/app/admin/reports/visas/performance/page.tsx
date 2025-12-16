@@ -201,71 +201,73 @@ export default function VisaTypePerformancePage() {
           </button>
         </div>
 
-        {/* Summary Cards */}
-        {visaTypes.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Total Visa Types</h3>
-                <FileText size={20} className="text-primary-600" />
+        <div className={loading && visaTypes.length > 0 ? "opacity-50 pointer-events-none transition-opacity" : ""}>
+          {/* Summary Cards */}
+          {visaTypes.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Total Visa Types</h3>
+                  <FileText size={20} className="text-primary-600" />
+                </div>
+                <p className="text-3xl font-bold text-neutral-900">{visaTypes.length}</p>
               </div>
-              <p className="text-3xl font-bold text-neutral-900">{visaTypes.length}</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Total Applications</h3>
-                <TrendingUp size={20} className="text-blue-600" />
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Total Applications</h3>
+                  <TrendingUp size={20} className="text-blue-600" />
+                </div>
+                <p className="text-3xl font-bold text-blue-700">
+                  {visaTypes.reduce((sum, v) => sum + v.totalApplications, 0)}
+                </p>
               </div>
-              <p className="text-3xl font-bold text-blue-700">
-                {visaTypes.reduce((sum, v) => sum + v.totalApplications, 0)}
-              </p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Total Revenue</h3>
-                <TrendingUp size={20} className="text-green-600" />
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Total Revenue</h3>
+                  <TrendingUp size={20} className="text-green-600" />
+                </div>
+                <p className="text-3xl font-bold text-green-700">
+                  ₹{visaTypes.reduce((sum, v) => sum + v.totalRevenue, 0).toLocaleString()}
+                </p>
               </div>
-              <p className="text-3xl font-bold text-green-700">
-                ₹{visaTypes.reduce((sum, v) => sum + v.totalRevenue, 0).toLocaleString()}
-              </p>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Visa Types Table */}
-        <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
-          <div className="p-6 border-b border-neutral-200">
-            <h2 className="text-xl font-bold text-neutral-900">Visa Type Performance</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-neutral-200">
-              <thead className="bg-neutral-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Visa Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Country</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Applications</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Paid</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Revenue</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Avg Travellers</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Approval Rate</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Refund Rate</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-neutral-200">
-                {visaTypes.map((visa) => (
-                  <tr key={visa.visaId} className="hover:bg-neutral-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{visa.visaName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.countryName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.totalApplications}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.paidApplications}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">₹{visa.totalRevenue.toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.avgTravellers.toFixed(1)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.approvalRate.toFixed(1)}%</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.refundRate.toFixed(1)}%</td>
+          {/* Visa Types Table */}
+          <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
+            <div className="p-6 border-b border-neutral-200">
+              <h2 className="text-xl font-bold text-neutral-900">Visa Type Performance</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-neutral-200">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Visa Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Country</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Applications</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Paid</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Revenue</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Avg Travellers</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Approval Rate</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Refund Rate</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-neutral-200">
+                  {visaTypes.map((visa) => (
+                    <tr key={visa.visaId} className="hover:bg-neutral-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{visa.visaName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.countryName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.totalApplications}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.paidApplications}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">₹{visa.totalRevenue.toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.avgTravellers.toFixed(1)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.approvalRate.toFixed(1)}%</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.refundRate.toFixed(1)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

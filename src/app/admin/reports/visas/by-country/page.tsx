@@ -203,83 +203,76 @@ export default function CountryWiseVisaReportPage() {
           </div>
         )}
 
-        {loading && summary ? (
-          <ReportSkeleton />
-        ) : (
-          <>
-            {/* Summary */}
-            {summary && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Total Countries</h3>
-                <Globe size={20} className="text-neutral-600" />
+        <div className={loading && summary ? "opacity-50 pointer-events-none transition-opacity" : ""}>
+          {summary && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Total Countries</h3>
+                  <Globe size={20} className="text-neutral-600" />
+                </div>
+                <p className="text-3xl font-bold text-neutral-900">{summary.totalCountries}</p>
               </div>
-              <p className="text-3xl font-bold text-neutral-900">{summary.totalCountries}</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Total Applications</h3>
-                <TrendingUp size={20} className="text-blue-600" />
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Total Applications</h3>
+                  <TrendingUp size={20} className="text-blue-600" />
+                </div>
+                <p className="text-3xl font-bold text-blue-700">{summary.totalApplications}</p>
               </div>
-              <p className="text-3xl font-bold text-blue-700">{summary.totalApplications}</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Total Revenue</h3>
-                <TrendingUp size={20} className="text-green-600" />
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Total Revenue</h3>
+                  <TrendingUp size={20} className="text-green-600" />
+                </div>
+                <p className="text-3xl font-bold text-green-700">₹{summary.totalRevenue.toLocaleString()}</p>
               </div>
-              <p className="text-3xl font-bold text-green-700">₹{summary.totalRevenue.toLocaleString()}</p>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Country Table */}
-        <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
-          <div className="p-6 border-b border-neutral-200">
-            <h2 className="text-xl font-bold text-neutral-900">Performance by Country</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-neutral-200">
-              <thead className="bg-neutral-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Country</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Total Applications</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Paid Applications</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Total Revenue</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Avg Ticket Size</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Approval Rate</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-neutral-200">
-                {countryData.map((country) => (
-                  <tr key={country.countryId} className="hover:bg-neutral-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
-                      {country.countryName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{country.totalApplications}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-medium">{country.paidApplications}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-neutral-900">₹{country.totalRevenue.toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">₹{Math.round(country.avgTicketSize).toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        country.approvalRate >= 80 ? "bg-green-100 text-green-700" :
-                        country.approvalRate >= 60 ? "bg-yellow-100 text-yellow-700" :
-                        "bg-red-100 text-red-700"
-                      }`}>
-                        {country.approvalRate.toFixed(1)}%
-                      </span>
-                    </td>
+          {/* Country Table */}
+          <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
+            <div className="p-6 border-b border-neutral-200">
+              <h2 className="text-xl font-bold text-neutral-900">Performance by Country</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-neutral-200">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Country</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Total Applications</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Paid Applications</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Total Revenue</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Avg Ticket Size</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Approval Rate</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-neutral-200">
+                  {countryData.map((country) => (
+                    <tr key={country.countryId} className="hover:bg-neutral-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
+                        {country.countryName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{country.totalApplications}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-medium">{country.paidApplications}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-neutral-900">₹{country.totalRevenue.toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">₹{Math.round(country.avgTicketSize).toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${country.approvalRate >= 80 ? "bg-green-100 text-green-700" :
+                          country.approvalRate >= 60 ? "bg-yellow-100 text-yellow-700" :
+                            "bg-red-100 text-red-700"
+                          }`}>
+                          {country.approvalRate.toFixed(1)}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-          </>
-        )}
       </div>
-    </AdminLayout>
+    </AdminLayout >
   );
 }
-

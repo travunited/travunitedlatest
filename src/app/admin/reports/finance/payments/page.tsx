@@ -219,121 +219,115 @@ export default function PaymentsReportPage() {
           </div>
         )}
 
-        {loading && summary ? (
-          <ReportSkeleton />
-        ) : (
-          <>
-            {/* Summary Cards */}
-            {summary && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Total Transactions</h3>
-                <CreditCard size={20} className="text-neutral-600" />
+        {/* Main Content */}
+        <div className={loading && summary ? "opacity-50 pointer-events-none transition-opacity" : ""}>
+          {summary && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Total Transactions</h3>
+                  <CreditCard size={20} className="text-neutral-600" />
+                </div>
+                <p className="text-3xl font-bold text-neutral-900">{summary.totalTransactions}</p>
               </div>
-              <p className="text-3xl font-bold text-neutral-900">{summary.totalTransactions}</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Successful</h3>
-                <CheckCircle size={20} className="text-green-600" />
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Successful</h3>
+                  <CheckCircle size={20} className="text-green-600" />
+                </div>
+                <p className="text-3xl font-bold text-green-700">{summary.successfulTransactions}</p>
+                <p className="text-sm text-neutral-600 mt-2">₹{summary.totalAmount.toLocaleString()}</p>
               </div>
-              <p className="text-3xl font-bold text-green-700">{summary.successfulTransactions}</p>
-              <p className="text-sm text-neutral-600 mt-2">₹{summary.totalAmount.toLocaleString()}</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Failed</h3>
-                <XCircle size={20} className="text-red-600" />
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Failed</h3>
+                  <XCircle size={20} className="text-red-600" />
+                </div>
+                <p className="text-3xl font-bold text-red-700">{summary.failedTransactions}</p>
               </div>
-              <p className="text-3xl font-bold text-red-700">{summary.failedTransactions}</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Refunded</h3>
-                <AlertCircle size={20} className="text-orange-600" />
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Refunded</h3>
+                  <AlertCircle size={20} className="text-orange-600" />
+                </div>
+                <p className="text-3xl font-bold text-orange-700">{summary.refundedTransactions}</p>
               </div>
-              <p className="text-3xl font-bold text-orange-700">{summary.refundedTransactions}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Payments Table */}
-        <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
-          <div className="p-6 border-b border-neutral-200">
-            <h2 className="text-xl font-bold text-neutral-900">Payment Transactions</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-neutral-200">
-              <thead className="bg-neutral-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date & Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Payment ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-neutral-200">
-                {payments.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-neutral-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                      {formatDate(payment.date)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-600">
-                      {payment.paymentId?.slice(0, 20) || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        payment.type === "Visa" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
-                      }`}>
-                        {payment.type}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="font-medium text-neutral-900">{payment.customerName || "N/A"}</div>
-                      <div className="text-neutral-500">{payment.customerEmail}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(payment.status)}`}>
-                        {payment.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-neutral-900">
-                      ₹{payment.amount.toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-neutral-200 flex items-center justify-between">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <span className="text-sm text-neutral-600">
-                Page {page} of {totalPages}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
             </div>
           )}
+
+          {/* Payments Table */}
+          <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
+            <div className="p-6 border-b border-neutral-200">
+              <h2 className="text-xl font-bold text-neutral-900">Payment Transactions</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-neutral-200">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date & Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Payment ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Customer</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-neutral-200">
+                  {payments.map((payment) => (
+                    <tr key={payment.id} className="hover:bg-neutral-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900" suppressHydrationWarning>
+                        {formatDate(payment.date)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-600">
+                        {payment.paymentId?.slice(0, 20) || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${payment.type === "Visa" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
+                          }`}>
+                          {payment.type}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="font-medium text-neutral-900">{payment.customerName || "N/A"}</div>
+                        <div className="text-neutral-500">{payment.customerEmail}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(payment.status)}`}>
+                          {payment.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-neutral-900">
+                        ₹{payment.amount.toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-neutral-200 flex items-center justify-between">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-neutral-600">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-          </>
-        )}
       </div>
-    </AdminLayout>
+    </AdminLayout >
   );
 }
-

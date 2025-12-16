@@ -187,78 +187,74 @@ export default function RevenueReportPage() {
           </div>
         )}
 
-        {loading && summary ? (
-          <ReportSkeleton />
-        ) : (
-          <>
-            {/* Summary Cards */}
-            {summary && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Total Revenue</h3>
-                <DollarSign size={20} className="text-primary-600" />
+        <div className={loading && summary ? "opacity-50 pointer-events-none transition-opacity" : ""}>
+          {/* Summary Cards */}
+          {summary && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Total Revenue</h3>
+                  <DollarSign size={20} className="text-primary-600" />
+                </div>
+                <p className="text-3xl font-bold text-neutral-900">₹{summary.totalRevenue.toLocaleString()}</p>
               </div>
-              <p className="text-3xl font-bold text-neutral-900">₹{summary.totalRevenue.toLocaleString()}</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Visa Revenue</h3>
-                <DollarSign size={20} className="text-blue-600" />
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Visa Revenue</h3>
+                  <DollarSign size={20} className="text-blue-600" />
+                </div>
+                <p className="text-3xl font-bold text-blue-700">₹{summary.visaRevenue.toLocaleString()}</p>
               </div>
-              <p className="text-3xl font-bold text-blue-700">₹{summary.visaRevenue.toLocaleString()}</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Tour Revenue</h3>
-                <DollarSign size={20} className="text-green-600" />
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Tour Revenue</h3>
+                  <DollarSign size={20} className="text-green-600" />
+                </div>
+                <p className="text-3xl font-bold text-green-700">₹{summary.tourRevenue.toLocaleString()}</p>
               </div>
-              <p className="text-3xl font-bold text-green-700">₹{summary.tourRevenue.toLocaleString()}</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Avg Order Value</h3>
-                <TrendingUp size={20} className="text-purple-600" />
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Avg Order Value</h3>
+                  <TrendingUp size={20} className="text-purple-600" />
+                </div>
+                <p className="text-3xl font-bold text-purple-700">₹{Math.round(summary.avgOrderValue).toLocaleString()}</p>
               </div>
-              <p className="text-3xl font-bold text-purple-700">₹{Math.round(summary.avgOrderValue).toLocaleString()}</p>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Daily Summary Table */}
-        <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
-          <div className="p-6 border-b border-neutral-200">
-            <h2 className="text-xl font-bold text-neutral-900">Daily Revenue Summary</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-neutral-200">
-              <thead className="bg-neutral-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Transactions</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Visa Revenue</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Tour Revenue</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Total Revenue</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-neutral-200">
-                {dailyData.map((day) => (
-                  <tr key={day.date} className="hover:bg-neutral-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
-                      {new Date(day.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{day.transactionCount}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-700 font-medium">₹{day.visaRevenue.toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-medium">₹{day.tourRevenue.toLocaleString()}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-neutral-900">₹{day.totalRevenue.toLocaleString()}</td>
+          {/* Daily Summary Table */}
+          <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
+            <div className="p-6 border-b border-neutral-200">
+              <h2 className="text-xl font-bold text-neutral-900">Daily Revenue Summary</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-neutral-200">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Transactions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Visa Revenue</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Tour Revenue</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Total Revenue</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-neutral-200">
+                  {dailyData.map((day) => (
+                    <tr key={day.date} className="hover:bg-neutral-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900" suppressHydrationWarning>
+                        {new Date(day.date).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{day.transactionCount}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-700 font-medium">₹{day.visaRevenue.toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-medium">₹{day.tourRevenue.toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-neutral-900">₹{day.totalRevenue.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-          </>
-        )}
       </div>
     </AdminLayout>
   );

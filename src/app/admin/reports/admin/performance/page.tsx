@@ -181,71 +181,73 @@ export default function AdminPerformancePage() {
           </button>
         </div>
 
-        {/* Summary Cards */}
-        {summary && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Total Admins</h3>
-                <Shield size={20} className="text-primary-600" />
+        <div className={loading && summary ? "opacity-50 pointer-events-none transition-opacity" : ""}>
+          {/* Summary Cards */}
+          {summary && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Total Admins</h3>
+                  <Shield size={20} className="text-primary-600" />
+                </div>
+                <p className="text-3xl font-bold text-neutral-900">{summary.totalAdmins}</p>
               </div>
-              <p className="text-3xl font-bold text-neutral-900">{summary.totalAdmins}</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Applications Assigned</h3>
-                <TrendingUp size={20} className="text-blue-600" />
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Applications Assigned</h3>
+                  <TrendingUp size={20} className="text-blue-600" />
+                </div>
+                <p className="text-3xl font-bold text-blue-700">{summary.totalApplicationsAssigned}</p>
               </div>
-              <p className="text-3xl font-bold text-blue-700">{summary.totalApplicationsAssigned}</p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium text-neutral-600">Applications Processed</h3>
-                <TrendingUp size={20} className="text-green-600" />
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Applications Processed</h3>
+                  <TrendingUp size={20} className="text-green-600" />
+                </div>
+                <p className="text-3xl font-bold text-green-700">{summary.totalApplicationsProcessed}</p>
               </div>
-              <p className="text-3xl font-bold text-green-700">{summary.totalApplicationsProcessed}</p>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Admins Table */}
-        <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
-          <div className="p-6 border-b border-neutral-200">
-            <h2 className="text-xl font-bold text-neutral-900">Admin Performance</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-neutral-200">
-              <thead className="bg-neutral-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Admin</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Assigned</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Processed</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Avg Processing Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Pending &gt;7 Days</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Doc Verifications</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-neutral-200">
-                {admins.map((admin) => (
-                  <tr key={admin.id} className="hover:bg-neutral-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{admin.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{admin.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{admin.applicationsAssigned}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-medium">{admin.applicationsProcessed}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{admin.avgProcessingTimeHours.toFixed(1)} hrs</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {admin.pendingOver7Days > 0 ? (
-                        <span className="text-red-700 font-medium">{admin.pendingOver7Days}</span>
-                      ) : (
-                        <span className="text-neutral-600">0</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{admin.documentVerifications}</td>
+          {/* Admins Table */}
+          <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
+            <div className="p-6 border-b border-neutral-200">
+              <h2 className="text-xl font-bold text-neutral-900">Admin Performance</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-neutral-200">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Admin</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Assigned</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Processed</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Avg Processing Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Pending &gt;7 Days</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Doc Verifications</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-neutral-200">
+                  {admins.map((admin) => (
+                    <tr key={admin.id} className="hover:bg-neutral-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{admin.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{admin.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{admin.applicationsAssigned}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-medium">{admin.applicationsProcessed}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{admin.avgProcessingTimeHours.toFixed(1)} hrs</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {admin.pendingOver7Days > 0 ? (
+                          <span className="text-red-700 font-medium">{admin.pendingOver7Days}</span>
+                        ) : (
+                          <span className="text-neutral-600">0</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{admin.documentVerifications}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

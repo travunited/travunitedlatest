@@ -163,60 +163,62 @@ export default function SLATurnaroundPage() {
           </button>
         </div>
 
-        {/* Summary Cards */}
-        {summary && (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-neutral-600">Total Applications</h3>
-                  <Clock size={20} className="text-primary-600" />
+        <div className={loading && summary ? "opacity-50 pointer-events-none transition-opacity" : ""}>
+          {/* Summary Cards */}
+          {summary && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+                <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-medium text-neutral-600">Total Applications</h3>
+                    <Clock size={20} className="text-primary-600" />
+                  </div>
+                  <p className="text-3xl font-bold text-neutral-900">{summary.totalApplications}</p>
                 </div>
-                <p className="text-3xl font-bold text-neutral-900">{summary.totalApplications}</p>
-              </div>
-              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-neutral-600">Avg Time to First Review</h3>
-                  <Clock size={20} className="text-blue-600" />
+                <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-medium text-neutral-600">Avg Time to First Review</h3>
+                    <Clock size={20} className="text-blue-600" />
+                  </div>
+                  <p className="text-3xl font-bold text-blue-700">{summary.avgTimeToFirstReview.toFixed(1)} hrs</p>
                 </div>
-                <p className="text-3xl font-bold text-blue-700">{summary.avgTimeToFirstReview.toFixed(1)} hrs</p>
-              </div>
-              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-neutral-600">Avg Time to Decision</h3>
-                  <Clock size={20} className="text-green-600" />
+                <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-medium text-neutral-600">Avg Time to Decision</h3>
+                    <Clock size={20} className="text-green-600" />
+                  </div>
+                  <p className="text-3xl font-bold text-green-700">{summary.avgTimeToDecision.toFixed(1)} hrs</p>
                 </div>
-                <p className="text-3xl font-bold text-green-700">{summary.avgTimeToDecision.toFixed(1)} hrs</p>
               </div>
-            </div>
 
-            {/* SLA Breaches */}
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200 mb-6">
-              <h3 className="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">
-                <AlertCircle size={20} className="text-red-600" />
-                SLA Breaches
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                  <div className="text-sm text-red-600 mb-1">Not Touched &gt; 24h</div>
-                  <div className="text-2xl font-bold text-red-700">{summary.slaBreaches.notTouched24h}</div>
-                </div>
-                <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                  <div className="text-sm text-red-600 mb-1">Not Touched &gt; 48h</div>
-                  <div className="text-2xl font-bold text-red-700">{summary.slaBreaches.notTouched48h}</div>
-                </div>
-                <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
-                  <div className="text-sm text-orange-600 mb-1">Not Decided &gt; 48h</div>
-                  <div className="text-2xl font-bold text-orange-700">{summary.slaBreaches.notDecided48h}</div>
-                </div>
-                <div className="bg-red-50 rounded-lg p-4 border border-red-200">
-                  <div className="text-sm text-red-600 mb-1">Not Decided &gt; 72h</div>
-                  <div className="text-2xl font-bold text-red-700">{summary.slaBreaches.notDecided72h}</div>
+              {/* SLA Breaches */}
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200 mb-6">
+                <h3 className="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">
+                  <AlertCircle size={20} className="text-red-600" />
+                  SLA Breaches
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                    <div className="text-sm text-red-600 mb-1">Not Touched &gt; 24h</div>
+                    <div className="text-2xl font-bold text-red-700">{summary.slaBreaches.notTouched24h}</div>
+                  </div>
+                  <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                    <div className="text-sm text-red-600 mb-1">Not Touched &gt; 48h</div>
+                    <div className="text-2xl font-bold text-red-700">{summary.slaBreaches.notTouched48h}</div>
+                  </div>
+                  <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                    <div className="text-sm text-orange-600 mb-1">Not Decided &gt; 48h</div>
+                    <div className="text-2xl font-bold text-orange-700">{summary.slaBreaches.notDecided48h}</div>
+                  </div>
+                  <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                    <div className="text-sm text-red-600 mb-1">Not Decided &gt; 72h</div>
+                    <div className="text-2xl font-bold text-red-700">{summary.slaBreaches.notDecided72h}</div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </AdminLayout>
   );
