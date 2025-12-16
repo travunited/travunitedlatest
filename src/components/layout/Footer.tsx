@@ -39,7 +39,7 @@ export function Footer() {
               <img 
                 src="/white-logo.png" 
                 alt="Travunited Logo" 
-                className="h-14 w-auto"
+                className="h-20 w-auto"
               />
             </picture>
             <p className="text-neutral-400 mb-4 max-w-md">
