@@ -114,7 +114,10 @@ export default function AuditLogPage() {
     return "bg-neutral-100 text-neutral-700";
   };
 
-  if (loading) {
+  // Only show full-page loader on initial load (no logs and loading)
+  const isInitialLoad = loading && logs.length === 0;
+
+  if (isInitialLoad) {
     return (
       <AdminLayout>
         <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
@@ -216,61 +219,63 @@ export default function AuditLogPage() {
         </div>
 
         {/* Audit Log Table */}
-        {logs.length > 0 ? (
-          <div className="bg-white rounded-lg shadow-medium border border-neutral-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-neutral-200">
-                <thead className="bg-neutral-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Timestamp</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Admin</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Entity</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Action</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Description</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-neutral-200">
-                  {logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-neutral-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                        <div className="flex items-center space-x-1">
-                          <Calendar size={14} className="text-neutral-400" />
-                          <span suppressHydrationWarning>{new Date(log.timestamp).toLocaleString()}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          <User size={16} className="text-neutral-400" />
-                          <div>
-                            <div className="text-sm font-medium text-neutral-900">{log.adminUser.name || "N/A"}</div>
-                            <div className="text-xs text-neutral-500">{log.adminUser.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center space-x-2">
-                          {getEntityIcon(log.entityType)}
-                          <span className="text-sm text-neutral-900">{log.entityType}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getActionColor(log.action)}`}>
-                          {log.action}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-neutral-700">{log.description}</td>
+        <div className={loading && logs.length > 0 ? "opacity-50 pointer-events-none transition-opacity" : ""}>
+          {logs.length > 0 ? (
+            <div className="bg-white rounded-lg shadow-medium border border-neutral-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-neutral-200">
+                  <thead className="bg-neutral-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Timestamp</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Admin</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Entity</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Action</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Description</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-neutral-200">
+                    {logs.map((log) => (
+                      <tr key={log.id} className="hover:bg-neutral-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                          <div className="flex items-center space-x-1">
+                            <Calendar size={14} className="text-neutral-400" />
+                            <span suppressHydrationWarning>{new Date(log.timestamp).toLocaleString()}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center space-x-2">
+                            <User size={16} className="text-neutral-400" />
+                            <div>
+                              <div className="text-sm font-medium text-neutral-900">{log.adminUser.name || "N/A"}</div>
+                              <div className="text-xs text-neutral-500">{log.adminUser.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center space-x-2">
+                            {getEntityIcon(log.entityType)}
+                            <span className="text-sm text-neutral-900">{log.entityType}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getActionColor(log.action)}`}>
+                            {log.action}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-neutral-700">{log.description}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg border border-neutral-200 p-12 text-center">
-            <Search size={48} className="text-neutral-300 mx-auto mb-4" />
-            <p className="text-neutral-600">No audit log entries found</p>
-          </div>
-        )}
+          ) : (
+            <div className="bg-white rounded-lg border border-neutral-200 p-12 text-center">
+              <Search size={48} className="text-neutral-300 mx-auto mb-4" />
+              <p className="text-neutral-600">No audit log entries found</p>
+            </div>
+          )}
+        </div>
       </div>
     </AdminLayout>
   );

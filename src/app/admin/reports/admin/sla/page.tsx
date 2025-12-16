@@ -107,7 +107,10 @@ export default function SLATurnaroundPage() {
     }
   };
 
-  if (loading) {
+  // Only show full-page loader on initial load
+  const isInitialLoad = loading && !summary;
+
+  if (isInitialLoad) {
     return (
       <AdminLayout>
         <div className="min-h-screen bg-neutral-50 flex items-center justify-center">

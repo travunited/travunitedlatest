@@ -25,6 +25,7 @@ export default function AuditLogPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<any>(null);
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
   const [filters, setFilters] = useState<ReportFilters>({
@@ -93,7 +94,10 @@ export default function AuditLogPage() {
     }
   };
 
-  if (loading) {
+  // Only show full-page loader on initial load
+  const isInitialLoad = loading && !summary && !error && logs.length === 0;
+
+  if (isInitialLoad) {
     return (
       <AdminLayout>
         <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
@@ -149,87 +153,88 @@ export default function AuditLogPage() {
         </div>
 
         {/* Summary */}
-        {summary && (
-          <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200 mb-6">
-            <h3 className="text-lg font-semibold text-neutral-900 mb-4">Summary</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <div className="text-sm text-neutral-600">Total Logs</div>
-                <div className="text-2xl font-bold text-neutral-900">{summary.totalLogs}</div>
-              </div>
-              <div>
-                <div className="text-sm text-neutral-600">Action Types</div>
-                <div className="text-sm text-neutral-900">
-                  {Object.keys(summary.actionCounts || {}).length} unique actions
+        <div className={loading && (summary || logs.length > 0) ? "opacity-50 pointer-events-none transition-opacity" : ""}>
+          {summary && (
+            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200 mb-6">
+              <h3 className="text-lg font-semibold text-neutral-900 mb-4">Summary</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-neutral-600">Total Logs</div>
+                  <div className="text-2xl font-bold text-neutral-900">{summary.totalLogs}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-neutral-600">Action Types</div>
+                  <div className="text-sm text-neutral-900">
+                    {Object.keys(summary.actionCounts || {}).length} unique actions
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Audit Logs Table */}
-        <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
-          <div className="p-6 border-b border-neutral-200">
-            <h2 className="text-xl font-bold text-neutral-900">Audit Logs</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-neutral-200">
-              <thead className="bg-neutral-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Timestamp</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Actor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Action</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Entity Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Entity ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Description</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-neutral-200">
-                {logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-neutral-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900" suppressHydrationWarning>
-                      {formatDate(log.timestamp)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{log.actor}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 py-1 rounded text-xs font-medium bg-primary-100 text-primary-700">
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{log.entityType}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-600">
-                      {log.entityId?.slice(0, 8) || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-neutral-900 max-w-md truncate">{log.description}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-neutral-200 flex items-center justify-between">
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <span className="text-sm text-neutral-600">
-                Page {page} of {totalPages}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
           )}
+
+          {/* Audit Logs Table */}
+          <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
+            <div className="p-6 border-b border-neutral-200">
+              <h2 className="text-xl font-bold text-neutral-900">Audit Logs</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-neutral-200">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Timestamp</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Actor</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Action</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Entity Type</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Entity ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Description</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-neutral-200">
+                  {logs.map((log) => (
+                    <tr key={log.id} className="hover:bg-neutral-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900" suppressHydrationWarning>
+                        {formatDate(log.timestamp)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{log.actor}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 py-1 rounded text-xs font-medium bg-primary-100 text-primary-700">
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{log.entityType}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-600">
+                        {log.entityId?.slice(0, 8) || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-neutral-900 max-w-md truncate">{log.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {totalPages > 1 && (
+              <div className="px-6 py-4 border-t border-neutral-200 flex items-center justify-between">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-neutral-600">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </AdminLayout>
   );
 }
-

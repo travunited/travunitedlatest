@@ -106,7 +106,10 @@ export default function AdminPerformancePage() {
     }
   };
 
-  if (loading && admins.length === 0) {
+  // Only show full-page loader on initial load
+  const isInitialLoad = loading && !summary && !error;
+
+  if (isInitialLoad) {
     return (
       <AdminLayout>
         <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
@@ -181,7 +184,7 @@ export default function AdminPerformancePage() {
           </button>
         </div>
 
-        <div className={loading && summary ? "opacity-50 pointer-events-none transition-opacity" : ""}>
+        <div className={loading && (summary || admins.length > 0) ? "opacity-50 pointer-events-none transition-opacity" : ""}>
           {/* Summary Cards */}
           {summary && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
