@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, memo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -9,6 +9,36 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImportModal } from "@/components/admin/ImportModal";
 import Image from "next/image";
 import { getCountryFlagUrl } from "@/lib/flags";
+
+// Memoized search input to prevent focus loss
+const SearchInput = memo(({ value, onChange, placeholder }: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+  }, [onChange]);
+
+  return (
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
+      <input
+        type="search"
+        value={value}
+        onChange={handleChange}
+        placeholder={placeholder}
+        className="w-full pl-10 pr-4 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500"
+      />
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if value or onChange reference changes
+  return prevProps.value === nextProps.value && 
+         prevProps.placeholder === nextProps.placeholder &&
+         prevProps.onChange === nextProps.onChange;
+});
+SearchInput.displayName = "SearchInput";
 
 interface CountryRecord {
   id: string;
@@ -258,13 +288,10 @@ export default function AdminCountriesPage() {
 
         <div className="bg-white border border-neutral-200 rounded-2xl p-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
-            <input
-              type="search"
-              placeholder="Search by name, code or region..."
+            <SearchInput
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500"
+              onChange={setSearchQuery}
+              placeholder="Search by name, code or region..."
             />
           </div>
           <div className="flex items-center gap-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -21,6 +21,62 @@ import {
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImportModal } from "@/components/admin/ImportModal";
+
+// Memoized input components to prevent focus loss
+const SearchInput = memo(({ value, onChange, placeholder }: {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e.target.value);
+  }, [onChange]);
+
+  return (
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
+      <input
+        type="search"
+        value={value}
+        onChange={handleChange}
+        placeholder={placeholder}
+        className="w-full pl-10 pr-4 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500"
+      />
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if value or onChange reference changes
+  return prevProps.value === nextProps.value && 
+         prevProps.placeholder === nextProps.placeholder &&
+         prevProps.onChange === nextProps.onChange;
+});
+SearchInput.displayName = "SearchInput";
+
+const SelectInput = memo(({ value, onChange, children, className = "" }: {
+  value: string;
+  onChange: (value: string) => void;
+  children: React.ReactNode;
+  className?: string;
+}) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange(e.target.value);
+  }, [onChange]);
+
+  return (
+    <select
+      value={value}
+      onChange={handleChange}
+      className={`px-3 py-2 border border-neutral-200 rounded-lg text-sm ${className}`}
+    >
+      {children}
+    </select>
+  );
+}, (prevProps, nextProps) => {
+  return prevProps.value === nextProps.value && 
+         prevProps.onChange === nextProps.onChange &&
+         prevProps.className === nextProps.className;
+});
+SelectInput.displayName = "SelectInput";
 
 interface VisaRecord {
   id: string;
@@ -188,11 +244,52 @@ export default function AdminVisasPage() {
     );
   }, [session, status, router, fetchCountries, fetchVisas]);
 
-  const handleFilterChange = (field: string, value: string) => {
-    const nextFilters = { ...filters, [field]: value };
-    setFilters(nextFilters);
-    fetchVisas(nextFilters);
-  };
+  const handleFilterChange = useCallback((field: keyof VisaFilters, value: string) => {
+    setFilters((prev) => {
+      const nextFilters = { ...prev, [field]: value } as VisaFilters;
+      // Don't fetch immediately for search - it's handled by debounced handler
+      if (field !== "search") {
+        fetchVisas(nextFilters);
+      }
+      return nextFilters;
+    });
+  }, [fetchVisas]);
+
+  // Debounced search handler
+  const [searchValue, setSearchValue] = useState(filters.search);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Sync searchValue with filters.search when filters change externally
+    if (filters.search !== searchValue) {
+      setSearchValue(filters.search);
+    }
+  }, [filters.search, searchValue]);
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchValue(value);
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    // Set new timeout for debounced search
+    searchTimeoutRef.current = setTimeout(() => {
+      setFilters((prev) => {
+        const nextFilters = { ...prev, search: value } as VisaFilters;
+        fetchVisas(nextFilters);
+        return nextFilters;
+      });
+    }, 300);
+  }, [fetchVisas]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleToggleStatus = async (visa: VisaRecord) => {
     try {
@@ -346,13 +443,10 @@ export default function AdminVisasPage() {
         <div className="bg-white border border-neutral-200 rounded-2xl p-4 space-y-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
-              <input
-                type="search"
-                value={filters.search}
-                onChange={(e) => handleFilterChange("search", e.target.value)}
+              <SearchInput
+                value={searchValue}
+                onChange={handleSearchChange}
                 placeholder="Search visas..."
-                className="w-full pl-10 pr-4 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <div className="flex flex-wrap gap-2">
@@ -360,10 +454,9 @@ export default function AdminVisasPage() {
                 <Filter size={16} />
                 Filters
               </div>
-              <select
+              <SelectInput
                 value={filters.countryId}
-                onChange={(e) => handleFilterChange("countryId", e.target.value)}
-                className="px-3 py-2 border border-neutral-200 rounded-lg text-sm"
+                onChange={(value) => handleFilterChange("countryId", value)}
               >
                 <option value="">All countries</option>
                 {countries.map((country) => (
@@ -371,11 +464,10 @@ export default function AdminVisasPage() {
                     {country.name}
                   </option>
                 ))}
-              </select>
-              <select
+              </SelectInput>
+              <SelectInput
                 value={filters.category}
-                onChange={(e) => handleFilterChange("category", e.target.value)}
-                className="px-3 py-2 border border-neutral-200 rounded-lg text-sm"
+                onChange={(value) => handleFilterChange("category", value)}
               >
                 <option value="">All categories</option>
                 {categories.map((category) => (
@@ -383,16 +475,15 @@ export default function AdminVisasPage() {
                     {category}
                   </option>
                 ))}
-              </select>
-              <select
+              </SelectInput>
+              <SelectInput
                 value={filters.status}
-                onChange={(e) => handleFilterChange("status", e.target.value)}
-                className="px-3 py-2 border border-neutral-200 rounded-lg text-sm"
+                onChange={(value) => handleFilterChange("status", value)}
               >
                 <option value="all">All statuses</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
-              </select>
+              </SelectInput>
             </div>
           </div>
         </div>
