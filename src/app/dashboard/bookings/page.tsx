@@ -88,8 +88,15 @@ export default function BookingsPage() {
       });
     }
 
-    if (booking.status === "CONFIRMED" || booking.status === "BOOKED") {
-      if (booking.voucherUrl) {
+    if (booking.status === "CONFIRMED" || booking.status === "BOOKED" || booking.status === "COMPLETED") {
+      actions.push({
+        label: "Download Invoice",
+        href: `/api/invoices/download/booking/${booking.id}`,
+        icon: FileText,
+        download: true,
+      });
+
+      if (booking.voucherUrl && booking.status !== "COMPLETED") {
         actions.push({
           label: "Download Vouchers",
           href: `/api/files?key=${encodeURIComponent(booking.voucherUrl)}`,
@@ -117,11 +124,11 @@ export default function BookingsPage() {
 
   const filteredBookings = selectedStatus
     ? bookings.filter(booking => {
-        const group = Object.entries(statusGroups).find(([_, statuses]) =>
-          statuses.includes(booking.status)
-        );
-        return group?.[0] === selectedStatus;
-      })
+      const group = Object.entries(statusGroups).find(([_, statuses]) =>
+        statuses.includes(booking.status)
+      );
+      return group?.[0] === selectedStatus;
+    })
     : bookings;
 
   const groupedBookings = Object.keys(statusGroups).reduce((acc, group) => {
@@ -166,11 +173,10 @@ export default function BookingsPage() {
         <div className="mb-6 flex flex-wrap gap-2">
           <button
             onClick={() => setSelectedStatus(null)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              selectedStatus === null
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedStatus === null
                 ? "bg-primary-600 text-white"
                 : "bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50"
-            }`}
+              }`}
           >
             All
           </button>
@@ -183,11 +189,10 @@ export default function BookingsPage() {
               <button
                 key={group}
                 onClick={() => setSelectedStatus(group)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedStatus === group
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedStatus === group
                     ? "bg-primary-600 text-white"
                     : "bg-white text-neutral-700 border border-neutral-300 hover:bg-neutral-50"
-                }`}
+                  }`}
               >
                 {group} ({count})
               </button>
@@ -234,7 +239,7 @@ export default function BookingsPage() {
                               const Icon = action.icon;
                               const isExternal = action.href.startsWith("http");
                               const isInvoice = (action as any).download;
-                              
+
                               if (isInvoice) {
                                 return (
                                   <button
@@ -259,32 +264,30 @@ export default function BookingsPage() {
                                         alert("Failed to download invoice. Please try again.");
                                       }
                                     }}
-                                    className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                                      action.variant === "primary"
+                                    className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors ${action.variant === "primary"
                                         ? "bg-primary-600 text-white hover:bg-primary-700"
                                         : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
-                                    }`}
+                                      }`}
                                   >
                                     <Icon size={16} />
                                     <span>{action.label}</span>
                                   </button>
                                 );
                               }
-                              
+
                               const Component = isExternal ? "a" : Link;
                               const props = isExternal
                                 ? { href: action.href, target: "_blank", rel: "noopener noreferrer" }
                                 : { href: action.href };
-                              
+
                               return (
                                 <Component
                                   key={index}
                                   {...props}
-                                  className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                                    action.variant === "primary"
+                                  className={`inline-flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors ${action.variant === "primary"
                                       ? "bg-primary-600 text-white hover:bg-primary-700"
                                       : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
-                                  }`}
+                                    }`}
                                 >
                                   <Icon size={16} />
                                   <span>{action.label}</span>

@@ -67,7 +67,7 @@ export default function BookingDetailPage() {
 
   const handlePayRemaining = async () => {
     if (!booking) return;
-    
+
     try {
       setPaymentLoading(true);
       const response = await fetch("/api/payments/create-order", {
@@ -138,7 +138,7 @@ export default function BookingDetailPage() {
       };
 
       const razorpay = new window.Razorpay(options);
-      
+
       razorpay.on("payment.failed", (response: any) => {
         console.error("Payment failed:", response);
         setPaymentLoading(false);
@@ -397,7 +397,7 @@ export default function BookingDetailPage() {
                       };
 
                       const razorpay = new window.Razorpay(options);
-                      
+
                       razorpay.on("payment.failed", (response: any) => {
                         console.error("Payment failed:", response);
                         setPaymentLoading(false);
@@ -426,6 +426,32 @@ export default function BookingDetailPage() {
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200 sticky top-24">
               <h3 className="font-semibold text-neutral-900 mb-4">Quick Actions</h3>
               <div className="space-y-3">
+                {(booking.status === "BOOKED" || booking.status === "CONFIRMED" || booking.status === "COMPLETED") && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(`/api/invoices/download/booking/${booking.id}`);
+                        if (!response.ok) throw new Error("Failed to download invoice");
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `invoice-booking-${booking.id}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                      } catch (error) {
+                        console.error("Error downloading invoice:", error);
+                        alert("Failed to download invoice. Please try again.");
+                      }
+                    }}
+                    className="w-full flex items-center justify-center space-x-2 border border-neutral-300 text-neutral-700 px-4 py-2 rounded-lg hover:bg-neutral-50 transition-colors"
+                  >
+                    <FileText size={16} />
+                    <span>Download Invoice</span>
+                  </button>
+                )}
                 <Link
                   href="/help"
                   className="block w-full text-center border border-neutral-300 text-neutral-700 px-4 py-2 rounded-lg hover:bg-neutral-50 transition-colors"
