@@ -69,6 +69,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   const [dateErrors, setDateErrors] = useState<Record<string, string>>({});
   const [phoneErrors, setPhoneErrors] = useState<Record<string, string>>({});
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [previewModal, setPreviewModal] = useState<{ url: string; fileName: string } | null>(null);
 
   type FormDataTraveller = {
     id: string;
@@ -1560,7 +1561,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                                     {doc.preview && (
                                       <button
                                         type="button"
-                                        onClick={() => window.open(doc.preview, "_blank")}
+                                        onClick={() => setPreviewModal({ url: doc.preview!, fileName: doc.file.name })}
                                         className="p-1 text-primary-600 hover:text-primary-700"
                                       >
                                         <Eye size={16} />
@@ -1650,7 +1651,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                               {doc.preview && (
                                 <button
                                   type="button"
-                                  onClick={() => window.open(doc.preview, "_blank")}
+                                  onClick={() => setPreviewModal({ url: doc.preview!, fileName: doc.file.name })}
                                   className="p-1 text-primary-600 hover:text-primary-700"
                                 >
                                   <Eye size={16} />
@@ -2102,6 +2103,83 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           )}
         </div>
       </div>
+
+      {/* Document Preview Modal */}
+      <AnimatePresence>
+        {previewModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+            onClick={() => setPreviewModal(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-4 border-b border-neutral-200">
+                <h3 className="text-lg font-semibold text-neutral-900 truncate flex-1 mr-4">
+                  {previewModal.fileName}
+                </h3>
+                <button
+                  onClick={() => setPreviewModal(null)}
+                  className="p-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
+                  aria-label="Close preview"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-neutral-50">
+                {previewModal.url.startsWith("data:image") ? (
+                  <img
+                    src={previewModal.url}
+                    alt="Document preview"
+                    className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-md"
+                  />
+                ) : previewModal.url.startsWith("data:application/pdf") || previewModal.url.includes("pdf") ? (
+                  <object
+                    data={previewModal.url}
+                    type="application/pdf"
+                    className="w-full h-[70vh] rounded-lg shadow-md border border-neutral-200"
+                    aria-label="PDF preview"
+                  >
+                    <div className="text-center p-8 h-full flex flex-col items-center justify-center">
+                      <FileText size={48} className="text-neutral-400 mx-auto mb-4" />
+                      <p className="text-neutral-600 mb-4">PDF preview not available in this browser</p>
+                      <a
+                        href={previewModal.url}
+                        download={previewModal.fileName}
+                        className="text-primary-600 hover:text-primary-700 underline"
+                      >
+                        Download PDF
+                      </a>
+                    </div>
+                  </object>
+                ) : (
+                  <div className="text-center p-8">
+                    <FileText size={48} className="text-neutral-400 mx-auto mb-4" />
+                    <p className="text-neutral-600 mb-4">Preview not available for this file type</p>
+                    <a
+                      href={previewModal.url}
+                      download={previewModal.fileName}
+                      className="text-primary-600 hover:text-primary-700 underline"
+                    >
+                      Download file
+                    </a>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
