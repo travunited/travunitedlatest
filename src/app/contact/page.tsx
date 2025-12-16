@@ -53,8 +53,8 @@ export default function ContactPage() {
               Contact Us
             </h1>
             <p className="text-xl text-white/90 max-w-2xl mx-auto text-center">
-              Travunited of India Pvt Ltd — making global travel and visa services simple,
-              fast, and transparent.
+              Travunited of India Pvt Ltd Making Global Travel and Visa Services Simple,
+              Fast, and Transparent.
             </p>
           </motion.div>
         </div>

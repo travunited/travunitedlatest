@@ -23,8 +23,7 @@ export function Navbar() {
     { href: "/tours", label: "Holidays", icon: Plane },
     { href: "/blog", label: "Blog", icon: BookOpen },
     { href: "/corporate", label: "Corporate", icon: Building2 },
-    { href: "/help", label: "Help/Support", icon: HelpCircle },
-    { href: "/contact", label: "Contact", icon: Mail },
+    { href: "/help", label: "Support", icon: HelpCircle },
   ];
 
   return (
