@@ -32,6 +32,12 @@ const SearchInput = memo(({ value, onChange, placeholder }: {
       />
     </div>
   );
+}, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if value or onChange reference changes
+  // This prevents re-renders when parent re-renders due to other state changes
+  return prevProps.value === nextProps.value && 
+         prevProps.placeholder === nextProps.placeholder &&
+         prevProps.onChange === nextProps.onChange;
 });
 SearchInput.displayName = "SearchInput";
 
@@ -223,7 +229,10 @@ export default function AdminToursPage() {
   const handleFilterChange = useCallback((field: keyof TourFilters, value: string) => {
     setFilters((prev) => {
       const nextFilters = { ...prev, [field]: value } as TourFilters;
-      fetchTours(nextFilters);
+      // Don't fetch immediately for search - it's handled by debounced handler
+      if (field !== "search") {
+        fetchTours(nextFilters);
+      }
       return nextFilters;
     });
   }, [fetchTours]);
@@ -247,9 +256,13 @@ export default function AdminToursPage() {
     }
     // Set new timeout for debounced search
     searchTimeoutRef.current = setTimeout(() => {
-      handleFilterChange("search", value);
+      setFilters((prev) => {
+        const nextFilters = { ...prev, search: value } as TourFilters;
+        fetchTours(nextFilters);
+        return nextFilters;
+      });
     }, 300);
-  }, [handleFilterChange]);
+  }, [fetchTours]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
