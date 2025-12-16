@@ -14,7 +14,7 @@ export async function GET(
   try {
     // Handle params as Promise (Next.js 15+) or object (Next.js 14)
     const resolvedParams = await Promise.resolve(params);
-    
+
     if (!resolvedParams?.type || !resolvedParams?.id) {
       return NextResponse.json(
         { error: "Invalid request parameters" },
@@ -23,7 +23,7 @@ export async function GET(
     }
 
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -86,7 +86,7 @@ export async function GET(
         try {
           // Extract the MinIO key from the invoice URL (handles both key and full URL)
           const invoiceKey = extractMediaKeyFromUrl(application.invoiceUrl) || application.invoiceUrl;
-          
+
           if (invoiceKey) {
             // Try to get the document object first to verify it exists
             const documentObject = await getDocumentObject(invoiceKey);
@@ -94,7 +94,7 @@ export async function GET(
               // Try to get signed URL first (preferred method)
               try {
                 const signedUrl = await getSignedDocumentUrl(invoiceKey, 300); // 5 minutes expiry
-                
+
                 if (signedUrl) {
                   // Redirect to signed URL
                   return NextResponse.redirect(signedUrl);
@@ -108,7 +108,7 @@ export async function GET(
               const headers = new Headers();
               headers.set("Content-Type", documentObject.contentType || "application/pdf");
               headers.set("Content-Disposition", `attachment; filename="invoice-application-${resolvedParams.id}.pdf"`);
-              
+
               if (documentObject.contentLength) {
                 headers.set("Content-Length", documentObject.contentLength.toString());
               }
@@ -185,7 +185,7 @@ export async function GET(
           customerEmail: application.user.email,
           customerPhone: application.user.phone || undefined,
           itemName: `${countryName} ${visaName}`,
-          itemDescription: application.visa?.processingTime 
+          itemDescription: application.visa?.processingTime
             ? `Processing Time: ${application.visa.processingTime}`
             : undefined,
           quantity: application.travellers.length,
@@ -195,12 +195,12 @@ export async function GET(
           total: totalPaid,
           currency: application.currency || "INR",
           paymentStatus: application.status === "APPROVED" || application.status === "IN_PROCESS" ? "Paid" : "Partial",
-          paymentDate: latestPayment.createdAt 
+          paymentDate: latestPayment.createdAt
             ? new Date(latestPayment.createdAt).toLocaleDateString("en-IN", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
             : undefined,
           paymentMethod: "Online Payment",
           transactionId: latestPayment.razorpayPaymentId || latestPayment.razorpayOrderId || undefined,
@@ -211,7 +211,10 @@ export async function GET(
         // Generate PDF
         const pdfBuffer = await generateInvoicePDF(invoiceData);
 
-        return new NextResponse(pdfBuffer as any, {
+        // Use Blob for better compatibility
+        const pdfBlob = new Blob([pdfBuffer as any], { type: "application/pdf" });
+
+        return new NextResponse(pdfBlob, {
           headers: {
             "Content-Type": "application/pdf",
             "Content-Disposition": `attachment; filename=invoice-${invoiceNumber}.pdf`,
@@ -220,7 +223,7 @@ export async function GET(
       } catch (generateError) {
         console.error("Error generating invoice on-the-fly:", generateError);
         return NextResponse.json(
-          { 
+          {
             error: "Failed to generate invoice. Please contact support.",
             details: process.env.NODE_ENV === "development" ? (generateError instanceof Error ? generateError.message : String(generateError)) : undefined
           },
@@ -275,7 +278,7 @@ export async function GET(
         try {
           // Extract the MinIO key from the invoice URL (handles both key and full URL)
           const invoiceKey = extractMediaKeyFromUrl(booking.invoiceUrl) || booking.invoiceUrl;
-          
+
           if (invoiceKey) {
             // Try to get the document object first to verify it exists
             const documentObject = await getDocumentObject(invoiceKey);
@@ -283,7 +286,7 @@ export async function GET(
               // Try to get signed URL first (preferred method)
               try {
                 const signedUrl = await getSignedDocumentUrl(invoiceKey, 300); // 5 minutes expiry
-                
+
                 if (signedUrl) {
                   // Redirect to signed URL
                   return NextResponse.redirect(signedUrl);
@@ -297,7 +300,7 @@ export async function GET(
               const headers = new Headers();
               headers.set("Content-Type", documentObject.contentType || "application/pdf");
               headers.set("Content-Disposition", `attachment; filename="invoice-booking-${resolvedParams.id}.pdf"`);
-              
+
               if (documentObject.contentLength) {
                 headers.set("Content-Length", documentObject.contentLength.toString());
               }
@@ -374,7 +377,7 @@ export async function GET(
           customerEmail: booking.user?.email || "customer@example.com",
           customerPhone: booking.user?.phone || undefined,
           itemName: booking.tourName || "Tour Package",
-          itemDescription: booking.travelDate 
+          itemDescription: booking.travelDate
             ? `Travel Date: ${new Date(booking.travelDate).toLocaleDateString("en-IN")}`
             : undefined,
           quantity: travellerCount,
@@ -384,22 +387,22 @@ export async function GET(
           total: totalPaid,
           currency: booking.currency || "INR",
           paymentStatus: booking.status === "BOOKED" || booking.status === "CONFIRMED" ? "Paid" : "Partial",
-          paymentDate: latestPayment?.createdAt 
+          paymentDate: latestPayment?.createdAt
             ? new Date(latestPayment.createdAt).toLocaleDateString("en-IN", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
             : undefined,
           paymentMethod: "Online Payment",
           transactionId: latestPayment?.razorpayPaymentId || latestPayment?.razorpayOrderId || undefined,
           bookingId: booking.id,
           travelDate: booking.travelDate
             ? new Date(booking.travelDate).toLocaleDateString("en-IN", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
             : undefined,
           notes: `Thank you for booking with ${companyName}. Your booking reference is ${booking.id}.`,
         };
@@ -407,7 +410,10 @@ export async function GET(
         // Generate PDF
         const pdfBuffer = await generateInvoicePDF(invoiceData);
 
-        return new NextResponse(pdfBuffer as any, {
+        // Use Blob for better compatibility
+        const pdfBlob = new Blob([pdfBuffer as any], { type: "application/pdf" });
+
+        return new NextResponse(pdfBlob, {
           headers: {
             "Content-Type": "application/pdf",
             "Content-Disposition": `attachment; filename=invoice-${invoiceNumber}.pdf`,
@@ -416,7 +422,7 @@ export async function GET(
       } catch (generateError) {
         console.error("Error generating invoice on-the-fly:", generateError);
         return NextResponse.json(
-          { 
+          {
             error: "Failed to generate invoice. Please contact support.",
             details: process.env.NODE_ENV === "development" ? (generateError instanceof Error ? generateError.message : String(generateError)) : undefined
           },
@@ -434,9 +440,10 @@ export async function GET(
     console.error("Error details:", error instanceof Error ? error.message : String(error));
     console.error("Error stack:", error instanceof Error ? error.stack : undefined);
     return NextResponse.json(
-      { 
+      {
         error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error"
+        message: error instanceof Error ? error.message : "Unknown error",
+        stack: process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
