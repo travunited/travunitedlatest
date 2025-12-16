@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Download, FileDown, Users, FileText } from "lucide-react";
+import { Download, FileDown, Users, FileText, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ReportFilterBar, ReportFilters } from "@/components/admin/ReportFilterBar";
 import { buildExportUrl } from "@/lib/report-export";
@@ -26,6 +26,7 @@ export default function CorporateLeadsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [summary, setSummary] = useState<any>(null);
   const [leads, setLeads] = useState<CorporateLead[]>([]);
   const [filters, setFilters] = useState<ReportFilters>({
@@ -48,8 +49,12 @@ export default function CorporateLeadsPage() {
   const dateTo = filters.dateTo;
   const filterStatus = filters.status;
 
-  const fetchReport = useCallback(async (abortSignal?: AbortSignal) => {
-    setLoading(true);
+  const fetchReport = useCallback(async (abortSignal?: AbortSignal, showRefreshing = false) => {
+    if (showRefreshing) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const params = new URLSearchParams();
       if (dateFrom) params.append("dateFrom", dateFrom);
@@ -81,6 +86,7 @@ export default function CorporateLeadsPage() {
       console.error("Error fetching report:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [dateFrom, dateTo, filterStatus, debouncedSearchQuery, page]);
 
@@ -186,8 +192,24 @@ export default function CorporateLeadsPage() {
           ]}
         />
 
-        {/* Export Buttons */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => {
+              // Cancel any pending request
+              if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+              }
+              // Create new abort controller
+              abortControllerRef.current = new AbortController();
+              fetchReport(abortControllerRef.current.signal, true);
+            }}
+            disabled={refreshing || loading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
           <button
             onClick={() => handleExport("xlsx")}
             className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"

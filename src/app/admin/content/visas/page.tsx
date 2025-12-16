@@ -18,6 +18,7 @@ import {
   Square,
   ChevronDown,
   Upload,
+  Download,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImportModal } from "@/components/admin/ImportModal";
@@ -430,6 +431,15 @@ export default function AdminVisasPage() {
               >
                 <Upload size={18} />
                 Import
+              </button>
+              <button
+                onClick={() => {
+                  window.open("/api/admin/content/visas/export?format=xlsx", "_blank");
+                }}
+                className="inline-flex items-center gap-2 border border-neutral-200 px-4 py-2 rounded-lg text-neutral-700 hover:bg-neutral-50"
+              >
+                <Download size={18} />
+                Export
               </button>
             </div>
             <Link

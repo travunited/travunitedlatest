@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Download, FileDown, Calendar, TrendingUp, Users, FileText } from "lucide-react";
+import { Download, FileDown, Calendar, TrendingUp, Users, FileText, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ReportFilterBar, ReportFilters } from "@/components/admin/ReportFilterBar";
 import { ReportSkeleton } from "@/components/admin/ReportSkeleton";
@@ -39,6 +39,7 @@ export default function TourBookingsReportPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<TourSummary | null>(null);
   const [bookings, setBookings] = useState<BookingRow[]>([]);
@@ -59,14 +60,18 @@ export default function TourBookingsReportPage() {
   const isFetchingRef = useRef(false);
   const mountedRef = useRef(true);
 
-  const fetchReport = useCallback(async () => {
+  const fetchReport = useCallback(async (showRefreshing = false) => {
     // Prevent multiple simultaneous fetches
     if (isFetchingRef.current) {
       return;
     }
 
     isFetchingRef.current = true;
-    setLoading(true);
+    if (showRefreshing) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     
     try {
@@ -97,6 +102,7 @@ export default function TourBookingsReportPage() {
     } finally {
       if (mountedRef.current) {
         setLoading(false);
+        setRefreshing(false);
       }
       isFetchingRef.current = false;
     }
@@ -191,8 +197,16 @@ export default function TourBookingsReportPage() {
           showType={false}
         />
 
-        {/* Export Buttons */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => fetchReport(true)}
+            disabled={refreshing || loading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
           <button
             onClick={() => handleExport("xlsx")}
             disabled={loading}

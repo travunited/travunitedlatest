@@ -618,6 +618,15 @@ export default function AdminToursPage() {
                 <Upload size={16} />
               Import
             </button>
+            <button
+              onClick={() => {
+                window.open("/api/admin/content/tours/export?format=xlsx", "_blank");
+              }}
+              className="inline-flex items-center gap-2 border border-neutral-200 px-3 py-1.5 rounded-lg text-sm text-neutral-700 hover:bg-neutral-50"
+            >
+              <Download size={16} />
+              Export
+            </button>
             <Link
               href="/admin/content/tours/new"
                 className="inline-flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors text-sm"

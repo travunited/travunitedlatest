@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Download, FileDown, FileText, TrendingUp, CheckCircle, XCircle, Clock, FileText as FileTextIcon } from "lucide-react";
+import { Download, FileDown, FileText, TrendingUp, CheckCircle, XCircle, Clock, FileText as FileTextIcon, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ReportFilterBar, ReportFilters } from "@/components/admin/ReportFilterBar";
 import { ReportSkeleton } from "@/components/admin/ReportSkeleton";
@@ -38,6 +38,7 @@ export default function VisaApplicationsReportPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<VisaSummary | null>(null);
   const [applications, setApplications] = useState<ApplicationRow[]>([]);
@@ -68,8 +69,12 @@ export default function VisaApplicationsReportPage() {
     }
   }, []);
 
-  const fetchReport = useCallback(async () => {
-    setLoading(true);
+  const fetchReport = useCallback(async (showRefreshing = false) => {
+    if (showRefreshing) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
       const params = new URLSearchParams();
@@ -95,6 +100,7 @@ export default function VisaApplicationsReportPage() {
       setError(error.message || "Failed to load report. Please try again or contact support.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [dateFrom, dateTo, filterStatus, countryIds, page]);
 
@@ -186,8 +192,16 @@ export default function VisaApplicationsReportPage() {
           countries={countries}
         />
 
-        {/* Export Buttons */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => fetchReport(true)}
+            disabled={refreshing || loading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
           <button
             onClick={() => handleExport("xlsx")}
             disabled={loading}

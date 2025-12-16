@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, memo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Edit, Globe, Search, RefreshCw, Trash2, ToggleLeft, ToggleRight, CheckSquare, Square, ChevronDown, Upload } from "lucide-react";
+import { Plus, Edit, Globe, Search, RefreshCw, Trash2, ToggleLeft, ToggleRight, CheckSquare, Square, ChevronDown, Upload, Download } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ImportModal } from "@/components/admin/ImportModal";
 import Image from "next/image";
@@ -275,6 +275,15 @@ export default function AdminCountriesPage() {
             >
               <Upload size={18} />
               Import
+            </button>
+            <button
+              onClick={() => {
+                window.open("/api/admin/content/countries/export?format=xlsx", "_blank");
+              }}
+              className="inline-flex items-center gap-2 border border-neutral-200 px-4 py-2 rounded-lg text-neutral-700 hover:bg-neutral-50"
+            >
+              <Download size={18} />
+              Export
             </button>
             <Link
               href="/admin/content/countries/new"

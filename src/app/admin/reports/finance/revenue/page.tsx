@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Download, DollarSign, TrendingUp, FileDown, FileText } from "lucide-react";
+import { Download, DollarSign, TrendingUp, FileDown, FileText, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ReportFilterBar, ReportFilters } from "@/components/admin/ReportFilterBar";
 import { ReportSkeleton } from "@/components/admin/ReportSkeleton";
@@ -32,6 +32,7 @@ export default function RevenueReportPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<RevenueSummary | null>(null);
   const [dailyData, setDailyData] = useState<DailyData[]>([]);
@@ -45,8 +46,12 @@ export default function RevenueReportPage() {
   const dateFrom = useMemo(() => filters.dateFrom, [filters.dateFrom]);
   const dateTo = useMemo(() => filters.dateTo, [filters.dateTo]);
 
-  const fetchReport = useCallback(async () => {
-    setLoading(true);
+  const fetchReport = useCallback(async (showRefreshing = false) => {
+    if (showRefreshing) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
       const params = new URLSearchParams();
@@ -65,6 +70,7 @@ export default function RevenueReportPage() {
       setError(error.message || "Failed to load report. Please try again or contact support.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [dateFrom, dateTo]);
 
@@ -136,8 +142,16 @@ export default function RevenueReportPage() {
           showType={false}
         />
 
-        {/* Export Buttons */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => fetchReport(true)}
+            disabled={refreshing || loading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
           <button
             onClick={() => handleExport("xlsx")}
             disabled={loading}

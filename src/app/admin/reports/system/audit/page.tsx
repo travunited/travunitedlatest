@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Download, FileDown, FileSearch, FileText } from "lucide-react";
+import { Download, FileDown, FileSearch, FileText, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ReportFilterBar, ReportFilters } from "@/components/admin/ReportFilterBar";
 import { buildExportUrl } from "@/lib/report-export";
@@ -24,6 +24,7 @@ export default function AuditLogPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [summary, setSummary] = useState<any>(null);
   const [logs, setLogs] = useState<AuditLogRow[]>([]);
   const [filters, setFilters] = useState<ReportFilters>({
@@ -38,8 +39,12 @@ export default function AuditLogPage() {
   const dateFrom = filters.dateFrom;
   const dateTo = filters.dateTo;
 
-  const fetchReport = useCallback(async () => {
-    setLoading(true);
+  const fetchReport = useCallback(async (showRefreshing = false) => {
+    if (showRefreshing) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const params = new URLSearchParams();
       if (dateFrom) params.append("dateFrom", dateFrom);
@@ -58,6 +63,7 @@ export default function AuditLogPage() {
       console.error("Error fetching report:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [dateFrom, dateTo, page]);
 
@@ -116,8 +122,16 @@ export default function AuditLogPage() {
           showType={false}
         />
 
-        {/* Export Buttons */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => fetchReport(true)}
+            disabled={refreshing || loading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
           <button
             onClick={() => handleExport("xlsx")}
             className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
