@@ -11,6 +11,7 @@ import {
   sendVisaDocumentRejectedEmail,
   sendVisaApprovedEmail,
   sendVisaRejectedEmail,
+  sendVisaFeedbackEmail,
   sendTourPaymentSuccessEmail,
   sendTourPaymentFailedEmail,
   sendTourConfirmedEmail,
@@ -139,6 +140,17 @@ export async function POST(req: Request) {
             params.country || "United States",
             params.visaType || "Tourist Visa",
             params.reason || "Application does not meet requirements"
+          );
+          break;
+
+        case "visaFeedback":
+          success = await sendVisaFeedbackEmail(
+            testEmail,
+            "test-app-123",
+            params.country || "United States",
+            params.visaType || "Tourist Visa",
+            params.googleReviewUrl || "https://g.page/r/YOUR_GOOGLE_BUSINESS_REVIEW_LINK",
+            "CUSTOMER"
           );
           break;
 

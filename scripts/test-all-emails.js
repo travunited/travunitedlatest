@@ -60,6 +60,11 @@ const EMAIL_TYPES = [
     params: { country: "United States", visaType: "Tourist Visa", reason: "Application does not meet requirements" },
   },
   {
+    name: "Visa Feedback Email",
+    type: "visaFeedback",
+    params: { country: "United States", visaType: "Tourist Visa", googleReviewUrl: "https://g.page/r/YOUR_GOOGLE_BUSINESS_REVIEW_LINK" },
+  },
+  {
     name: "Tour Payment Success Email",
     type: "tourPaymentSuccess",
     params: { tourName: "Amazing Europe Tour", amount: 50000, isAdvance: false },
