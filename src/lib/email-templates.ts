@@ -303,6 +303,8 @@ export function getDefaultEmailTemplate(templateKey: string): string {
   <p>Best regards,<br>The {companyName} Team</p>
 </div>`,
 
+    // Visa Feedback Email - Sent to users after visa approval (24+ hours after approval)
+    // Variables: {country}, {visaType}, {googleReviewUrl}, {companyName}, {applicationUrl}
     visaFeedbackEmail: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9fafb;">
   <div style="background-color: white; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
     <h1 style="color: #1f2937; margin-bottom: 20px;">🌟 We'd Love Your Feedback!</h1>
