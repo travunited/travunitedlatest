@@ -35,13 +35,35 @@ export async function GET(req: NextRequest) {
     const dateFilter: any = {};
     if (dateFrom || dateTo) {
       dateFilter.updatedAt = {};
-      if (dateFrom) {
-        dateFilter.updatedAt.gte = new Date(dateFrom);
+      if (dateFrom && dateFrom.trim() !== "") {
+        try {
+          dateFilter.updatedAt.gte = new Date(dateFrom);
+          if (isNaN(dateFilter.updatedAt.gte.getTime())) {
+            throw new Error(`Invalid dateFrom: ${dateFrom}`);
+          }
+        } catch (dateError) {
+          console.error("Invalid dateFrom:", dateFrom, dateError);
+          return NextResponse.json(
+            { error: `Invalid dateFrom parameter: ${dateFrom}` },
+            { status: 400 }
+          );
+        }
       }
-      if (dateTo) {
-        const toDate = new Date(dateTo);
-        toDate.setHours(23, 59, 59, 999);
-        dateFilter.updatedAt.lte = toDate;
+      if (dateTo && dateTo.trim() !== "") {
+        try {
+          const toDate = new Date(dateTo);
+          if (isNaN(toDate.getTime())) {
+            throw new Error(`Invalid dateTo: ${dateTo}`);
+          }
+          toDate.setHours(23, 59, 59, 999);
+          dateFilter.updatedAt.lte = toDate;
+        } catch (dateError) {
+          console.error("Invalid dateTo:", dateTo, dateError);
+          return NextResponse.json(
+            { error: `Invalid dateTo parameter: ${dateTo}` },
+            { status: 400 }
+          );
+        }
       }
     }
 
@@ -74,8 +96,8 @@ export async function GET(req: NextRequest) {
 
     // Calculate performance metrics for each admin
     const adminData = admins.map((admin) => {
-      const applications = admin.processedApplications;
-      const bookings = admin.processedBookings;
+      const applications = Array.isArray(admin.processedApplications) ? admin.processedApplications : [];
+      const bookings = Array.isArray(admin.processedBookings) ? admin.processedBookings : [];
       
       // Applications assigned
       const applicationsAssigned = applications.length;
@@ -90,7 +112,7 @@ export async function GET(req: NextRequest) {
       let processedCount = 0;
       
       applications.forEach((app) => {
-        if (app.status === "APPROVED" || app.status === "REJECTED") {
+        if ((app.status === "APPROVED" || app.status === "REJECTED") && app.updatedAt && app.createdAt) {
           const processingTime = app.updatedAt.getTime() - app.createdAt.getTime();
           totalProcessingTime += processingTime;
           processedCount++;
@@ -106,12 +128,13 @@ export async function GET(req: NextRequest) {
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const pendingOver7Days = applications.filter((app) => 
         (app.status === "SUBMITTED" || app.status === "IN_PROCESS") &&
+        app.createdAt &&
         app.createdAt < sevenDaysAgo
       ).length;
       
       // Document verifications
       const documentVerifications = applications.reduce((sum, app) => 
-        sum + app.documents.length, 0
+        sum + (Array.isArray(app.documents) ? app.documents.length : 0), 0
       );
 
       return {
@@ -218,8 +241,22 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching admin performance report:", error);
+    const errorMessage = error instanceof Error ? error.message : "Internal server error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    // Log full error details for debugging
+    console.error("Full error details:", {
+      message: errorMessage,
+      stack: errorStack,
+      error: error,
+    });
+    
     return NextResponse.json(
-      { error: "Internal server error" },
+      { 
+        error: errorMessage,
+        // Only include stack in development
+        ...(process.env.NODE_ENV === "development" && errorStack ? { details: errorStack } : {})
+      },
       { status: 500 }
     );
   }
