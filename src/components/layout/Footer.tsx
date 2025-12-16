@@ -37,9 +37,9 @@ export function Footer() {
             <Image 
               src="/white-logo.png" 
               alt="Travunited Logo" 
-              width={80}
-              height={32}
-              className="h-8 w-auto mb-4"
+              width={140}
+              height={56}
+              className="h-14 w-auto mb-4"
             />
             <p className="text-neutral-400 mb-4 max-w-md">
               Premium visa services and tour packages for global travellers. 
