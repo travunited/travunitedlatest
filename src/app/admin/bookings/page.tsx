@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { Eye, Filter, Calendar, CheckCircle, X, AlertCircle, Download, Mail, Trash2, UserCheck, ArrowRight } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface Booking {
   id: string;
@@ -58,6 +59,7 @@ function AdminBookingsPageContent() {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>("ALL");
   const [destinationFilter, setDestinationFilter] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   const searchParamsKey = useMemo(() => searchParams.toString(), [searchParams]);
 
@@ -76,7 +78,7 @@ function AdminBookingsPageContent() {
       if (travelDateTo) params.append("travelDateTo", travelDateTo);
       if (paymentStatusFilter !== "ALL") params.append("paymentStatus", paymentStatusFilter);
       if (destinationFilter) params.append("destination", destinationFilter);
-      if (searchQuery) params.append("search", searchQuery);
+      if (debouncedSearchQuery) params.append("search", debouncedSearchQuery);
 
       const currentParams = new URLSearchParams(searchParamsKey);
       const unconfirmed = currentParams.get("unconfirmed") === "true";
@@ -93,7 +95,7 @@ function AdminBookingsPageContent() {
       setLoading(false);
       setInitialLoad(false);
     }
-  }, [statusFilter, tourFilter, assignedFilter, assignedAdminFilter, dateFrom, dateTo, travelDateFrom, travelDateTo, paymentStatusFilter, destinationFilter, searchQuery, searchParamsKey]);
+  }, [statusFilter, tourFilter, assignedFilter, assignedAdminFilter, dateFrom, dateTo, travelDateFrom, travelDateTo, paymentStatusFilter, destinationFilter, debouncedSearchQuery, searchParamsKey]);
 
   const [admins, setAdmins] = useState<Array<{ id: string; name: string; email: string }>>([]);
   const [bulkActionMessage, setBulkActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);

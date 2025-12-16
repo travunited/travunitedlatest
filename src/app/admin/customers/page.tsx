@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { Users, Mail, Phone, Calendar, Eye, Filter, FileText, Plane, CheckCircle, X } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -31,13 +32,14 @@ export default function AdminCustomersPage() {
   const [initialLoad, setInitialLoad] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
   const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       if (statusFilter !== "ALL") params.append("status", statusFilter);
-      if (searchQuery) params.append("search", searchQuery);
+      if (debouncedSearchQuery) params.append("search", debouncedSearchQuery);
 
       const response = await fetch(`/api/admin/customers?${params.toString()}`);
       if (response.ok) {
@@ -50,7 +52,7 @@ export default function AdminCustomersPage() {
       setLoading(false);
       setInitialLoad(false);
     }
-  }, [statusFilter, searchQuery]);
+  }, [statusFilter, debouncedSearchQuery]);
 
   useEffect(() => {
     if (status === "unauthenticated") {
