@@ -170,9 +170,11 @@ export default function AdminToursPage() {
     }
   }, []);
 
-  const fetchTours = useCallback(async (activeFilters: TourFilters) => {
+  const fetchTours = useCallback(async (activeFilters: TourFilters, showLoading = false) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const params = new URLSearchParams();
       if (activeFilters.countryId) params.set("countryId", activeFilters.countryId);
       if (activeFilters.status && activeFilters.status !== "all")
@@ -205,7 +207,9 @@ export default function AdminToursPage() {
     } catch (error) {
       console.error("Error fetching tours:", error);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
       setRefreshing(false);
     }
   }, []);
@@ -221,7 +225,7 @@ export default function AdminToursPage() {
       return;
     }
     bootstrapped.current = true;
-    Promise.all([fetchCountries(), fetchTours(TOUR_FILTER_DEFAULT)]).finally(() =>
+    Promise.all([fetchCountries(), fetchTours(TOUR_FILTER_DEFAULT, true)]).finally(() =>
       setLoading(false)
     );
   }, [session, status, router, fetchCountries, fetchTours]);
@@ -230,8 +234,9 @@ export default function AdminToursPage() {
     setFilters((prev) => {
       const nextFilters = { ...prev, [field]: value } as TourFilters;
       // Don't fetch immediately for search - it's handled by debounced handler
+      // Don't show loading indicator for filter changes
       if (field !== "search") {
-        fetchTours(nextFilters);
+        fetchTours(nextFilters, false);
       }
       return nextFilters;
     });
@@ -255,10 +260,11 @@ export default function AdminToursPage() {
       clearTimeout(searchTimeoutRef.current);
     }
     // Set new timeout for debounced search
+    // Don't show loading indicator for search filter changes
     searchTimeoutRef.current = setTimeout(() => {
       setFilters((prev) => {
         const nextFilters = { ...prev, search: value } as TourFilters;
-        fetchTours(nextFilters);
+        fetchTours(nextFilters, false);
         return nextFilters;
       });
     }, 300);
@@ -275,7 +281,7 @@ export default function AdminToursPage() {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchTours(filters);
+    fetchTours(filters, false);
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -383,7 +389,7 @@ export default function AdminToursPage() {
           setTimeout(() => setBulkActionMessage(null), 5000);
           return;
       }
-      await fetchTours(filters);
+      await fetchTours(filters, false);
       setSelectedIds(new Set());
       setShowBulkActions(false);
       setTimeout(() => setBulkActionMessage(null), 5000);
@@ -523,7 +529,7 @@ export default function AdminToursPage() {
                 label: "All",
                 action: () => {
                   setFilters(TOUR_FILTER_DEFAULT);
-                  fetchTours(TOUR_FILTER_DEFAULT);
+                  fetchTours(TOUR_FILTER_DEFAULT, false);
                 },
                 active: filters.status === "all" && filters.featured === "all" && filters.tourType === "all" && filters.region === "all",
               },
@@ -531,7 +537,7 @@ export default function AdminToursPage() {
                 label: "Active",
                 action: () => {
                   setFilters({ ...filters, status: "active" });
-                  fetchTours({ ...filters, status: "active" });
+                  fetchTours({ ...filters, status: "active" }, false);
                 },
                 active: filters.status === "active",
               },
@@ -539,7 +545,7 @@ export default function AdminToursPage() {
                 label: "Inactive",
                 action: () => {
                   setFilters({ ...filters, status: "inactive" });
-                  fetchTours({ ...filters, status: "inactive" });
+                  fetchTours({ ...filters, status: "inactive" }, false);
                 },
                 active: filters.status === "inactive",
               },
@@ -547,7 +553,7 @@ export default function AdminToursPage() {
                 label: "Featured",
                 action: () => {
                   setFilters({ ...filters, featured: "yes" });
-                  fetchTours({ ...filters, featured: "yes" });
+                  fetchTours({ ...filters, featured: "yes" }, false);
                 },
                 active: filters.featured === "yes",
               },
@@ -555,7 +561,7 @@ export default function AdminToursPage() {
                 label: "Draft",
                 action: () => {
                   setFilters({ ...filters, status: "draft" });
-                  fetchTours({ ...filters, status: "draft" });
+                  fetchTours({ ...filters, status: "draft" }, false);
                 },
                 active: filters.status === "draft",
               },
@@ -579,7 +585,7 @@ export default function AdminToursPage() {
                   key={region}
                   onClick={() => {
                     setFilters({ ...filters, region });
-                    fetchTours({ ...filters, region });
+                    fetchTours({ ...filters, region }, false);
                   }}
                   className="rounded-full border border-neutral-200 px-3 py-1 text-neutral-600 hover:border-neutral-400"
                 >
@@ -962,7 +968,7 @@ export default function AdminToursPage() {
             <button
               onClick={() => {
                 setFilters(TOUR_FILTER_DEFAULT);
-                fetchTours(TOUR_FILTER_DEFAULT);
+                fetchTours(TOUR_FILTER_DEFAULT, false);
               }}
               className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
             >
@@ -977,7 +983,7 @@ export default function AdminToursPage() {
         entityType="tours"
         entityName="Tours"
         onImportComplete={() => {
-          fetchTours(filters);
+          fetchTours(filters, false);
           setShowImportModal(false);
         }}
       />

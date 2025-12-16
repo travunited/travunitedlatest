@@ -248,6 +248,7 @@ export default function AdminVisasPage() {
     setFilters((prev) => {
       const nextFilters = { ...prev, [field]: value } as VisaFilters;
       // Don't fetch immediately for search - it's handled by debounced handler
+      // Filter changes don't show loading indicators
       if (field !== "search") {
         fetchVisas(nextFilters);
       }
@@ -273,6 +274,7 @@ export default function AdminVisasPage() {
       clearTimeout(searchTimeoutRef.current);
     }
     // Set new timeout for debounced search
+    // Search filter changes don't show loading indicators
     searchTimeoutRef.current = setTimeout(() => {
       setFilters((prev) => {
         const nextFilters = { ...prev, search: value } as VisaFilters;
