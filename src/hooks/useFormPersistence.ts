@@ -14,6 +14,8 @@ export function useFormPersistence<T extends Record<string, any>>(
     debounceMs?: number;
     onRestore?: (restoredState: Partial<T>) => void;
     excludeKeys?: string[];
+    backendSync?: boolean;
+    backendEndpoint?: string;
   } = {}
 ) {
   const {
@@ -21,6 +23,8 @@ export function useFormPersistence<T extends Record<string, any>>(
     debounceMs = 500,
     onRestore,
     excludeKeys = [],
+    backendSync = false,
+    backendEndpoint,
   } = options;
 
   const storageKey = `admin-form-${formKey}`;
@@ -69,7 +73,7 @@ export function useFormPersistence<T extends Record<string, any>>(
   }, [formKey, storageKey, enabled, onRestore]);
 
   // Function to save form state
-  const saveFormState = useCallback(() => {
+  const saveFormState = useCallback(async () => {
     if (!enabled || typeof window === "undefined" || isRestoringRef.current) {
       return;
     }
@@ -84,7 +88,22 @@ export function useFormPersistence<T extends Record<string, any>>(
       // Add metadata
       stateToSave._savedAt = Date.now();
 
+      // Save to localStorage (always)
       localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+
+      // Optionally sync to backend
+      if (backendSync && backendEndpoint) {
+        try {
+          await fetch(backendEndpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(stateToSave),
+          });
+        } catch (backendError) {
+          // Backend sync failure shouldn't block localStorage save
+          console.warn(`Backend draft sync failed for ${formKey}:`, backendError);
+        }
+      }
     } catch (error) {
       console.error(`Error saving form state for ${formKey}:`, error);
       // If quota exceeded, try to clear old entries
@@ -103,7 +122,7 @@ export function useFormPersistence<T extends Record<string, any>>(
         }
       }
     }
-  }, [formKey, storageKey, enabled, excludeKeys]);
+  }, [formKey, storageKey, enabled, excludeKeys, backendSync, backendEndpoint]);
 
   // Save form state with debouncing on changes
   useEffect(() => {

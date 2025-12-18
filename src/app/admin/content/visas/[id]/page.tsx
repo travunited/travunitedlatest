@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -207,6 +207,8 @@ export default function AdminVisaEditorPage() {
   const formPersistenceKey = `visa-editor-${params.id}`;
   const [hasLoadedFromServer, setHasLoadedFromServer] = useState(false);
   const [showDraftSaved, setShowDraftSaved] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const initialFormStateRef = useRef<any>(null);
   const combinedFormState = useMemo(() => ({
     formData,
     requirements,
@@ -217,12 +219,72 @@ export default function AdminVisaEditorPage() {
     sampleVisaImageMode,
   }), [formData, requirements, faqs, subTypes, activeTab, heroImageMode, sampleVisaImageMode]);
 
+  // Track if form has unsaved changes
+  useEffect(() => {
+    if (hasLoadedFromServer && initialFormStateRef.current) {
+      const currentState = JSON.stringify(combinedFormState);
+      const initialState = JSON.stringify(initialFormStateRef.current);
+      setHasUnsavedChanges(currentState !== initialState);
+    }
+  }, [combinedFormState, hasLoadedFromServer]);
+
+  // Store initial state after server load
+  useEffect(() => {
+    if (hasLoadedFromServer && !initialFormStateRef.current) {
+      initialFormStateRef.current = JSON.parse(JSON.stringify(combinedFormState));
+    }
+  }, [hasLoadedFromServer, combinedFormState]);
+
+  // Warn before leaving page with unsaved changes
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "You have unsaved changes. Are you sure you want to leave?";
+      return e.returnValue;
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  // Protect against Next.js router navigation with unsaved changes
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+
+    const handleLinkClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest("a");
+      if (link && link.href && !link.href.includes("#")) {
+        const confirmed = window.confirm(
+          "You have unsaved changes. Your draft will be saved automatically, but are you sure you want to leave this page?"
+        );
+        if (!confirmed) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }
+    };
+
+    document.addEventListener("click", handleLinkClick, true);
+
+    return () => {
+      document.removeEventListener("click", handleLinkClick, true);
+    };
+  }, [hasUnsavedChanges]);
+
   const { clearSavedState } = useFormPersistence(
     formPersistenceKey,
     combinedFormState,
     {
       enabled: true,
       debounceMs: 1000, // 1 second debounce for auto-save
+      backendSync: false, // Can enable later for cross-device sync
+      backendEndpoint: `/api/admin/content/visas/${params.id}/draft`,
       onRestore: (restoredState: any) => {
         // For new forms, always restore if draft exists
         // For existing forms, restore only if we haven't loaded from server yet
@@ -590,6 +652,8 @@ export default function AdminVisaEditorPage() {
 
       // Clear saved form state on successful save
       clearSavedState();
+      setHasUnsavedChanges(false);
+      initialFormStateRef.current = null;
       router.push("/admin/content/visas");
     } catch (error) {
       console.error("Failed to save visa", error);
@@ -717,6 +781,12 @@ export default function AdminVisaEditorPage() {
                 <div className="flex items-center gap-2 text-sm text-green-600 animate-fade-in">
                   <CheckCircle size={18} />
                   <span>Draft saved</span>
+                </div>
+              )}
+              {hasUnsavedChanges && !showDraftSaved && (
+                <div className="flex items-center gap-2 text-sm text-amber-600">
+                  <Loader2 size={18} className="animate-spin" />
+                  <span>Unsaved changes</span>
                 </div>
               )}
             </div>
