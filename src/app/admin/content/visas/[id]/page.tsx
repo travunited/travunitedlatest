@@ -209,6 +209,7 @@ export default function AdminVisaEditorPage() {
   const [showDraftSaved, setShowDraftSaved] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const initialFormStateRef = useRef<any>(null);
+  const hasAttemptedRestoreRef = useRef(false);
   const combinedFormState = useMemo(() => ({
     formData,
     requirements,
@@ -286,35 +287,68 @@ export default function AdminVisaEditorPage() {
       backendSync: false, // Can enable later for cross-device sync
       backendEndpoint: `/api/admin/content/visas/${params.id}/draft`,
       onRestore: (restoredState: any) => {
-        // Always restore if draft exists and we haven't loaded from server yet
-        // For new forms, this allows restoring drafts
-        // For existing forms, this prevents overwriting server data
-        if (!hasLoadedFromServer && Object.keys(restoredState).length > 0) {
+        // Only restore once, and only if we haven't already attempted restore
+        if (hasAttemptedRestoreRef.current) {
+          console.log("Already attempted restore, skipping");
+          return;
+        }
+        
+        // Check if we have data to restore
+        if (!restoredState || Object.keys(restoredState).length === 0) {
+          console.log("No data to restore");
+          return;
+        }
+        
+        // For new forms, always restore
+        // For existing forms, only restore if we haven't loaded from server yet
+        const shouldRestore = isNew || !hasLoadedFromServer;
+        
+        console.log("Restore decision:", {
+          shouldRestore,
+          isNew,
+          hasLoadedFromServer,
+          restoredStateKeys: Object.keys(restoredState),
+          restoredState
+        });
+        
+        if (shouldRestore) {
+          hasAttemptedRestoreRef.current = true;
           console.log("Restoring draft:", restoredState);
+          
+          // Restore immediately (don't use setTimeout as it can cause timing issues)
           if (restoredState.formData) {
+            console.log("Restoring formData:", restoredState.formData);
             setFormData(restoredState.formData);
           }
-          if (restoredState.requirements) {
+          if (restoredState.requirements && Array.isArray(restoredState.requirements)) {
+            console.log("Restoring requirements:", restoredState.requirements.length);
             setRequirements(restoredState.requirements);
           }
-          if (restoredState.faqs) {
+          if (restoredState.faqs && Array.isArray(restoredState.faqs)) {
+            console.log("Restoring faqs:", restoredState.faqs.length);
             setFaqs(restoredState.faqs);
           }
-          if (restoredState.subTypes) {
+          if (restoredState.subTypes && Array.isArray(restoredState.subTypes)) {
+            console.log("Restoring subTypes:", restoredState.subTypes.length);
             setSubTypes(restoredState.subTypes);
           }
           if (restoredState.activeTab) {
+            console.log("Restoring activeTab:", restoredState.activeTab);
             setActiveTab(restoredState.activeTab);
           }
           if (restoredState.heroImageMode) {
+            console.log("Restoring heroImageMode:", restoredState.heroImageMode);
             setHeroImageMode(restoredState.heroImageMode);
           }
           if (restoredState.sampleVisaImageMode) {
+            console.log("Restoring sampleVisaImageMode:", restoredState.sampleVisaImageMode);
             setSampleVisaImageMode(restoredState.sampleVisaImageMode);
           }
           // Show notification that draft was restored
           setShowDraftSaved(true);
           setTimeout(() => setShowDraftSaved(false), 3000);
+        } else {
+          console.log("Skipping restore - shouldRestore is false");
         }
       },
       excludeKeys: ['_savedAt'],
@@ -469,10 +503,10 @@ export default function AdminVisaEditorPage() {
     } else {
       // For new forms, delay marking as loaded to allow draft restoration
       setLoading(false);
-      // Set a small delay to allow draft restoration to happen first
+      // Set a longer delay to ensure draft restoration completes first
       setTimeout(() => {
         setHasLoadedFromServer(true);
-      }, 100);
+      }, 500);
     }
   }, [session, status, router, isNew, params.id, cloneSourceId, fetchVisa, fetchCountries]);
 

@@ -44,37 +44,42 @@ export function useFormPersistence<T extends Record<string, any>>(
       return;
     }
 
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        const restoredState = JSON.parse(stored);
-        // Check if saved state is recent (within 7 days)
-        const savedAt = restoredState._savedAt;
-        if (savedAt && Date.now() - savedAt < 7 * 24 * 60 * 60 * 1000) {
-          isRestoringRef.current = true;
-          hasRestoredRef.current = true;
-          
-          // Remove internal metadata
-          const { _savedAt, ...cleanState } = restoredState;
-          
-          console.log(`Draft found for ${formKey}, restoring...`, cleanState);
-          
-          if (onRestore) {
-            onRestore(cleanState);
+    // Use a small delay to ensure component is fully mounted
+    const restoreTimer = setTimeout(() => {
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          const restoredState = JSON.parse(stored);
+          // Check if saved state is recent (within 7 days)
+          const savedAt = restoredState._savedAt;
+          if (savedAt && Date.now() - savedAt < 7 * 24 * 60 * 60 * 1000) {
+            isRestoringRef.current = true;
+            hasRestoredRef.current = true;
+            
+            // Remove internal metadata
+            const { _savedAt, ...cleanState } = restoredState;
+            
+            console.log(`Draft found for ${formKey}, restoring...`, cleanState);
+            
+            if (onRestore) {
+              onRestore(cleanState);
+            }
+          } else {
+            // Clear expired state
+            console.log(`Draft expired for ${formKey}, clearing...`);
+            localStorage.removeItem(storageKey);
           }
         } else {
-          // Clear expired state
-          console.log(`Draft expired for ${formKey}, clearing...`);
-          localStorage.removeItem(storageKey);
+          console.log(`No draft found for ${formKey}`);
         }
-      } else {
-        console.log(`No draft found for ${formKey}`);
+      } catch (error) {
+        console.error(`Error restoring form state for ${formKey}:`, error);
+      } finally {
+        isRestoringRef.current = false;
       }
-    } catch (error) {
-      console.error(`Error restoring form state for ${formKey}:`, error);
-    } finally {
-      isRestoringRef.current = false;
-    }
+    }, 50); // Small delay to ensure component is ready
+
+    return () => clearTimeout(restoreTimer);
   }, [formKey, storageKey, enabled, onRestore]);
 
   // Function to save form state
