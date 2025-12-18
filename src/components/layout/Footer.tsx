@@ -38,7 +38,7 @@ export function Footer() {
               <img 
                 src="/white-logo.svg" 
                 alt="Travunited Logo" 
-                className="h-12 w-auto"
+                className="h-14 w-auto"
               />
             </div>
             <p className="text-neutral-400 mb-4 max-w-md">

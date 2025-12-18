@@ -27,6 +27,12 @@ export function useFormPersistence<T extends Record<string, any>>(
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isRestoringRef = useRef(false);
   const hasRestoredRef = useRef(false);
+  const formStateRef = useRef(formState);
+  
+  // Keep formStateRef in sync with formState
+  useEffect(() => {
+    formStateRef.current = formState;
+  }, [formState]);
 
   // Restore form state on mount
   useEffect(() => {
@@ -62,7 +68,44 @@ export function useFormPersistence<T extends Record<string, any>>(
     }
   }, [formKey, storageKey, enabled, onRestore]);
 
-  // Save form state with debouncing
+  // Function to save form state
+  const saveFormState = useCallback(() => {
+    if (!enabled || typeof window === "undefined" || isRestoringRef.current) {
+      return;
+    }
+
+    try {
+      // Create a copy of form state excluding specified keys
+      const stateToSave: any = { ...formStateRef.current };
+      excludeKeys.forEach((key) => {
+        delete stateToSave[key];
+      });
+
+      // Add metadata
+      stateToSave._savedAt = Date.now();
+
+      localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+    } catch (error) {
+      console.error(`Error saving form state for ${formKey}:`, error);
+      // If quota exceeded, try to clear old entries
+      if (error instanceof Error && error.name === "QuotaExceededError") {
+        clearOldFormStates();
+        // Try saving again after clearing old entries
+        try {
+          const stateToSave: any = { ...formStateRef.current };
+          excludeKeys.forEach((key) => {
+            delete stateToSave[key];
+          });
+          stateToSave._savedAt = Date.now();
+          localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+        } catch (retryError) {
+          console.error(`Error saving form state after cleanup for ${formKey}:`, retryError);
+        }
+      }
+    }
+  }, [formKey, storageKey, enabled, excludeKeys]);
+
+  // Save form state with debouncing on changes
   useEffect(() => {
     if (!enabled || typeof window === "undefined" || isRestoringRef.current) {
       return;
@@ -75,24 +118,7 @@ export function useFormPersistence<T extends Record<string, any>>(
 
     // Set new timeout for debounced save
     timeoutRef.current = setTimeout(() => {
-      try {
-        // Create a copy of form state excluding specified keys
-        const stateToSave: any = { ...formState };
-        excludeKeys.forEach((key) => {
-          delete stateToSave[key];
-        });
-
-        // Add metadata
-        stateToSave._savedAt = Date.now();
-
-        localStorage.setItem(storageKey, JSON.stringify(stateToSave));
-      } catch (error) {
-        console.error(`Error saving form state for ${formKey}:`, error);
-        // If quota exceeded, try to clear old entries
-        if (error instanceof Error && error.name === "QuotaExceededError") {
-          clearOldFormStates();
-        }
-      }
+      saveFormState();
     }, debounceMs);
 
     // Cleanup timeout on unmount
@@ -101,7 +127,37 @@ export function useFormPersistence<T extends Record<string, any>>(
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [formState, formKey, storageKey, enabled, debounceMs, excludeKeys]);
+  }, [formState, debounceMs, saveFormState, enabled]);
+
+  // Save immediately on window blur (user switches tabs/windows)
+  useEffect(() => {
+    if (!enabled || typeof window === "undefined") {
+      return;
+    }
+
+    const handleBlur = () => {
+      // Clear any pending debounced save
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      // Save immediately
+      saveFormState();
+    };
+
+    const handleBeforeUnload = () => {
+      // Save immediately before page unload
+      saveFormState();
+    };
+
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [enabled, saveFormState]);
 
   // Clear saved state
   const clearSavedState = useCallback(() => {

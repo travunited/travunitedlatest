@@ -12,6 +12,7 @@ import {
   Trash2,
   Sparkles,
   RefreshCw,
+  CheckCircle,
 } from "lucide-react";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -205,6 +206,7 @@ export default function AdminVisaEditorPage() {
   // Form persistence - save form state to localStorage
   const formPersistenceKey = `visa-editor-${params.id}`;
   const [hasLoadedFromServer, setHasLoadedFromServer] = useState(false);
+  const [showDraftSaved, setShowDraftSaved] = useState(false);
   const combinedFormState = useMemo(() => ({
     formData,
     requirements,
@@ -220,36 +222,57 @@ export default function AdminVisaEditorPage() {
     combinedFormState,
     {
       enabled: true,
-      debounceMs: 500,
+      debounceMs: 1000, // 1 second debounce for auto-save
       onRestore: (restoredState: any) => {
-        // Only restore if we haven't loaded from server yet (for new forms or when editing)
-        if (!hasLoadedFromServer && isNew) {
-          if (restoredState.formData) {
-            setFormData(restoredState.formData);
-          }
-          if (restoredState.requirements) {
-            setRequirements(restoredState.requirements);
-          }
-          if (restoredState.faqs) {
-            setFaqs(restoredState.faqs);
-          }
-          if (restoredState.subTypes) {
-            setSubTypes(restoredState.subTypes);
-          }
-          if (restoredState.activeTab) {
-            setActiveTab(restoredState.activeTab);
-          }
-          if (restoredState.heroImageMode) {
-            setHeroImageMode(restoredState.heroImageMode);
-          }
-          if (restoredState.sampleVisaImageMode) {
-            setSampleVisaImageMode(restoredState.sampleVisaImageMode);
+        // Restore draft if we haven't loaded from server yet
+        // This works for both new forms and when editing (before server data loads)
+        if (!hasLoadedFromServer) {
+          // For new forms, restore everything
+          // For existing forms, only restore if user made changes before server data loaded
+          if (isNew || Object.keys(restoredState).length > 0) {
+            if (restoredState.formData) {
+              setFormData(restoredState.formData);
+            }
+            if (restoredState.requirements) {
+              setRequirements(restoredState.requirements);
+            }
+            if (restoredState.faqs) {
+              setFaqs(restoredState.faqs);
+            }
+            if (restoredState.subTypes) {
+              setSubTypes(restoredState.subTypes);
+            }
+            if (restoredState.activeTab) {
+              setActiveTab(restoredState.activeTab);
+            }
+            if (restoredState.heroImageMode) {
+              setHeroImageMode(restoredState.heroImageMode);
+            }
+            if (restoredState.sampleVisaImageMode) {
+              setSampleVisaImageMode(restoredState.sampleVisaImageMode);
+            }
+            // Show notification that draft was restored
+            if (Object.keys(restoredState).length > 0) {
+              setShowDraftSaved(true);
+              setTimeout(() => setShowDraftSaved(false), 3000);
+            }
           }
         }
       },
       excludeKeys: ['_savedAt'],
     }
   );
+
+  // Show draft saved indicator when form state changes (debounced save happens)
+  useEffect(() => {
+    if (hasLoadedFromServer) {
+      const timer = setTimeout(() => {
+        setShowDraftSaved(true);
+        setTimeout(() => setShowDraftSaved(false), 2000);
+      }, 1200); // Show after debounce + small delay
+      return () => clearTimeout(timer);
+    }
+  }, [combinedFormState, hasLoadedFromServer]);
 
   const tabs = useMemo(
     () => [
@@ -689,9 +712,17 @@ export default function AdminVisaEditorPage() {
               <ArrowLeft size={16} className="mr-2" />
               Back to visas
             </Link>
-            <h1 className="text-3xl font-bold text-neutral-900 mt-3">
-              {isNew ? "Create Visa" : "Edit Visa"}
-            </h1>
+            <div className="flex items-center gap-3 mt-3">
+              <h1 className="text-3xl font-bold text-neutral-900">
+                {isNew ? "Create Visa" : "Edit Visa"}
+              </h1>
+              {showDraftSaved && (
+                <div className="flex items-center gap-2 text-sm text-green-600 animate-fade-in">
+                  <CheckCircle size={18} />
+                  <span>Draft saved</span>
+                </div>
+              )}
+            </div>
             <p className="text-neutral-500">
               Configure everything travellers will see plus what powers the visa flow.
             </p>
