@@ -34,14 +34,13 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <picture className="block mb-4">
-              <source srcSet="/white-logo.svg" type="image/svg+xml" />
+            <div className="block mb-4">
               <img 
-                src="/white-logo.png" 
+                src="/white-logo.svg" 
                 alt="Travunited Logo" 
-                className="h-20 w-auto"
+                className="h-12 w-auto"
               />
-            </picture>
+            </div>
             <p className="text-neutral-400 mb-4 max-w-md">
               Premium visa services and tour packages for global travellers. 
               Trusted by thousands for seamless travel experiences.

@@ -175,7 +175,7 @@ export function Hero() {
             </span>
           </h1>
           <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto">
-            Your trusted partner for premium visa services and unforgettable tour experiences
+          Trusted by Global Travellers Across 160+ Destinations!
           </p>
         </motion.div>
 

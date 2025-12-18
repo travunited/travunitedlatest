@@ -17,6 +17,7 @@ import {
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { getMediaProxyUrl } from "@/lib/media";
 import { TextInput, NumberInput, TextareaInput, SelectInput, CheckboxInput } from "@/components/admin/MemoizedInputs";
+import { useFormPersistence } from "@/hooks/useFormPersistence";
 
 type DocScope = "PER_TRAVELLER" | "PER_APPLICATION";
 
@@ -201,6 +202,55 @@ export default function AdminVisaEditorPage() {
   const [sampleVisaImageUploading, setSampleVisaImageUploading] = useState(false);
   const [sampleVisaImageUploadError, setSampleVisaImageUploadError] = useState<string | null>(null);
 
+  // Form persistence - save form state to localStorage
+  const formPersistenceKey = `visa-editor-${params.id}`;
+  const [hasLoadedFromServer, setHasLoadedFromServer] = useState(false);
+  const combinedFormState = useMemo(() => ({
+    formData,
+    requirements,
+    faqs,
+    subTypes,
+    activeTab,
+    heroImageMode,
+    sampleVisaImageMode,
+  }), [formData, requirements, faqs, subTypes, activeTab, heroImageMode, sampleVisaImageMode]);
+
+  const { clearSavedState } = useFormPersistence(
+    formPersistenceKey,
+    combinedFormState,
+    {
+      enabled: true,
+      debounceMs: 500,
+      onRestore: (restoredState: any) => {
+        // Only restore if we haven't loaded from server yet (for new forms or when editing)
+        if (!hasLoadedFromServer && isNew) {
+          if (restoredState.formData) {
+            setFormData(restoredState.formData);
+          }
+          if (restoredState.requirements) {
+            setRequirements(restoredState.requirements);
+          }
+          if (restoredState.faqs) {
+            setFaqs(restoredState.faqs);
+          }
+          if (restoredState.subTypes) {
+            setSubTypes(restoredState.subTypes);
+          }
+          if (restoredState.activeTab) {
+            setActiveTab(restoredState.activeTab);
+          }
+          if (restoredState.heroImageMode) {
+            setHeroImageMode(restoredState.heroImageMode);
+          }
+          if (restoredState.sampleVisaImageMode) {
+            setSampleVisaImageMode(restoredState.sampleVisaImageMode);
+          }
+        }
+      },
+      excludeKeys: ['_savedAt'],
+    }
+  );
+
   const tabs = useMemo(
     () => [
       { id: "basic", label: "Basic Info" },
@@ -237,6 +287,7 @@ export default function AdminVisaEditorPage() {
   }, []);
 
   const hydrateFromVisa = (data: any, isClone = false) => {
+    setHasLoadedFromServer(true);
     setFormData({
       countryId: data.countryId,
       name: isClone ? `${data.name} Copy` : data.name,
@@ -336,6 +387,7 @@ export default function AdminVisaEditorPage() {
       fetchVisa(cloneSourceId, true);
     } else {
       setLoading(false);
+      setHasLoadedFromServer(true); // Mark as loaded for new forms
     }
   }, [session, status, router, isNew, params.id, cloneSourceId, fetchVisa, fetchCountries]);
 
@@ -516,6 +568,8 @@ export default function AdminVisaEditorPage() {
         return;
       }
 
+      // Clear saved form state on successful save
+      clearSavedState();
       router.push("/admin/content/visas");
     } catch (error) {
       console.error("Failed to save visa", error);
