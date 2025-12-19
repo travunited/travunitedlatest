@@ -141,7 +141,7 @@ export function Hero() {
         // Navigate to tours with search query
         const params = new URLSearchParams({ destination: tourDestination });
         if (tourDate) params.append("date", tourDate);
-        router.push(`/tours?${params.toString()}`);
+        router.push(`/holidays?${params.toString()}`);
       }
     }
   };

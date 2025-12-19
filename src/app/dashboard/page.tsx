@@ -252,12 +252,12 @@ export default function DashboardPage() {
             <p className="text-sm text-neutral-600">Start a new visa application</p>
           </Link>
           <Link
-            href="/tours"
+            href="/holidays"
             className="bg-white rounded-2xl p-6 shadow-medium hover:shadow-large transition-shadow border border-neutral-200 text-center"
           >
             <Calendar size={32} className="text-primary-600 mx-auto mb-3" />
-            <h3 className="font-semibold text-neutral-900 mb-1">Book a Tour</h3>
-            <p className="text-sm text-neutral-600">Explore tour packages</p>
+            <h3 className="font-semibold text-neutral-900 mb-1">Book a Holiday</h3>
+            <p className="text-sm text-neutral-600">Explore holiday packages</p>
           </Link>
           <Link
             href="/dashboard/travellers"
@@ -428,7 +428,7 @@ export default function DashboardPage() {
               <Calendar size={48} className="text-neutral-300 mx-auto mb-4" />
               <p className="text-neutral-600 mb-4">No tour bookings yet</p>
               <Link
-                href="/tours"
+                href="/holidays"
                 className="inline-flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-medium"
               >
                 <span>Book a Tour</span>

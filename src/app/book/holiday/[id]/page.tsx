@@ -262,11 +262,11 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
             setSelectedHotelCategory(data.hotelCategories[0]);
           }
         } else {
-          router.push("/tours");
+          router.push("/holidays");
         }
       } catch (error) {
         console.error("Failed to load tour:", error);
-        router.push("/tours");
+        router.push("/holidays");
       } finally {
         setTourLoading(false);
       }
@@ -768,7 +768,7 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
 
     if (!session) {
       router.push(
-        `/signup?email=${encodeURIComponent(formData.primaryContact.email || "")}&redirect=/book/tour/${params.id}`
+        `/signup?email=${encodeURIComponent(formData.primaryContact.email || "")}&redirect=/book/holiday/${params.id}`
       );
       return null;
     }
@@ -880,7 +880,7 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
 
     if (!session) {
       alert("Please login to proceed with payment");
-      router.push(`/login?redirect=/book/tour/${params.id}`);
+      router.push(`/login?redirect=/book/holiday/${params.id}`);
       return;
     }
 
@@ -2053,10 +2053,10 @@ export default function TourBookingPage({ params }: { params: { id: string } }) 
       <div className="bg-white border-b border-neutral-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Link
-            href={`/tours/${params.id}`}
+            href={`/holidays/${params.id}`}
             className="text-primary-600 hover:text-primary-700 text-sm"
           >
-            ← Back to Tour Details
+            ← Back to Holiday Details
           </Link>
         </div>
       </div>

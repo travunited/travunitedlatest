@@ -164,10 +164,10 @@ function BookingThankYouContent() {
                   <span>Go to Dashboard</span>
                 </Link>
                 <Link
-                  href="/tours"
+                  href="/holidays"
                   className="flex-1 border border-neutral-300 text-neutral-700 px-6 py-3 rounded-lg font-medium hover:bg-neutral-50 transition-colors flex items-center justify-center space-x-2"
                 >
-                  <span>Browse More Tours</span>
+                  <span>Browse More Holidays</span>
                   <ArrowRight size={20} />
                 </Link>
               </div>

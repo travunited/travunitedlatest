@@ -334,7 +334,7 @@ export default function BookingsPage() {
             <Calendar size={48} className="text-neutral-300 mx-auto mb-4" />
             <p className="text-neutral-600 mb-4">No bookings found</p>
             <Link
-              href="/tours"
+              href="/holidays"
               className="inline-flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-medium"
             >
               <span>Book a Tour</span>

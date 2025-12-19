@@ -12,7 +12,7 @@ export function Footer() {
     ],
     services: [
       { href: "/visas", label: "Visa Services" },
-      { href: "/tours", label: "Tour Packages" },
+      { href: "/holidays", label: "Holiday Packages" },
       { href: "/corporate", label: "Corporate Travel" },
     ],
     support: [
