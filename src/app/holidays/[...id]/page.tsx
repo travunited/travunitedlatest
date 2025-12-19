@@ -23,6 +23,7 @@ import { getMediaProxyUrl } from "@/lib/media";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 import { PhotoGallery } from "@/components/tours/PhotoGallery";
 import { BackToHolidaysButton } from "./BackToHolidaysButton";
+import { ShareButton } from "@/components/sharing/ShareButton";
 
 export async function generateMetadata({
   params,
@@ -571,7 +572,15 @@ function Hero({
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
       <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
         <div className="max-w-7xl mx-auto">
-          <BackToHolidaysButton />
+          <div className="flex items-center justify-between mb-4">
+            <BackToHolidaysButton />
+            <ShareButton
+              url=""
+              title={tour.name}
+              description={tour.shortDescription || tour.description?.substring(0, 160)}
+              className="hidden md:block"
+            />
+          </div>
           
           {/* Title & Location */}
           <h1 className="text-3xl md:text-5xl font-bold mb-3">{tour.name}</h1>
@@ -755,6 +764,16 @@ function BookingSidebar({
           Not Available
         </button>
       )}
+
+      {/* Share Button */}
+      <div className="border-t border-neutral-200 pt-4">
+        <ShareButton
+          url=""
+          title={tour.name}
+          description={tour.shortDescription || tour.description?.substring(0, 160)}
+          className="w-full"
+        />
+      </div>
 
       {/* Advance Payment Info */}
       {allowAdvance && advancePercentage && (

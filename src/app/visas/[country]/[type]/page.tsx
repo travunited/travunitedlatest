@@ -13,6 +13,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
+import { ShareButton } from "@/components/sharing/ShareButton";
 
 const visaModeLabels: Record<string, string> = {
   EVISA: "eVisa",
@@ -321,6 +322,17 @@ export default async function VisaDetailPage({
                 <span>Apply for this Visa</span>
                 <ArrowRight size={20} />
               </Link>
+              
+              {/* Share Button */}
+              <div className="mb-4">
+                <ShareButton
+                  url=""
+                  title={visa.name}
+                  description={visa.subtitle || visa.overview?.substring(0, 160)}
+                  className="w-full"
+                />
+              </div>
+              
               <div className="space-y-3 text-sm text-neutral-600 border-t border-neutral-200 pt-4">
                 <div className="flex items-center">
                   <Clock size={16} className="mr-2 text-primary-600" />
