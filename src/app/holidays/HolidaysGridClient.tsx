@@ -22,6 +22,7 @@ import {
 
 interface TourCard {
   id: string;
+  slug?: string | null;
   name: string;
   destination: string;
   primaryDestination?: string | null;

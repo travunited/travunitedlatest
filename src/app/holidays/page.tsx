@@ -82,7 +82,8 @@ export default async function HolidaysPage({
       })() : [];
 
       return {
-        id: tour.slug ?? tour.id,
+        id: tour.id,
+        slug: tour.slug,
         name: tour.name,
         destination: destinationDisplay,
         primaryDestination: tour.primaryDestination,
