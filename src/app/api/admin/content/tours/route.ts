@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
+import { revalidatePath } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { normalizeMediaInput } from "@/lib/media";
@@ -305,6 +306,25 @@ export async function POST(req: Request) {
         },
       });
     });
+
+    // Revalidate cache for the new holiday pages
+    if (tour) {
+      const tourSlug = tour.slug;
+      
+      // Revalidate holiday detail page
+      if (tourSlug) {
+        revalidatePath(`/holidays/${tourSlug}`);
+        revalidatePath(`/holidays/${encodeURIComponent(tourSlug)}`);
+      }
+      
+      // Revalidate holidays listing page
+      revalidatePath("/holidays");
+      
+      // Revalidate homepage if tour is featured
+      if (tour.isFeatured) {
+        revalidatePath("/");
+      }
+    }
 
     return NextResponse.json(tour);
   } catch (error) {

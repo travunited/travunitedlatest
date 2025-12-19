@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
+import { revalidatePath } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DocScope, EntryType, StayType, VisaMode } from "@prisma/client";
@@ -412,6 +413,30 @@ export async function POST(req: Request) {
         subTypes: true,
       },
     });
+
+    // Revalidate cache for the new visa pages
+    if (visa) {
+      const countryCode = visa.country?.code?.toLowerCase() || "";
+      const visaSlug = visa.slug;
+      
+      // Revalidate visa detail page
+      if (countryCode && visaSlug) {
+        revalidatePath(`/visas/${countryCode}/${visaSlug}`);
+      }
+      
+      // Revalidate country visas listing page
+      if (countryCode) {
+        revalidatePath(`/visas/${countryCode}`);
+      }
+      
+      // Revalidate visas listing page
+      revalidatePath("/visas");
+      
+      // Revalidate homepage if visa is featured
+      if (visa.isFeatured) {
+        revalidatePath("/");
+      }
+    }
 
     return NextResponse.json(visa);
   } catch (error) {

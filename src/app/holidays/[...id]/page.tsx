@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { TourDetailClient } from "./TourDetailClient";
 import {
   Calendar,

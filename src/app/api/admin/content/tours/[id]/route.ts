@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
+import { revalidatePath } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl, normalizeMediaInput } from "@/lib/media";
@@ -326,6 +327,27 @@ export async function PUT(
       },
     });
 
+    // Revalidate cache for the updated holiday pages
+    if (updated) {
+      const tourSlug = updated.slug;
+      
+      // Revalidate holiday detail page (slug may contain slashes, so we need to handle it)
+      if (tourSlug) {
+        // The route is /holidays/[...id], so we need to revalidate with the full slug path
+        revalidatePath(`/holidays/${tourSlug}`);
+        // Also revalidate the encoded version
+        revalidatePath(`/holidays/${encodeURIComponent(tourSlug)}`);
+      }
+      
+      // Revalidate holidays listing page
+      revalidatePath("/holidays");
+      
+      // Revalidate homepage if tour is featured
+      if (updated.isFeatured) {
+        revalidatePath("/");
+      }
+    }
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating tour:", error);
@@ -365,6 +387,25 @@ export async function PATCH(
         country: true,
       },
     });
+
+    // Revalidate cache for the updated holiday pages
+    if (updated) {
+      const tourSlug = updated.slug;
+      
+      // Revalidate holiday detail page
+      if (tourSlug) {
+        revalidatePath(`/holidays/${tourSlug}`);
+        revalidatePath(`/holidays/${encodeURIComponent(tourSlug)}`);
+      }
+      
+      // Revalidate holidays listing page
+      revalidatePath("/holidays");
+      
+      // Revalidate homepage if tour is featured
+      if (updated.isFeatured) {
+        revalidatePath("/");
+      }
+    }
 
     return NextResponse.json(updated);
   } catch (error) {

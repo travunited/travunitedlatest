@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
+import { revalidatePath } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DocScope, EntryType, StayType, VisaMode } from "@prisma/client";
@@ -500,6 +501,30 @@ export async function PUT(
       },
     });
 
+    // Revalidate cache for the updated visa pages
+    if (updated) {
+      const countryCode = updated.country?.code?.toLowerCase() || "";
+      const visaSlug = updated.slug;
+      
+      // Revalidate visa detail page
+      if (countryCode && visaSlug) {
+        revalidatePath(`/visas/${countryCode}/${visaSlug}`);
+      }
+      
+      // Revalidate country visas listing page
+      if (countryCode) {
+        revalidatePath(`/visas/${countryCode}`);
+      }
+      
+      // Revalidate visas listing page
+      revalidatePath("/visas");
+      
+      // Revalidate homepage if visa is featured
+      if (updated.isFeatured) {
+        revalidatePath("/");
+      }
+    }
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error("Error updating visa:", error);
@@ -546,6 +571,30 @@ export async function PATCH(
         country: true,
       },
     });
+
+    // Revalidate cache for the updated visa pages
+    if (updated) {
+      const countryCode = updated.country?.code?.toLowerCase() || "";
+      const visaSlug = updated.slug;
+      
+      // Revalidate visa detail page
+      if (countryCode && visaSlug) {
+        revalidatePath(`/visas/${countryCode}/${visaSlug}`);
+      }
+      
+      // Revalidate country visas listing page
+      if (countryCode) {
+        revalidatePath(`/visas/${countryCode}`);
+      }
+      
+      // Revalidate visas listing page
+      revalidatePath("/visas");
+      
+      // Revalidate homepage if visa is featured
+      if (updated.isFeatured) {
+        revalidatePath("/");
+      }
+    }
 
     return NextResponse.json(updated);
   } catch (error) {
