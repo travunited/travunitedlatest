@@ -18,7 +18,6 @@ import {
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { getMediaProxyUrl } from "@/lib/media";
 import { TextInput, NumberInput, TextareaInput, SelectInput, CheckboxInput } from "@/components/admin/MemoizedInputs";
-import { useFormPersistence } from "@/hooks/useFormPersistence";
 
 type DocScope = "PER_TRAVELLER" | "PER_APPLICATION";
 
@@ -205,11 +204,14 @@ export default function AdminVisaEditorPage() {
 
   // Form persistence - save form state to localStorage
   const formPersistenceKey = `visa-editor-${params.id}`;
-  const [hasLoadedFromServer, setHasLoadedFromServer] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [showDraftSaved, setShowDraftSaved] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [lastSaveTime, setLastSaveTime] = useState<number | null>(null);
   const initialFormStateRef = useRef<any>(null);
-  const hasAttemptedRestoreRef = useRef(false);
+  const isRestoringRef = useRef(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   const combinedFormState = useMemo(() => ({
     formData,
     requirements,
@@ -220,21 +222,26 @@ export default function AdminVisaEditorPage() {
     sampleVisaImageMode,
   }), [formData, requirements, faqs, subTypes, activeTab, heroImageMode, sampleVisaImageMode]);
 
-  // Track if form has unsaved changes
+  // Track if form has unsaved changes (compare against initial state after restore/server load)
   useEffect(() => {
-    if (hasLoadedFromServer && initialFormStateRef.current) {
+    if (isInitialized && initialFormStateRef.current) {
       const currentState = JSON.stringify(combinedFormState);
       const initialState = JSON.stringify(initialFormStateRef.current);
       setHasUnsavedChanges(currentState !== initialState);
     }
-  }, [combinedFormState, hasLoadedFromServer]);
+  }, [combinedFormState, isInitialized]);
 
-  // Store initial state after server load
+  // Set initial state reference after form is fully initialized (restore + server load complete)
   useEffect(() => {
-    if (hasLoadedFromServer && !initialFormStateRef.current) {
-      initialFormStateRef.current = JSON.parse(JSON.stringify(combinedFormState));
+    if (isInitialized && !initialFormStateRef.current && !isRestoringRef.current) {
+      // Use a small delay to ensure all state updates have settled
+      const timer = setTimeout(() => {
+        initialFormStateRef.current = JSON.parse(JSON.stringify(combinedFormState));
+        console.log("Initial state captured for unsaved changes tracking");
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [hasLoadedFromServer, combinedFormState]);
+  }, [isInitialized, combinedFormState]);
 
   // Warn before leaving page with unsaved changes
   useEffect(() => {
@@ -278,93 +285,175 @@ export default function AdminVisaEditorPage() {
     };
   }, [hasUnsavedChanges]);
 
-  const { clearSavedState } = useFormPersistence(
-    formPersistenceKey,
-    combinedFormState,
-    {
-      enabled: true,
-      debounceMs: 1000, // 1 second debounce for auto-save
-      backendSync: false, // Can enable later for cross-device sync
-      backendEndpoint: `/api/admin/content/visas/${params.id}/draft`,
-      onRestore: (restoredState: any) => {
-        // Only restore once, and only if we haven't already attempted restore
-        if (hasAttemptedRestoreRef.current) {
-          console.log("Already attempted restore, skipping");
-          return;
-        }
-        
-        // Check if we have data to restore
-        if (!restoredState || Object.keys(restoredState).length === 0) {
-          console.log("No data to restore");
-          return;
-        }
-        
-        // For new forms, always restore
-        // For existing forms, only restore if we haven't loaded from server yet
-        // (The hydrateFromVisa function will handle merging drafts with server data)
-        const shouldRestore = isNew || !hasLoadedFromServer;
-        
-        console.log("Restore decision:", {
-          shouldRestore,
-          isNew,
-          hasLoadedFromServer,
-          restoredStateKeys: Object.keys(restoredState),
-        });
-        
-        if (shouldRestore) {
-          hasAttemptedRestoreRef.current = true;
-          console.log("Restoring draft:", restoredState);
-          
-          // Restore immediately (don't use setTimeout as it can cause timing issues)
-          if (restoredState.formData) {
-            console.log("Restoring formData");
-            setFormData(restoredState.formData);
-          }
-          if (restoredState.requirements && Array.isArray(restoredState.requirements)) {
-            console.log("Restoring requirements:", restoredState.requirements.length);
-            setRequirements(restoredState.requirements);
-          }
-          if (restoredState.faqs && Array.isArray(restoredState.faqs)) {
-            console.log("Restoring faqs:", restoredState.faqs.length);
-            setFaqs(restoredState.faqs);
-          }
-          if (restoredState.subTypes && Array.isArray(restoredState.subTypes)) {
-            console.log("Restoring subTypes:", restoredState.subTypes.length);
-            setSubTypes(restoredState.subTypes);
-          }
-          if (restoredState.activeTab) {
-            console.log("Restoring activeTab:", restoredState.activeTab);
-            setActiveTab(restoredState.activeTab);
-          }
-          if (restoredState.heroImageMode) {
-            console.log("Restoring heroImageMode:", restoredState.heroImageMode);
-            setHeroImageMode(restoredState.heroImageMode);
-          }
-          if (restoredState.sampleVisaImageMode) {
-            console.log("Restoring sampleVisaImageMode:", restoredState.sampleVisaImageMode);
-            setSampleVisaImageMode(restoredState.sampleVisaImageMode);
-          }
-          // Show notification that draft was restored
-          setShowDraftSaved(true);
-          setTimeout(() => setShowDraftSaved(false), 3000);
-        } else {
-          console.log("Skipping restore - will be handled by hydrateFromVisa merge");
-        }
-      },
-      excludeKeys: ['_savedAt'],
+  // Custom save handler that shows feedback
+  const handleAutoSave = useCallback(() => {
+    if (!isInitialized || isRestoringRef.current || typeof window === "undefined") {
+      return;
     }
-  );
 
-  // Show draft saved indicator when form state changes (debounced save happens)
-  useEffect(() => {
-    if (hasLoadedFromServer) {
-      const timer = setTimeout(() => {
-        setShowDraftSaved(true);
-        setTimeout(() => setShowDraftSaved(false), 2000);
-      }, 1200); // Show after debounce + small delay
-      return () => clearTimeout(timer);
+    try {
+      const stateToSave = { ...combinedFormState, _savedAt: Date.now() };
+      const storageKey = `admin-form-${formPersistenceKey}`;
+      localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+      setLastSaveTime(Date.now());
+      
+      // Show subtle feedback
+      setShowDraftSaved(true);
+      setTimeout(() => {
+        setShowDraftSaved(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Error auto-saving draft:", error);
     }
-  }, [combinedFormState, hasLoadedFromServer]);
+  }, [formPersistenceKey, combinedFormState, isInitialized]);
+
+  // Debounced auto-save on form changes
+  useEffect(() => {
+    if (!isInitialized || isRestoringRef.current) return;
+
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      handleAutoSave();
+    }, 1000); // 1 second debounce
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [combinedFormState, isInitialized, handleAutoSave]);
+
+  // Save on window blur/unload
+  useEffect(() => {
+    if (!isInitialized || typeof window === "undefined") return;
+
+    const handleBlur = () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      handleAutoSave();
+    };
+
+    const handleBeforeUnload = () => {
+      // Synchronous save for beforeunload
+      try {
+        const stateToSave = { ...combinedFormState, _savedAt: Date.now() };
+        const storageKey = `admin-form-${formPersistenceKey}`;
+        localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+      } catch (error) {
+        console.error("Error saving on beforeunload:", error);
+      }
+    };
+
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isInitialized, combinedFormState, formPersistenceKey, handleAutoSave]);
+
+  // Restore draft on mount (for new forms or before server data loads)
+  useEffect(() => {
+    if (isInitialized || typeof window === "undefined") return;
+
+    const restoreDraft = () => {
+      try {
+        const storageKey = `admin-form-${formPersistenceKey}`;
+        const stored = localStorage.getItem(storageKey);
+        
+        if (!stored) {
+          console.log("No draft found for", formPersistenceKey);
+          return false;
+        }
+
+        const restoredState = JSON.parse(stored);
+        const savedAt = restoredState._savedAt;
+        
+        // Check if draft is recent (within 7 days)
+        if (!savedAt || Date.now() - savedAt > 7 * 24 * 60 * 60 * 1000) {
+          console.log("Draft expired, clearing");
+          localStorage.removeItem(storageKey);
+          return false;
+        }
+
+        // Remove metadata
+        const { _savedAt, ...cleanState } = restoredState;
+        
+        if (Object.keys(cleanState).length === 0) {
+          return false;
+        }
+
+        console.log("Restoring draft for", formPersistenceKey, cleanState);
+        isRestoringRef.current = true;
+
+        // Restore state
+        if (cleanState.formData) {
+          setFormData(cleanState.formData);
+        }
+        if (cleanState.requirements && Array.isArray(cleanState.requirements)) {
+          setRequirements(cleanState.requirements);
+        }
+        if (cleanState.faqs && Array.isArray(cleanState.faqs)) {
+          setFaqs(cleanState.faqs);
+        }
+        if (cleanState.subTypes && Array.isArray(cleanState.subTypes)) {
+          setSubTypes(cleanState.subTypes);
+        }
+        if (cleanState.activeTab) {
+          setActiveTab(cleanState.activeTab);
+        }
+        if (cleanState.heroImageMode) {
+          setHeroImageMode(cleanState.heroImageMode);
+        }
+        if (cleanState.sampleVisaImageMode) {
+          setSampleVisaImageMode(cleanState.sampleVisaImageMode);
+        }
+
+        // Show restoration notification
+        setShowDraftSaved(true);
+        setTimeout(() => setShowDraftSaved(false), 3000);
+
+        // Reset restoring flag after state updates settle
+        setTimeout(() => {
+          isRestoringRef.current = false;
+        }, 200);
+
+        return true;
+      } catch (error) {
+        console.error("Error restoring draft:", error);
+        isRestoringRef.current = false;
+        return false;
+      }
+    };
+
+    // For new forms, restore immediately
+    if (isNew) {
+      const restored = restoreDraft();
+      // Mark as initialized after restore completes
+      setTimeout(() => {
+        setIsInitialized(true);
+      }, restored ? 300 : 100);
+    }
+    // For existing forms, restore will happen in hydrateFromVisa
+  }, [isNew, formPersistenceKey, isInitialized]);
+
+  // Clear saved state function
+  const clearSavedState = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const storageKey = `admin-form-${formPersistenceKey}`;
+      localStorage.removeItem(storageKey);
+      initialFormStateRef.current = null;
+      setHasUnsavedChanges(false);
+    } catch (error) {
+      console.error("Error clearing saved state:", error);
+    }
+  }, [formPersistenceKey]);
 
   const tabs = useMemo(
     () => [
@@ -402,27 +491,29 @@ export default function AdminVisaEditorPage() {
   }, []);
 
   const hydrateFromVisa = (data: any, isClone = false) => {
-    // Check if there's a draft that's newer than server data
-    const draftKey = `admin-form-visa-editor-${params.id}`;
-    let shouldUseDraft = false;
+    // Check if there's a draft to merge with server data
+    const draftKey = `admin-form-${formPersistenceKey}`;
     let draftData: any = null;
+    let shouldUseDraft = false;
     
     try {
       const stored = localStorage.getItem(draftKey);
       if (stored) {
         draftData = JSON.parse(stored);
         const draftSavedAt = draftData._savedAt;
-        // If draft exists and is recent (within 7 days), we'll merge it with server data
+        // If draft exists and is recent (within 7 days), merge it with server data
         if (draftSavedAt && Date.now() - draftSavedAt < 7 * 24 * 60 * 60 * 1000) {
           shouldUseDraft = true;
-          console.log("Found draft to merge with server data");
+          console.log("Found draft to merge with server data for existing visa");
         }
       }
     } catch (error) {
       console.error("Error checking draft:", error);
     }
     
-    // Merge server data with draft if draft exists
+    isRestoringRef.current = true;
+    
+    // Base form data from server
     const baseFormData = {
       countryId: data.countryId,
       name: isClone ? `${data.name} Copy` : data.name,
@@ -449,14 +540,13 @@ export default function AdminVisaEditorPage() {
       heroImageUrl: data.heroImageUrl || "",
       metaTitle: data.metaTitle || "",
       metaDescription: data.metaDescription || "",
-      // New fields
       stayDurationDays: data.stayDurationDays ?? null,
       validityDays: data.validityDays ?? null,
       sampleVisaImageUrl: data.sampleVisaImageUrl || "",
       currency: data.currency || "INR",
     };
     
-    // If draft exists, merge it with server data (draft takes precedence for user edits)
+    // Merge draft with server data (draft takes precedence for user edits)
     if (shouldUseDraft && draftData?.formData) {
       console.log("Merging draft with server data");
       setFormData({ ...baseFormData, ...draftData.formData });
@@ -464,7 +554,7 @@ export default function AdminVisaEditorPage() {
       setFormData(baseFormData);
     }
     
-    // Use draft requirements/faqs/subTypes if they exist, otherwise use server data
+    // Use draft arrays if they exist and have content, otherwise use server data
     if (shouldUseDraft && draftData?.requirements && Array.isArray(draftData.requirements) && draftData.requirements.length > 0) {
       console.log("Using draft requirements");
       setRequirements(draftData.requirements);
@@ -511,19 +601,22 @@ export default function AdminVisaEditorPage() {
       );
     }
     
-    // Restore active tab and image modes from draft if available
-    if (shouldUseDraft && draftData?.activeTab) {
-      setActiveTab(draftData.activeTab);
-    }
-    if (shouldUseDraft && draftData?.heroImageMode) {
-      setHeroImageMode(draftData.heroImageMode);
-    }
-    if (shouldUseDraft && draftData?.sampleVisaImageMode) {
-      setSampleVisaImageMode(draftData.sampleVisaImageMode);
+    // Restore UI state from draft if available
+    if (shouldUseDraft) {
+      if (draftData?.activeTab) setActiveTab(draftData.activeTab);
+      if (draftData?.heroImageMode) setHeroImageMode(draftData.heroImageMode);
+      if (draftData?.sampleVisaImageMode) setSampleVisaImageMode(draftData.sampleVisaImageMode);
+      
+      // Show notification that draft was restored
+      setShowDraftSaved(true);
+      setTimeout(() => setShowDraftSaved(false), 3000);
     }
     
-    // Mark as loaded from server AFTER setting all the data
-    setHasLoadedFromServer(true);
+    // Reset restoring flag and mark as initialized after state updates settle
+    setTimeout(() => {
+      isRestoringRef.current = false;
+      setIsInitialized(true);
+    }, 200);
   };
 
   const fetchVisa = useCallback(
@@ -562,12 +655,8 @@ export default function AdminVisaEditorPage() {
     } else if (cloneSourceId) {
       fetchVisa(cloneSourceId, true);
     } else {
-      // For new forms, delay marking as loaded to allow draft restoration
+      // For new forms, loading is handled by the restore effect
       setLoading(false);
-      // Set a longer delay to ensure draft restoration completes first
-      setTimeout(() => {
-        setHasLoadedFromServer(true);
-      }, 500);
     }
   }, [session, status, router, isNew, params.id, cloneSourceId, fetchVisa, fetchCountries]);
 
@@ -751,7 +840,7 @@ export default function AdminVisaEditorPage() {
       // Clear saved form state on successful save
       clearSavedState();
       setHasUnsavedChanges(false);
-      initialFormStateRef.current = null;
+      setIsInitialized(false);
       router.push("/admin/content/visas");
     } catch (error) {
       console.error("Failed to save visa", error);
@@ -895,31 +984,7 @@ export default function AdminVisaEditorPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={async () => {
-                // Explicitly save draft
-                try {
-                  const draftData = {
-                    formData,
-                    requirements,
-                    faqs,
-                    subTypes,
-                    activeTab,
-                    heroImageMode,
-                    sampleVisaImageMode,
-                  };
-                  const storageKey = `admin-form-${formPersistenceKey}`;
-                  localStorage.setItem(
-                    storageKey,
-                    JSON.stringify({ ...draftData, _savedAt: Date.now() })
-                  );
-                  console.log("Draft manually saved:", storageKey);
-                  setShowDraftSaved(true);
-                  setTimeout(() => setShowDraftSaved(false), 2000);
-                } catch (error) {
-                  console.error("Error saving draft:", error);
-                  alert("Failed to save draft. Please check console for details.");
-                }
-              }}
+              onClick={handleAutoSave}
               className="inline-flex items-center gap-2 px-4 py-2 border border-primary-200 bg-primary-50 text-primary-700 rounded-lg text-sm font-medium hover:bg-primary-100"
             >
               <Save size={16} />
