@@ -425,7 +425,7 @@ export default function ToursGridClient({ tours, countries, regions, tourTypes, 
           {/* Quick Filter Pills */}
           <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => setOnlyFeatured((prev) => !prev)}
+              onClick={() => setOnlyFeatured((prev: boolean) => !prev)}
               className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 onlyFeatured
                   ? "bg-primary-600 text-white"
@@ -436,7 +436,7 @@ export default function ToursGridClient({ tours, countries, regions, tourTypes, 
               Featured
             </button>
             <button
-              onClick={() => setOnlyAdvance((prev) => !prev)}
+              onClick={() => setOnlyAdvance((prev: boolean) => !prev)}
               className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 onlyAdvance
                   ? "bg-primary-600 text-white"
