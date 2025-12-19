@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export function BackToToursButton() {
+export function BackToHolidaysButton() {
   const router = useRouter();
   const [backUrl, setBackUrl] = useState("/holidays");
 

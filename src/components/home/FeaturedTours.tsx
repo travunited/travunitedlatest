@@ -50,7 +50,7 @@ export function FeaturedTours({ tours }: { tours: FeaturedTour[] }) {
           className="text-center mb-12"
         >
           <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
-            Featured Tour Packages
+            Featured Holiday Packages
           </h2>
           <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
             Curated holiday experiences designed for unforgettable memories

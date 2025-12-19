@@ -50,7 +50,7 @@ export default withAuth(
         const publicRoutes = [
           "/",
           "/visas",
-          "/tours",
+          "/holidays",
           "/blog",
           "/help",
           "/login",

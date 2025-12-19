@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
-import ToursGridClient from "./ToursGridClient";
+import HolidaysGridClient from "./HolidaysGridClient";
 import { Prisma } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function ToursPage({
+export default async function HolidaysPage({
   searchParams,
 }: {
   searchParams: { destination?: string; date?: string };
@@ -163,7 +163,7 @@ export default async function ToursPage({
         </div>
       </div>
 
-      <ToursGridClient 
+      <HolidaysGridClient 
         tours={formatted} 
         countries={countryFilters}
         regions={regions}

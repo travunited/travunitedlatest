@@ -20,7 +20,7 @@ export function Navbar() {
   const navLinks: { href: string; label: string; icon: LucideIcon }[] = [
     { href: "/", label: "Home", icon: Home },
     { href: "/visas", label: "Visas", icon: FileText },
-    { href: "/tours", label: "Holidays", icon: Plane },
+    { href: "/holidays", label: "Holidays", icon: Plane },
     { href: "/blog", label: "Blog", icon: BookOpen },
     { href: "/corporate", label: "Corporate", icon: Building2 },
     { href: "/help", label: "Support", icon: HelpCircle },

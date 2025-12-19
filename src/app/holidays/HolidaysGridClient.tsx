@@ -62,7 +62,7 @@ interface Props {
   themes: string[];
 }
 
-export default function ToursGridClient({ tours, countries, regions, tourTypes, themes }: Props) {
+export default function HolidaysGridClient({ tours, countries, regions, tourTypes, themes }: Props) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();

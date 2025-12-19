@@ -22,7 +22,7 @@ import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 import { PhotoGallery } from "@/components/tours/PhotoGallery";
-import { BackToToursButton } from "./BackToToursButton";
+import { BackToHolidaysButton } from "./BackToHolidaysButton";
 
 export async function generateMetadata({
   params,
@@ -563,7 +563,7 @@ function Hero({
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
       <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
         <div className="max-w-7xl mx-auto">
-          <BackToToursButton />
+          <BackToHolidaysButton />
           
           {/* Title & Location */}
           <h1 className="text-3xl md:text-5xl font-bold mb-3">{tour.name}</h1>
@@ -733,10 +733,10 @@ function BookingSidebar({
       {/* Booking Button */}
       {canBook ? (
         <Link
-          href={`/book/tour/${tour.slug}`}
+          href={`/book/holiday/${tour.slug}`}
           className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
         >
-          <span>Book this Tour</span>
+          <span>Book this Holiday</span>
           <ArrowRight size={18} />
         </Link>
       ) : (
