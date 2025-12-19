@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -63,6 +64,77 @@ const buildEntrySummary = (visa: {
   if (parts.length) return parts.join(" • ");
   return visa.entryTypeLegacy || "Flexible Entry";
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { country: string; type: string };
+}): Promise<Metadata> {
+  const visa = await prisma.visa.findFirst({
+    where: { slug: params.type },
+    include: {
+      country: true,
+    },
+  });
+
+  if (!visa || visa.country.code.toLowerCase() !== params.country) {
+    return {};
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://travunited.com";
+  const pageUrl = `${siteUrl}/visas/${params.country}/${visa.slug}`;
+  
+  // Get OG image - use hero image, fallback to a default
+  let ogImage: string | undefined;
+  if (visa.heroImageUrl) {
+    const imageUrl = getMediaProxyUrl(visa.heroImageUrl);
+    if (imageUrl) {
+      // Ensure absolute URL for social media
+      ogImage = imageUrl.startsWith("http") 
+        ? imageUrl 
+        : imageUrl.startsWith("/")
+        ? `${siteUrl}${imageUrl}`
+        : `${siteUrl}/${imageUrl}`;
+    }
+  }
+  
+  // If no image, use a default OG image
+  if (!ogImage) {
+    ogImage = `${siteUrl}/og-default.jpg`; // You can create this default image
+  }
+
+  const title = visa.metaTitle || visa.name;
+  const description = visa.metaDescription || visa.subtitle || visa.overview?.substring(0, 160) || `Apply for ${visa.name} - ${visa.country.name} visa services`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: pageUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: pageUrl,
+      siteName: "Travunited",
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: visa.name,
+        },
+      ],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
+  };
+}
 
 export default async function VisaDetailPage({
   params,

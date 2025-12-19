@@ -44,14 +44,37 @@ export async function generateMetadata({
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://travunited.com";
-  const canonical = tour.canonicalUrl || `${siteUrl}/tours/${tour.slug}`;
-  const ogImage = tour.ogImage
+  const canonical = tour.canonicalUrl || `${siteUrl}/holidays/${tour.slug}`;
+  
+  // Get OG image and ensure it's an absolute URL
+  let ogImage: string | undefined;
+  const rawOgImage = tour.ogImage
     ? getMediaProxyUrl(tour.ogImage)
     : tour.featuredImage
     ? getMediaProxyUrl(tour.featuredImage)
     : tour.heroImageUrl
     ? getMediaProxyUrl(tour.heroImageUrl)
     : undefined;
+  
+  if (rawOgImage) {
+    // Convert relative URLs to absolute URLs for social media
+    ogImage = rawOgImage.startsWith("http") 
+      ? rawOgImage 
+      : rawOgImage.startsWith("/")
+      ? `${siteUrl}${rawOgImage}`
+      : `${siteUrl}/${rawOgImage}`;
+  }
+  
+  // Get Twitter image
+  let twitterImage: string | undefined;
+  if (tour.twitterImage) {
+    const rawTwitterImage = getMediaProxyUrl(tour.twitterImage);
+    twitterImage = rawTwitterImage.startsWith("http")
+      ? rawTwitterImage
+      : rawTwitterImage.startsWith("/")
+      ? `${siteUrl}${rawTwitterImage}`
+      : `${siteUrl}/${rawTwitterImage}`;
+  }
 
   return {
     title: tour.metaTitle || tour.name,
@@ -63,14 +86,23 @@ export async function generateMetadata({
     openGraph: {
       title: tour.ogTitle || tour.metaTitle || tour.name,
       description: tour.ogDescription || tour.metaDescription || tour.shortDescription || tour.description?.substring(0, 160),
-      images: ogImage ? [{ url: ogImage }] : [],
+      url: canonical,
+      siteName: "Travunited",
+      images: ogImage ? [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: tour.name,
+        }
+      ] : [],
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
       title: tour.twitterTitle || tour.metaTitle || tour.name,
       description: tour.twitterDescription || tour.metaDescription || tour.shortDescription || tour.description?.substring(0, 160),
-      images: tour.twitterImage ? [getMediaProxyUrl(tour.twitterImage)] : ogImage ? [ogImage] : [],
+      images: twitterImage ? [twitterImage] : ogImage ? [ogImage] : [],
     },
   };
 }

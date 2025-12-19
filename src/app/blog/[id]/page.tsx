@@ -2,11 +2,90 @@ import Link from "next/link";
 import { ArrowLeft, Calendar, Clock, Tag } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 import { formatDate } from "@/lib/dateFormat";
 import { getMediaProxyUrl } from "@/lib/media";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 import { ShareButton } from "@/components/ui/ShareButton";
 import { publishReadyPosts } from "@/lib/blog/publishReady";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const post = await prisma.blogPost.findUnique({
+    where: { slug: params.id },
+  });
+
+  if (!post) {
+    return {};
+  }
+
+  const now = new Date();
+  const isReady = post.isPublished || (post.publishedAt && post.publishedAt <= now);
+
+  if (!isReady) {
+    return {};
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://travunited.com";
+  const pageUrl = `${siteUrl}/blog/${post.slug}`;
+  
+  // Get OG image - use cover image, fallback to default
+  let ogImage: string | undefined;
+  if (post.coverImage) {
+    const imageUrl = getMediaProxyUrl(post.coverImage);
+    if (imageUrl) {
+      // Ensure absolute URL for social media
+      ogImage = imageUrl.startsWith("http") 
+        ? imageUrl 
+        : imageUrl.startsWith("/")
+        ? `${siteUrl}${imageUrl}`
+        : `${siteUrl}/${imageUrl}`;
+    }
+  }
+  
+  // If no image, use a default OG image
+  if (!ogImage) {
+    ogImage = `${siteUrl}/og-default.jpg`; // You can create this default image
+  }
+
+  const title = post.title;
+  const description = post.excerpt || post.content?.substring(0, 160).replace(/<[^>]*>/g, "") || `Read ${post.title} on Travunited blog`;
+
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: pageUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: pageUrl,
+      siteName: "Travunited",
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+      type: "article",
+      publishedTime: post.publishedAt?.toISOString(),
+      authors: ["Travunited"],
+      tags: post.category ? [post.category] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
+  };
+}
 
 export default async function BlogPostPage({ params }: { params: { id: string } }) {
   // First, publish any scheduled posts that are ready (ensures scheduled posts are published on time)
