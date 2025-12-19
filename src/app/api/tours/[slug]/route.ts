@@ -12,8 +12,11 @@ export async function GET(
     const tour = await prisma.tour.findFirst({
       where: {
         slug: params.slug,
-        isActive: true,
-        status: "active",
+        OR: [
+          { isActive: true },
+          { status: "active" },
+          { status: null },
+        ],
       },
       include: {
         country: true,
