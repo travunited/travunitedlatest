@@ -13,7 +13,8 @@ export async function GET(
   { params }: { params: RouteParams }
 ) {
   const countryCode = params.country.toUpperCase();
-  const slug = params.slug;
+  // Decode URL-encoded slug
+  const slug = decodeURIComponent(params.slug);
 
   try {
     const visa = await prisma.visa.findFirst({

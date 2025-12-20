@@ -70,8 +70,11 @@ export async function generateMetadata({
 }: {
   params: { country: string; type: string };
 }): Promise<Metadata> {
+  // Decode URL-encoded slug
+  const decodedSlug = decodeURIComponent(params.type);
+  
   const visa = await prisma.visa.findFirst({
-    where: { slug: params.type },
+    where: { slug: decodedSlug },
     include: {
       country: true,
     },
@@ -141,8 +144,11 @@ export default async function VisaDetailPage({
 }: {
   params: { country: string; type: string };
 }) {
+  // Decode URL-encoded slug
+  const decodedSlug = decodeURIComponent(params.type);
+  
   const visa = await prisma.visa.findFirst({
-    where: { slug: params.type },
+    where: { slug: decodedSlug },
     include: {
       country: true,
       requirements: {
