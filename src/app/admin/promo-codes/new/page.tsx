@@ -96,27 +96,31 @@ export default function NewPromoCodePage() {
             <div className="border-b border-neutral-200 pb-6">
               <h2 className="text-lg font-semibold text-neutral-900 mb-4">Basic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <TextInput
-                  label="Code"
-                  value={formData.code}
-                  onChange={(e) =>
-                    setFormData({ ...formData, code: e.target.value.toUpperCase() })
-                  }
-                  required
-                  placeholder="SUMMER2024"
-                  helpText="Code will be converted to uppercase"
-                />
-                <CheckboxInput
-                  label="Active"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                />
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Code</label>
+                  <TextInput
+                    value={formData.code}
+                    onChange={(value) =>
+                      setFormData({ ...formData, code: value.toUpperCase() })
+                    }
+                    required
+                    placeholder="SUMMER2024"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">Code will be converted to uppercase</p>
+                </div>
+                <div className="flex items-center space-x-3 pt-6">
+                  <CheckboxInput
+                    checked={formData.isActive}
+                    onChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                  />
+                  <label className="text-sm font-medium text-neutral-700">Active</label>
+                </div>
               </div>
               <div className="mt-6">
+                <label className="block text-sm font-medium text-neutral-700 mb-1">Description</label>
                 <TextareaInput
-                  label="Description"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, description: value })}
                   placeholder="Admin notes or description"
                   rows={3}
                 />
@@ -127,85 +131,89 @@ export default function NewPromoCodePage() {
             <div className="border-b border-neutral-200 pb-6">
               <h2 className="text-lg font-semibold text-neutral-900 mb-4">Discount Settings</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SelectInput
-                  label="Discount Type"
-                  value={formData.discountType}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      discountType: e.target.value as any,
-                    })
-                  }
-                  options={[
-                    { value: "PERCENTAGE", label: "Percentage" },
-                    { value: "FIXED_AMOUNT", label: "Fixed Amount" },
-                    { value: "FREE", label: "Free" },
-                  ]}
-                  required
-                />
-                <TextInput
-                  label={
-                    formData.discountType === "PERCENTAGE"
-                      ? "Discount Percentage"
-                      : formData.discountType === "FIXED_AMOUNT"
-                      ? "Discount Amount (in ₹)"
-                      : "Discount Value"
-                  }
-                  type="number"
-                  value={
-                    formData.discountType === "FIXED_AMOUNT"
-                      ? formData.discountValue / 100
-                      : formData.discountValue
-                  }
-                  onChange={(e) => {
-                    const value = parseFloat(e.target.value) || 0;
-                    setFormData({
-                      ...formData,
-                      discountValue:
-                        formData.discountType === "FIXED_AMOUNT" ? Math.round(value * 100) : value,
-                    });
-                  }}
-                  required
-                  min={0}
-                  max={formData.discountType === "PERCENTAGE" ? 100 : undefined}
-                  helpText={
-                    formData.discountType === "PERCENTAGE"
-                      ? "Enter percentage (0-100)"
-                      : formData.discountType === "FIXED_AMOUNT"
-                      ? "Enter amount in rupees"
-                      : "Enter discount value"
-                  }
-                />
-                {formData.discountType === "PERCENTAGE" && (
-                  <TextInput
-                    label="Maximum Discount Amount (in ₹)"
-                    type="number"
-                    value={formData.maxDiscountAmount ? formData.maxDiscountAmount / 100 : ""}
-                    onChange={(e) => {
-                      const value = e.target.value ? parseFloat(e.target.value) : null;
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Discount Type</label>
+                  <SelectInput
+                    value={formData.discountType}
+                    onChange={(value) =>
                       setFormData({
                         ...formData,
-                        maxDiscountAmount: value ? Math.round(value * 100) : null,
+                        discountType: value as any,
+                      })
+                    }
+                  >
+                    <option value="PERCENTAGE">Percentage</option>
+                    <option value="FIXED_AMOUNT">Fixed Amount</option>
+                    <option value="FREE">Free</option>
+                  </SelectInput>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    {formData.discountType === "PERCENTAGE"
+                      ? "Discount Percentage"
+                      : formData.discountType === "FIXED_AMOUNT"
+                        ? "Discount Amount (in ₹)"
+                        : "Discount Value"}
+                  </label>
+                  <TextInput
+                    type="number"
+                    value={
+                      formData.discountType === "FIXED_AMOUNT"
+                        ? (formData.discountValue / 100).toString()
+                        : formData.discountValue.toString()
+                    }
+                    onChange={(value) => {
+                      const numValue = parseFloat(value) || 0;
+                      setFormData({
+                        ...formData,
+                        discountValue:
+                          formData.discountType === "FIXED_AMOUNT" ? Math.round(numValue * 100) : numValue,
                       });
                     }}
-                    placeholder="No limit"
-                    helpText="Optional: Cap the maximum discount amount"
+                    required
                   />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    {formData.discountType === "PERCENTAGE"
+                      ? "Enter percentage (0-100)"
+                      : formData.discountType === "FIXED_AMOUNT"
+                        ? "Enter amount in rupees"
+                        : "Enter discount value"}
+                  </p>
+                </div>
+                {formData.discountType === "PERCENTAGE" && (
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Maximum Discount Amount (in ₹)</label>
+                    <TextInput
+                      type="number"
+                      value={formData.maxDiscountAmount ? (formData.maxDiscountAmount / 100).toString() : ""}
+                      onChange={(value) => {
+                        const numValue = value ? parseFloat(value) : null;
+                        setFormData({
+                          ...formData,
+                          maxDiscountAmount: numValue ? Math.round(numValue * 100) : null,
+                        });
+                      }}
+                      placeholder="No limit"
+                    />
+                    <p className="text-xs text-neutral-500 mt-1">Optional: Cap the maximum discount amount</p>
+                  </div>
                 )}
-                <TextInput
-                  label="Minimum Purchase Amount (in ₹)"
-                  type="number"
-                  value={formData.minPurchaseAmount ? formData.minPurchaseAmount / 100 : ""}
-                  onChange={(e) => {
-                    const value = e.target.value ? parseFloat(e.target.value) : null;
-                    setFormData({
-                      ...formData,
-                      minPurchaseAmount: value ? Math.round(value * 100) : null,
-                    });
-                  }}
-                  placeholder="No minimum"
-                  helpText="Optional: Minimum order value to apply code"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Minimum Purchase Amount (in ₹)</label>
+                  <TextInput
+                    type="number"
+                    value={formData.minPurchaseAmount ? (formData.minPurchaseAmount / 100).toString() : ""}
+                    onChange={(value) => {
+                      const numValue = value ? parseFloat(value) : null;
+                      setFormData({
+                        ...formData,
+                        minPurchaseAmount: numValue ? Math.round(numValue * 100) : null,
+                      });
+                    }}
+                    placeholder="No minimum"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">Optional: Minimum order value to apply code</p>
+                </div>
               </div>
             </div>
 
@@ -213,19 +221,19 @@ export default function NewPromoCodePage() {
             <div className="border-b border-neutral-200 pb-6">
               <h2 className="text-lg font-semibold text-neutral-900 mb-4">Applicability</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SelectInput
-                  label="Applicable To"
-                  value={formData.applicableTo}
-                  onChange={(e) =>
-                    setFormData({ ...formData, applicableTo: e.target.value as any })
-                  }
-                  options={[
-                    { value: "BOTH", label: "Both Visas and Tours" },
-                    { value: "VISAS", label: "Visas Only" },
-                    { value: "TOURS", label: "Tours Only" },
-                  ]}
-                  required
-                />
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Applicable To</label>
+                  <SelectInput
+                    value={formData.applicableTo}
+                    onChange={(value) =>
+                      setFormData({ ...formData, applicableTo: value as any })
+                    }
+                  >
+                    <option value="BOTH">Both Visas and Tours</option>
+                    <option value="VISAS">Visas Only</option>
+                    <option value="TOURS">Tours Only</option>
+                  </SelectInput>
+                </div>
               </div>
               <div className="mt-4 text-sm text-neutral-600">
                 <p>Note: Specific visa/tour/country restrictions can be added after creating the promo code.</p>
@@ -236,35 +244,41 @@ export default function NewPromoCodePage() {
             <div className="border-b border-neutral-200 pb-6">
               <h2 className="text-lg font-semibold text-neutral-900 mb-4">Usage Limits</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <TextInput
-                  label="Maximum Total Uses"
-                  type="number"
-                  value={formData.maxUses || ""}
-                  onChange={(e) => {
-                    const value = e.target.value ? parseInt(e.target.value) : null;
-                    setFormData({ ...formData, maxUses: value });
-                  }}
-                  placeholder="Unlimited"
-                  helpText="Leave empty for unlimited uses"
-                  min={1}
-                />
-                <TextInput
-                  label="Maximum Uses Per User"
-                  type="number"
-                  value={formData.maxUsesPerUser}
-                  onChange={(e) => {
-                    const value = parseInt(e.target.value) || 1;
-                    setFormData({ ...formData, maxUsesPerUser: value });
-                  }}
-                  required
-                  min={1}
-                />
-                <CheckboxInput
-                  label="New Users Only"
-                  checked={formData.newUsersOnly}
-                  onChange={(e) => setFormData({ ...formData, newUsersOnly: e.target.checked })}
-                  helpText="Only users with no previous bookings/applications can use this code"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Maximum Total Uses</label>
+                  <TextInput
+                    type="number"
+                    value={formData.maxUses ? formData.maxUses.toString() : ""}
+                    onChange={(value) => {
+                      const numValue = value ? parseInt(value) : null;
+                      setFormData({ ...formData, maxUses: numValue });
+                    }}
+                    placeholder="Unlimited"
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">Leave empty for unlimited uses</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Maximum Uses Per User</label>
+                  <TextInput
+                    type="number"
+                    value={formData.maxUsesPerUser.toString()}
+                    onChange={(value) => {
+                      const numValue = parseInt(value) || 1;
+                      setFormData({ ...formData, maxUsesPerUser: numValue });
+                    }}
+                    required
+                  />
+                </div>
+                <div className="md:col-span-2 flex items-center space-x-3">
+                  <CheckboxInput
+                    checked={formData.newUsersOnly}
+                    onChange={(checked) => setFormData({ ...formData, newUsersOnly: checked })}
+                  />
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700">New Users Only</label>
+                    <p className="text-xs text-neutral-500 mt-1">Only users with no previous bookings/applications can use this code</p>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -272,20 +286,24 @@ export default function NewPromoCodePage() {
             <div className="border-b border-neutral-200 pb-6">
               <h2 className="text-lg font-semibold text-neutral-900 mb-4">Validity Period</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <TextInput
-                  label="Valid From"
-                  type="datetime-local"
-                  value={formData.validFrom}
-                  onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
-                  required
-                />
-                <TextInput
-                  label="Valid Until"
-                  type="datetime-local"
-                  value={formData.validUntil}
-                  onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })}
-                  required
-                />
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Valid From</label>
+                  <TextInput
+                    type="datetime-local"
+                    value={formData.validFrom}
+                    onChange={(value) => setFormData({ ...formData, validFrom: value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Valid Until</label>
+                  <TextInput
+                    type="datetime-local"
+                    value={formData.validUntil}
+                    onChange={(value) => setFormData({ ...formData, validUntil: value })}
+                    required
+                  />
+                </div>
               </div>
             </div>
 

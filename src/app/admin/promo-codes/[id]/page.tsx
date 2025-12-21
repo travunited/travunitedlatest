@@ -217,14 +217,14 @@ export default function EditPromoCodePage() {
                     {formData.discountType === "PERCENTAGE"
                       ? "Discount Percentage"
                       : formData.discountType === "FIXED_AMOUNT"
-                      ? "Discount Amount (in ₹)"
-                      : "Discount Value"}
+                        ? "Discount Amount (in ₹)"
+                        : "Discount Value"}
                   </label>
                   <TextInput
                     type="number"
                     value={
                       formData.discountType === "FIXED_AMOUNT"
-                        ? formData.discountValue / 100
+                        ? (formData.discountValue / 100).toString()
                         : formData.discountValue.toString()
                     }
                     onChange={(value) => {
@@ -241,8 +241,8 @@ export default function EditPromoCodePage() {
                     {formData.discountType === "PERCENTAGE"
                       ? "Enter percentage (0-100)"
                       : formData.discountType === "FIXED_AMOUNT"
-                      ? "Enter amount in rupees"
-                      : "Enter discount value"}
+                        ? "Enter amount in rupees"
+                        : "Enter discount value"}
                   </p>
                 </div>
                 {formData.discountType === "PERCENTAGE" && (

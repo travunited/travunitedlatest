@@ -98,6 +98,7 @@ interface Tour {
   maximumTravelers?: number | null;
   updatedAt?: string | Date | null;
   bookingPolicies?: string | null;
+  countryId?: string | null;
   cancellationTerms?: string | null;
   childAgeLimit?: number | null;
 }
@@ -175,7 +176,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
     setFormData((prev) => {
       const travellers = [...prev.travellers];
       const updatedTraveller = { ...travellers[index], [field]: value ?? "" };
-      
+
       // Auto-calculate age from DOB or vice versa, and detect child/adult/infant
       if (field === "dateOfBirth" && value) {
         const dob = new Date(value);
@@ -197,7 +198,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
           updatedTraveller.dateOfBirth = estimatedDOB.toISOString().split("T")[0];
         }
       }
-      
+
       travellers[index] = updatedTraveller;
       return { ...prev, travellers };
     });
@@ -207,11 +208,11 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
   const getTravellerTypeBadge = (traveller: TravellerForm) => {
     if (!traveller.dateOfBirth && !traveller.age) return null;
     // Calculate age more precisely to handle infants (months)
-    const age = traveller.dateOfBirth 
+    const age = traveller.dateOfBirth
       ? (new Date().getTime() - new Date(traveller.dateOfBirth).getTime()) / (365.25 * 24 * 3600 * 1000)
       : parseFloat(traveller.age) || 0;
     const childAgeLimit = tour?.childAgeLimit || 12;
-    
+
     // Infants are under 1 year old (including 5-6 month old babies)
     if (age < 1) {
       return { label: "Infant", color: "bg-purple-100 text-purple-800" };
@@ -263,7 +264,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
         // Join the path segments and encode for URL
         const slug = Array.isArray(params.id) ? params.id.join('/') : params.id;
         const encodedSlug = encodeURIComponent(slug);
-        
+
         const response = await fetch(`/api/tours/${encodedSlug}`);
         if (response.ok) {
           const data = await response.json();
@@ -455,8 +456,8 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
           const quantity = isPerPerson
             ? travellerTotal
             : addOn.isRequired
-            ? 1
-            : Math.max(1, state?.quantity || 1);
+              ? 1
+              : Math.max(1, state?.quantity || 1);
           const unitPrice = addOn.price || 0;
           return {
             id: addOn.id,
@@ -514,11 +515,11 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
 
     // Calculate subtotal before discount
     const subtotal = baseAmount + addOnTotal;
-    
+
     // Apply promo code discount if applicable
     const discountAmount = appliedPromoCode ? appliedPromoCode.discountAmount / 100 : 0; // Convert from paise to rupees
     const finalAmount = Math.max(0, subtotal - discountAmount);
-    
+
     const advancePercentage = tour.advancePercentage ?? 0;
     const advanceAmount = formData.paymentType === "advance" && tour.allowAdvance
       ? Math.round(finalAmount * (advancePercentage / 100))
@@ -550,7 +551,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
   useEffect(() => {
     const totalTravellers = travellerCount;
     const currentCount = travellersLength;
-    
+
     if (totalTravellers > currentCount) {
       // Add new travellers
       const newTravellers = Array.from({ length: totalTravellers - currentCount }, () => createTravellerEntry());
@@ -570,7 +571,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
   // Validate availability and constraints
   const validateStep1 = (): string | null => {
     if (!tour) return "Tour not loaded";
-    
+
     if (!formData.travelDate) {
       return "Please select a travel date";
     }
@@ -627,7 +628,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
         return;
       }
     }
-    
+
     if (currentStep === 2) {
       if (!formData.primaryContact.name || !formData.primaryContact.email) {
         setValidationError("Please fill in all required contact information");
@@ -635,7 +636,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
         return;
       }
     }
-    
+
     if (currentStep === 3) {
       if (formData.travellers.length === 0) {
         setValidationError("Please add traveller information");
@@ -701,7 +702,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
         }
       }
     }
-    
+
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
     }
@@ -885,7 +886,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
       const data = await response.json();
       setBookingId(data.bookingId);
       return data.bookingId;
-      } catch (error: unknown) {
+    } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "An error occurred while creating the booking.";
       setBookingCreationError(message);
       console.error("Error creating booking:", error);
@@ -1007,7 +1008,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
       };
 
       const razorpay = new window.Razorpay(options);
-      
+
       razorpay.on("payment.failed", (response: { error: { code: string; description: string; source: string; step: string; reason: string; metadata: { order_id: string; payment_id: string } } }) => {
         console.error("Payment failed:", response);
         setLoading(false);
@@ -1081,13 +1082,12 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                             type="button"
                             disabled={isDisabled}
                             onClick={() => !isDisabled && setFormData({ ...formData, travelDate: dateStr })}
-                            className={`p-3 border rounded-lg text-sm text-left transition-colors ${
-                              isSelected
+                            className={`p-3 border rounded-lg text-sm text-left transition-colors ${isSelected
                                 ? "bg-primary-600 text-white border-primary-600"
                                 : isDisabled
-                                ? "bg-neutral-100 text-neutral-400 border-neutral-200 cursor-not-allowed"
-                                : "bg-white text-neutral-700 border-neutral-300 hover:border-primary-500"
-                            }`}
+                                  ? "bg-neutral-100 text-neutral-400 border-neutral-200 cursor-not-allowed"
+                                  : "bg-white text-neutral-700 border-neutral-300 hover:border-primary-500"
+                              }`}
                           >
                             <div className="font-medium">
                               {date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
@@ -1237,11 +1237,10 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                         key={category}
                         type="button"
                         onClick={() => setSelectedHotelCategory(category)}
-                        className={`px-4 py-2 border rounded-lg text-sm transition-colors ${
-                          selectedHotelCategory === category
+                        className={`px-4 py-2 border rounded-lg text-sm transition-colors ${selectedHotelCategory === category
                             ? "bg-primary-600 text-white border-primary-600"
                             : "bg-white text-neutral-700 border-neutral-300 hover:border-primary-500"
-                        }`}
+                          }`}
                       >
                         {category}
                       </button>
@@ -1254,10 +1253,10 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
               {tour.addOns && tour.addOns.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                <div>
+                    <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-1">
                         Customise this package
-                  </label>
+                      </label>
                       <p className="text-sm text-neutral-600">
                         Choose from optional upgrades and add-ons. Required items are pre-selected.
                       </p>
@@ -1295,8 +1294,8 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                                 </span>
                               ) : (
                                 <label className="inline-flex items-center gap-2 text-sm text-neutral-700">
-                        <input
-                          type="checkbox"
+                                  <input
+                                    type="checkbox"
                                     checked={isSelected}
                                     onChange={(e) => toggleAddOnSelection(addOn.id, e.target.checked)}
                                     className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
@@ -1321,9 +1320,9 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                                   >
                                     <Plus size={16} />
                                   </button>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
                           </div>
                         </div>
                       );
@@ -1556,41 +1555,41 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                         </span>
                       )}
                     </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        First Name *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={traveller.firstName}
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                          First Name *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={traveller.firstName}
                           onChange={(e) => updateTraveller(index, "firstName", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Last Name *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={traveller.lastName}
+                          className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                          Last Name *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={traveller.lastName}
                           onChange={(e) => updateTraveller(index, "lastName", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                          className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
                           Date of Birth *
-                      </label>
-                      <input
+                        </label>
+                        <input
                           type="date"
                           value={traveller.dateOfBirth}
                           onChange={(e) => updateTraveller(index, "dateOfBirth", e.target.value)}
                           className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                        required
+                          required
                         />
                       </div>
                       <div>
@@ -1601,30 +1600,30 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                           type="number"
                           min="0"
                           step="0.1"
-                        value={traveller.age}
+                          value={traveller.age}
                           onChange={(e) => updateTraveller(index, "age", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                          className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
                           placeholder="Enter age in years (e.g., 0.5 for 6 months)"
-                      />
-                      <p className="text-xs text-neutral-500 mt-1">
-                        For infants, enter fractional age (e.g., 0.5 for 6 months, 0.4 for 5 months)
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        />
+                        <p className="text-xs text-neutral-500 mt-1">
+                          For infants, enter fractional age (e.g., 0.5 for 6 months, 0.4 for 5 months)
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
                           Gender
-                      </label>
-                      <select
-                        value={traveller.gender || ""}
+                        </label>
+                        <select
+                          value={traveller.gender || ""}
                           onChange={(e) => updateTraveller(index, "gender", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                      >
-                        <option value="">Select</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
+                          className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                        >
+                          <option value="">Select</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
                       <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-2">
                           Nationality {requiresPassport && "*"}
@@ -1636,12 +1635,12 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                           className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
                           placeholder="Indian"
                         />
-                  </div>
-                </div>
+                      </div>
+                    </div>
 
                     {(() => {
-                      const isIndian = (traveller.nationality || "").toLowerCase().trim() === "india" || 
-                                       (traveller.nationality || "").toLowerCase().trim() === "indian";
+                      const isIndian = (traveller.nationality || "").toLowerCase().trim() === "india" ||
+                        (traveller.nationality || "").toLowerCase().trim() === "indian";
                       const showPassport = requiresPassport || !isIndian;
                       // Show Indian docs (PAN/Aadhaar) for all Indian travellers, regardless of tour type
                       const showIndianDocs = isIndian;
@@ -1651,92 +1650,92 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                           {/* Passport section - show if tour requires passport OR traveller is not Indian */}
                           {showPassport && (
                             <div className="border border-dashed border-neutral-200 rounded-lg p-4 bg-neutral-50">
-                            <div className="flex items-center justify-between mb-4">
-                              <div>
-                                <h4 className="font-medium text-neutral-900">Passport details</h4>
-                                <p className="text-sm text-neutral-600">
-                                  {requiresPassport
-                                    ? "All fields below are required for international tours."
-                                    : isIndian
-                                    ? "Passport required for non-Indian travellers."
-                                    : "Passport details are required for non-Indian travellers."}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="grid md:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                  Passport Number {requiresPassport && "*"}
-                                </label>
-                                <input
-                                  type="text"
-                                  value={traveller.passportNumber}
-                                  onChange={(e) => updateTraveller(index, "passportNumber", e.target.value.toUpperCase())}
-                                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg uppercase"
-                                  maxLength={20}
-                                  placeholder="Enter passport number"
-                                  required={requiresPassport || !isIndian}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                  Issuing Country {requiresPassport && "*"}
-                                </label>
-                                <input
-                                  type="text"
-                                  value={traveller.passportIssuingCountry}
-                                  onChange={(e) => updateTraveller(index, "passportIssuingCountry", e.target.value)}
-                                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                                  placeholder="India"
-                                  required={requiresPassport || !isIndian}
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                  Passport Expiry {requiresPassport && "*"}
-                                </label>
-                                <input
-                                  type="date"
-                                  value={traveller.passportExpiry}
-                                  onChange={(e) => updateTraveller(index, "passportExpiry", e.target.value)}
-                                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                                  required={requiresPassport || !isIndian}
-                                />
-                                {expiryIssue && (
-                                  <p className="text-sm text-red-600 mt-1">{expiryIssue}</p>
-                                )}
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                  Passport Copy {requiresPassport && "*"}
-                                </label>
-                                <input
-                                  type="file"
-                                  accept=".pdf,image/*"
-                                  onChange={(e) => handlePassportFileChange(index, e.target.files?.[0] || null)}
-                                  className="w-full text-sm text-neutral-600"
-                                  required={requiresPassport || !isIndian}
-                                />
-                                <div className="text-xs mt-1 text-neutral-500">
-                                  Accepted: PDF, JPG, PNG up to 10MB
+                              <div className="flex items-center justify-between mb-4">
+                                <div>
+                                  <h4 className="font-medium text-neutral-900">Passport details</h4>
+                                  <p className="text-sm text-neutral-600">
+                                    {requiresPassport
+                                      ? "All fields below are required for international tours."
+                                      : isIndian
+                                        ? "Passport required for non-Indian travellers."
+                                        : "Passport details are required for non-Indian travellers."}
+                                  </p>
                                 </div>
-                                {uploadState?.uploading && (
-                                  <p className="text-sm text-primary-600 mt-1 flex items-center gap-1">
-                                    <Upload size={14} className="animate-spin" />
-                                    Uploading...
-                                  </p>
-                                )}
-                                {traveller.passportFileName && !uploadState?.uploading && (
-                                  <p className="text-sm text-green-600 mt-1">
-                                    Uploaded: {traveller.passportFileName}
-                                  </p>
-                                )}
-                                {uploadState?.error && (
-                                  <p className="text-sm text-red-600 mt-1">{uploadState.error}</p>
-                                )}
+                              </div>
+                              <div className="grid md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                    Passport Number {requiresPassport && "*"}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={traveller.passportNumber}
+                                    onChange={(e) => updateTraveller(index, "passportNumber", e.target.value.toUpperCase())}
+                                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg uppercase"
+                                    maxLength={20}
+                                    placeholder="Enter passport number"
+                                    required={requiresPassport || !isIndian}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                    Issuing Country {requiresPassport && "*"}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={traveller.passportIssuingCountry}
+                                    onChange={(e) => updateTraveller(index, "passportIssuingCountry", e.target.value)}
+                                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                                    placeholder="India"
+                                    required={requiresPassport || !isIndian}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                    Passport Expiry {requiresPassport && "*"}
+                                  </label>
+                                  <input
+                                    type="date"
+                                    value={traveller.passportExpiry}
+                                    onChange={(e) => updateTraveller(index, "passportExpiry", e.target.value)}
+                                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                                    required={requiresPassport || !isIndian}
+                                  />
+                                  {expiryIssue && (
+                                    <p className="text-sm text-red-600 mt-1">{expiryIssue}</p>
+                                  )}
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                    Passport Copy {requiresPassport && "*"}
+                                  </label>
+                                  <input
+                                    type="file"
+                                    accept=".pdf,image/*"
+                                    onChange={(e) => handlePassportFileChange(index, e.target.files?.[0] || null)}
+                                    className="w-full text-sm text-neutral-600"
+                                    required={requiresPassport || !isIndian}
+                                  />
+                                  <div className="text-xs mt-1 text-neutral-500">
+                                    Accepted: PDF, JPG, PNG up to 10MB
+                                  </div>
+                                  {uploadState?.uploading && (
+                                    <p className="text-sm text-primary-600 mt-1 flex items-center gap-1">
+                                      <Upload size={14} className="animate-spin" />
+                                      Uploading...
+                                    </p>
+                                  )}
+                                  {traveller.passportFileName && !uploadState?.uploading && (
+                                    <p className="text-sm text-green-600 mt-1">
+                                      Uploaded: {traveller.passportFileName}
+                                    </p>
+                                  )}
+                                  {uploadState?.error && (
+                                    <p className="text-sm text-red-600 mt-1">{uploadState.error}</p>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          </div>
                           )}
 
                           {/* Indian ID Documents section - show for all Indian travellers */}
@@ -1746,62 +1745,62 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                                 <div>
                                   <h4 className="font-medium text-neutral-900">Indian ID Documents</h4>
                                   <p className="text-sm text-neutral-600">
-                                    {requiresPassport 
+                                    {requiresPassport
                                       ? "PAN and Aadhaar are recommended for Indian travellers (in addition to passport)."
                                       : "PAN and Aadhaar are required for Indian travellers on domestic tours."}
                                   </p>
                                 </div>
                               </div>
-                            <div className="grid md:grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                  PAN Number *
-                                </label>
-                                <input
-                                  type="text"
-                                  value={traveller.panNumber || ""}
-                                  onChange={(e) => updateTraveller(index, "panNumber", e.target.value.toUpperCase())}
-                                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg uppercase"
-                                  maxLength={10}
-                                  placeholder="ABCDE1234F"
-                                  required
-                                  pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
-                                />
-                                <div className="text-xs mt-1 text-neutral-500">
-                                  Format: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)
+                              <div className="grid md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                    PAN Number *
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={traveller.panNumber || ""}
+                                    onChange={(e) => updateTraveller(index, "panNumber", e.target.value.toUpperCase())}
+                                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg uppercase"
+                                    maxLength={10}
+                                    placeholder="ABCDE1234F"
+                                    required
+                                    pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
+                                  />
+                                  <div className="text-xs mt-1 text-neutral-500">
+                                    Format: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)
+                                  </div>
                                 </div>
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                  Aadhaar Document *
-                                </label>
-                                <input
-                                  type="file"
-                                  accept=".pdf,image/*"
-                                  onChange={(e) => handleAadharFileChange(index, e.target.files?.[0] || null)}
-                                  className="w-full text-sm text-neutral-600"
-                                  required
-                                />
-                                <div className="text-xs mt-1 text-neutral-500">
-                                  Accepted: PDF, JPG, PNG up to 10MB
+                                <div>
+                                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                    Aadhaar Document *
+                                  </label>
+                                  <input
+                                    type="file"
+                                    accept=".pdf,image/*"
+                                    onChange={(e) => handleAadharFileChange(index, e.target.files?.[0] || null)}
+                                    className="w-full text-sm text-neutral-600"
+                                    required
+                                  />
+                                  <div className="text-xs mt-1 text-neutral-500">
+                                    Accepted: PDF, JPG, PNG up to 10MB
+                                  </div>
+                                  {uploadState?.uploading && (
+                                    <p className="text-sm text-primary-600 mt-1 flex items-center gap-1">
+                                      <Upload size={14} className="animate-spin" />
+                                      Uploading...
+                                    </p>
+                                  )}
+                                  {traveller.aadharFileName && !uploadState?.uploading && (
+                                    <p className="text-sm text-green-600 mt-1">
+                                      Uploaded: {traveller.aadharFileName}
+                                    </p>
+                                  )}
+                                  {uploadState?.error && (
+                                    <p className="text-sm text-red-600 mt-1">{uploadState.error}</p>
+                                  )}
                                 </div>
-                                {uploadState?.uploading && (
-                                  <p className="text-sm text-primary-600 mt-1 flex items-center gap-1">
-                                    <Upload size={14} className="animate-spin" />
-                                    Uploading...
-                                  </p>
-                                )}
-                                {traveller.aadharFileName && !uploadState?.uploading && (
-                                  <p className="text-sm text-green-600 mt-1">
-                                    Uploaded: {traveller.aadharFileName}
-                                  </p>
-                                )}
-                                {uploadState?.error && (
-                                  <p className="text-sm text-red-600 mt-1">{uploadState.error}</p>
-                                )}
                               </div>
                             </div>
-                          </div>
                           )}
                         </div>
                       );
@@ -1927,9 +1926,9 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                           countryId: tour?.countryId || undefined,
                         }),
                       });
-                      
+
                       const result = await response.json();
-                      
+
                       if (result.valid && result.promoCode) {
                         setAppliedPromoCode({
                           id: result.promoCode.id,
@@ -1938,7 +1937,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                           message: result.message,
                         });
                       }
-                      
+
                       return result;
                     }}
                     appliedCode={appliedPromoCode ? {
@@ -2053,13 +2052,13 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
       case 5:
         const paymentFinalAmount = formData.paymentType === "full" ? finalAmount : advanceAmount;
         const isFreeBooking = paymentFinalAmount <= 0;
-        
+
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">
               {isFreeBooking ? "Signup/Login & Confirm Booking" : "Signup/Login & Payment"}
             </h2>
-            
+
             {!session ? (
               <div className="bg-neutral-50 rounded-lg p-6 space-y-4">
                 <p className="text-neutral-700">
@@ -2141,10 +2140,10 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                     disabled={loading || !formData.policyAccepted}
                     className="w-full bg-primary-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading 
-                      ? "Processing..." 
-                      : isFreeBooking 
-                        ? "Confirm Booking" 
+                    {loading
+                      ? "Processing..."
+                      : isFreeBooking
+                        ? "Confirm Booking"
                         : "Proceed to Payment"}
                   </button>
                 </div>
@@ -2201,29 +2200,26 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                 <div key={step.id} className="flex items-center flex-1 min-w-[160px]">
                   <div className="flex flex-col items-center flex-1">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        isCompleted
+                      className={`w-10 h-10 rounded-full flex items-center justify-center ${isCompleted
                           ? "bg-green-500 text-white"
                           : isActive
-                          ? "bg-primary-600 text-white"
-                          : "bg-neutral-200 text-neutral-600"
-                      }`}
+                            ? "bg-primary-600 text-white"
+                            : "bg-neutral-200 text-neutral-600"
+                        }`}
                     >
                       {isCompleted ? <CheckCircle size={20} /> : <Icon size={20} />}
                     </div>
                     <span
-                      className={`mt-2 text-xs font-medium text-center ${
-                        isActive ? "text-primary-600" : "text-neutral-600"
-                      }`}
+                      className={`mt-2 text-xs font-medium text-center ${isActive ? "text-primary-600" : "text-neutral-600"
+                        }`}
                     >
                       {step.name}
                     </span>
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`h-1 flex-1 mx-2 ${
-                        isCompleted ? "bg-green-500" : "bg-neutral-200"
-                      } hidden sm:block`}
+                      className={`h-1 flex-1 mx-2 ${isCompleted ? "bg-green-500" : "bg-neutral-200"
+                        } hidden sm:block`}
                     />
                   )}
                 </div>
@@ -2268,10 +2264,10 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
           )}
           {currentStep === 4 && (
             <button
-            onClick={handleProceedToPaymentStep}
+              onClick={handleProceedToPaymentStep}
               className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
-            <span>Continue to Payment</span>
+              <span>Continue to Payment</span>
               <ArrowRight size={20} />
             </button>
           )}
