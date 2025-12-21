@@ -112,6 +112,22 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check if email is verified (required for application submission)
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { emailVerified: true },
+    });
+
+    if (!user?.emailVerified) {
+      return NextResponse.json(
+        { 
+          error: "Email verification required",
+          message: "Please verify your email before submitting the application. You can continue filling the form, but verification is required for submission." 
+        },
+        { status: 403 }
+      );
+    }
+
     // Validate dates
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -225,7 +241,7 @@ export async function POST(req: Request) {
       };
     }
 
-    // Create application
+    // Create application with PAYMENT_PENDING status (documents will be uploaded after payment)
     const application = await prisma.application.create({
       data: {
         userId,
@@ -234,7 +250,7 @@ export async function POST(req: Request) {
         country: linkedVisa?.countryCode ?? data.country,
         visaType: linkedVisa?.name ?? data.visaType,
         visaSubTypeId: data.selectedSubTypeId || null,
-        status: "DRAFT",
+        status: "PAYMENT_PENDING", // Changed from DRAFT - payment comes before documents
         totalAmount: data.totalAmount ?? 0,
         currency: "INR",
       },
@@ -294,7 +310,7 @@ export async function POST(req: Request) {
           application.id,
           application.country || "",
           application.visaType || "",
-          "DRAFT",
+          "PAYMENT_PENDING",
           user.role || "CUSTOMER"
         );
 
@@ -303,7 +319,7 @@ export async function POST(req: Request) {
           userId,
           type: "VISA_APPLICATION_SUBMITTED",
           title: "Visa Application Created",
-          message: `Your ${application.country || ""} ${application.visaType || ""} application has been created. Please upload required documents to proceed.`,
+          message: `Your ${application.country || ""} ${application.visaType || ""} application has been created. Please proceed to payment.`,
           link: `/dashboard/applications/${application.id}`,
           data: {
             applicationId: application.id,
@@ -338,7 +354,7 @@ export async function POST(req: Request) {
                 </ul>
                 <h3>Travellers:</h3>
                 <p>${travellersList}</p>
-                <p><strong>Note:</strong> Documents will be uploaded separately. Please check the application dashboard for document uploads.</p>
+                <p><strong>Note:</strong> Payment is required before document upload. After successful payment, the customer will be prompted to upload required documents.</p>
                 <p><a href="${process.env.NEXTAUTH_URL || "https://travunited.com"}/admin/applications/${application.id}" style="background: #0066cc; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block;">View Application</a></p>
                 <p>Best regards,<br>Travunited System</p>
               </div>

@@ -27,11 +27,32 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        if (result.error === "EMAIL_NOT_VERIFIED" || result.error.includes("EMAIL_NOT_VERIFIED")) {
+          setError("Please verify your email before logging in. Check your inbox for the OTP or resend it.");
+        } else {
+          setError("Invalid email or password");
+        }
       } else {
-        // Wait a moment for session to update, then check role and redirect
+        // Wait a moment for session to update, then check for guest applications and redirect
         setTimeout(async () => {
           router.refresh();
+
+          // Check for guest application to merge
+          try {
+            const mergeResponse = await fetch("/api/guest-applications/merge", {
+              method: "POST",
+            });
+            if (mergeResponse.ok) {
+              const mergeData = await mergeResponse.json();
+              // If we have merged guest application with visa data, redirect to visa application
+              if (mergeData.formData && mergeData.formData.country && mergeData.formData.visaType) {
+                router.push(`/apply/visa/${mergeData.formData.country}/${mergeData.formData.visaType}?restored=true`);
+                return;
+              }
+            }
+          } catch (error) {
+            console.error("Error merging guest application:", error);
+          }
 
           // Fetch session to get user role
           const sessionRes = await fetch("/api/auth/session");
@@ -65,9 +86,19 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 text-red-700">
-                <AlertCircle size={20} />
-                <span className="text-sm">{error}</span>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-2 text-red-700">
+                <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <span className="text-sm block">{error}</span>
+                  {error.includes("verify your email") && (
+                    <Link 
+                      href={`/signup?email=${encodeURIComponent(email)}`}
+                      className="text-sm text-primary-600 hover:text-primary-700 underline mt-1 inline-block"
+                    >
+                      Go to verification page
+                    </Link>
+                  )}
+                </div>
               </div>
             )}
 

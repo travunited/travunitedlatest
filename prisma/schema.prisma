@@ -39,28 +39,30 @@ enum StayType {
 }
 
 model User {
-  id                    String          @id @default(cuid())
-  name                  String?
-  email                 String          @unique
-  phone                 String?
-  passwordHash          String
-  role                  UserRole        @default(CUSTOMER)
-  isActive              Boolean         @default(true)
-  emailVerified         Boolean         @default(false)
-  emailVerifiedAt       DateTime?
-  passwordResetToken    String?         @unique
-  passwordResetExpires  DateTime?
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
-  applications          Application[]
-  bookings              Booking[]
-  travellers            Traveller[]
-  processedApplications Application[]   @relation("ProcessedBy")
-  processedBookings     Booking[]       @relation("ProcessedBy")
-  reviews               Review[]
-  auditLogs             AuditLog[]
-  payments              Payment[]
-  passwordResets        PasswordReset[]
+  id                     String          @id @default(cuid())
+  name                   String?
+  email                  String          @unique
+  phone                  String?
+  passwordHash           String
+  role                   UserRole        @default(CUSTOMER)
+  isActive               Boolean         @default(true)
+  emailVerified          Boolean         @default(false)
+  emailVerifiedAt        DateTime?
+  passwordResetToken     String?         @unique
+  passwordResetExpires   DateTime?
+  registrationOtp        String? // 6-digit OTP for email verification during registration
+  registrationOtpExpires DateTime? // OTP expiration time (usually 10 minutes)
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  applications           Application[]
+  bookings               Booking[]
+  travellers             Traveller[]
+  processedApplications  Application[]   @relation("ProcessedBy")
+  processedBookings      Booking[]       @relation("ProcessedBy")
+  reviews                Review[]
+  auditLogs              AuditLog[]
+  payments               Payment[]
+  passwordResets         PasswordReset[]
   // Relations to Notification models intentionally removed for now - will be re-added when User model is finalized
   // notifications Notification[]
   // notificationSettings UserNotificationSettings?
@@ -787,4 +789,26 @@ model EmailEvent {
   @@index([email], map: "email_events_email_idx")
   @@index([type], map: "email_events_type_idx")
   @@map("email_events")
+}
+
+model GuestApplication {
+  id               String   @id @default(cuid())
+  guestId          String   // Session-based guest identifier
+  country          String
+  visaType         String
+  visaId           String?
+  selectedSubTypeId String?
+  travelDate       DateTime?
+  tripType         String?
+  nationality      String?
+  purposeOfTravel  String?
+  stepCompleted    Int      @default(1) // Last completed step (1-7)
+  formData         Json     // Store all form data as JSON
+  expiresAt        DateTime // Expires after 24 hours
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([guestId])
+  @@index([expiresAt])
+  @@map("guest_applications")
 }

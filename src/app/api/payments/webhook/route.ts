@@ -96,13 +96,15 @@ export async function POST(req: Request) {
       });
 
       if (payment.applicationId && payment.application) {
+        // Update status to DOCUMENTS_PENDING - documents will be uploaded after payment
         await prisma.application.update({
           where: { id: payment.applicationId },
           data: {
-            status: "SUBMITTED",
+            status: "DOCUMENTS_PENDING",
           },
         });
 
+        // Send payment success email with instructions to upload documents
         await sendVisaPaymentSuccessEmail(
           payment.application.user.email,
           payment.applicationId,
@@ -111,12 +113,14 @@ export async function POST(req: Request) {
           payment.amount,
           payment.application.user.role || "CUSTOMER"
         );
+        
+        // Send notification to upload documents
         await notify({
           userId: payment.application.userId,
           type: "VISA_PAYMENT_SUCCESS",
-          title: "Payment Successful",
-          message: `Payment of ₹${payment.amount.toLocaleString()} received for your visa application. Your application has been submitted.`,
-          link: `/dashboard/applications/${payment.applicationId}`,
+          title: "Payment Successful - Upload Documents",
+          message: `Payment of ₹${payment.amount.toLocaleString()} received. Please upload required documents to complete your application.`,
+          link: `/dashboard/applications/${payment.applicationId}/documents`,
           data: {
             applicationId: payment.applicationId,
             amount: payment.amount,
@@ -125,20 +129,24 @@ export async function POST(req: Request) {
           },
           sendEmail: false, // Email already sent above
         });
-        // Notify customer about application submission
-        await notify({
-          userId: payment.application.userId,
-          type: "VISA_APPLICATION_SUBMITTED",
-          title: "Visa Application Submitted",
-          message: `Your visa application for ${payment.application.country || ""} ${payment.application.visaType || ""} has been submitted successfully.`,
-          link: `/dashboard/applications/${payment.applicationId}`,
-          data: {
-            applicationId: payment.applicationId,
-            country: payment.application.country,
-            visaType: payment.application.visaType,
-          },
-          sendEmail: false, // Email already sent above
-        });
+        
+        // Notify admins about payment success and pending documents
+        const adminIds = await getAdminUserIds();
+        if (adminIds.length > 0) {
+          await notifyMultiple(adminIds, {
+            type: "ADMIN_APPLICATION_ASSIGNED",
+            title: "Payment Received - Documents Pending",
+            message: `Payment received for ${payment.application.country || ""} ${payment.application.visaType || ""} application. Waiting for document upload.`,
+            link: `/admin/applications/${payment.applicationId}`,
+            data: {
+              applicationId: payment.applicationId,
+              country: payment.application.country,
+              visaType: payment.application.visaType,
+            },
+            sendEmail: false,
+            roleScope: "STAFF_ADMIN",
+          });
+        }
       }
 
       if (payment.bookingId && payment.booking) {

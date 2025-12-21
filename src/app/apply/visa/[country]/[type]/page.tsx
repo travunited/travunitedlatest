@@ -10,6 +10,7 @@ import { saveDraftToLocalStorage, getDraftFromLocalStorage, clearDraftFromLocalS
 import { loadRazorpayScript } from "@/lib/razorpay-client";
 import { useSearchParams } from "next/navigation";
 import { formatDate } from "@/lib/dateFormat";
+import { AccountGate } from "@/components/visa/AccountGate";
 
 type DocScope = "PER_TRAVELLER" | "PER_APPLICATION";
 
@@ -50,10 +51,10 @@ const steps = [
   { id: 1, name: "Select Visa", icon: CheckCircle },
   { id: 2, name: "Primary Contact", icon: User },
   { id: 3, name: "Travellers", icon: User },
-  { id: 4, name: "Documents", icon: FileText },
-  { id: 5, name: "Review", icon: CheckCircle },
-  { id: 6, name: "Terms & Conditions", icon: FileCheck },
-  { id: 7, name: "Payment", icon: CreditCard },
+  { id: 4, name: "Review", icon: CheckCircle },
+  { id: 5, name: "Terms & Conditions", icon: FileCheck },
+  { id: 6, name: "Payment", icon: CreditCard },
+  { id: 7, name: "Documents", icon: FileText },
 ];
 
 export default function VisaApplicationPage({ params }: { params: { country: string; type: string } }) {
@@ -70,6 +71,12 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   const [phoneErrors, setPhoneErrors] = useState<Record<string, string>>({});
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [previewModal, setPreviewModal] = useState<{ url: string; fileName: string } | null>(null);
+  const [showAccountGate, setShowAccountGate] = useState(false);
+  const [guestApplicationId, setGuestApplicationId] = useState<string | null>(null);
+  const [isGuestMode, setIsGuestMode] = useState(true); // Start in guest mode
+  const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [emailVerified, setEmailVerified] = useState<boolean | null>(null); // null = checking, true/false = result
+  const [isLoadingGuestData, setIsLoadingGuestData] = useState(true);
 
   type FormDataTraveller = {
     id: string;
@@ -233,6 +240,82 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.country, params.type, router]);
+
+  // Check email verification status if logged in
+  useEffect(() => {
+    if (session?.user?.email) {
+      fetch("/api/auth/verify-email")
+        .then(res => res.json())
+        .then(data => {
+          setEmailVerified(data.emailVerified || false);
+        })
+        .catch(() => {
+          setEmailVerified(false);
+        });
+    } else {
+      setEmailVerified(null);
+    }
+  }, [session?.user?.email]);
+
+  // Load guest application data on mount (if not editing existing application)
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    const applicationId = searchParams.get("applicationId");
+    const restored = searchParams.get("restored");
+    
+    // Skip guest loading if editing existing application or if user is logged in (they should have merged data)
+    if (editId || applicationId) {
+      setIsLoadingGuestData(false);
+      return;
+    }
+
+    // If user just logged in and restored, skip guest loading as merge should have happened
+    if (session?.user && !restored) {
+      setIsLoadingGuestData(false);
+      return;
+    }
+
+    async function loadGuestApplication() {
+      try {
+        const response = await fetch(`/api/guest-applications?country=${params.country}&visaType=${params.type}`);
+        if (response.ok) {
+          const guestData = await response.json();
+          if (guestData.id) {
+            setGuestApplicationId(guestData.id);
+            
+            // Restore form data from guest application
+            if (guestData.formData) {
+              const restoredData = guestData.formData;
+              setFormData(prev => ({
+                ...prev,
+                ...restoredData,
+                // Ensure travellers have IDs
+                travellers: restoredData.travellers?.map((t: any, idx: number) => ({
+                  ...t,
+                  id: t.id || `traveller-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
+                })) || prev.travellers,
+              }));
+              
+              // Restore step (but don't go beyond step 2 if not logged in)
+              if (guestData.stepCompleted && guestData.stepCompleted > 1) {
+                // If logged in, can go to any step; if not, max step 2
+                const maxStep = session?.user ? steps.length : 2;
+                setCurrentStep(Math.min(guestData.stepCompleted, maxStep));
+              }
+            }
+          }
+        } else if (response.status === 404) {
+          // No guest application found - that's fine
+        }
+      } catch (error) {
+        console.error("Error loading guest application:", error);
+      } finally {
+        setIsLoadingGuestData(false);
+      }
+    }
+
+    loadGuestApplication();
+  }, [params.country, params.type, searchParams, session?.user, steps.length]);
 
   // Load existing application data if editing
   useEffect(() => {
@@ -556,10 +639,73 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     }));
   }, []);
 
+  // Helper function to save guest application
+  const saveGuestApplication = useCallback(async (step: number) => {
+    if (!visaInfo || session?.user) return; // Skip if logged in (use regular draft save)
+
+    try {
+      // Extract pre-application data (step 1 data)
+      const nationality = formData.travellers?.[0]?.nationality || formData.primaryContact?.email || undefined;
+      const purposeOfTravel = formData.tripType || undefined;
+
+      const guestData = {
+        country: formData.country || params.country,
+        visaType: formData.visaType || params.type,
+        visaId: formData.visaId || visaInfo.id,
+        selectedSubTypeId: formData.selectedSubTypeId,
+        travelDate: formData.travelDate,
+        tripType: formData.tripType,
+        nationality,
+        purposeOfTravel,
+        stepCompleted: step,
+        formData: {
+          country: formData.country,
+          visaType: formData.visaType,
+          visaId: formData.visaId,
+          selectedSubTypeId: formData.selectedSubTypeId,
+          travelDate: formData.travelDate,
+          tripType: formData.tripType,
+          primaryContact: formData.primaryContact,
+          travellers: formData.travellers?.map(({ id, ...rest }) => rest), // Remove client-side IDs
+        },
+      };
+
+      const response = await fetch("/api/guest-applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(guestData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.guestApplicationId) {
+          setGuestApplicationId(result.guestApplicationId);
+        }
+      }
+    } catch (error) {
+      console.error("Error saving guest application:", error);
+      // Silently fail - don't interrupt user experience
+    }
+  }, [formData, visaInfo, params.country, params.type, session?.user]);
+
   // Auto-save draft to database when form data changes (debounced)
   useEffect(() => {
-    // Only save if we have at least primary contact info (email is required)
-    if (currentStep > 1 && formData.primaryContact?.email) {
+    // Clear existing timeout
+    if (autoSaveTimeout) {
+      clearTimeout(autoSaveTimeout);
+    }
+
+    // Save guest application if not logged in
+    if (!session?.user && currentStep >= 1 && visaInfo) {
+      const timeoutId = setTimeout(() => {
+        saveGuestApplication(currentStep);
+      }, 2000); // Debounce by 2 seconds
+      setAutoSaveTimeout(timeoutId);
+      return () => clearTimeout(timeoutId);
+    }
+
+    // Save regular draft if logged in and have email
+    if (session?.user && currentStep > 1 && formData.primaryContact?.email) {
       const timeoutId = setTimeout(async () => {
         try {
           const draftData = {
@@ -600,9 +746,10 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           // Silently fail - don't interrupt user experience
         }
       }, 2000); // Debounce by 2 seconds to avoid too many API calls
+      setAutoSaveTimeout(timeoutId);
       return () => clearTimeout(timeoutId);
     }
-  }, [formData, currentStep, draftId]);
+  }, [formData, currentStep, draftId, session?.user, visaInfo, saveGuestApplication, autoSaveTimeout]);
 
   // Phone number validation helper
   const validatePhoneNumber = (phone: string): string | null => {
@@ -679,6 +826,12 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           return newErrors;
         });
       }
+
+      // Account Gate: Require login when moving to step 3 (Travellers - personal data)
+      if (!session) {
+        setShowAccountGate(true);
+        return;
+      }
     }
 
     if (currentStep === 3) {
@@ -703,39 +856,16 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       }
     }
 
-    if (currentStep === 4 && visaInfo) {
-      const missingDocs: string[] = [];
-
-      perTravellerRequirements.forEach((req) => {
-        (formData.travellers || []).forEach((traveller, index) => {
-          const key = getDocumentKey(req.id, traveller.id);
-          if (req.isRequired && !formData.documents?.[key]?.file) {
-            missingDocs.push(`${req.name} for traveller ${index + 1}`);
-          }
-        });
-      });
-
-      perApplicationRequirements.forEach((req) => {
-        const key = getDocumentKey(req.id);
-        if (req.isRequired && !formData.documents?.[key]?.file) {
-          missingDocs.push(req.name);
-        }
-      });
-
-      if (missingDocs.length > 0) {
-        alert(
-          `Please upload the following required documents:\n- ${missingDocs.join(
-            "\n- "
-          )}`
-        );
-        return;
-      }
-    }
+    // Document validation removed from step 4 (Review) - documents are now step 7 (after payment)
 
     if (currentStep < steps.length) {
-      setCurrentStep(currentStep + 1);
-      // Auto-save disabled - drafts should not be saved automatically
-      // saveDraftToLocalStorage(formData);
+      const nextStepNum = currentStep + 1;
+      setCurrentStep(nextStepNum);
+      
+      // Save guest application when moving to next step
+      if (!session?.user && visaInfo) {
+        saveGuestApplication(nextStepNum);
+      }
     }
   };
 
@@ -819,11 +949,40 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       }
     }
 
-    // Check if user is logged in
+    // Check if user is logged in (required for step 4+)
     if (!session) {
-      // Redirect to signup/login
-      router.push(`/signup?email=${encodeURIComponent(formData.primaryContact.email || "")}&redirect=/apply/visa/${params.country}/${params.type}`);
+      // Show account gate if not logged in
+      setShowAccountGate(true);
       return;
+    }
+
+    // Check email verification (hard block - cannot submit without verification)
+    if (emailVerified === false) {
+      const shouldVerify = confirm(
+        "Your email is not verified yet. You must verify your email before submitting the application.\n\nWould you like to verify your email now?"
+      );
+      if (shouldVerify) {
+        router.push(`/verify-email?email=${encodeURIComponent(session.user?.email || "")}&redirect=${encodeURIComponent(`/apply/visa/${params.country}/${params.type}`)}`);
+      }
+      return; // Block submission
+    }
+
+    // If email verification status is unknown, check it
+    if (emailVerified === null && session?.user?.email) {
+      try {
+        const verifyResponse = await fetch("/api/auth/verify-email");
+        const verifyData = await verifyResponse.json();
+        if (!verifyData.emailVerified) {
+          alert("Please verify your email before submitting the application.");
+          router.push(`/verify-email?email=${encodeURIComponent(session.user?.email || "")}&redirect=${encodeURIComponent(`/apply/visa/${params.country}/${params.type}`)}`);
+          return;
+        }
+        setEmailVerified(true);
+      } catch (error) {
+        console.error("Error checking email verification:", error);
+        alert("Unable to verify email status. Please try again.");
+        return;
+      }
     }
 
     const travellersLength =
@@ -889,6 +1048,18 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       } else {
         const errorData = await response.json();
         let errorMessage = errorData.error || "Failed to save application. Please try again.";
+
+        // Handle email verification error
+        if (response.status === 403 && errorData.error === "Email verification required") {
+          const shouldVerify = confirm(
+            errorData.message || "Please verify your email before submitting the application.\n\nWould you like to verify your email now?"
+          );
+          if (shouldVerify && session?.user?.email) {
+            router.push(`/verify-email?email=${encodeURIComponent(session.user.email)}&redirect=${encodeURIComponent(`/apply/visa/${params.country}/${params.type}`)}`);
+          }
+          setLoading(false);
+          return;
+        }
 
         // Handle validation errors with field-specific messages
         if (errorData.details && Array.isArray(errorData.details)) {
@@ -1478,214 +1649,6 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         );
 
       case 4:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">
-              Upload Documents
-            </h2>
-            <p className="text-neutral-600 mb-6">
-              Upload all required documents. Accepted formats: JPG, PNG, PDF (max
-              20MB per file).
-            </p>
-
-            {!visaInfo && (
-              <div className="text-sm text-neutral-500">
-                Loading document requirements...
-              </div>
-            )}
-
-            {visaInfo && (
-              <>
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-lg text-neutral-900">
-                    Per-Traveller Documents
-                  </h3>
-                  {perTravellerRequirements.length === 0 && (
-                    <p className="text-sm text-neutral-500">
-                      No per-traveller documents required for this visa.
-                    </p>
-                  )}
-                  {(formData.travellers || []).map((traveller, travellerIndex) => (
-                    <div
-                      key={traveller.id}
-                      className="border border-neutral-200 rounded-lg p-4 space-y-3"
-                    >
-                      <h4 className="font-medium">
-                        Traveller {travellerIndex + 1}:{" "}
-                        {traveller.firstName || traveller.lastName
-                          ? `${traveller.firstName} ${traveller.lastName}`.trim()
-                          : "Details pending"}
-                      </h4>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        {perTravellerRequirements.map((requirement) => {
-                          const key = getDocumentKey(
-                            requirement.id,
-                            traveller.id
-                          );
-                          const doc = formData.documents?.[key];
-                          return (
-                            <div key={key} className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium text-neutral-700">
-                                  {requirement.name}
-                                </label>
-                                <span
-                                  className={`text-xs px-2 py-1 rounded-full ${requirement.isRequired
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-neutral-100 text-neutral-600"
-                                    }`}
-                                >
-                                  {requirement.isRequired ? "Required" : "Optional"}
-                                </span>
-                              </div>
-                              {requirement.description && (
-                                <p className="text-xs text-neutral-500">
-                                  {requirement.description}
-                                </p>
-                              )}
-                              {doc?.file ? (
-                                <div className="border border-neutral-300 rounded-lg p-3 flex items-center justify-between">
-                                  <div className="flex items-center space-x-2">
-                                    <FileText size={20} className="text-primary-600" />
-                                    <span className="text-sm text-neutral-700">
-                                      {doc.file.name}
-                                    </span>
-                                  </div>
-                                  <div className="flex space-x-2">
-                                    {doc.preview && (
-                                      <button
-                                        type="button"
-                                        onClick={() => setPreviewModal({ url: doc.preview!, fileName: doc.file!.name })}
-                                        className="p-1 text-primary-600 hover:text-primary-700"
-                                      >
-                                        <Eye size={16} />
-                                      </button>
-                                    )}
-                                    <button
-                                      type="button"
-                                      onClick={() => removeDocument(key)}
-                                      className="p-1 text-red-600 hover:text-red-700"
-                                    >
-                                      <X size={16} />
-                                    </button>
-                                  </div>
-                                </div>
-                              ) : (
-                                <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 rounded-lg cursor-pointer hover:border-primary-600 transition-colors">
-                                  <Upload size={24} className="text-neutral-400 mb-2" />
-                                  <span className="text-sm text-neutral-600">
-                                    Click to upload
-                                  </span>
-                                  <input
-                                    type="file"
-                                    accept=".jpg,.jpeg,.png,.pdf"
-                                    className="hidden"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file)
-                                        handleDocumentUpload(
-                                          requirement,
-                                          traveller.id,
-                                          file
-                                        );
-                                    }}
-                                  />
-                                </label>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-4 mt-6">
-                  <h3 className="font-semibold text-lg text-neutral-900">
-                    Per-Application Documents
-                  </h3>
-                  {perApplicationRequirements.length === 0 && (
-                    <p className="text-sm text-neutral-500">
-                      No application-level documents required for this visa.
-                    </p>
-                  )}
-                  {perApplicationRequirements.map((requirement) => {
-                    const key = getDocumentKey(requirement.id);
-                    const doc = formData.documents?.[key];
-                    return (
-                      <div key={key} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium text-neutral-700">
-                            {requirement.name}
-                          </label>
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full ${requirement.isRequired
-                              ? "bg-red-100 text-red-700"
-                              : "bg-neutral-100 text-neutral-600"
-                              }`}
-                          >
-                            {requirement.isRequired ? "Required" : "Optional"}
-                          </span>
-                        </div>
-                        {requirement.description && (
-                          <p className="text-xs text-neutral-500">
-                            {requirement.description}
-                          </p>
-                        )}
-                        {doc?.file ? (
-                          <div className="border border-neutral-300 rounded-lg p-3 flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <FileText size={20} className="text-primary-600" />
-                              <span className="text-sm text-neutral-700">
-                                {doc.file.name}
-                              </span>
-                            </div>
-                            <div className="flex space-x-2">
-                              {doc.preview && (
-                                <button
-                                  type="button"
-                                  onClick={() => setPreviewModal({ url: doc.preview!, fileName: doc.file!.name })}
-                                  className="p-1 text-primary-600 hover:text-primary-700"
-                                >
-                                  <Eye size={16} />
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => removeDocument(key)}
-                                className="p-1 text-red-600 hover:text-red-700"
-                              >
-                                <X size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 rounded-lg cursor-pointer hover:border-primary-600 transition-colors">
-                            <Upload size={24} className="text-neutral-400 mb-2" />
-                            <span className="text-sm text-neutral-600">
-                              Click to upload
-                            </span>
-                            <input
-                              type="file"
-                              accept=".jpg,.jpeg,.png,.pdf"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleDocumentUpload(requirement, undefined, file);
-                              }}
-                            />
-                          </label>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        );
-
-      case 5:
         const totalAmount =
           visaPrice * ((formData.travellers || []).length || 1);
         return (
@@ -2171,6 +2134,56 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Account Gate Modal */}
+      <AccountGate
+        isOpen={showAccountGate}
+        onClose={() => setShowAccountGate(false)}
+        onContinue={async () => {
+          setShowAccountGate(false);
+          setIsGuestMode(false);
+          
+          // Refresh session to get updated user data
+          router.refresh();
+          
+          // Merge guest application after login
+          try {
+            const mergeResponse = await fetch("/api/guest-applications/merge", {
+              method: "POST",
+            });
+            if (mergeResponse.ok) {
+              const mergeData = await mergeResponse.json();
+              if (mergeData.formData) {
+                // Restore merged data
+                const restoredFormData = mergeData.formData;
+                setFormData(prev => ({
+                  ...prev,
+                  ...restoredFormData,
+                  // Ensure travellers have IDs
+                  travellers: restoredFormData.travellers?.map((t: any, idx: number) => ({
+                    ...t,
+                    id: t.id || `traveller-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
+                  })) || prev.travellers,
+                }));
+                
+                // Navigate to last completed step or current step if it's ahead
+                if (mergeData.lastStepCompleted && mergeData.lastStepCompleted >= currentStep) {
+                  setCurrentStep(mergeData.lastStepCompleted);
+                }
+              }
+            }
+          } catch (error) {
+            console.error("Error merging guest application:", error);
+          }
+          
+          // Continue to next step if we're at step 2
+          if (currentStep === 2 && currentStep < steps.length) {
+            setCurrentStep(currentStep + 1);
+          }
+        }}
+        email={formData.primaryContact?.email}
+        redirectUrl={`/apply/visa/${params.country}/${params.type}`}
+      />
     </div>
   );
 }

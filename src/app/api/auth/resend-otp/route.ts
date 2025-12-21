@@ -1,79 +1,67 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
 import { z } from "zod";
 export const dynamic = "force-dynamic";
 
-
-const signupSchema = z.object({
-  name: z.string().min(2).optional(),
+const resendOtpSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
-  phone: z.string().optional(),
 });
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, password, phone } = signupSchema.parse(body);
+    const { email } = resendOtpSchema.parse(body);
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    // Find user by email
+    const user = await prisma.user.findUnique({
       where: { email },
     });
 
-    if (existingUser) {
+    if (!user) {
       return NextResponse.json(
-        { error: "User with this email already exists" },
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if email is already verified
+    if (user.emailVerified) {
+      return NextResponse.json(
+        { error: "Email is already verified" },
         { status: 400 }
       );
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
-
-    // Generate 6-digit OTP
+    // Generate new 6-digit OTP
     const crypto = await import("crypto");
     const otp = crypto.randomInt(100000, 999999).toString();
     const otpExpires = new Date();
     otpExpires.setMinutes(otpExpires.getMinutes() + 10); // Valid for 10 minutes
 
-    // Create user with OTP
-    const user = await prisma.user.create({
+    // Update user with new OTP
+    await prisma.user.update({
+      where: { id: user.id },
       data: {
-        name,
-        email,
-        passwordHash,
-        phone,
-        role: "CUSTOMER",
-        emailVerified: false, // Email verification required via OTP
         registrationOtp: otp,
         registrationOtpExpires: otpExpires,
       },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-      },
     });
 
-    // Send OTP email (non-blocking)
+    // Send OTP email
     try {
       const { sendRegistrationOTPEmail } = await import("@/lib/email");
       await sendRegistrationOTPEmail(user.email, otp, user.name || undefined, user.role);
     } catch (error) {
-      // Non-blocking - don't fail signup if email fails
       console.error("Failed to send OTP email:", error);
+      return NextResponse.json(
+        { error: "Failed to send OTP email. Please try again." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(
-      { 
-        message: "User created successfully. Please verify your email with the OTP sent to your email.", 
-        user,
-        requiresVerification: true 
-      },
-      { status: 201 }
+      { message: "OTP sent successfully" },
+      { status: 200 }
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -83,7 +71,7 @@ export async function POST(req: Request) {
       );
     }
 
-    console.error("Signup error:", error);
+    console.error("Resend OTP error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

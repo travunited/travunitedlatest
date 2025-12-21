@@ -688,6 +688,138 @@ const FALLBACK_OTP_TEMPLATE = `<div style="font-family: Arial, sans-serif; max-w
   <p>Best regards,<br>The Travunited Team</p>
 </div>`;
 
+// Fallback simple Registration OTP email template
+const FALLBACK_REGISTRATION_OTP_TEMPLATE = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #667eea;">Welcome to Travunited!</h1>
+  <p>Hi{name},</p>
+  <p>Thank you for registering with Travunited. Use the OTP below to verify your email address:</p>
+  <div style="background: #f0f0f0; border: 2px solid #667eea; border-radius: 8px; padding: 20px; text-align: center; margin: 30px 0;">
+    <p style="font-size: 36px; font-weight: bold; color: #667eea; margin: 0; letter-spacing: 8px; font-family: 'Courier New', monospace;">{otp}</p>
+  </div>
+  <p><strong>Important:</strong> This OTP is valid for 10 minutes only. Do not share this OTP with anyone.</p>
+  <p>If you didn't create an account with Travunited, please ignore this email.</p>
+  <p>Best regards,<br>The Travunited Team</p>
+</div>`;
+
+export async function sendRegistrationOTPEmail(
+  email: string,
+  otp: string,
+  name?: string,
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
+) {
+  try {
+    console.log("[Email] sendRegistrationOTPEmail called", {
+      email,
+      otpLength: otp.length,
+      name: name || "not provided",
+      role: role || "not provided",
+    });
+    
+    const subject = "Verify Your Email - Travunited";
+    
+    // Load templates and ensure we have a valid template
+    let template: string;
+    try {
+      const templates = await loadEmailTemplates();
+      const loadedTemplate = getEmailTemplate("registrationOTPEmail", (templates as any).emailRegistrationOTP || "");
+      
+      console.log("[Email] Registration OTP template loaded", {
+        hasTemplate: !!loadedTemplate,
+        templateLength: loadedTemplate?.length || 0,
+        hasCustomTemplate: !!(templates as any).emailRegistrationOTP,
+        customTemplateLength: (templates as any).emailRegistrationOTP?.length || 0,
+      });
+      
+      // If template is empty or invalid, force use default
+      if (!loadedTemplate || !loadedTemplate.trim()) {
+        console.warn("[Email] Custom template is empty, using fallback template", {
+          templateKey: "registrationOTPEmail",
+        });
+        template = FALLBACK_REGISTRATION_OTP_TEMPLATE;
+      } else {
+        template = loadedTemplate;
+      }
+    } catch (templateError) {
+      console.error("[Email] Error loading template, using fallback", {
+        error: templateError instanceof Error ? templateError.message : String(templateError),
+      });
+      template = FALLBACK_REGISTRATION_OTP_TEMPLATE;
+    }
+    
+    // Final safety check - if still empty, use hardcoded fallback
+    if (!template || !template.trim()) {
+      console.error("[Email] ❌ Registration OTP template is still empty after fallback, using hardcoded fallback", {
+        templateKey: "registrationOTPEmail",
+      });
+      template = FALLBACK_REGISTRATION_OTP_TEMPLATE;
+    }
+    
+    const config = await loadEmailConfig();
+    const variables: EmailTemplateVariables = {
+      otp,
+      name: name || "",
+      email,
+      companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+    };
+    
+    let html = replaceTemplateVariables(template, variables);
+    
+    // Fix name formatting
+    if (name) {
+      html = html.replace(/{name}/g, ` ${name}`);
+    } else {
+      html = html.replace(/Hi{name}/g, "Hi");
+    }
+    
+    console.log("[Email] Registration OTP HTML generated", {
+      htmlLength: html?.length || 0,
+      hasHtml: !!html && html.trim().length > 0,
+    });
+    
+    if (!html || !html.trim()) {
+      console.error("[Email] ❌ Generated HTML for Registration OTP is empty", {
+        templateLength: template.length,
+        variables,
+      });
+      return false;
+    }
+    
+    // Registration OTP emails should ALWAYS go to the user's actual email address
+    // Bypass active check since user is not yet verified
+    console.log("[Email] Calling sendEmail for Registration OTP", {
+      to: email,
+      subject,
+      category: "general",
+      bypassActiveCheck: true,
+      htmlLength: html.length,
+    });
+    
+    const result = await sendEmail({
+      to: email,
+      subject,
+      html,
+      category: "general",
+      bypassActiveCheck: true, // Always send registration emails, even if user is inactive
+    });
+    
+    console.log("[Email] sendEmail result for Registration OTP", {
+      success: result,
+      email,
+      lastError: result ? null : getLastEmailError(),
+    });
+    
+    return result;
+  } catch (error) {
+    console.error("[Email] ❌ Exception in sendRegistrationOTPEmail:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      email,
+      otpLength: otp?.length || 0,
+    });
+    return false;
+  }
+}
+
 export async function sendPasswordResetOTPEmail(
   email: string,
   otp: string,
@@ -817,11 +949,12 @@ export async function sendVisaPaymentSuccessEmail(
     visaType,
     amount,
     applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
+    documentsUrl: `${baseUrl}/dashboard/applications/${applicationId}/documents`, // Link to document upload page
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
   
   const html = replaceTemplateVariables(template, variables);
-  const subject = `Payment Successful - ${country} ${visaType}`;
+  const subject = `Payment Successful - Upload Documents to Complete Application`;
   
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }

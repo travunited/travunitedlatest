@@ -1,112 +1,140 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-
 export const dynamic = "force-dynamic";
 
-const verifyOTPSchema = z.object({
-  resetId: z.string().min(1, "Reset ID is required"),
-  otp: z.string().regex(/^\d{6}$/, "OTP must be 6 digits"),
+const verifyOtpSchema = z.object({
+  email: z.string().email(),
+  otp: z.string().length(6, "OTP must be 6 digits"),
 });
 
 export async function POST(req: Request) {
   try {
-    // Ensure we're receiving JSON
-    const contentType = req.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      return NextResponse.json(
-        { error: "Content-Type must be application/json" },
-        { status: 400 }
-      );
-    }
+    const body = await req.json();
+    const { email, otp } = verifyOtpSchema.parse(body);
 
-    let body;
-    try {
-      body = await req.json();
-    } catch (parseError) {
-      console.error("Failed to parse JSON body:", parseError);
-      return NextResponse.json(
-        { error: "Invalid JSON format" },
-        { status: 400 }
-      );
-    }
-
-    const { resetId, otp } = verifyOTPSchema.parse(body);
-
-    // Find password reset record
-    const passwordReset = await prisma.passwordReset.findUnique({
-      where: { id: resetId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
-      },
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email },
     });
 
-    if (!passwordReset) {
-      console.error("[OTP Verification] Record not found", { resetId });
+    if (!user) {
       return NextResponse.json(
-        { error: "Invalid reset request" },
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if email is already verified
+    if (user.emailVerified) {
+      return NextResponse.json(
+        { error: "Email is already verified" },
         { status: 400 }
       );
     }
 
-    // Check if already used
-    if (passwordReset.used) {
-      console.error("[OTP Verification] Reset already used", {
-        resetId,
-        userId: passwordReset.userId,
-      });
+    // Check if OTP exists and matches
+    if (!user.registrationOtp || user.registrationOtp !== otp) {
       return NextResponse.json(
-        { error: "This reset request has already been used. Please request a new one." },
+        { error: "Invalid OTP" },
         { status: 400 }
       );
     }
 
-    // Check if OTP exists
-    if (!passwordReset.otp) {
-      console.error("[OTP Verification] No OTP found", { resetId });
-      return NextResponse.json(
-        { error: "Invalid reset request" },
-        { status: 400 }
-      );
-    }
-
-    // Check if OTP is expired
-    if (!passwordReset.otpExpiresAt || new Date() > passwordReset.otpExpiresAt) {
-      console.error("[OTP Verification] OTP expired", {
-        resetId,
-        otpExpiresAt: passwordReset.otpExpiresAt,
-      });
+    // Check if OTP has expired
+    if (!user.registrationOtpExpires || user.registrationOtpExpires < new Date()) {
       return NextResponse.json(
         { error: "OTP has expired. Please request a new one." },
         { status: 400 }
       );
     }
 
-    // Verify OTP (case-sensitive exact match)
-    if (passwordReset.otp !== otp) {
-      console.error("[OTP Verification] Invalid OTP", {
-        resetId,
-        providedOtp: otp,
-        expectedOtp: passwordReset.otp,
-      });
-      return NextResponse.json(
-        { error: "Invalid OTP. Please check and try again." },
-        { status: 400 }
-      );
+    // Verify email and clear OTP
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerifiedAt: new Date(),
+        registrationOtp: null,
+        registrationOtpExpires: null,
+      },
+    });
+
+    // Send welcome email after verification
+    try {
+      const { sendWelcomeEmail } = await import("@/lib/email");
+      await sendWelcomeEmail(user.email, user.name || undefined, user.role);
+    } catch (error) {
+      // Non-blocking - don't fail verification if welcome email fails
+      console.error("Failed to send welcome email:", error);
     }
 
-    // OTP is valid - return success with resetId for password reset
-    return NextResponse.json({
-      success: true,
-      message: "OTP verified successfully",
-      resetId: passwordReset.id,
-      userId: passwordReset.userId,
-    });
+    // Merge guest application if exists (non-blocking)
+    try {
+      const { cookies } = await import("next/headers");
+      const cookieStore = await cookies();
+      const guestId = cookieStore.get("guest_id")?.value;
+      
+      if (guestId) {
+        // Import merge logic
+        const { prisma } = await import("@/lib/prisma");
+        const guestApplications = await prisma.guestApplication.findMany({
+          where: {
+            guestId,
+            expiresAt: {
+              gt: new Date(),
+            },
+          },
+        });
+
+        for (const guestApp of guestApplications) {
+          // Check if user already has an application for this visa
+          const existingApp = await prisma.application.findFirst({
+            where: {
+              userId: user.id,
+              country: guestApp.country,
+              visaType: guestApp.visaType,
+              status: {
+                in: ["DRAFT", "PAYMENT_PENDING"],
+              },
+            },
+          });
+
+          if (!existingApp) {
+            // Create new application from guest data
+            await prisma.application.create({
+              data: {
+                userId: user.id,
+                visaId: guestApp.visaId || null,
+                visaTypeId: guestApp.visaType,
+                country: guestApp.country,
+                visaType: guestApp.visaType,
+                visaSubTypeId: guestApp.selectedSubTypeId || null,
+                status: "DRAFT",
+                totalAmount: 0,
+                currency: "INR",
+              },
+            });
+          }
+
+          // Delete guest application after merge
+          await prisma.guestApplication.delete({
+            where: { id: guestApp.id },
+          });
+        }
+
+        // Clear guest cookie
+        cookieStore.delete("guest_id");
+      }
+    } catch (error) {
+      // Non-blocking - don't fail verification if merge fails
+      console.error("Error merging guest application during verification:", error);
+    }
+
+    return NextResponse.json(
+      { message: "Email verified successfully", verified: true },
+      { status: 200 }
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -115,11 +143,10 @@ export async function POST(req: Request) {
       );
     }
 
-    console.error("Error verifying OTP:", error);
+    console.error("OTP verification error:", error);
     return NextResponse.json(
-      { error: "An error occurred. Please try again." },
+      { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
-

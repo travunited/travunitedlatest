@@ -20,6 +20,11 @@ function ThankYouContent() {
           if (res.ok) {
             const data = await res.json();
             setApplication(data);
+            
+            // If status is DOCUMENTS_PENDING, redirect to document upload page
+            if (data.status === "DOCUMENTS_PENDING") {
+              router.push(`/dashboard/applications/${applicationId}/documents`);
+            }
           } else {
             console.error("Failed to fetch application");
           }
@@ -39,7 +44,7 @@ function ThankYouContent() {
       
       return () => clearInterval(interval);
     }
-  }, [applicationId]);
+  }, [applicationId, router]);
 
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
