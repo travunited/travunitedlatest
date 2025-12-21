@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -24,9 +25,52 @@ interface Props {
 }
 
 export default function VisasGridClient({ countries }: Props) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRegion, setSelectedRegion] = useState<string>("all");
-  const [sortOption, setSortOption] = useState<"alpha" | "volume">("alpha");
+  const searchParams = useSearchParams();
+  
+  // Initialize state from URL params or sessionStorage
+  const getInitialState = useCallback(() => {
+    // Try to restore from sessionStorage first (for back navigation)
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("visas-filter-state");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          // Only use stored state if we don't have URL params
+          const hasParams = searchParams?.get("search") || searchParams?.get("region") || searchParams?.get("sort");
+          if (!hasParams && Object.keys(parsed).length > 0) {
+            return parsed;
+          }
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
+    
+    // Otherwise, use URL params or defaults
+    return {
+      searchQuery: searchParams?.get("search") || "",
+      selectedRegion: searchParams?.get("region") || "all",
+      sortOption: (searchParams?.get("sort") || "alpha") as "alpha" | "volume",
+    };
+  }, [searchParams]);
+
+  const initialState = getInitialState();
+  
+  const [searchQuery, setSearchQuery] = useState(initialState.searchQuery);
+  const [selectedRegion, setSelectedRegion] = useState<string>(initialState.selectedRegion);
+  const [sortOption, setSortOption] = useState<"alpha" | "volume">(initialState.sortOption);
+  
+  // Save filter state to sessionStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const filterState = {
+        searchQuery,
+        selectedRegion,
+        sortOption,
+      };
+      sessionStorage.setItem("visas-filter-state", JSON.stringify(filterState));
+    }
+  }, [searchQuery, selectedRegion, sortOption]);
 
   const regions = useMemo(() => {
     const unique = new Set<string>();

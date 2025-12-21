@@ -16,6 +16,8 @@ import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 import { ShareButton } from "@/components/sharing/ShareButton";
+import { VisaDetailClient } from "./VisaDetailClient";
+import { BackToVisasButton } from "./BackToVisasButton";
 
 const visaModeLabels: Record<string, string> = {
   EVISA: "eVisa",
@@ -141,8 +143,10 @@ export async function generateMetadata({
 
 export default async function VisaDetailPage({
   params,
+  searchParams,
 }: {
   params: { country: string; type: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 }) {
   // Decode URL-encoded slug
   const decodedSlug = decodeURIComponent(params.type);
@@ -189,15 +193,11 @@ export default async function VisaDetailPage({
     : visa.validity || "Not specified";
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link
-            href={`/visas/${params.country}`}
-            className="inline-flex items-center text-white/80 hover:text-white mb-4 text-sm"
-          >
-            ← Back to {visa.country.name} Visas
-          </Link>
+    <VisaDetailClient searchParams={searchParams}>
+      <div className="min-h-screen bg-white">
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-12">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <BackToVisasButton countryCode={params.country} countryName={visa.country.name} />
           <h1 className="text-3xl md:text-4xl font-bold mb-2">{visa.name}</h1>
           <p className="text-lg text-white/90">{visa.subtitle}</p>
           <p className="text-sm text-white/80 mt-3 flex flex-wrap gap-4">
@@ -433,6 +433,7 @@ export default async function VisaDetailPage({
         </div>
       </div>
     </div>
+    </VisaDetailClient>
   );
 }
 

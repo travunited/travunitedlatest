@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Clock, CheckCircle, Info, ArrowRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { CountryVisasClient } from "./CountryVisasClient";
 
 const entryTypeLabels: Record<string, string> = {
   SINGLE: "Single Entry",
@@ -76,15 +77,16 @@ export default async function CountryVisasPage({
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link
-            href="/visas"
-            className="inline-flex items-center text-white/80 hover:text-white mb-4 text-sm"
-          >
-            ← Back to All Visas
-          </Link>
+    <CountryVisasClient>
+      <div className="min-h-screen bg-white">
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <Link
+              href="/visas"
+              className="inline-flex items-center text-white/80 hover:text-white mb-4 text-sm"
+            >
+              ← Back to All Visas
+            </Link>
           <h1 className="text-4xl md:text-5xl font-bold mb-2">{country.name}</h1>
           <p className="text-xl text-white/90 max-w-2xl">
             Choose the visa type that best suits your travel needs
@@ -190,5 +192,6 @@ export default async function CountryVisasPage({
         )}
       </div>
     </div>
+    </CountryVisasClient>
   );
 }
