@@ -15,6 +15,8 @@ export interface EmailTemplateVariables {
   status?: string;
   amount?: number;
   reason?: string;
+  promoCode?: string;
+  discountAmount?: number;
   
   // Booking variables
   bookingId?: string;
@@ -91,6 +93,8 @@ export function replaceTemplateVariables(
     "{tourName}": variables.tourName || "",
     "{pendingBalance}": variables.pendingBalance ? `₹${variables.pendingBalance.toLocaleString()}` : "",
     "{dueDate}": variables.dueDate || "",
+    "{promoCode}": variables.promoCode || "",
+    "{discountAmount}": variables.discountAmount ? `₹${(variables.discountAmount / 100).toLocaleString()}` : "",
     "{resetLink}": variables.resetLink || "",
     "{verificationLink}": variables.verificationLink || "",
     "{dashboardUrl}": variables.dashboardUrl || `${baseUrl}/dashboard`,
@@ -124,6 +128,13 @@ export function replaceTemplateVariables(
     result = result.replace(/{reason}/g, `<p><strong>Reason:</strong> ${variables.reason}</p>`);
   } else {
     result = result.replace(/{reason}/g, "");
+  }
+  
+  // {promoCode} - only show if promo code exists
+  if (variables.promoCode && variables.discountAmount) {
+    result = result.replace(/{promoCode}/g, `<p style="color: #059669;"><strong>Promo Code Applied:</strong> ${variables.promoCode} - You saved ${variables.discountAmount}</p>`);
+  } else {
+    result = result.replace(/{promoCode}/g, "");
   }
   
   // {pendingBalance} - only show if pendingBalance exists
@@ -298,6 +309,7 @@ export function getDefaultEmailTemplate(templateKey: string): string {
   <h1>Payment Successful!</h1>
   <p>Your payment for {country} {visaType} has been received successfully.</p>
   <p><strong>Amount Paid:</strong> {amount}</p>
+  {promoCode}
   <p><strong>Application ID:</strong> {applicationIdShort}</p>
   <p>Your application is now submitted and will be processed shortly. You can track the status in your <a href="{applicationUrl}">dashboard</a>.</p>
   <p>Best regards,<br>The {companyName} Team</p>
@@ -397,6 +409,7 @@ export function getDefaultEmailTemplate(templateKey: string): string {
   <h1>Payment Successful!</h1>
   <p>Your payment for {tourName} has been received successfully.</p>
   <p><strong>Amount Paid:</strong> {amount}</p>
+  {promoCode}
   {pendingBalance}
   <p><strong>Booking ID:</strong> {bookingIdShort}</p>
   <p>View your booking in your <a href="{bookingUrl}">dashboard</a>.</p>

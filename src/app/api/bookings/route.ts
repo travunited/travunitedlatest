@@ -21,6 +21,14 @@ export async function GET(req: Request) {
       where: {
         userId: session.user.id,
       },
+      include: {
+        promoCode: {
+          select: {
+            id: true,
+            code: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: "desc",
       },

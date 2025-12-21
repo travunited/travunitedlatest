@@ -16,6 +16,8 @@ const orderSchema = z.object({
   applicationId: z.string().optional(),
   bookingId: z.string().optional(),
   paymentType: z.enum(["full", "advance"]).optional(),
+  promoCodeId: z.string().optional(),
+  discountAmount: z.number().nonnegative().optional(),
 });
 
 export async function POST(req: Request) {
@@ -36,7 +38,7 @@ export async function POST(req: Request) {
       body.amount = parseFloat(body.amount);
     }
     
-    const { amount, applicationId, bookingId, paymentType } = orderSchema.parse(body);
+    const { amount, applicationId, bookingId, paymentType, promoCodeId, discountAmount } = orderSchema.parse(body);
 
     if (!applicationId && !bookingId) {
       return NextResponse.json(
@@ -91,12 +93,33 @@ export async function POST(req: Request) {
           status: "COMPLETED",
           provider: "NONE",
           method: "FREE",
+          promoCodeId: promoCodeId || null,
+          discountAmount: discountAmount || 0,
           metadata: {
             note: "Free booking/application - no payment required",
             paymentType: paymentType || null,
           },
         } as any, // Type assertion needed until Prisma client is regenerated
       });
+
+      // Record promo code usage for free payments if promo code was applied
+      if (promoCodeId && discountAmount && discountAmount > 0) {
+        try {
+          const { recordPromoCodeUsage } = await import("@/lib/promo-codes");
+          await recordPromoCodeUsage({
+            promoCodeId,
+            userId: session.user.id,
+            originalAmount: discountAmount, // Original amount was the discount amount for free items
+            discountAmount: discountAmount,
+            finalAmount: 0,
+            applicationId: applicationId || undefined,
+            bookingId: bookingId || undefined,
+            paymentId: payment.id,
+          });
+        } catch (error) {
+          console.error("Error recording promo code usage:", error);
+        }
+      }
 
       // Update booking/application status
       if (applicationId) {
@@ -204,7 +227,10 @@ export async function POST(req: Request) {
         amount,
         currency: "INR",
         status: "PENDING",
-      },
+        provider: "RAZORPAY",
+        promoCodeId: promoCodeId || null,
+        discountAmount: discountAmount || 0,
+      } as any,
     });
 
     if (applicationId) {

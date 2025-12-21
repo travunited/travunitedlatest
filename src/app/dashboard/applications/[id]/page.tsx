@@ -32,6 +32,7 @@ interface Application {
   visaType: string;
   status: string;
   totalAmount: number;
+  discountAmount?: number;
   visaDocumentUrl: string | null;
   createdAt: string;
   documents: Document[];
@@ -45,6 +46,10 @@ interface Application {
     id: string;
     label: string;
     code: string | null;
+  } | null;
+  promoCode?: {
+    id: string;
+    code: string;
   } | null;
 }
 
@@ -275,6 +280,11 @@ export default function ApplicationDetailPage() {
                   <div className="font-medium text-neutral-900">
                     ₹{application.totalAmount.toLocaleString()}
                   </div>
+                  {application.discountAmount && application.discountAmount > 0 && application.promoCode && (
+                    <div className="text-xs text-green-600 mt-1">
+                      Promo code {application.promoCode.code} applied - Saved ₹{(application.discountAmount / 100).toLocaleString()}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

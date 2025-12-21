@@ -24,6 +24,7 @@ import Link from "next/link";
 import { loadRazorpayScript } from "@/lib/razorpay-client";
 import { formatDate } from "@/lib/dateFormat";
 import TermsAndPolicy from "@/components/ui/TermsAndPolicy";
+import { PromoCodeInput } from "@/components/promo-code/PromoCodeInput";
 
 const steps = [
   { id: 1, name: "Select Tour & Date", icon: Calendar },
@@ -118,6 +119,12 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
   const [refundPolicy, setRefundPolicy] = useState<{ key: string; title: string; content: string; version: string } | null>(null);
   const [termsPolicy, setTermsPolicy] = useState<{ key: string; title: string; content: string; version: string } | null>(null);
   const [policyVersion, setPolicyVersion] = useState<string | null>(null);
+  const [appliedPromoCode, setAppliedPromoCode] = useState<{
+    id: string;
+    code: string;
+    discountAmount: number;
+    message?: string;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     travelDate: "",
@@ -475,6 +482,8 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
         finalAmount: 0,
         advanceAmount: 0,
         remainingAmount: 0,
+        subtotal: 0,
+        discountAmount: 0,
       };
     }
 
@@ -503,16 +512,22 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
     const selectedAddOnDetails = getSelectedAddOnDetails(normalizedTravellerCount);
     const addOnTotal = selectedAddOnDetails.reduce((sum, detail) => sum + detail.totalPrice, 0);
 
-    const finalAmount = baseAmount + addOnTotal;
+    // Calculate subtotal before discount
+    const subtotal = baseAmount + addOnTotal;
+    
+    // Apply promo code discount if applicable
+    const discountAmount = appliedPromoCode ? appliedPromoCode.discountAmount / 100 : 0; // Convert from paise to rupees
+    const finalAmount = Math.max(0, subtotal - discountAmount);
+    
     const advancePercentage = tour.advancePercentage ?? 0;
     const advanceAmount = formData.paymentType === "advance" && tour.allowAdvance
       ? Math.round(finalAmount * (advancePercentage / 100))
       : finalAmount;
     const remainingAmount = Math.max(finalAmount - advanceAmount, 0);
-    return { baseAmount, addOnTotal, finalAmount, advanceAmount, remainingAmount };
+    return { baseAmount, addOnTotal, finalAmount, advanceAmount, remainingAmount, subtotal, discountAmount };
   };
 
-  const { baseAmount, addOnTotal, finalAmount, advanceAmount, remainingAmount } = calculatePrice();
+  const { baseAmount, addOnTotal, finalAmount, advanceAmount, remainingAmount, subtotal, discountAmount } = calculatePrice();
   const selectedAddOnDetails = useMemo(
     () => getSelectedAddOnDetails(),
     [getSelectedAddOnDetails]
@@ -805,6 +820,8 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
           tourId: tour.id,
           tourName: tour.name,
           tourPrice: finalAmount,
+          promoCodeId: appliedPromoCode?.id,
+          discountAmount: appliedPromoCode ? Math.round(appliedPromoCode.discountAmount) : 0,
           advancePercentage: tour.advancePercentage ?? null,
           travelDate: formData.travelDate,
           numberOfAdults: formData.numberOfAdults,
@@ -902,14 +919,18 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
     setLoading(true);
     try {
       const amount = formData.paymentType === "full" ? finalAmount : advanceAmount;
+      const discountAmountInPaise = appliedPromoCode?.discountAmount || 0;
+      const amountInPaise = Math.round(amount * 100);
 
       const response = await fetch("/api/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: Math.round(amount),
+          amount: amountInPaise,
           bookingId: ensuredBookingId,
           paymentType: formData.paymentType,
+          promoCodeId: appliedPromoCode?.id,
+          discountAmount: discountAmountInPaise > 0 ? discountAmountInPaise : undefined,
         }),
       });
 
@@ -1885,6 +1906,87 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                   </div>
                 </div>
               )}
+
+              {/* Promo Code */}
+              {session && (
+                <div className="bg-white rounded-lg p-4 border border-neutral-200">
+                  <PromoCodeInput
+                    onApply={async (code) => {
+                      // Recalculate to get current subtotal
+                      const { subtotal: currentSubtotal } = calculatePrice();
+                      // Use subtotal (before discount) for validation
+                      const baseAmountInPaise = Math.round(currentSubtotal * 100);
+                      const response = await fetch("/api/promo-codes/validate", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          code,
+                          amount: baseAmountInPaise,
+                          type: "tour",
+                          tourId: tour?.id,
+                          countryId: tour?.countryId || undefined,
+                        }),
+                      });
+                      
+                      const result = await response.json();
+                      
+                      if (result.valid && result.promoCode) {
+                        setAppliedPromoCode({
+                          id: result.promoCode.id,
+                          code: result.promoCode.code,
+                          discountAmount: result.discountAmount || 0, // Already in paise
+                          message: result.message,
+                        });
+                      }
+                      
+                      return result;
+                    }}
+                    appliedCode={appliedPromoCode ? {
+                      code: appliedPromoCode.code,
+                      discountAmount: appliedPromoCode.discountAmount / 100, // Convert to rupees for display
+                      message: appliedPromoCode.message,
+                    } : null}
+                    onRemove={() => setAppliedPromoCode(null)}
+                  />
+                </div>
+              )}
+
+              {/* Price Summary */}
+              <div className="bg-primary-50 rounded-lg p-4 border border-primary-200">
+                {discountAmount > 0 && appliedPromoCode && (
+                  <div className="mb-3 pb-3 border-b border-primary-200">
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span className="text-neutral-700">Base Price</span>
+                      <span className="text-neutral-900">₹{baseAmount.toLocaleString()}</span>
+                    </div>
+                    {addOnTotal > 0 && (
+                      <div className="flex justify-between items-center text-sm mb-2">
+                        <span className="text-neutral-700">Add-ons</span>
+                        <span className="text-neutral-900">₹{addOnTotal.toLocaleString()}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span className="text-neutral-700">Subtotal</span>
+                      <span className="text-neutral-900">₹{subtotal.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-green-700">Discount ({appliedPromoCode.code})</span>
+                      <span className="text-green-700 font-medium">-₹{discountAmount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-neutral-900">Total Amount</span>
+                  <span className="text-2xl font-bold text-primary-600">
+                    ₹{finalAmount.toLocaleString()}
+                  </span>
+                </div>
+                {addOnTotal > 0 && discountAmount === 0 && (
+                  <div className="text-xs text-neutral-600 mt-1">
+                    Base: ₹{baseAmount.toLocaleString()} + Add-ons: ₹{addOnTotal.toLocaleString()}
+                  </div>
+                )}
+              </div>
 
               {/* Payment Option */}
               <div className="bg-neutral-50 rounded-lg p-4">

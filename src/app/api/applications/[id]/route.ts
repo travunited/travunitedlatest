@@ -58,6 +58,12 @@ export async function GET(
             code: true,
           },
         },
+        promoCode: {
+          select: {
+            id: true,
+            code: true,
+          },
+        },
       },
     });
 

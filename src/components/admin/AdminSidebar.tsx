@@ -30,6 +30,7 @@ import {
   UserCircle,
   Mail,
   ChevronLeft,
+  Tag,
 } from "lucide-react";
 
 const BASE_MENU_ITEMS = [
@@ -123,6 +124,12 @@ const SETTINGS_MENU_ITEMS = [
     label: "Email Templates",
     href: "/admin/settings/email-templates",
     icon: Mail,
+    roles: ["STAFF_ADMIN", "SUPER_ADMIN"],
+  },
+  {
+    label: "Promo Codes",
+    href: "/admin/promo-codes",
+    icon: Tag,
     roles: ["STAFF_ADMIN", "SUPER_ADMIN"],
   },
   {

@@ -935,7 +935,9 @@ export async function sendVisaPaymentSuccessEmail(
   country: string,
   visaType: string,
   amount: number,
-  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null,
+  promoCode?: string | null,
+  discountAmount?: number | null
 ) {
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("visaPaymentSuccessEmail", templates.emailVisaPaymentSuccess);
@@ -951,6 +953,8 @@ export async function sendVisaPaymentSuccessEmail(
     applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
     documentsUrl: `${baseUrl}/dashboard/applications/${applicationId}/documents`, // Link to document upload page
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+    promoCode: promoCode || undefined,
+    discountAmount: discountAmount || undefined,
   };
   
   const html = replaceTemplateVariables(template, variables);
@@ -1143,7 +1147,9 @@ export async function sendTourPaymentSuccessEmail(
   amount: number,
   isAdvance: boolean,
   pendingBalance?: number,
-  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null
+  role?: UserRole | "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN" | null,
+  promoCode?: string | null,
+  discountAmount?: number | null
 ) {
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("tourPaymentSuccessEmail", templates.emailTourPaymentSuccess);
@@ -1159,6 +1165,8 @@ export async function sendTourPaymentSuccessEmail(
     pendingBalance,
     bookingUrl: `${baseUrl}/dashboard/bookings/${bookingId}`,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
+    promoCode: promoCode || undefined,
+    discountAmount: discountAmount || undefined,
   };
   
   const html = replaceTemplateVariables(template, variables);

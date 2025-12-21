@@ -57,6 +57,8 @@ const applicationSchema = z.object({
   totalAmount: z.number().int().nonnegative().optional(),
   travelDate: z.string().optional(),
   tripType: z.string().optional(),
+  promoCodeId: z.string().optional(),
+  discountAmount: z.number().int().nonnegative().optional(),
   primaryContact: z.object({
     name: z.string(),
     email: z.string().email(),
@@ -253,6 +255,8 @@ export async function POST(req: Request) {
         status: "PAYMENT_PENDING", // Changed from DRAFT - payment comes before documents
         totalAmount: data.totalAmount ?? 0,
         currency: "INR",
+        promoCodeId: data.promoCodeId || null,
+        discountAmount: data.discountAmount || 0,
       },
     });
 

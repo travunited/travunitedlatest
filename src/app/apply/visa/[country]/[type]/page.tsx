@@ -11,6 +11,7 @@ import { loadRazorpayScript } from "@/lib/razorpay-client";
 import { useSearchParams } from "next/navigation";
 import { formatDate } from "@/lib/dateFormat";
 import { AccountGate } from "@/components/visa/AccountGate";
+import { PromoCodeInput } from "@/components/promo-code/PromoCodeInput";
 
 type DocScope = "PER_TRAVELLER" | "PER_APPLICATION";
 
@@ -77,6 +78,12 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   const [emailVerified, setEmailVerified] = useState<boolean | null>(null); // null = checking, true/false = result
   const [isLoadingGuestData, setIsLoadingGuestData] = useState(true);
+  const [appliedPromoCode, setAppliedPromoCode] = useState<{
+    id: string;
+    code: string;
+    discountAmount: number;
+    message?: string;
+  } | null>(null);
 
   type FormDataTraveller = {
     id: string;
@@ -1007,6 +1014,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           selectedSubTypeId: formData.selectedSubTypeId,
           primaryContact: formData.primaryContact,
           travellers: formData.travellers?.map(({ id, ...rest }) => rest) || [],
+          promoCodeId: appliedPromoCode?.id,
+          discountAmount: appliedPromoCode?.discountAmount || 0,
         }),
       });
 
@@ -1168,7 +1177,10 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       formData.travellers && formData.travellers.length > 0
         ? formData.travellers.length
         : 1;
-    const totalAmount = (visaInfo?.priceInInr ?? 0) * travellerCount;
+    const baseTotalAmount = (visaInfo?.priceInInr ?? 0) * travellerCount;
+    const discountAmountInPaise = appliedPromoCode?.discountAmount || 0;
+    const discountAmountInRupees = discountAmountInPaise / 100;
+    const totalAmount = Math.max(0, baseTotalAmount - discountAmountInRupees);
 
     setLoading(true);
     try {
@@ -1176,8 +1188,10 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: totalAmount,
+          amount: Math.round(totalAmount * 100), // Convert to paise for payment API
           applicationId: draftId,
+          promoCodeId: appliedPromoCode?.id,
+          discountAmount: discountAmountInPaise > 0 ? discountAmountInPaise : undefined,
         }),
       });
 
@@ -1649,8 +1663,10 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         );
 
       case 4:
-        const totalAmount =
+        const baseTotalAmount =
           visaPrice * ((formData.travellers || []).length || 1);
+        const discountAmount = appliedPromoCode ? appliedPromoCode.discountAmount / 100 : 0; // Convert from paise to rupees
+        const totalAmount = Math.max(0, baseTotalAmount - discountAmount);
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">Review & Confirm</h2>
@@ -1724,8 +1740,63 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                 )}
               </div>
 
+              {/* Promo Code */}
+              {session && (
+                <div className="bg-white rounded-lg p-4 border border-neutral-200">
+                  <PromoCodeInput
+                    onApply={async (code) => {
+                      const baseAmount = visaPrice * ((formData.travellers || []).length || 1);
+                      // Convert to paise for API (multiply by 100)
+                      const baseAmountInPaise = Math.round(baseAmount * 100);
+                      const response = await fetch("/api/promo-codes/validate", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          code,
+                          amount: baseAmountInPaise,
+                          type: "visa",
+                          visaId: visaInfo?.id,
+                          countryId: visaInfo?.country?.id,
+                        }),
+                      });
+                      
+                      const result = await response.json();
+                      
+                      if (result.valid && result.promoCode) {
+                        setAppliedPromoCode({
+                          id: result.promoCode.id,
+                          code: result.promoCode.code,
+                          discountAmount: result.discountAmount || 0, // Already in paise
+                          message: result.message,
+                        });
+                      }
+                      
+                      return result;
+                    }}
+                    appliedCode={appliedPromoCode ? {
+                      code: appliedPromoCode.code,
+                      discountAmount: appliedPromoCode.discountAmount / 100, // Convert to rupees for display
+                      message: appliedPromoCode.message,
+                    } : null}
+                    onRemove={() => setAppliedPromoCode(null)}
+                  />
+                </div>
+              )}
+
               {/* Price */}
               <div className="bg-primary-50 rounded-lg p-4 border border-primary-200">
+                {discountAmount > 0 && (
+                  <div className="mb-3 pb-3 border-b border-primary-200">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-neutral-700">Subtotal</span>
+                      <span className="text-neutral-900">₹{baseTotalAmount.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm mt-2">
+                      <span className="text-green-700">Discount ({appliedPromoCode?.code})</span>
+                      <span className="text-green-700 font-medium">-₹{discountAmount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                )}
                 <div className="flex justify-between items-center">
                   <span className="font-semibold text-neutral-900">Total Amount</span>
                   <span className="text-2xl font-bold text-primary-600">
@@ -1848,7 +1919,9 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         );
 
       case 7:
-        const visaTotalAmount = visaPrice * Math.max(formData.travellers?.length ?? 1, 1);
+        const baseVisaTotalAmount = visaPrice * Math.max(formData.travellers?.length ?? 1, 1);
+        const visaDiscountAmount = appliedPromoCode ? appliedPromoCode.discountAmount / 100 : 0; // Convert from paise to rupees
+        const visaTotalAmount = Math.max(0, baseVisaTotalAmount - visaDiscountAmount);
         const isFreeVisa = visaTotalAmount <= 0;
 
         return (
@@ -1885,6 +1958,18 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                   </p>
                 </div>
                 <div className="bg-neutral-50 rounded-lg p-6">
+                  {visaDiscountAmount > 0 && (
+                    <div className="mb-4 pb-4 border-b border-neutral-200">
+                      <div className="flex justify-between items-center text-sm mb-2">
+                        <span className="text-neutral-700">Subtotal</span>
+                        <span className="text-neutral-900">₹{baseVisaTotalAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-green-700">Discount ({appliedPromoCode?.code})</span>
+                        <span className="text-green-700 font-medium">-₹{visaDiscountAmount.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-lg font-semibold">Total Amount</span>
                     <span className="text-2xl font-bold text-primary-600">

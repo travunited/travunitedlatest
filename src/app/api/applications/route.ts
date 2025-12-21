@@ -55,6 +55,12 @@ export async function GET(req: Request) {
             entryTypeLegacy: true,
           },
         },
+        promoCode: {
+          select: {
+            id: true,
+            code: true,
+          },
+        },
       },
       orderBy: {
         createdAt: "desc",

@@ -63,6 +63,7 @@ model User {
   auditLogs              AuditLog[]
   payments               Payment[]
   passwordResets         PasswordReset[]
+  promoCodeUsages        PromoCodeUsage[]
   // Relations to Notification models intentionally removed for now - will be re-added when User model is finalized
   // notifications Notification[]
   // notificationSettings UserNotificationSettings?
@@ -96,6 +97,10 @@ model Application {
   travellers               ApplicationTraveller[]
   reviews                  Review[]
   payments                 Payment[]
+  promoCode                PromoCode?     @relation(fields: [promoCodeId], references: [id])
+  promoCodeId              String?
+  discountAmount           Int?           @default(0) // Discount amount in paise
+  promoCodeUsages          PromoCodeUsage[]
 }
 
 model ApplicationTraveller {
@@ -181,6 +186,10 @@ model Booking {
   reviews                  Review[]
   payments                 Payment[]
   bookingDocuments         BookingDocument[]
+  promoCode                PromoCode?     @relation(fields: [promoCodeId], references: [id])
+  promoCodeId              String?
+  discountAmount           Int?           @default(0) // Discount amount in paise
+  promoCodeUsages          PromoCodeUsage[]
 }
 
 model BookingTraveller {
@@ -463,6 +472,10 @@ model Payment {
   user        User         @relation(fields: [userId], references: [id])
   application Application? @relation(fields: [applicationId], references: [id])
   booking     Booking?     @relation(fields: [bookingId], references: [id])
+  promoCode   PromoCode?   @relation(fields: [promoCodeId], references: [id])
+  promoCodeId String?
+  discountAmount Int?      @default(0) // Discount amount in paise
+  promoCodeUsage PromoCodeUsage?
 }
 
 enum ReviewType {
@@ -811,4 +824,80 @@ model GuestApplication {
   @@index([guestId])
   @@index([expiresAt])
   @@map("guest_applications")
+}
+
+model PromoCode {
+  id                  String   @id @default(cuid())
+  code                String   @unique // e.g., "SUMMER2024", "WELCOME10"
+  description         String?  // Admin notes/description
+  discountType        String   // "PERCENTAGE" | "FIXED_AMOUNT" | "FREE"
+  discountValue       Int      // Percentage (0-100) or amount in paise
+  minPurchaseAmount   Int?     // Minimum order value to apply (in paise)
+  maxDiscountAmount   Int?     // Maximum discount cap (for percentage discounts)
+  applicableTo        String   @default("BOTH") // "VISAS" | "TOURS" | "BOTH"
+  
+  // Specific restrictions
+  visaIds             String[] // Specific visa IDs (empty = all visas)
+  countryIds          String[] // Specific country IDs (empty = all countries)
+  tourIds             String[] // Specific tour IDs (empty = all tours)
+  
+  // Usage limits
+  maxUses             Int?     // Total times this code can be used (null = unlimited)
+  maxUsesPerUser      Int      @default(1) // Times a single user can use it
+  currentUses         Int      @default(0) // Current usage count
+  
+  // User restrictions
+  restrictedUserIds   String[] // Specific users allowed (empty = all users)
+  restrictedEmails    String[] // Specific emails allowed
+  newUsersOnly        Boolean  @default(false) // Only for first-time users
+  
+  // Validity
+  validFrom           DateTime // Start date/time
+  validUntil          DateTime // End date/time
+  isActive            Boolean  @default(true) // Admin can enable/disable
+  
+  // Metadata
+  createdBy           String?  // Admin user ID who created
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  
+  // Relations
+  usages              PromoCodeUsage[]
+  applications        Application[]
+  bookings            Booking[]
+  payments            Payment[]
+  
+  @@index([code])
+  @@index([isActive, validFrom, validUntil])
+  @@index([applicableTo])
+}
+
+model PromoCodeUsage {
+  id           String    @id @default(cuid())
+  promoCode    PromoCode @relation(fields: [promoCodeId], references: [id])
+  promoCodeId  String
+  user         User      @relation(fields: [userId], references: [id])
+  userId       String
+  application  Application? @relation(fields: [applicationId], references: [id])
+  applicationId String?
+  booking      Booking?    @relation(fields: [bookingId], references: [id])
+  bookingId    String?
+  payment      Payment?    @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  paymentId    String?     @unique
+  
+  // Discount details
+  originalAmount  Int     // Amount before discount
+  discountAmount  Int     // Actual discount applied
+  finalAmount     Int     // Amount after discount
+  
+  // Metadata
+  usedAt         DateTime @default(now())
+  ipAddress      String?
+  userAgent      String?
+  
+  @@index([promoCodeId])
+  @@index([userId])
+  @@index([applicationId])
+  @@index([bookingId])
+  @@index([paymentId])
 }

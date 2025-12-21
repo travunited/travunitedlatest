@@ -34,6 +34,12 @@ export async function GET(
             email: true,
           },
         },
+        promoCode: {
+          select: {
+            id: true,
+            code: true,
+          },
+        },
       },
     });
 

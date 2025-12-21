@@ -18,6 +18,7 @@ interface Booking {
   tourName: string;
   status: string;
   totalAmount: number;
+  discountAmount?: number;
   travelDate: string | null;
   voucherUrl: string | null;
   invoiceUrl: string | null;
@@ -28,6 +29,10 @@ interface Booking {
       lastName: string;
     };
   }>;
+  promoCode?: {
+    id: string;
+    code: string;
+  } | null;
 }
 
 export default function BookingDetailPage() {
@@ -246,6 +251,11 @@ export default function BookingDetailPage() {
                   <div className="font-medium text-neutral-900">
                     ₹{booking.totalAmount.toLocaleString()}
                   </div>
+                  {booking.discountAmount && booking.discountAmount > 0 && booking.promoCode && (
+                    <div className="text-xs text-green-600 mt-1">
+                      Promo code {booking.promoCode.code} applied - Saved ₹{(booking.discountAmount / 100).toLocaleString()}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

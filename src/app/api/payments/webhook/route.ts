@@ -11,6 +11,7 @@ import {
 import { logAuditEvent } from "@/lib/audit";
 import { notify, notifyMultiple } from "@/lib/notifications";
 import { getAdminUserIds } from "@/lib/admin-contacts";
+import { recordPromoCodeUsage } from "@/lib/promo-codes";
 export const dynamic = "force-dynamic";
 
 
@@ -62,6 +63,9 @@ export async function POST(req: Request) {
               user: {
                 select: { email: true, name: true, id: true, role: true },
               },
+              promoCode: {
+                select: { code: true },
+              },
             },
           },
           booking: {
@@ -69,10 +73,16 @@ export async function POST(req: Request) {
               user: {
                 select: { email: true, name: true, id: true, role: true },
               },
+              promoCode: {
+                select: { code: true },
+              },
             },
           },
           user: {
             select: { id: true },
+          },
+          promoCode: {
+            select: { code: true },
           },
         },
       });
@@ -96,6 +106,28 @@ export async function POST(req: Request) {
         },
       });
 
+      // Record promo code usage if promo code was applied
+      if (payment.promoCodeId && payment.discountAmount && payment.discountAmount > 0) {
+        try {
+          // Get the original amount before discount
+          const originalAmount = payment.amount + (payment.discountAmount || 0);
+          
+          await recordPromoCodeUsage({
+            promoCodeId: payment.promoCodeId,
+            userId: payment.userId,
+            originalAmount: originalAmount,
+            discountAmount: payment.discountAmount,
+            finalAmount: payment.amount,
+            applicationId: payment.applicationId || undefined,
+            bookingId: payment.bookingId || undefined,
+            paymentId: payment.id,
+          });
+        } catch (error) {
+          // Log error but don't fail the webhook processing
+          console.error("Error recording promo code usage:", error);
+        }
+      }
+
       if (payment.applicationId && payment.application) {
         // Update status to DOCUMENTS_PENDING - documents will be uploaded after payment
         await prisma.application.update({
@@ -112,7 +144,9 @@ export async function POST(req: Request) {
           payment.application.country || "",
           payment.application.visaType || "",
           payment.amount,
-          payment.application.user.role || "CUSTOMER"
+          payment.application.user.role || "CUSTOMER",
+          payment.promoCode?.code || payment.application.promoCode?.code || null,
+          payment.discountAmount || null
         );
         
         // Send notification to upload documents
@@ -157,6 +191,9 @@ export async function POST(req: Request) {
             user: {
               select: { email: true, id: true, role: true },
             },
+            promoCode: {
+              select: { code: true },
+            },
           },
         });
 
@@ -178,7 +215,9 @@ export async function POST(req: Request) {
             payment.amount,
             isAdvance,
             isAdvance ? pendingBalance : undefined,
-            booking.user.role || "CUSTOMER"
+            booking.user.role || "CUSTOMER",
+            payment.promoCode?.code || booking.promoCode?.code || null,
+            payment.discountAmount || null
           );
           await notify({
             userId: booking.userId,

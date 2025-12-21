@@ -40,6 +40,8 @@ const bookingSchema = z.object({
   paymentType: z.enum(["full", "advance"]),
   tourPrice: z.number().nonnegative(),
   advancePercentage: z.number().nullable().optional(),
+  promoCodeId: z.string().optional(),
+  discountAmount: z.number().int().nonnegative().optional(),
   primaryContact: z.object({
     name: z.string().min(1, "Primary contact name is required"),
     email: z.string().email("Invalid email address"),
@@ -571,6 +573,8 @@ export async function POST(req: Request) {
           policyVersion: data.policyVersion || null,
           policyAcceptedIp: ipAddress,
           policyAcceptedUserAgent: userAgent,
+          promoCodeId: data.promoCodeId || null,
+          discountAmount: data.discountAmount || 0,
           // documents field is optional (Json?) and will be null by default
           // If the column doesn't exist, the migration needs to be run
         },
