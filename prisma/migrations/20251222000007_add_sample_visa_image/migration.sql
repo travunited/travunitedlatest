@@ -1,4 +1,13 @@
 -- AlterTable
-ALTER TABLE "Visa"
-ADD COLUMN "sampleVisaImageUrl" TEXT;
+-- Add column only if it doesn't already exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'Visa' 
+        AND column_name = 'sampleVisaImageUrl'
+    ) THEN
+        ALTER TABLE "Visa" ADD COLUMN "sampleVisaImageUrl" TEXT;
+    END IF;
+END $$;
 
