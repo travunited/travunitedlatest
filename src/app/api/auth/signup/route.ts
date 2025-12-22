@@ -56,13 +56,29 @@ export async function POST(req: Request) {
     // Check if user already exists
     let existingUser;
     try {
+      console.log("[Signup] Checking if user exists:", { email });
       existingUser = await prisma.user.findUnique({
         where: { email },
       });
-    } catch (dbError) {
-      console.error("[Signup] Database error checking existing user:", dbError);
+      console.log("[Signup] User lookup result:", { exists: !!existingUser });
+    } catch (dbError: any) {
+      const errorDetails = {
+        error: dbError?.message || String(dbError),
+        code: dbError?.code,
+        meta: dbError?.meta,
+        name: dbError?.name,
+        cause: dbError?.cause,
+        stack: dbError?.stack,
+      };
+      console.error("[Signup] ❌ Database error checking existing user:", JSON.stringify(errorDetails, null, 2));
+      
+      // Return more specific error in development
+      const errorMessage = process.env.NODE_ENV === "development" 
+        ? `Database error: ${dbError?.message || String(dbError)} (Code: ${dbError?.code || 'N/A'})`
+        : "Database error. Please try again.";
+      
       return NextResponse.json(
-        { error: "Database error. Please try again." },
+        { error: errorMessage },
         { status: 500 }
       );
     }
@@ -105,6 +121,13 @@ export async function POST(req: Request) {
     // Create user with OTP
     let user;
     try {
+      console.log("[Signup] Creating user:", { 
+        email, 
+        hasName: !!normalizedName, 
+        hasPhone: !!normalizedPhone,
+        hasPasswordHash: !!passwordHash,
+        otp: otp.substring(0, 2) + "****",
+      });
       user = await prisma.user.create({
         data: {
           name: normalizedName,
@@ -123,12 +146,17 @@ export async function POST(req: Request) {
           role: true,
         },
       });
+      console.log("[Signup] ✅ User created successfully:", { id: user.id, email: user.email });
     } catch (createError: any) {
-      console.error("[Signup] User creation error:", {
+      const errorDetails = {
         error: createError?.message || String(createError),
         code: createError?.code,
         meta: createError?.meta,
-      });
+        name: createError?.name,
+        cause: createError?.cause,
+        stack: createError?.stack,
+      };
+      console.error("[Signup] ❌ User creation error:", JSON.stringify(errorDetails, null, 2));
       
       // Handle unique constraint violation
       if (createError?.code === "P2002") {
@@ -138,8 +166,13 @@ export async function POST(req: Request) {
         );
       }
       
+      // Return more specific error in development
+      const errorMessage = process.env.NODE_ENV === "development"
+        ? `Failed to create user: ${createError?.message || String(createError)} (Code: ${createError?.code || 'N/A'})`
+        : "Failed to create user account. Please try again.";
+      
       return NextResponse.json(
-        { error: "Failed to create user account" },
+        { error: errorMessage },
         { status: 500 }
       );
     }
