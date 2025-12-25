@@ -37,12 +37,12 @@ export async function POST(req: Request) {
         id: { in: data.ids },
         OR: [
           {
-            visas: {
+            Visa: {
               some: {},
             },
           },
           {
-            tours: {
+            Tour: {
               some: {},
             },
           },
@@ -53,8 +53,8 @@ export async function POST(req: Request) {
         name: true,
         _count: {
           select: {
-            visas: true,
-            tours: true,
+            Visa: true,
+            Tour: true,
           },
         },
       },
@@ -63,8 +63,8 @@ export async function POST(req: Request) {
     if (countriesWithLinks.length > 0) {
       const countryDetails = countriesWithLinks.map((c) => ({
         name: c.name,
-        visas: c._count.visas,
-        tours: c._count.tours,
+        visas: c._count.Visa,
+        tours: c._count.Tour,
       }));
 
       return NextResponse.json(

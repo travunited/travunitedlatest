@@ -55,11 +55,11 @@ export async function GET(
     const tour = await prisma.tour.findUnique({
       where: { id: params.id },
       include: {
-        country: true,
-        days: {
+        Country: true,
+        TourDay: {
           orderBy: { dayIndex: "asc" },
         },
-        addOns: {
+        TourAddOn: {
           orderBy: { sortOrder: "asc" },
         },
       },
@@ -90,6 +90,9 @@ export async function GET(
 
     return NextResponse.json({
       ...tour,
+      country: tour.Country,
+      days: tour.TourDay,
+      addOns: tour.TourAddOn,
       imageUrl: getMediaProxyUrl(tour.imageUrl),
       heroImageUrl: getMediaProxyUrl(tour.heroImageUrl),
       galleryImageUrls: processedGalleryImages,
@@ -152,7 +155,7 @@ function buildTourData(body: any, resolvedSlug: string) {
     tourType: body.tourType || null,
     tourSubType: body.tourSubType || null,
     bestFor: stringifyJson(body.bestFor),
-    
+
     // Destination & Categorization
     destination: body.destination,
     primaryDestination: body.primaryDestination || null,
@@ -163,7 +166,7 @@ function buildTourData(body: any, resolvedSlug: string) {
     regionTags: stringifyJson(body.regionTags),
     categoryId: body.categoryId || null,
     themes: stringifyJson(body.themes),
-    
+
     // Duration & Group Size
     duration: body.duration,
     durationDays: body.durationDays || null,
@@ -173,7 +176,7 @@ function buildTourData(body: any, resolvedSlug: string) {
     minimumTravelers: body.minimumTravelers || null,
     maximumTravelers: body.maximumTravelers || null,
     difficultyLevel: body.difficultyLevel || null,
-    
+
     // Pricing
     price: Number(body.price),
     basePriceInInr: body.basePriceInInr ? Number(body.basePriceInInr) : Number(body.price),
@@ -181,19 +184,19 @@ function buildTourData(body: any, resolvedSlug: string) {
     currency: body.currency || "INR",
     packageType: body.packageType || null,
     seasonalPricing: stringifyJson(body.seasonalPricing),
-    
+
     // Dates & Availability
     availableDates: stringifyJson(body.availableDates),
     bookingDeadline: body.bookingDeadline ? new Date(body.bookingDeadline) : null,
     status: body.status || (body.isActive ? "active" : "inactive"),
     isActive: body.isActive ?? true,
     isFeatured: body.isFeatured ?? false,
-    
+
     // Advance Payment
     allowAdvance: body.allowAdvance ?? false,
     advancePercentage: body.allowAdvance && body.advancePercentage ? Number(body.advancePercentage) : null,
     requiresPassport: body.requiresPassport ?? false,
-    
+
     // Content
     overview: body.overview || null,
     highlights: stringifyJson(body.highlights),
@@ -205,7 +208,7 @@ function buildTourData(body: any, resolvedSlug: string) {
     customizationOptions: stringifyJson(body.customizationOptions),
     bookingPolicies: body.bookingPolicies || null,
     cancellationTerms: body.cancellationTerms || null,
-    
+
     // Images & Media
     imageUrl: normalizeMediaInput(body.imageUrl),
     heroImageUrl: normalizeMediaInput(body.heroImageUrl || body.imageUrl),
@@ -214,7 +217,7 @@ function buildTourData(body: any, resolvedSlug: string) {
     images: stringifyJson(body.images || body.galleryImageUrls),
     ogImage: normalizeMediaInput(body.ogImage),
     twitterImage: normalizeMediaInput(body.twitterImage),
-    
+
     // SEO & Social
     metaTitle: body.metaTitle || null,
     metaDescription: body.metaDescription || null,
@@ -267,11 +270,13 @@ export async function PUT(
               day: { title: string; content: string; dayIndex?: number },
               index: number
             ) => ({
+              id: crypto.randomUUID(),
               tourId: params.id,
               title: day.title,
               content: day.content,
               dayIndex:
                 typeof day.dayIndex === "number" ? day.dayIndex : index + 1,
+              updatedAt: new Date(),
             })
           ),
         });
@@ -300,7 +305,9 @@ export async function PUT(
           const created = await tx.tourAddOn.create({
             data: {
               ...payload,
+              id: crypto.randomUUID(),
               tourId: params.id,
+              updatedAt: new Date(),
             },
           });
           keepAddOnIds.push(created.id);
@@ -321,16 +328,16 @@ export async function PUT(
     const updated = await prisma.tour.findUnique({
       where: { id: params.id },
       include: {
-        country: true,
-        days: { orderBy: { dayIndex: "asc" } },
-        addOns: { orderBy: { sortOrder: "asc" } },
+        Country: true,
+        TourDay: { orderBy: { dayIndex: "asc" } },
+        TourAddOn: { orderBy: { sortOrder: "asc" } },
       },
     });
 
     // Revalidate cache for the updated holiday pages
     if (updated) {
       const tourSlug = updated.slug;
-      
+
       // Revalidate holiday detail page (slug may contain slashes, so we need to handle it)
       if (tourSlug) {
         // The route is /holidays/[...id], so we need to revalidate with the full slug path
@@ -338,10 +345,10 @@ export async function PUT(
         // Also revalidate the encoded version
         revalidatePath(`/holidays/${encodeURIComponent(tourSlug)}`);
       }
-      
+
       // Revalidate holidays listing page
       revalidatePath("/holidays");
-      
+
       // Revalidate homepage if tour is featured
       if (updated.isFeatured) {
         revalidatePath("/");
@@ -384,23 +391,23 @@ export async function PATCH(
           : { isFeatured: body.isFeatured }),
       },
       include: {
-        country: true,
+        Country: true,
       },
     });
 
     // Revalidate cache for the updated holiday pages
     if (updated) {
       const tourSlug = updated.slug;
-      
+
       // Revalidate holiday detail page
       if (tourSlug) {
         revalidatePath(`/holidays/${tourSlug}`);
         revalidatePath(`/holidays/${encodeURIComponent(tourSlug)}`);
       }
-      
+
       // Revalidate holidays listing page
       revalidatePath("/holidays");
-      
+
       // Revalidate homepage if tour is featured
       if (updated.isFeatured) {
         revalidatePath("/");

@@ -79,14 +79,14 @@ export async function GET(
     const visa = await prisma.visa.findUnique({
       where: { id: params.id },
       include: {
-        country: true,
-        requirements: {
+        Country: true,
+        VisaDocumentRequirement: {
           orderBy: { sortOrder: "asc" },
         },
-        faqs: {
+        VisaFaq: {
           orderBy: { sortOrder: "asc" },
         },
-        subTypes: {
+        VisaSubType: {
           orderBy: { sortOrder: "asc" },
         },
       },
@@ -101,6 +101,10 @@ export async function GET(
 
     return NextResponse.json({
       ...visa,
+      country: visa.Country,
+      requirements: visa.VisaDocumentRequirement,
+      faqs: visa.VisaFaq,
+      subTypes: visa.VisaSubType,
       heroImageUrl: getMediaProxyUrl(visa.heroImageUrl),
       sampleVisaImageUrl: getMediaProxyUrl(visa.sampleVisaImageUrl),
     });
@@ -166,7 +170,7 @@ export async function PUT(
     }
 
     const body = await req.json();
-    
+
     // Debug logging for entryType issues
     if (body.entryType !== undefined || body.structuredEntryType !== undefined) {
       console.log("EntryType debug:", {
@@ -229,7 +233,7 @@ export async function PUT(
     const validityDays = body.validityDays !== undefined ? body.validityDays : existingVisa.validityDays;
     const currency = body.currency !== undefined ? body.currency : existingVisa.currency;
     // Handle visaMode: if explicitly provided in body, use it (even if empty string to set to null), otherwise use existing value
-    const visaMode = body.visaMode !== undefined 
+    const visaMode = body.visaMode !== undefined
       ? (body.visaMode || "")  // Allow empty string to explicitly set to null
       : existingVisa.visaMode;
     const structuredEntryType = (body.structuredEntryType !== undefined && body.structuredEntryType !== null && body.structuredEntryType !== "")
@@ -338,18 +342,18 @@ export async function PUT(
         // visaMode not provided in body, use existing value
         parsedVisaMode = existingVisa.visaMode as VisaMode | null;
       }
-      
+
       // Only normalize entryType if it's actually being updated with a non-empty value
       // Check if structuredEntryType or entryType is explicitly provided with a non-empty string value
-      const hasStructuredEntryType = body.structuredEntryType !== undefined && 
-                                     body.structuredEntryType !== null && 
-                                     typeof body.structuredEntryType === "string" &&
-                                     body.structuredEntryType.trim() !== "";
-      const hasEntryType = body.entryType !== undefined && 
-                          body.entryType !== null && 
-                          typeof body.entryType === "string" &&
-                          body.entryType.trim() !== "";
-      
+      const hasStructuredEntryType = body.structuredEntryType !== undefined &&
+        body.structuredEntryType !== null &&
+        typeof body.structuredEntryType === "string" &&
+        body.structuredEntryType.trim() !== "";
+      const hasEntryType = body.entryType !== undefined &&
+        body.entryType !== null &&
+        typeof body.entryType === "string" &&
+        body.entryType.trim() !== "";
+
       // Only normalize entryType if a non-empty value is explicitly provided
       // Skip normalization entirely if no valid value is provided
       if (hasStructuredEntryType) {
@@ -363,7 +367,7 @@ export async function PUT(
         // Don't try to normalize - just use the existing enum value directly or null
         parsedEntryType = existingVisa.entryType as EntryType | null;
       }
-      
+
       // Handle stayType: if explicitly provided in body (even if empty), process it; otherwise use existing value
       if (body.stayType !== undefined) {
         // stayType was explicitly provided in the request body
@@ -440,6 +444,7 @@ export async function PUT(
               category?: string;
               sortOrder?: number;
             }, index: number) => ({
+              id: crypto.randomUUID(),
               visaId: params.id,
               name: req.name,
               description: req.description || null,
@@ -448,6 +453,7 @@ export async function PUT(
               category: req.category || null,
               sortOrder:
                 typeof req.sortOrder === "number" ? req.sortOrder : index,
+              updatedAt: new Date(),
             })
           ),
         });
@@ -468,12 +474,14 @@ export async function PUT(
               },
               index: number
             ) => ({
+              id: crypto.randomUUID(),
               visaId: params.id,
               category: faq.category || null,
               question: faq.question,
               answer: faq.answer,
               sortOrder:
                 typeof faq.sortOrder === "number" ? faq.sortOrder : index,
+              updatedAt: new Date(),
             })
           ),
         });
@@ -494,11 +502,13 @@ export async function PUT(
               },
               index: number
             ) => ({
+              id: crypto.randomUUID(),
               visaId: params.id,
               label: subtype.label,
               code: subtype.code || null,
               sortOrder:
                 typeof subtype.sortOrder === "number" ? subtype.sortOrder : index,
+              updatedAt: new Date(),
             })
           ),
         });
@@ -508,31 +518,31 @@ export async function PUT(
     const updated = await prisma.visa.findUnique({
       where: { id: params.id },
       include: {
-        country: true,
-        requirements: { orderBy: { sortOrder: "asc" } },
-        faqs: { orderBy: { sortOrder: "asc" } },
-        subTypes: { orderBy: { sortOrder: "asc" } },
+        Country: true,
+        VisaDocumentRequirement: { orderBy: { sortOrder: "asc" } },
+        VisaFaq: { orderBy: { sortOrder: "asc" } },
+        VisaSubType: { orderBy: { sortOrder: "asc" } },
       },
     });
 
     // Revalidate cache for the updated visa pages
     if (updated) {
-      const countryCode = updated.country?.code?.toLowerCase() || "";
+      const countryCode = updated.Country?.code?.toLowerCase() || "";
       const visaSlug = updated.slug;
-      
+
       // Revalidate visa detail page
       if (countryCode && visaSlug) {
         revalidatePath(`/visas/${countryCode}/${visaSlug}`);
       }
-      
+
       // Revalidate country visas listing page
       if (countryCode) {
         revalidatePath(`/visas/${countryCode}`);
       }
-      
+
       // Revalidate visas listing page
       revalidatePath("/visas");
-      
+
       // Revalidate homepage if visa is featured
       if (updated.isFeatured) {
         revalidatePath("/");
@@ -582,28 +592,28 @@ export async function PATCH(
           : { isFeatured: body.isFeatured }),
       },
       include: {
-        country: true,
+        Country: true,
       },
     });
 
     // Revalidate cache for the updated visa pages
     if (updated) {
-      const countryCode = updated.country?.code?.toLowerCase() || "";
+      const countryCode = updated.Country?.code?.toLowerCase() || "";
       const visaSlug = updated.slug;
-      
+
       // Revalidate visa detail page
       if (countryCode && visaSlug) {
         revalidatePath(`/visas/${countryCode}/${visaSlug}`);
       }
-      
+
       // Revalidate country visas listing page
       if (countryCode) {
         revalidatePath(`/visas/${countryCode}`);
       }
-      
+
       // Revalidate visas listing page
       revalidatePath("/visas");
-      
+
       // Revalidate homepage if visa is featured
       if (updated.isFeatured) {
         revalidatePath("/");

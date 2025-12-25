@@ -35,13 +35,13 @@ export async function POST(req: Request) {
     let toursWithBookings: Array<{
       id: string;
       name: string;
-      _count: { bookings: number };
+      _count: { Booking: number };
     }> = [];
     try {
       toursWithBookings = await prisma.tour.findMany({
         where: {
           id: { in: data.ids },
-          bookings: {
+          Booking: {
             some: {},
           },
         },
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
           name: true,
           _count: {
             select: {
-              bookings: true, // Count ALL bookings, not just active ones
+              Booking: true, // Count ALL bookings, not just active ones
             },
           },
         },
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     }
 
     if (toursWithBookings.length > 0) {
-      const tourNames = toursWithBookings.map((t) => `${t.name} (${t._count.bookings} booking(s))`).join(", ");
+      const tourNames = toursWithBookings.map((t) => `${t.name} (${t._count.Booking} booking(s))`).join(", ");
       return NextResponse.json(
         {
           error: "Cannot delete tours with existing bookings",
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("Error bulk deleting tours:", error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Invalid input", details: error.errors },
@@ -140,7 +140,7 @@ export async function POST(req: Request) {
     if (error && typeof error === "object" && "code" in error) {
       if (error.code === "P2003") {
         return NextResponse.json(
-          { 
+          {
             error: "Cannot delete tour(s) because they are referenced by other records",
             details: "Please ensure there are no active bookings or other dependencies"
           },
@@ -158,7 +158,7 @@ export async function POST(req: Request) {
     // Log full error details for debugging
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const errorStack = error instanceof Error ? error.stack : undefined;
-    
+
     console.error("Full error details:", {
       message: errorMessage,
       stack: errorStack,
@@ -166,7 +166,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      { 
+      {
         error: "Internal server error",
         message: process.env.NODE_ENV === "development" ? errorMessage : undefined
       },

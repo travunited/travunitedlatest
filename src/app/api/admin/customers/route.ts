@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -59,8 +59,8 @@ export async function GET(req: Request) {
         createdAt: true,
         _count: {
           select: {
-            applications: true,
-            bookings: true,
+            Application_Application_userIdToUser: true,
+            Booking_Booking_userIdToUser: true,
           },
         },
       },
@@ -77,8 +77,8 @@ export async function GET(req: Request) {
       phone: customer.phone,
       isActive: customer.isActive,
       createdAt: customer.createdAt,
-      applicationsCount: customer._count.applications,
-      bookingsCount: customer._count.bookings,
+      applicationsCount: customer._count.Application_Application_userIdToUser,
+      bookingsCount: customer._count.Booking_Booking_userIdToUser,
     }));
 
     return NextResponse.json(customersWithCounts);

@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -71,7 +71,7 @@ export async function GET(req: Request) {
         processedById: null,
       },
       include: {
-        documents: {
+        ApplicationDocument: {
           select: {
             id: true,
             status: true,
@@ -84,14 +84,14 @@ export async function GET(req: Request) {
     const applicationsWithPendingDocs = await prisma.application.findMany({
       where: {
         status: "SUBMITTED",
-        documents: {
+        ApplicationDocument: {
           some: {
             status: "PENDING",
           },
         },
       },
       include: {
-        documents: {
+        ApplicationDocument: {
           select: {
             id: true,
             status: true,
@@ -103,14 +103,14 @@ export async function GET(req: Request) {
     // Pending Work - Applications with rejected documents
     const applicationsWithRejectedDocs = await prisma.application.findMany({
       where: {
-        documents: {
+        ApplicationDocument: {
           some: {
             status: "REJECTED",
           },
         },
       },
       include: {
-        documents: {
+        ApplicationDocument: {
           where: {
             status: "REJECTED",
           },

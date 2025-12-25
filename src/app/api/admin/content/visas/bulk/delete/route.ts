@@ -36,13 +36,13 @@ export async function POST(req: Request) {
     let visasWithApplications: Array<{
       id: string;
       name: string;
-      _count: { applications: number };
+      _count: { Application: number };
     }> = [];
     try {
       visasWithApplications = await prisma.visa.findMany({
         where: {
           id: { in: data.ids },
-          applications: {
+          Application: {
             some: {
               status: {
                 notIn: ["REJECTED", "CANCELLED"],
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
           name: true,
           _count: {
             select: {
-              applications: {
+              Application: {
                 where: {
                   status: {
                     notIn: ["REJECTED", "CANCELLED"],
@@ -118,7 +118,7 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("Error bulk deleting visas:", error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: "Invalid input", details: error.errors },
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
     if (error && typeof error === "object" && "code" in error) {
       if (error.code === "P2003") {
         return NextResponse.json(
-          { 
+          {
             error: "Cannot delete visa(s) because they are referenced by other records",
             details: "Please ensure there are no active applications or other dependencies"
           },
@@ -148,7 +148,7 @@ export async function POST(req: Request) {
     // Log full error details for debugging
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const errorStack = error instanceof Error ? error.stack : undefined;
-    
+
     console.error("Full error details:", {
       message: errorMessage,
       stack: errorStack,
@@ -156,7 +156,7 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      { 
+      {
         error: "Internal server error",
         message: process.env.NODE_ENV === "development" ? errorMessage : undefined
       },

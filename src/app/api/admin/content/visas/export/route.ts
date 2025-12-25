@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -31,18 +31,18 @@ export async function GET(req: Request) {
     // Fetch all visas with related data
     const visas = await prisma.visa.findMany({
       include: {
-        country: true,
-        faqs: {
+        Country: true,
+        VisaFaq: {
           orderBy: {
             sortOrder: "asc",
           },
         },
-        requirements: {
+        VisaDocumentRequirement: {
           orderBy: {
             sortOrder: "asc",
           },
         },
-        subTypes: {
+        VisaSubType: {
           orderBy: {
             sortOrder: "asc",
           },
@@ -56,24 +56,24 @@ export async function GET(req: Request) {
     // Prepare export data - flatten FAQs, requirements, and subtypes
     const exportData = visas.map((visa) => {
       // Combine FAQs into a single string
-      const faqsText = visa.faqs
+      const faqsText = visa.VisaFaq
         .map((faq, idx) => `Q${idx + 1}: ${faq.question}\nA${idx + 1}: ${faq.answer}`)
         .join("\n\n");
 
       // Combine requirements into a single string
-      const requirementsText = visa.requirements
+      const requirementsText = visa.VisaDocumentRequirement
         .map((req) => `${req.name}${req.description ? `: ${req.description}` : ""} (${req.scope}, Required: ${req.isRequired ? "Yes" : "No"})`)
         .join("\n");
 
       // Combine subtypes into a single string
-      const subtypesText = visa.subTypes.map((st) => st.label).join(", ");
+      const subtypesText = visa.VisaSubType.map((st) => st.label).join(", ");
 
       return {
         ID: visa.id,
         Name: visa.name,
         Slug: visa.slug,
-        Country: visa.country.name,
-        CountryCode: visa.country.code,
+        Country: visa.Country.name,
+        CountryCode: visa.Country.code,
         Subtitle: visa.subtitle || "",
         Category: visa.category,
         IsActive: visa.isActive ? "Yes" : "No",
@@ -115,7 +115,7 @@ export async function GET(req: Request) {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Visas");
       const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-      
+
       return new NextResponse(buffer, {
         headers: {
           "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

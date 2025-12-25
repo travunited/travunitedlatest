@@ -50,7 +50,7 @@ const blogSchema = z.object({
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -82,7 +82,7 @@ export async function GET(req: Request) {
       // Derive status from isPublished and publishedAt
       let derivedStatus: "DRAFT" | "PUBLISHED" | "SCHEDULED" = "DRAFT";
       const now = new Date();
-      
+
       if (post.isPublished) {
         // If published, it's PUBLISHED (even if publishedAt is in future, it's already published)
         derivedStatus = "PUBLISHED";
@@ -93,7 +93,7 @@ export async function GET(req: Request) {
         // Otherwise it's a DRAFT
         derivedStatus = "DRAFT";
       }
-      
+
       return {
         ...post,
         published: post.isPublished, // Map isPublished to published for frontend consistency
@@ -116,7 +116,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -152,7 +152,7 @@ export async function POST(req: Request) {
     const status = data.status || (data.published ? "PUBLISHED" : "DRAFT");
     const isPublished = status === "PUBLISHED";
     let publishedAtDate: Date | null = null;
-    
+
     if (status === "PUBLISHED") {
       publishedAtDate = data.publishedAt ? new Date(data.publishedAt) : new Date();
     } else if (status === "SCHEDULED" && data.publishedAt) {
@@ -161,6 +161,7 @@ export async function POST(req: Request) {
 
     const post = await prisma.blogPost.create({
       data: {
+        id: crypto.randomUUID(),
         title: data.title,
         slug: data.slug,
         coverImage: normalizedCover,
@@ -175,6 +176,7 @@ export async function POST(req: Request) {
         metaDescription: data.metaDescription || null,
         focusKeyword: data.focusKeyword || null,
         author: data.author || null,
+        updatedAt: new Date(),
         // Note: status is derived from isPublished, not stored directly
       },
     });
@@ -182,7 +184,7 @@ export async function POST(req: Request) {
     // Derive status from isPublished and publishedAt
     let derivedStatus: "DRAFT" | "PUBLISHED" | "SCHEDULED" = "DRAFT";
     const now = new Date();
-    
+
     if (post.isPublished) {
       derivedStatus = "PUBLISHED";
     } else if (post.publishedAt && post.publishedAt > now) {

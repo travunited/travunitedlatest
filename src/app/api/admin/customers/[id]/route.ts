@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -31,7 +31,7 @@ export async function GET(
     const customer = await prisma.user.findUnique({
       where: { id: params.id },
       include: {
-        applications: {
+        Application_Application_userIdToUser: {
           orderBy: {
             createdAt: "desc",
           },
@@ -44,7 +44,7 @@ export async function GET(
             createdAt: true,
           },
         },
-        bookings: {
+        Booking_Booking_userIdToUser: {
           orderBy: {
             createdAt: "desc",
           },
@@ -70,14 +70,14 @@ export async function GET(
         comment: true,
         isVisible: true,
         createdAt: true,
-        application: {
+        Application: {
           select: {
             id: true,
             country: true,
             visaType: true,
           },
         },
-        booking: {
+        Booking: {
           select: {
             id: true,
             tourName: true,
@@ -102,6 +102,8 @@ export async function GET(
 
     return NextResponse.json({
       ...customer,
+      applications: customer.Application_Application_userIdToUser,
+      bookings: customer.Booking_Booking_userIdToUser,
       reviews,
     });
   } catch (error) {
@@ -119,7 +121,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },

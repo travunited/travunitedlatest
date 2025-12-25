@@ -32,7 +32,7 @@ export async function GET(
     const country = await prisma.country.findUnique({
       where: { id: params.id },
       include: {
-        _count: { select: { visas: true, tours: true } },
+        _count: { select: { Visa: true, Tour: true } },
       },
     });
 
@@ -111,7 +111,7 @@ export async function DELETE(
 
     const country = await prisma.country.findUnique({
       where: { id: params.id },
-      include: { _count: { select: { visas: true, tours: true } } },
+      include: { _count: { select: { Visa: true, Tour: true } } },
     });
 
     if (!country) {
@@ -121,7 +121,7 @@ export async function DELETE(
       );
     }
 
-    if (country._count.visas > 0 || country._count.tours > 0) {
+    if (country._count.Visa > 0 || country._count.Tour > 0) {
       return NextResponse.json(
         {
           error:

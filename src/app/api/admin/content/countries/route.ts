@@ -35,24 +35,24 @@ export async function GET(req: Request) {
         ...(status === "active"
           ? { isActive: true }
           : status === "inactive"
-          ? { isActive: false }
-          : {}),
+            ? { isActive: false }
+            : {}),
         ...(search
           ? {
-              OR: [
-                { name: { contains: search, mode: "insensitive" } },
-                { code: { contains: search, mode: "insensitive" } },
-                { region: { contains: search, mode: "insensitive" } },
-              ],
-            }
+            OR: [
+              { name: { contains: search, mode: "insensitive" } },
+              { code: { contains: search, mode: "insensitive" } },
+              { region: { contains: search, mode: "insensitive" } },
+            ],
+          }
           : {}),
       },
       orderBy: { name: "asc" },
       include: {
         _count: {
           select: {
-            visas: true,
-            tours: true,
+            Visa: true,
+            Tour: true,
           },
         },
       },
@@ -87,11 +87,13 @@ export async function POST(req: Request) {
 
     const country = await prisma.country.create({
       data: {
+        id: crypto.randomUUID(),
         name,
         code: code.toUpperCase(),
         region: body.region?.trim() || null,
         flagUrl: body.flagUrl?.trim() || null,
         isActive: body.isActive ?? true,
+        updatedAt: new Date(),
       },
     });
 

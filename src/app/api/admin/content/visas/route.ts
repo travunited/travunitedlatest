@@ -99,14 +99,14 @@ export async function GET(req: Request) {
           : {}),
       },
       include: {
-        country: true,
-        subTypes: {
+        Country: true,
+        VisaSubType: {
           orderBy: { sortOrder: "asc" },
         },
         _count: {
           select: {
-            requirements: true,
-            applications: true,
+            VisaDocumentRequirement: true,
+            Application: true,
           },
         },
       },
@@ -244,23 +244,23 @@ export async function POST(req: Request) {
       if (visaMode !== undefined && visaMode !== null && visaMode !== "") {
         parsedVisaMode = normalizeEnumInput(visaMode, Object.values(VisaMode), "visaMode");
       }
-      
+
       // Check if structuredEntryType or entryType is explicitly provided with a non-empty value
-      const hasStructuredEntryType = structuredEntryType !== undefined && 
-                                     structuredEntryType !== null && 
-                                     typeof structuredEntryType === "string" &&
-                                     structuredEntryType.trim() !== "";
-      const hasEntryType = entryType !== undefined && 
-                          entryType !== null && 
-                          typeof entryType === "string" &&
-                          entryType.trim() !== "";
-      
+      const hasStructuredEntryType = structuredEntryType !== undefined &&
+        structuredEntryType !== null &&
+        typeof structuredEntryType === "string" &&
+        structuredEntryType.trim() !== "";
+      const hasEntryType = entryType !== undefined &&
+        entryType !== null &&
+        typeof entryType === "string" &&
+        entryType.trim() !== "";
+
       if (hasStructuredEntryType) {
         parsedEntryType = normalizeEnumInput(structuredEntryType, Object.values(EntryType), "entryType");
       } else if (hasEntryType) {
         parsedEntryType = normalizeEnumInput(entryType, Object.values(EntryType), "entryType");
       }
-      
+
       if (stayType !== undefined && stayType !== null && stayType !== "") {
         parsedStayType = normalizeEnumInput(stayType, Object.values(StayType), "stayType");
       }
@@ -275,123 +275,129 @@ export async function POST(req: Request) {
 
     // Prepare the data object
     const visaData: any = {
-        countryId,
-        name: safeName,
-        slug: resolvedSlug,
-        subtitle: subtitle || null,
-        category: safeCategory,
-        isActive: isActive ?? true,
-        isFeatured: isFeatured ?? false,
-        priceInInr: Number(safePriceInInr),
-        processingTime: safeProcessingTime,
-        stayDuration: safeStayDuration,
-        validity: safeValidity,
-        entryTypeLegacy: (entryTypeLegacy !== undefined && entryTypeLegacy !== null && typeof entryTypeLegacy === "string" && entryTypeLegacy.trim() !== "") ? entryTypeLegacy : null,
-        visaMode: parsedVisaMode,
-        entryType: parsedEntryType,
-        stayType: parsedStayType,
-        visaSubTypeLabel: visaSubTypeLabel || null,
-        overview: safeOverview,
-        eligibility: safeEligibility,
-        importantNotes: importantNotes || null,
-        rejectionReasons: rejectionReasons || null,
-        whyTravunited: whyTravunited || null,
-        statistics: statistics || null,
-        heroImageUrl: heroImageUrl || null,
-        sampleVisaImageUrl: sampleVisaImageUrl || null,
-        metaTitle: metaTitle || null,
-        metaDescription: metaDescription || null,
-        // New fields
-        stayDurationDays: stayDurationDays !== undefined && stayDurationDays !== null ? Number(stayDurationDays) : null,
-        validityDays: validityDays !== undefined && validityDays !== null ? Number(validityDays) : null,
-        currency: currency || "INR",
-        requirements: (() => {
-          const validRequirements = requirements
-            ? requirements.filter((req: any) => req && req.name && typeof req.name === "string" && req.name.trim() !== "")
-            : [];
-          return validRequirements.length > 0
-            ? {
-              create: validRequirements.map(
-                (req: {
-                  name: string;
-                  description?: string;
-                  scope: DocScope;
-                  isRequired?: boolean;
+      countryId,
+      name: safeName,
+      slug: resolvedSlug,
+      subtitle: subtitle || null,
+      category: safeCategory,
+      isActive: isActive ?? true,
+      isFeatured: isFeatured ?? false,
+      priceInInr: Number(safePriceInInr),
+      processingTime: safeProcessingTime,
+      stayDuration: safeStayDuration,
+      validity: safeValidity,
+      entryTypeLegacy: (entryTypeLegacy !== undefined && entryTypeLegacy !== null && typeof entryTypeLegacy === "string" && entryTypeLegacy.trim() !== "") ? entryTypeLegacy : null,
+      visaMode: parsedVisaMode,
+      entryType: parsedEntryType,
+      stayType: parsedStayType,
+      visaSubTypeLabel: visaSubTypeLabel || null,
+      overview: safeOverview,
+      eligibility: safeEligibility,
+      importantNotes: importantNotes || null,
+      rejectionReasons: rejectionReasons || null,
+      whyTravunited: whyTravunited || null,
+      statistics: statistics || null,
+      heroImageUrl: heroImageUrl || null,
+      sampleVisaImageUrl: sampleVisaImageUrl || null,
+      metaTitle: metaTitle || null,
+      metaDescription: metaDescription || null,
+      // New fields
+      stayDurationDays: stayDurationDays !== undefined && stayDurationDays !== null ? Number(stayDurationDays) : null,
+      validityDays: validityDays !== undefined && validityDays !== null ? Number(validityDays) : null,
+      currency: currency || "INR",
+      requirements: (() => {
+        const validRequirements = requirements
+          ? requirements.filter((req: any) => req && req.name && typeof req.name === "string" && req.name.trim() !== "")
+          : [];
+        return validRequirements.length > 0
+          ? {
+            create: validRequirements.map(
+              (req: {
+                name: string;
+                description?: string;
+                scope: DocScope;
+                isRequired?: boolean;
+                category?: string;
+                sortOrder?: number;
+              }, index: number) => ({
+                id: crypto.randomUUID(),
+                name: req.name.trim(),
+                description: (req.description && typeof req.description === "string" && req.description.trim() !== "") ? req.description.trim() : null,
+                scope: req.scope || DocScope.PER_APPLICATION,
+                isRequired: req.isRequired ?? true,
+                category: (req.category && typeof req.category === "string" && req.category.trim() !== "") ? req.category.trim() : null,
+                sortOrder:
+                  typeof req.sortOrder === "number"
+                    ? req.sortOrder
+                    : index,
+                updatedAt: new Date(),
+              })
+            ),
+          }
+          : undefined;
+      })(),
+      faqs: (() => {
+        const validFaqs = faqs
+          ? faqs.filter((faq: any) =>
+            faq &&
+            faq.question && typeof faq.question === "string" && faq.question.trim() !== "" &&
+            faq.answer && typeof faq.answer === "string" && faq.answer.trim() !== ""
+          )
+          : [];
+        return validFaqs.length > 0
+          ? {
+            create: validFaqs.map(
+              (
+                faq: {
                   category?: string;
+                  question: string;
+                  answer: string;
                   sortOrder?: number;
-                }, index: number) => ({
-                  name: req.name.trim(),
-                  description: (req.description && typeof req.description === "string" && req.description.trim() !== "") ? req.description.trim() : null,
-                  scope: req.scope || DocScope.PER_APPLICATION,
-                  isRequired: req.isRequired ?? true,
-                  category: (req.category && typeof req.category === "string" && req.category.trim() !== "") ? req.category.trim() : null,
-                  sortOrder:
-                    typeof req.sortOrder === "number"
-                      ? req.sortOrder
-                      : index,
-                })
-              ),
-            }
-            : undefined;
-        })(),
-        faqs: (() => {
-          const validFaqs = faqs
-            ? faqs.filter((faq: any) => 
-                faq && 
-                faq.question && typeof faq.question === "string" && faq.question.trim() !== "" &&
-                faq.answer && typeof faq.answer === "string" && faq.answer.trim() !== ""
-              )
-            : [];
-          return validFaqs.length > 0
-            ? {
-              create: validFaqs.map(
-                (
-                  faq: {
-                    category?: string;
-                    question: string;
-                    answer: string;
-                    sortOrder?: number;
-                  },
-                  index: number
-                ) => ({
-                  category: (faq.category && typeof faq.category === "string" && faq.category.trim() !== "") ? faq.category.trim() : null,
-                  question: faq.question.trim(),
-                  answer: faq.answer.trim(),
-                  sortOrder:
-                    typeof faq.sortOrder === "number"
-                      ? faq.sortOrder
-                      : index,
-                })
-              ),
-            }
-            : undefined;
-        })(),
-        subTypes: (() => {
-          const validSubTypes = subTypes
-            ? subTypes.filter((subtype: any) => subtype && subtype.label && typeof subtype.label === "string" && subtype.label.trim() !== "")
-            : [];
-          return validSubTypes.length > 0
-            ? {
-              create: validSubTypes.map(
-                (
-                  subtype: {
-                    label: string;
-                    code?: string;
-                    sortOrder?: number;
-                  },
-                  index: number
-                ) => ({
-                  label: subtype.label.trim(),
-                  code: (subtype.code && typeof subtype.code === "string" && subtype.code.trim() !== "") ? subtype.code.trim() : null,
-                  sortOrder:
-                    typeof subtype.sortOrder === "number"
-                      ? subtype.sortOrder
-                      : index,
-                })
-              ),
-            }
-            : undefined;
-        })(),
+                },
+                index: number
+              ) => ({
+                id: crypto.randomUUID(),
+                category: (faq.category && typeof faq.category === "string" && faq.category.trim() !== "") ? faq.category.trim() : null,
+                question: faq.question.trim(),
+                answer: faq.answer.trim(),
+                sortOrder:
+                  typeof faq.sortOrder === "number"
+                    ? faq.sortOrder
+                    : index,
+                updatedAt: new Date(),
+              })
+            ),
+          }
+          : undefined;
+      })(),
+      subTypes: (() => {
+        const validSubTypes = subTypes
+          ? subTypes.filter((subtype: any) => subtype && subtype.label && typeof subtype.label === "string" && subtype.label.trim() !== "")
+          : [];
+        return validSubTypes.length > 0
+          ? {
+            create: validSubTypes.map(
+              (
+                subtype: {
+                  label: string;
+                  code?: string;
+                  sortOrder?: number;
+                },
+                index: number
+              ) => ({
+                id: crypto.randomUUID(),
+                label: subtype.label.trim(),
+                code: (subtype.code && typeof subtype.code === "string" && subtype.code.trim() !== "") ? subtype.code.trim() : null,
+                sortOrder:
+                  typeof subtype.sortOrder === "number"
+                    ? subtype.sortOrder
+                    : index,
+                updatedAt: new Date(),
+              })
+            ),
+          }
+          : undefined;
+      })(),
     };
 
     // Debug log the data being created (without nested arrays for readability)
@@ -405,33 +411,33 @@ export async function POST(req: Request) {
     }
 
     const visa = await prisma.visa.create({
-      data: visaData,
+      data: { ...visaData, id: crypto.randomUUID(), updatedAt: new Date() },
       include: {
-        country: true,
-        requirements: true,
-        faqs: true,
-        subTypes: true,
+        Country: true,
+        VisaDocumentRequirement: true,
+        VisaFaq: true,
+        VisaSubType: true,
       },
     });
 
     // Revalidate cache for the new visa pages
     if (visa) {
-      const countryCode = visa.country?.code?.toLowerCase() || "";
+      const countryCode = visa.Country?.code?.toLowerCase() || "";
       const visaSlug = visa.slug;
-      
+
       // Revalidate visa detail page
       if (countryCode && visaSlug) {
         revalidatePath(`/visas/${countryCode}/${visaSlug}`);
       }
-      
+
       // Revalidate country visas listing page
       if (countryCode) {
         revalidatePath(`/visas/${countryCode}`);
       }
-      
+
       // Revalidate visas listing page
       revalidatePath("/visas");
-      
+
       // Revalidate homepage if visa is featured
       if (visa.isFeatured) {
         revalidatePath("/");
@@ -441,13 +447,13 @@ export async function POST(req: Request) {
     return NextResponse.json(visa);
   } catch (error) {
     console.error("Error creating visa:", error);
-    
+
     // Log detailed error information
     if (error instanceof Error) {
       console.error("Error message:", error.message);
       console.error("Error stack:", error.stack);
     }
-    
+
     if (error && typeof error === 'object') {
       try {
         console.error("Error object:", JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
@@ -455,25 +461,25 @@ export async function POST(req: Request) {
         console.error("Error object (stringify failed):", error);
       }
     }
-    
+
     // Handle Prisma errors
     if (error && typeof error === 'object' && 'code' in error) {
       const prismaError = error as { code?: string; meta?: any; message?: string };
       console.error("Prisma error code:", prismaError.code);
       console.error("Prisma error meta:", prismaError.meta);
-      
+
       if (prismaError.code === "P2002") {
         return NextResponse.json(
           { error: "Visa slug must be unique" },
           { status: 409 }
         );
       }
-      
+
       // Handle missing table/column errors
       if (prismaError.code === "P2021" || prismaError.code === "P2019") {
         console.error("Database schema error:", prismaError);
         return NextResponse.json(
-          { 
+          {
             error: "Database schema error",
             message: prismaError.message || "A required database table or column is missing. Please run migrations.",
             code: prismaError.code
@@ -481,23 +487,23 @@ export async function POST(req: Request) {
           { status: 500 }
         );
       }
-      
+
       // Handle foreign key constraint errors
       if (prismaError.code === "P2003") {
         const fieldName = prismaError.meta?.field_name || "reference";
         return NextResponse.json(
-          { 
+          {
             error: "Invalid reference",
             message: `Invalid ${fieldName}. ${prismaError.message || "The selected country or related entity does not exist."}`
           },
           { status: 400 }
         );
       }
-      
+
       // Handle other Prisma errors with detailed message
       if (prismaError.code) {
         return NextResponse.json(
-          { 
+          {
             error: "Database error",
             message: prismaError.message || "A database error occurred",
             code: prismaError.code,
@@ -507,7 +513,7 @@ export async function POST(req: Request) {
         );
       }
     }
-    
+
     // Handle validation errors
     if (error instanceof Error) {
       // If it's a known validation error, return it
@@ -518,14 +524,14 @@ export async function POST(req: Request) {
         );
       }
     }
-    
+
     // Generic error response with actual error message
     const errorMessage = error instanceof Error ? error.message : (error as any)?.message || "Unknown error";
     return NextResponse.json(
-      { 
+      {
         error: "Internal server error",
         message: errorMessage || "An unexpected error occurred while creating the visa. Please try again.",
-        ...(process.env.NODE_ENV === 'development' && error instanceof Error && { 
+        ...(process.env.NODE_ENV === 'development' && error instanceof Error && {
           stack: error.stack,
           details: errorMessage
         })

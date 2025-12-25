@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
         },
       },
       include: {
-        user: {
+        User_Booking_userIdToUser: {
           select: {
             email: true,
           },
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
     for (const booking of bookings) {
       try {
         await sendTourStatusUpdateEmail(
-          booking.user.email,
+          booking.User_Booking_userIdToUser.email,
           booking.id,
           booking.tourName || "",
           status

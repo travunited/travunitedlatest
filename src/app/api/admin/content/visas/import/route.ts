@@ -42,7 +42,7 @@ async function findOrCreateCountry(countryName: string | undefined, flagEmoji: s
   if (!countryName) {
     throw new Error("Country name is required");
   }
-  
+
   // Try to find by name (case-insensitive)
   let country = await prisma.country.findFirst({
     where: {
@@ -52,7 +52,7 @@ async function findOrCreateCountry(countryName: string | undefined, flagEmoji: s
       },
     },
   });
-  
+
   if (!country) {
     // Create country with a code derived from name
     const code = countryName.substring(0, 2).toUpperCase();
@@ -60,13 +60,15 @@ async function findOrCreateCountry(countryName: string | undefined, flagEmoji: s
       where: { code },
       update: { name: countryName },
       create: {
+        id: crypto.randomUUID(),
         code,
         name: countryName,
         isActive: true,
+        updatedAt: new Date(),
       },
     });
   }
-  
+
   return country;
 }
 
@@ -110,7 +112,7 @@ function normalizeEnumInput<T extends string>(
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -169,11 +171,11 @@ export async function POST(req: NextRequest) {
         const visaSlug = data.slug || data.visa_slug || "";
         // Visa name should be visa_type (e.g., "Single Entry E Visa Short Stay")
         const visaName = visaType || data.visa_name || `${countryName} Visa`;
-        
+
         if (!countryName || !visaSlug) {
           throw new Error("name (country) and slug are required");
         }
-        
+
         if (!visaName) {
           throw new Error("visa_type is required");
         }
@@ -184,7 +186,7 @@ export async function POST(req: NextRequest) {
         // Parse duration and validity
         const stayDurationDays = data.stay_duration_days || extractDays(data.duration) || null;
         const validityDays = data.validity_days || extractDays(data.validity) || null;
-        
+
         // Parse price - use price field or calculate from govt_fee + service_fee
         let priceInInr = data.price || 0;
         if (!priceInInr && data.govt_fee !== null && data.service_fee !== null) {
@@ -200,7 +202,7 @@ export async function POST(req: NextRequest) {
         let eligibility = "";
         let whyTravunited = "";
         if (contentSections.length > 0) {
-          const eligibilitySection = contentSections.find((s: any) => 
+          const eligibilitySection = contentSections.find((s: any) =>
             s.title?.toLowerCase().includes("eligibility")
           );
           if (eligibilitySection) {
@@ -237,7 +239,7 @@ export async function POST(req: NextRequest) {
           processingTime: data.processing_time || data.processing_time_days || "3-5 days",
           stayDuration: data.duration || (stayDurationDays ? `${stayDurationDays} days` : null) || "",
           validity: data.validity || (validityDays ? `${validityDays} days` : null) || "",
-          entryTypeLegacy: data.entry_type || null,
+          entryTypeLegacy: data.entry_type || "",
           visaMode: visaModeValue,
           entryType: entryTypeValue,
           stayType: stayTypeValue,
@@ -266,8 +268,8 @@ export async function POST(req: NextRequest) {
 
         const visa = await prisma.visa.upsert({
           where: { slug: visaSlug },
-          update: visaData,
-          create: visaData,
+          update: { ...visaData, updatedAt: new Date() },
+          create: { ...visaData, id: crypto.randomUUID(), updatedAt: new Date() },
         });
 
         // Handle document requirements
@@ -282,12 +284,14 @@ export async function POST(req: NextRequest) {
             const req = documentRequirements[i];
             await prisma.visaDocumentRequirement.create({
               data: {
+                id: crypto.randomUUID(),
                 visaId: visa.id,
                 name: req.name || req.id || `Requirement ${i + 1}`,
                 description: req.description || null,
                 scope: DocScope.PER_TRAVELLER, // Default, can be enhanced
                 isRequired: true,
                 sortOrder: i,
+                updatedAt: new Date(),
               },
             });
           }
@@ -306,10 +310,12 @@ export async function POST(req: NextRequest) {
             if (faq.question && faq.answer) {
               await prisma.visaFaq.create({
                 data: {
+                  id: crypto.randomUUID(),
                   visaId: visa.id,
                   question: faq.question,
                   answer: faq.answer,
                   sortOrder: i,
+                  updatedAt: new Date(),
                 },
               });
             }
@@ -326,7 +332,7 @@ export async function POST(req: NextRequest) {
           });
 
           let subtypesArray: Array<{ label: string; code?: string }> = [];
-          
+
           // Try to parse as JSON first
           try {
             const parsed = JSON.parse(subtypesInput);
@@ -351,10 +357,12 @@ export async function POST(req: NextRequest) {
             if (subtype.label) {
               await prisma.visaSubType.create({
                 data: {
+                  id: crypto.randomUUID(),
                   visaId: visa.id,
                   label: subtype.label,
                   code: subtype.code || null,
                   sortOrder: i,
+                  updatedAt: new Date(),
                 },
               });
             }

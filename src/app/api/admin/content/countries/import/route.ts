@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -70,12 +70,15 @@ export async function POST(req: NextRequest) {
             name: data.country_name,
             region: data.continent || null,
             isActive: data.is_active,
+            updatedAt: new Date(),
           },
           create: {
+            id: crypto.randomUUID(),
             code: data.country_code,
             name: data.country_name,
             region: data.continent || null,
             isActive: data.is_active,
+            updatedAt: new Date(),
           },
         });
 

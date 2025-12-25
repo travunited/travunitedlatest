@@ -94,10 +94,12 @@ export async function POST(req: Request) {
       // Create new policy
       policy = await prisma.sitePolicy.create({
         data: {
+          id: crypto.randomUUID(),
           key: data.key,
           title: data.title,
           content: data.content,
           version: data.version,
+          updatedAt: new Date(),
         },
       });
 

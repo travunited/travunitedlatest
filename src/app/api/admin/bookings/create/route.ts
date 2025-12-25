@@ -47,7 +47,7 @@ const bookingSchema = z.object({
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -124,11 +124,13 @@ export async function POST(req: Request) {
       if (!primaryTraveller) {
         primaryTraveller = await tx.traveller.create({
           data: {
+            id: crypto.randomUUID(),
             userId: user.id,
             firstName: data.primaryContact.name.split(" ")[0] || data.primaryContact.name,
             lastName: data.primaryContact.name.split(" ").slice(1).join(" ") || "",
             email: data.primaryContact.email,
             phone: data.primaryContact.phone || null,
+            updatedAt: new Date(),
           },
         });
       } else {
@@ -144,6 +146,7 @@ export async function POST(req: Request) {
       // Create booking
       const booking = await tx.booking.create({
         data: {
+          id: crypto.randomUUID(),
           userId: user.id,
           tourId: tourRecord.id,
           tourName: data.tourName,
@@ -159,6 +162,7 @@ export async function POST(req: Request) {
           specialRequests: data.preferences?.specialRequests || null,
           policyAccepted: true,
           processedById: session.user.id, // Assign to creating admin
+          updatedAt: new Date(),
         },
       });
 
@@ -175,6 +179,7 @@ export async function POST(req: Request) {
         if (!traveller) {
           traveller = await tx.traveller.create({
             data: {
+              id: crypto.randomUUID(),
               userId: user.id,
               firstName: travellerData.firstName,
               lastName: travellerData.lastName,
@@ -183,12 +188,14 @@ export async function POST(req: Request) {
               dateOfBirth: travellerData.dateOfBirth ? new Date(travellerData.dateOfBirth) : null,
               passportNumber: travellerData.passportNumber || null,
               passportExpiry: travellerData.passportExpiry ? new Date(travellerData.passportExpiry) : null,
+              updatedAt: new Date(),
             },
           });
         }
 
         await tx.bookingTraveller.create({
           data: {
+            id: crypto.randomUUID(),
             bookingId: booking.id,
             travellerId: traveller.id,
             firstName: travellerData.firstName,
@@ -199,6 +206,7 @@ export async function POST(req: Request) {
             passportNumber: travellerData.passportNumber || null,
             passportExpiry: travellerData.passportExpiry ? new Date(travellerData.passportExpiry) : null,
             passportIssuingCountry: travellerData.passportIssuingCountry || null,
+            updatedAt: new Date(),
           },
         });
       }
@@ -207,11 +215,13 @@ export async function POST(req: Request) {
       if (data.paymentMode === "offline") {
         await tx.payment.create({
           data: {
+            id: crypto.randomUUID(),
             userId: user.id,
             bookingId: booking.id,
             amount: totalAmount,
             currency: "INR",
             status: "COMPLETED",
+            updatedAt: new Date(),
           },
         });
       }
@@ -274,7 +284,7 @@ export async function POST(req: Request) {
     return NextResponse.json(booking);
   } catch (error) {
     console.error("Error creating booking:", error);
-    
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {

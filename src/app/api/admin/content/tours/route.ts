@@ -58,34 +58,34 @@ export async function GET(req: Request) {
     const whereClause: any = {
       ...(countryId ? { countryId } : {}),
       ...(status === "active"
-        ? { 
-            OR: [
-              { status: "active" },
-              { status: null },
-            ]
-          }
+        ? {
+          OR: [
+            { status: "active" },
+            { status: null },
+          ]
+        }
         : status === "inactive"
-        ? { status: "inactive" }
-        : {}),
+          ? { status: "inactive" }
+          : {}),
       ...(search
         ? {
-            OR: [
-              { name: { contains: search, mode: "insensitive" } },
-              { destination: { contains: search, mode: "insensitive" } },
-              { slug: { contains: search, mode: "insensitive" } },
-            ],
-          }
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { destination: { contains: search, mode: "insensitive" } },
+            { slug: { contains: search, mode: "insensitive" } },
+          ],
+        }
         : {}),
     };
 
     const tours = await prisma.tour.findMany({
       where: whereClause,
       include: {
-        country: true,
+        Country: true,
         _count: {
           select: {
-            days: true,
-            bookings: true,
+            TourDay: true,
+            Booking: true,
           },
         },
       },
@@ -154,7 +154,7 @@ function buildTourData(body: any, resolvedSlug: string) {
     tourType: body.tourType || null,
     tourSubType: body.tourSubType || null,
     bestFor: stringifyJson(body.bestFor),
-    
+
     // Destination & Categorization
     destination: body.destination,
     primaryDestination: body.primaryDestination || null,
@@ -165,7 +165,7 @@ function buildTourData(body: any, resolvedSlug: string) {
     regionTags: stringifyJson(body.regionTags),
     categoryId: body.categoryId || null,
     themes: stringifyJson(body.themes),
-    
+
     // Duration & Group Size
     duration: body.duration,
     durationDays: body.durationDays || null,
@@ -175,7 +175,7 @@ function buildTourData(body: any, resolvedSlug: string) {
     minimumTravelers: body.minimumTravelers || null,
     maximumTravelers: body.maximumTravelers || null,
     difficultyLevel: body.difficultyLevel || null,
-    
+
     // Pricing
     price: Number(body.price),
     basePriceInInr: body.basePriceInInr ? Number(body.basePriceInInr) : Number(body.price),
@@ -183,19 +183,19 @@ function buildTourData(body: any, resolvedSlug: string) {
     currency: body.currency || "INR",
     packageType: body.packageType || null,
     seasonalPricing: stringifyJson(body.seasonalPricing),
-    
+
     // Dates & Availability
     availableDates: stringifyJson(body.availableDates),
     bookingDeadline: body.bookingDeadline ? new Date(body.bookingDeadline) : null,
     status: body.status || (body.isActive ? "active" : "inactive"),
     isActive: body.isActive ?? true,
     isFeatured: body.isFeatured ?? false,
-    
+
     // Advance Payment
     allowAdvance: body.allowAdvance ?? false,
     advancePercentage: body.allowAdvance && body.advancePercentage ? Number(body.advancePercentage) : null,
-  requiresPassport: body.requiresPassport ?? false,
-    
+    requiresPassport: body.requiresPassport ?? false,
+
     // Content
     overview: body.overview || null,
     highlights: stringifyJson(body.highlights),
@@ -207,7 +207,7 @@ function buildTourData(body: any, resolvedSlug: string) {
     customizationOptions: stringifyJson(body.customizationOptions),
     bookingPolicies: body.bookingPolicies || null,
     cancellationTerms: body.cancellationTerms || null,
-    
+
     // Images & Media
     imageUrl: normalizeMediaInput(body.imageUrl),
     heroImageUrl: normalizeMediaInput(body.heroImageUrl || body.imageUrl),
@@ -216,7 +216,7 @@ function buildTourData(body: any, resolvedSlug: string) {
     images: stringifyJson(body.images || body.galleryImageUrls),
     ogImage: normalizeMediaInput(body.ogImage),
     twitterImage: normalizeMediaInput(body.twitterImage),
-    
+
     // SEO & Social
     metaTitle: body.metaTitle || null,
     metaDescription: body.metaDescription || null,
@@ -254,25 +254,29 @@ export async function POST(req: Request) {
     const tour = await prisma.$transaction(async (tx) => {
       const created = await tx.tour.create({
         data: {
+          id: crypto.randomUUID(),
           ...buildTourData(body, resolvedSlug),
-          days: days.length
+          updatedAt: new Date(),
+          TourDay: days.length
             ? {
-                create: days.map(
-                  (day: { title: string; content: string; dayIndex?: number }, index: number) => ({
-                    title: day.title,
-                    content: day.content,
-                    dayIndex:
-                      typeof day.dayIndex === "number"
-                        ? day.dayIndex
-                        : index + 1,
-                  })
-                ),
-              }
+              create: days.map(
+                (day: { title: string; content: string; dayIndex?: number }, index: number) => ({
+                  id: crypto.randomUUID(),
+                  title: day.title,
+                  content: day.content,
+                  dayIndex:
+                    typeof day.dayIndex === "number"
+                      ? day.dayIndex
+                      : index + 1,
+                  updatedAt: new Date(),
+                })
+              ),
+            }
             : undefined,
         },
         include: {
-          country: true,
-          days: {
+          Country: true,
+          TourDay: {
             orderBy: { dayIndex: "asc" },
           },
         },
@@ -281,6 +285,7 @@ export async function POST(req: Request) {
       if (addOnsInput.length) {
         await tx.tourAddOn.createMany({
           data: addOnsInput.map((addOn: any, index: number) => ({
+            id: crypto.randomUUID(),
             tourId: created.id,
             name: addOn.name,
             description: addOn.description || null,
@@ -289,6 +294,7 @@ export async function POST(req: Request) {
             isRequired: !!addOn.isRequired,
             isActive: addOn.isActive ?? true,
             sortOrder: typeof addOn.sortOrder === "number" ? addOn.sortOrder : index,
+            updatedAt: new Date(),
           })),
         });
       }
@@ -296,11 +302,11 @@ export async function POST(req: Request) {
       return tx.tour.findUnique({
         where: { id: created.id },
         include: {
-          country: true,
-          days: {
+          Country: true,
+          TourDay: {
             orderBy: { dayIndex: "asc" },
           },
-          addOns: {
+          TourAddOn: {
             orderBy: { sortOrder: "asc" },
           },
         },
@@ -310,16 +316,16 @@ export async function POST(req: Request) {
     // Revalidate cache for the new holiday pages
     if (tour) {
       const tourSlug = tour.slug;
-      
+
       // Revalidate holiday detail page
       if (tourSlug) {
         revalidatePath(`/holidays/${tourSlug}`);
         revalidatePath(`/holidays/${encodeURIComponent(tourSlug)}`);
       }
-      
+
       // Revalidate holidays listing page
       revalidatePath("/holidays");
-      
+
       // Revalidate homepage if tour is featured
       if (tour.isFeatured) {
         revalidatePath("/");

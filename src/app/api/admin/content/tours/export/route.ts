@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -31,13 +31,13 @@ export async function GET(req: Request) {
     // Fetch all tours with related data
     const tours = await prisma.tour.findMany({
       include: {
-        country: true,
-        days: {
+        Country: true,
+        TourDay: {
           orderBy: {
             dayIndex: "asc",
           },
         },
-        addOns: {
+        TourAddOn: {
           orderBy: {
             sortOrder: "asc",
           },
@@ -51,12 +51,12 @@ export async function GET(req: Request) {
     // Prepare export data - flatten days and add-ons
     const exportData = tours.map((tour) => {
       // Combine tour days into a single string
-      const daysText = tour.days
+      const daysText = tour.TourDay
         .map((day) => `Day ${day.dayIndex}: ${day.title}\n${day.content}`)
         .join("\n\n");
 
       // Combine add-ons into a single string
-      const addOnsText = tour.addOns
+      const addOnsText = tour.TourAddOn
         .map((addon) => `${addon.name}${addon.description ? `: ${addon.description}` : ""} - ₹${addon.price / 100} (${addon.pricingType}, Required: ${addon.isRequired ? "Yes" : "No"})`)
         .join("\n");
 
@@ -78,8 +78,8 @@ export async function GET(req: Request) {
         ID: tour.id,
         Name: tour.name,
         Slug: tour.slug || "",
-        Country: tour.country?.name || "",
-        CountryCode: tour.country?.code || "",
+        Country: tour.Country?.name || "",
+        CountryCode: tour.Country?.code || "",
         Subtitle: tour.subtitle || "",
         Destination: tour.destination,
         Duration: tour.duration,
@@ -157,7 +157,7 @@ export async function GET(req: Request) {
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Tours");
       const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-      
+
       return new NextResponse(buffer, {
         headers: {
           "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

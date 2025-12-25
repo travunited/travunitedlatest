@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -39,20 +39,20 @@ export async function GET(req: Request) {
     const bookings = await prisma.booking.findMany({
       where,
       include: {
-        user: {
+        User_Booking_userIdToUser: {
           select: {
             name: true,
             email: true,
             phone: true,
           },
         },
-        processedBy: {
+        User_Booking_processedByIdToUser: {
           select: {
             name: true,
             email: true,
           },
         },
-        payments: {
+        Payment: {
           where: {
             status: "COMPLETED",
           },
@@ -77,15 +77,15 @@ export async function GET(req: Request) {
           where: { bookingId: booking.id },
           select: { amount: true, status: true },
         });
-        
+
         const completedPayments = allPayments.filter((p) => p.status === "COMPLETED");
         const failedPayments = allPayments.filter((p) => p.status === "FAILED");
         const refundedPayments = allPayments.filter((p) => p.status === "REFUNDED");
-        
+
         const amountPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0);
         const amountRefunded = refundedPayments.reduce((sum, p) => sum + p.amount, 0);
         const pendingBalance = booking.totalAmount - amountPaid;
-        
+
         let paymentStatus = "UNPAID";
         if (amountRefunded > 0) {
           paymentStatus = "REFUNDED";
@@ -96,7 +96,7 @@ export async function GET(req: Request) {
         } else if (failedPayments.length > 0) {
           paymentStatus = "FAILED";
         }
-        
+
         return {
           ...booking,
           travellersCount: travellers.length,
@@ -136,15 +136,15 @@ export async function GET(req: Request) {
         "", // Destination would need to be fetched from tour relation
         booking.travelDate ? new Date(booking.travelDate).toISOString().split("T")[0] : "",
         booking.travellersCount?.toString() || "0",
-        booking.user.name || "",
-        booking.user.email,
-        booking.user.phone || "",
+        booking.User_Booking_userIdToUser.name || "",
+        booking.User_Booking_userIdToUser.email,
+        booking.User_Booking_userIdToUser.phone || "",
         booking.totalAmount.toString(),
         booking.amountPaid.toString(),
         booking.pendingBalance.toString(),
         booking.paymentStatus,
         booking.status,
-        booking.processedBy?.name || booking.processedBy?.email || "Unassigned",
+        booking.User_Booking_processedByIdToUser?.name || booking.User_Booking_processedByIdToUser?.email || "Unassigned",
         "WEBSITE", // Source - would need to be added to booking model
         new Date(booking.updatedAt).toISOString(),
       ];
