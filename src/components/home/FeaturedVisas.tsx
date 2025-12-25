@@ -23,26 +23,6 @@ type FeaturedVisa = {
   image?: string | null;
 };
 
-const enumLabels: Record<string, string> = {
-  SINGLE: "Single Entry",
-  DOUBLE: "Double Entry",
-  MULTIPLE: "Multiple Entry",
-  SHORT_STAY: "Short Stay",
-  LONG_STAY: "Long Stay",
-};
-
-const formatEntrySummary = (visa: FeaturedVisa) => {
-  if (visa.visaSubTypeLabel) return visa.visaSubTypeLabel;
-  if (visa.entryType && visa.stayType) {
-    return `${enumLabels[visa.entryType] || visa.entryType} • ${
-      enumLabels[visa.stayType] || visa.stayType
-    }`;
-  }
-  if (visa.entryType) {
-    return enumLabels[visa.entryType] || visa.entryType;
-  }
-  return visa.entryTypeLegacy || "Flexible Entry";
-};
 
 export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
   if (!visas || visas.length === 0) {
@@ -82,7 +62,7 @@ export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {validVisas.map((visa, index) => (
             <motion.div
               key={visa.id}
@@ -104,7 +84,7 @@ export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
                       alt={visa.name}
                       fill
                       className="object-cover group-hover:scale-110 transition-transform duration-500"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                       unoptimized={shouldUseUnoptimizedImage(visa.image) || true}
                       onError={(e) => {
                         // Fallback to placeholder if image fails to load
@@ -115,23 +95,21 @@ export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
                     />
                   </div>
                   <div className="p-6 flex-1 flex flex-col">
-                    <div className="flex items-center text-neutral-600 text-sm mb-2">
-                      <MapPin size={16} className="mr-1" />
-                      <span>{visa.country}</span>
-                    </div>
-                    <h3 className="text-xl font-bold text-neutral-900 mb-1 line-clamp-2">
+                    <h3 className="text-xl font-bold text-neutral-900 mb-2 line-clamp-2">
                       {visa.name}
                     </h3>
                     {visa.subtitle && (
-                      <p className="text-neutral-600 text-sm mb-3 line-clamp-1">
+                      <p className="text-neutral-600 text-sm mb-2 line-clamp-1">
                         {visa.subtitle}
                       </p>
                     )}
+                    <div className="flex items-center text-neutral-600 text-sm mb-3">
+                      <MapPin size={16} className="mr-1" />
+                      <span className="line-clamp-1">{visa.country}</span>
+                    </div>
                     <div className="flex items-center text-neutral-600 text-sm mb-4">
                       <Clock size={16} className="mr-1" />
                       <span>{visa.processingTime}</span>
-                      <span className="mx-2">•</span>
-                      <span>{formatEntrySummary(visa)}</span>
                     </div>
                     <div className="mt-auto flex items-center justify-between pt-4 border-t border-neutral-200">
                       <div>
@@ -141,7 +119,7 @@ export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
                         <div className="text-xs text-neutral-500">starting from</div>
                       </div>
                       <div className="flex items-center text-primary-600 font-medium group-hover:translate-x-1 transition-transform">
-                        <span className="text-sm">Apply Now</span>
+                        <span className="text-sm">View</span>
                         <ArrowRight size={16} className="ml-1" />
                       </div>
                     </div>

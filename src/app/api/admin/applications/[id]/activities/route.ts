@@ -33,7 +33,7 @@ export async function GET(
     const application = await prisma.application.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             email: true,
             name: true,
@@ -44,7 +44,7 @@ export async function GET(
             updatedAt: "desc",
           },
         },
-        processedBy: {
+        User_Application_processedByIdToUser: {
           select: {
             name: true,
             email: true,
@@ -65,7 +65,7 @@ export async function GET(
       {
         id: "created",
         type: "application_created",
-        description: `Application created by ${application.user.email}`,
+        description: `Application created by ${application.User_Application_userIdToUser.email}`,
         createdBy: null,
         createdAt: application.createdAt,
       },
@@ -77,7 +77,7 @@ export async function GET(
         id: "updated",
         type: "status_changed",
         description: `Status changed to ${application.status}`,
-        createdBy: application.processedBy?.name || application.processedBy?.email || null,
+        createdBy: application.User_Application_processedByIdToUser?.name || application.User_Application_processedByIdToUser?.email || null,
         createdAt: application.updatedAt,
       });
     }
@@ -90,7 +90,7 @@ export async function GET(
           id: doc.id,
           type: "document_reviewed",
           description: `Document "${doc.documentType}" marked as ${statusText}${doc.rejectionReason ? `: ${doc.rejectionReason}` : ""}`,
-          createdBy: application.processedBy?.name || application.processedBy?.email || null,
+          createdBy: application.User_Application_processedByIdToUser?.name || application.User_Application_processedByIdToUser?.email || null,
           createdAt: doc.updatedAt,
         });
       }
