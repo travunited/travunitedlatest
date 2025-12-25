@@ -16,7 +16,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -38,13 +38,13 @@ export async function POST(
     const application = await prisma.application.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             email: true,
             role: true,
           },
         },
-        documents: {
+        ApplicationDocument: {
           where: {
             status: "REJECTED",
           },
@@ -62,53 +62,53 @@ export async function POST(
     // Send appropriate email based on type
     let emailSent = false;
     let emailError: Error | null = null;
-    
+
     try {
       switch (emailType) {
         case "application_submitted":
           emailSent = await sendVisaStatusUpdateEmail(
-            application.user.email,
+            application.User_Application_userIdToUser.email,
             application.id,
             application.country || "",
             application.visaType || "",
             "SUBMITTED",
-            application.user.role || "CUSTOMER"
+            application.User_Application_userIdToUser.role || "CUSTOMER"
           );
           break;
 
         case "docs_rejected":
-          const rejectedDocs = application.documents.map(doc => ({
+          const rejectedDocs = application.ApplicationDocument.map(doc => ({
             type: doc.documentType || "Document",
             reason: doc.rejectionReason || "Document does not meet requirements",
           }));
           emailSent = await sendVisaDocumentRejectedEmail(
-            application.user.email,
+            application.User_Application_userIdToUser.email,
             application.id,
             application.country || "",
             application.visaType || "",
             rejectedDocs,
-            application.user.role || "CUSTOMER"
+            application.User_Application_userIdToUser.role || "CUSTOMER"
           );
           break;
 
         case "visa_approved":
           emailSent = await sendVisaApprovedEmail(
-            application.user.email,
+            application.User_Application_userIdToUser.email,
             application.id,
             application.country || "",
             application.visaType || "",
-            application.user.role || "CUSTOMER"
+            application.User_Application_userIdToUser.role || "CUSTOMER"
           );
           break;
 
         case "status_update":
           emailSent = await sendVisaStatusUpdateEmail(
-            application.user.email,
+            application.User_Application_userIdToUser.email,
             application.id,
             application.country || "",
             application.visaType || "",
             application.status,
-            application.user.role || "CUSTOMER"
+            application.User_Application_userIdToUser.role || "CUSTOMER"
           );
           break;
 
@@ -131,7 +131,7 @@ export async function POST(
       emailError = error instanceof Error ? error : new Error(String(error));
       console.error("Error sending email:", emailError);
       return NextResponse.json(
-        { 
+        {
           error: "Failed to send email",
           message: emailError.message,
         },

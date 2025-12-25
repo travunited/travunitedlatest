@@ -16,7 +16,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -38,7 +38,7 @@ export async function PUT(
     const application = await prisma.application.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             email: true,
           },
@@ -69,7 +69,7 @@ export async function PUT(
       if (status === "APPROVED") {
         try {
           await sendVisaApprovedEmail(
-            application.user.email,
+            application.User_Application_userIdToUser.email,
             application.id,
             application.country || "",
             application.visaType || ""
@@ -95,7 +95,7 @@ export async function PUT(
       } else if (status === "REJECTED") {
         try {
           await sendVisaRejectedEmail(
-            application.user.email,
+            application.User_Application_userIdToUser.email,
             application.id,
             application.country || "",
             application.visaType || "",
@@ -123,7 +123,7 @@ export async function PUT(
       } else {
         try {
           await sendVisaStatusUpdateEmail(
-            application.user.email,
+            application.User_Application_userIdToUser.email,
             application.id,
             application.country || "",
             application.visaType || "",

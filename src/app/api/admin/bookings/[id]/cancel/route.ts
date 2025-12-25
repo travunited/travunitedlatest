@@ -14,7 +14,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -43,7 +43,7 @@ export async function POST(
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Booking_userIdToUser: {
           select: {
             email: true,
           },
@@ -63,9 +63,9 @@ export async function POST(
     // Update booking status and add cancellation reason to notes
     const updated = await prisma.booking.update({
       where: { id: params.id },
-      data: { 
+      data: {
         status: status || "CANCELLED",
-        notes: booking.notes 
+        notes: booking.notes
           ? `${booking.notes}\n\n[CANCELLED ${new Date().toISOString()}] Reason: ${reason}`
           : `[CANCELLED ${new Date().toISOString()}] Reason: ${reason}`
       },
@@ -74,7 +74,7 @@ export async function POST(
     // Send email notification
     try {
       await sendTourStatusUpdateEmail(
-        booking.user.email,
+        booking.User_Booking_userIdToUser.email,
         booking.id,
         booking.tourName || "",
         "CANCELLED"

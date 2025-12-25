@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -31,7 +31,7 @@ export async function GET(
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Booking_userIdToUser: {
           select: {
             id: true,
             name: true,
@@ -39,27 +39,27 @@ export async function GET(
             phone: true,
           },
         },
-        travellers: {
+        BookingTraveller: {
           include: {
-            traveller: true,
+            Traveller: true,
           },
           orderBy: {
             createdAt: "asc",
           },
         },
-        payments: {
+        Payment: {
           orderBy: {
             createdAt: "desc",
           },
         },
-        processedBy: {
+        User_Booking_processedByIdToUser: {
           select: {
             id: true,
             name: true,
             email: true,
           },
         },
-        tour: {
+        Tour: {
           select: {
             id: true,
             name: true,
@@ -68,7 +68,7 @@ export async function GET(
             price: true,
             cancellationTerms: true,
             bookingPolicies: true,
-            country: {
+            Country: {
               select: {
                 id: true,
                 name: true,
@@ -78,7 +78,7 @@ export async function GET(
             },
           },
         },
-        addOns: {
+        BookingAddOn: {
           orderBy: { createdAt: "asc" },
         },
       },
@@ -91,7 +91,7 @@ export async function GET(
       );
     }
 
-    const amountPaid = booking.payments
+    const amountPaid = booking.Payment
       .filter(p => p.status === "COMPLETED")
       .reduce((sum, p) => sum + p.amount, 0);
     const pendingBalance = booking.totalAmount - amountPaid;
@@ -108,7 +108,7 @@ export async function GET(
         entityId: params.id,
       },
       include: {
-        admin: {
+        User: {
           select: {
             name: true,
             email: true,
@@ -157,6 +157,12 @@ export async function GET(
     // Format response with additional computed fields
     const response = {
       ...booking,
+      user: booking.User_Booking_userIdToUser,
+      travellers: booking.BookingTraveller,
+      payments: booking.Payment,
+      processedBy: booking.User_Booking_processedByIdToUser,
+      tour: booking.Tour,
+      addOns: booking.BookingAddOn,
       referenceNumber,
       amountPaid,
       pendingBalance: pendingBalance > 0 ? pendingBalance : 0,
@@ -165,7 +171,7 @@ export async function GET(
         id: activity.id,
         time: activity.timestamp,
         event: activity.description,
-        adminName: activity.admin?.name || activity.admin?.email || "System",
+        adminName: activity.User?.name || activity.User?.email || "System",
       })),
     };
 
@@ -180,7 +186,7 @@ export async function GET(
       error,
     });
     return NextResponse.json(
-      { 
+      {
         error: "Internal server error",
         message: process.env.NODE_ENV === "development" ? errorMessage : undefined
       },

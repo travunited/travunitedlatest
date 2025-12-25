@@ -17,7 +17,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -46,7 +46,7 @@ export async function POST(
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Booking_userIdToUser: {
           select: {
             email: true,
           },
@@ -65,7 +65,7 @@ export async function POST(
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const key = `vouchers/${params.id}/voucher-${Date.now()}-${file.name}`;
-    
+
     await uploadVisaDocument(key, buffer, file.type);
 
     // Update booking with voucher URL and status
@@ -79,11 +79,11 @@ export async function POST(
 
     // Send confirmation email and notification
     await sendTourConfirmedEmail(
-      booking.user.email,
+      booking.User_Booking_userIdToUser.email,
       booking.id,
       booking.tourName || ""
     );
-    
+
     await notify({
       userId: booking.userId,
       type: "TOUR_VOUCHERS_READY",

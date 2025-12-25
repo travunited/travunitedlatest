@@ -17,7 +17,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -39,13 +39,13 @@ export async function POST(
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Booking_userIdToUser: {
           select: {
             email: true,
             role: true,
           },
         },
-        payments: {
+        Payment: {
           where: {
             status: "COMPLETED",
           },
@@ -60,49 +60,49 @@ export async function POST(
       );
     }
 
-    const amountPaid = booking.payments.reduce((sum, p) => sum + p.amount, 0);
+    const amountPaid = booking.Payment.reduce((sum, p) => sum + p.amount, 0);
     const pendingBalance = booking.totalAmount - amountPaid;
 
     // Send appropriate email based on type
     switch (emailType) {
       case "tour_confirmed":
         await sendTourConfirmedEmail(
-          booking.user.email,
+          booking.User_Booking_userIdToUser.email,
           booking.id,
           booking.tourName || "",
-          booking.user.role || "CUSTOMER"
+          booking.User_Booking_userIdToUser.role || "CUSTOMER"
         );
         break;
 
       case "vouchers_ready":
         await sendTourVouchersReadyEmail(
-          booking.user.email,
+          booking.User_Booking_userIdToUser.email,
           booking.id,
           booking.tourName || "",
-          booking.user.role || "CUSTOMER"
+          booking.User_Booking_userIdToUser.role || "CUSTOMER"
         );
         break;
 
       case "payment_reminder":
         if (pendingBalance > 0) {
           await sendTourPaymentReminderEmail(
-            booking.user.email,
+            booking.User_Booking_userIdToUser.email,
             booking.id,
             booking.tourName || "",
             pendingBalance,
             undefined,
-            booking.user.role || "CUSTOMER"
+            booking.User_Booking_userIdToUser.role || "CUSTOMER"
           );
         }
         break;
 
       case "status_update":
         await sendTourStatusUpdateEmail(
-          booking.user.email,
+          booking.User_Booking_userIdToUser.email,
           booking.id,
           booking.tourName || "",
           booking.status,
-          booking.user.role || "CUSTOMER"
+          booking.User_Booking_userIdToUser.role || "CUSTOMER"
         );
         break;
 

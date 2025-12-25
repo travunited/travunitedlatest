@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
         },
       },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             id: true,
             email: true,
@@ -80,18 +80,18 @@ export async function POST(req: Request) {
     for (const app of applications) {
       try {
         const previousStatus = app.status;
-        
+
         // Send appropriate email based on status
         if (status === "APPROVED") {
           await sendVisaApprovedEmail(
-            app.user.email,
+            app.User_Application_userIdToUser.email,
             app.id,
             app.country || "",
             app.visaType || ""
           );
         } else if (status === "REJECTED") {
           await sendVisaRejectedEmail(
-            app.user.email,
+            app.User_Application_userIdToUser.email,
             app.id,
             app.country || "",
             app.visaType || "",
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
           );
         } else {
           await sendVisaStatusUpdateEmail(
-            app.user.email,
+            app.User_Application_userIdToUser.email,
             app.id,
             app.country || "",
             app.visaType || "",
@@ -110,7 +110,7 @@ export async function POST(req: Request) {
         // Send in-app notification
         let notificationTitle = "Visa Application Status Updated";
         let notificationMessage = `Your visa application for ${app.country || ""} ${app.visaType || ""} is now ${status}.`;
-        
+
         if (status === "APPROVED") {
           notificationTitle = "Visa Application Approved";
           notificationMessage = `Good news! Your visa application for ${app.country || ""} ${app.visaType || ""} has been approved.`;

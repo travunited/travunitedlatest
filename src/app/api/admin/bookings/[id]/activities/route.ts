@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -31,18 +31,18 @@ export async function GET(
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Booking_userIdToUser: {
           select: {
             email: true,
             name: true,
           },
         },
-        payments: {
+        Payment: {
           orderBy: {
             createdAt: "desc",
           },
         },
-        processedBy: {
+        User_Booking_processedByIdToUser: {
           select: {
             name: true,
             email: true,
@@ -65,7 +65,7 @@ export async function GET(
         entityId: params.id,
       },
       include: {
-        admin: {
+        User: {
           select: {
             name: true,
             email: true,
@@ -82,7 +82,7 @@ export async function GET(
       {
         id: "created",
         action: "CREATE",
-        description: `Booking created by ${booking.user.email}`,
+        description: `Booking created by ${booking.User_Booking_userIdToUser.email}`,
         adminName: null,
         createdAt: booking.createdAt,
       },
@@ -94,13 +94,13 @@ export async function GET(
         id: log.id,
         action: log.action,
         description: log.description,
-        adminName: log.admin?.name || log.admin?.email || null,
+        adminName: log.User?.name || log.User?.email || null,
         createdAt: log.timestamp,
       });
     });
 
     // Add payment activities
-    booking.payments.forEach((payment) => {
+    booking.Payment.forEach((payment) => {
       const isAdvance = payment.amount < booking.totalAmount;
       activities.push({
         id: `payment-${payment.id}`,

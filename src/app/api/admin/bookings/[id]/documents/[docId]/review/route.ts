@@ -49,12 +49,12 @@ export async function POST(
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Booking_userIdToUser: {
           select: { email: true, name: true },
         },
-        travellers: {
+        BookingTraveller: {
           where: {
-            documents: {
+            BookingDocument: {
               some: { id: params.docId },
             },
           },
@@ -116,7 +116,7 @@ export async function POST(
 
       // Send email notification
       await sendEmail({
-        to: booking.user.email,
+        to: booking.User_Booking_userIdToUser.email,
         subject: `Document Rejected - ${booking.tourName || "Tour Booking"}`,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

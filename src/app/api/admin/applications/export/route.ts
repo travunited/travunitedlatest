@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -39,14 +39,14 @@ export async function GET(req: Request) {
     const applications = await prisma.application.findMany({
       where,
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             name: true,
             email: true,
             phone: true,
           },
         },
-        processedBy: {
+        User_Application_processedByIdToUser: {
           select: {
             name: true,
             email: true,
@@ -78,11 +78,11 @@ export async function GET(req: Request) {
       app.country || "",
       app.visaType || "",
       app.status,
-      app.user.name || "",
-      app.user.email,
-      app.user.phone || "",
+      app.User_Application_userIdToUser.name || "",
+      app.User_Application_userIdToUser.email,
+      app.User_Application_userIdToUser.phone || "",
       app.totalAmount.toString(),
-      app.processedBy?.name || app.processedBy?.email || "Unassigned",
+      app.User_Application_processedByIdToUser?.name || app.User_Application_processedByIdToUser?.email || "Unassigned",
       new Date(app.createdAt).toISOString(),
       new Date(app.updatedAt).toISOString(),
     ]);

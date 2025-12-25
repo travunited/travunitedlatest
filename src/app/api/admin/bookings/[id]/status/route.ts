@@ -16,7 +16,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -38,7 +38,7 @@ export async function PUT(
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Booking_userIdToUser: {
           select: {
             email: true,
           },
@@ -63,7 +63,7 @@ export async function PUT(
     // Send email and notification if confirmed
     if (status === "CONFIRMED") {
       await sendTourConfirmedEmail(
-        booking.user.email,
+        booking.User_Booking_userIdToUser.email,
         booking.id,
         booking.tourName || ""
       );

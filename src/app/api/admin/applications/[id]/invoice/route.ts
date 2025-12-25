@@ -14,7 +14,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -33,7 +33,7 @@ export async function POST(
     const application = await prisma.application.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             id: true,
             email: true,
@@ -80,7 +80,7 @@ export async function POST(
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const key = `invoices/applications/${params.id}/invoice-${Date.now()}.pdf`;
-    
+
     await uploadVisaDocument(key, buffer, "application/pdf");
 
     // Update application with invoice URL
@@ -126,9 +126,9 @@ export async function POST(
       // Don't fail the request if notification fails
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: "Invoice uploaded successfully",
-      invoiceUrl: key 
+      invoiceUrl: key
     });
   } catch (error) {
     console.error("Error uploading invoice:", error);
@@ -145,7 +145,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -164,7 +164,7 @@ export async function DELETE(
     const application = await prisma.application.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             id: true,
             email: true,

@@ -15,7 +15,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -38,7 +38,7 @@ export async function PUT(
     const application = await prisma.application.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             id: true,
             email: true,

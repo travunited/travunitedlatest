@@ -17,7 +17,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -46,7 +46,7 @@ export async function POST(
     const application = await prisma.application.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             email: true,
           },
@@ -65,7 +65,7 @@ export async function POST(
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const key = `visas/${params.id}/visa-${Date.now()}-${file.name}`;
-    
+
     await uploadVisaDocument(key, buffer, file.type);
 
     // Update application with visa URL and status
@@ -79,7 +79,7 @@ export async function POST(
 
     // Send approval email and notification
     await sendVisaApprovedEmail(
-      application.user.email,
+      application.User_Application_userIdToUser.email,
       application.id,
       application.country || "",
       application.visaType || ""

@@ -13,7 +13,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -51,7 +51,7 @@ export async function POST(
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
-        payments: {
+        Payment: {
           where: {
             status: "COMPLETED",
           },
@@ -82,11 +82,13 @@ export async function POST(
     // Create payment record
     const payment = await prisma.payment.create({
       data: {
+        id: crypto.randomUUID(),
         userId: booking.userId,
         bookingId: booking.id,
         amount: amountNum,
         currency: booking.currency || "INR",
         status: "COMPLETED",
+        updatedAt: new Date(),
         // Store proof file key in metadata if needed
         // For now, we'll add it to booking notes
       },
@@ -97,7 +99,7 @@ export async function POST(
     await prisma.booking.update({
       where: { id: params.id },
       data: {
-        notes: booking.notes 
+        notes: booking.notes
           ? `${booking.notes}\n\n${paymentNote}`
           : paymentNote
       },
@@ -122,9 +124,9 @@ export async function POST(
       console.error("Error logging audit event:", auditError);
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       message: "Offline payment recorded successfully",
-      payment 
+      payment
     });
   } catch (error) {
     console.error("Error recording offline payment:", error);

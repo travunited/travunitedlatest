@@ -14,7 +14,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -33,7 +33,7 @@ export async function GET(
     const application = await prisma.application.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             id: true,
             name: true,
@@ -41,18 +41,18 @@ export async function GET(
             phone: true,
           },
         },
-        travellers: {
+        ApplicationTraveller: {
           include: {
-            traveller: true,
+            Traveller: true,
           },
           orderBy: {
             createdAt: "asc",
           },
         },
-        documents: {
+        ApplicationDocument: {
           include: {
-            requirement: true,
-            traveller: {
+            VisaDocumentRequirement: true,
+            Traveller: {
               select: {
                 id: true,
                 firstName: true,
@@ -64,21 +64,21 @@ export async function GET(
             createdAt: "asc",
           },
         },
-        payments: {
+        Payment: {
           orderBy: {
             createdAt: "desc",
           },
         },
-        processedBy: {
+        User_Application_processedByIdToUser: {
           select: {
             id: true,
             name: true,
             email: true,
           },
         },
-        visa: {
+        Visa: {
           include: {
-            country: {
+            Country: {
               select: {
                 id: true,
                 name: true,
@@ -88,7 +88,7 @@ export async function GET(
             },
           },
         },
-        visaSubType: {
+        VisaSubType: {
           select: {
             id: true,
             label: true,
@@ -117,7 +117,7 @@ export async function GET(
         entityId: params.id,
       },
       include: {
-        admin: {
+        User: {
           select: {
             name: true,
             email: true,
@@ -132,12 +132,18 @@ export async function GET(
     // Format response with additional computed fields
     const response = {
       ...application,
+      user: application.User_Application_userIdToUser,
+      travellers: application.ApplicationTraveller,
+      documents: application.ApplicationDocument,
+      processedBy: application.User_Application_processedByIdToUser,
+      visa: application.Visa,
+      visaSubType: application.VisaSubType,
       referenceNumber,
       timeline: activities.map((activity) => ({
         id: activity.id,
         time: activity.timestamp,
         event: activity.description,
-        adminName: activity.admin?.name || activity.admin?.email || "System",
+        adminName: activity.User?.name || activity.User?.email || "System",
       })),
     };
 
@@ -157,7 +163,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -248,12 +254,12 @@ export async function DELETE(
       // Don't fail the deletion if audit logging fails
     }
 
-    return NextResponse.json({ 
-      message: "Application deleted successfully" 
+    return NextResponse.json({
+      message: "Application deleted successfully"
     });
   } catch (error: any) {
     console.error("Error deleting application:", error);
-    
+
     // Provide more specific error messages
     if (error.code === "P2003") {
       return NextResponse.json(

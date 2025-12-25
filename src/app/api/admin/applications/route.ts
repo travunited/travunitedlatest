@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -40,42 +40,42 @@ export async function GET(req: Request) {
     if (status && status !== "ALL") {
       where.status = status;
     }
-    
+
     if (country) {
       where.country = {
         contains: country,
         mode: "insensitive",
       };
     }
-    
+
     if (visaType) {
       where.visaType = {
         contains: visaType,
         mode: "insensitive",
       };
     }
-    
+
     // Filter unassigned applications
     if (unassigned) {
       where.processedById = null;
     }
-    
+
     // Filter assigned applications
     if (assigned) {
       where.processedById = {
         not: null,
       };
     }
-    
+
     // Filter applications with rejected documents
     if (rejected) {
-      where.documents = {
+      where.ApplicationDocument = {
         some: {
           status: "REJECTED",
         },
       };
     }
-    
+
     // Date range filter
     if (dateFrom || dateTo) {
       where.createdAt = {};
@@ -88,10 +88,10 @@ export async function GET(req: Request) {
         where.createdAt.lte = toDate;
       }
     }
-    
+
     // Filter by assigned admin email
     if (assignedAdmin) {
-      where.processedBy = {
+      where.User_Application_processedByIdToUser = {
         email: {
           contains: assignedAdmin,
           mode: "insensitive",
@@ -102,13 +102,13 @@ export async function GET(req: Request) {
     const applications = await prisma.application.findMany({
       where,
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             name: true,
             email: true,
           },
         },
-        processedBy: {
+        User_Application_processedByIdToUser: {
           select: {
             name: true,
             email: true,

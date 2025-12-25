@@ -69,7 +69,7 @@ export async function PUT(
         processedById: adminId,
       },
       include: {
-        processedBy: {
+        User_Application_processedByIdToUser: {
           select: {
             id: true,
             name: true,

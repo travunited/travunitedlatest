@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
         },
       },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             email: true,
             role: true,
@@ -57,12 +57,12 @@ export async function POST(req: Request) {
     for (const app of applications) {
       try {
         await sendVisaStatusUpdateEmail(
-          app.user.email,
+          app.User_Application_userIdToUser.email,
           app.id,
           app.country || "",
           app.visaType || "",
           app.status,
-          app.user.role || "CUSTOMER"
+          app.User_Application_userIdToUser.role || "CUSTOMER"
         );
       } catch (error) {
         console.error(`Error sending email for application ${app.id}:`, error);

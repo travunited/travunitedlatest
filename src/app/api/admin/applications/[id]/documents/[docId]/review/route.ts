@@ -18,7 +18,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -40,9 +40,9 @@ export async function PUT(
     const document = await prisma.applicationDocument.findUnique({
       where: { id: params.docId },
       include: {
-        application: {
+        Application: {
           include: {
-            user: {
+            User_Application_userIdToUser: {
               select: {
                 id: true,
                 email: true,
@@ -63,7 +63,7 @@ export async function PUT(
 
     // Normalize status: VERIFIED -> APPROVED
     const normalizedStatus = status === "VERIFIED" ? "APPROVED" : status;
-    
+
     // Update document status
     const updated = await prisma.applicationDocument.update({
       where: { id: params.docId },
@@ -93,10 +93,10 @@ export async function PUT(
     if (normalizedStatus === "APPROVED") {
       // Notify user when document is approved
       await notify({
-        userId: document.application.userId,
+        userId: document.Application.userId,
         type: "VISA_DOCUMENT_UPLOADED",
         title: "Document Approved",
-        message: `Your document "${document.documentType || "Document"}" has been approved for your ${document.application.country || ""} ${document.application.visaType || ""} application.`,
+        message: `Your document "${document.documentType || "Document"}" has been approved for your ${document.Application.country || ""} ${document.Application.visaType || ""} application.`,
         link: `/dashboard/applications/${document.applicationId}`,
         data: {
           applicationId: document.applicationId,
@@ -108,10 +108,10 @@ export async function PUT(
       });
     } else if (normalizedStatus === "REJECTED" && rejectionReason) {
       await sendVisaDocumentRejectedEmail(
-        document.application.user.email,
+        document.Application.User_Application_userIdToUser.email,
         document.applicationId,
-        document.application.country || "",
-        document.application.visaType || "",
+        document.Application.country || "",
+        document.Application.visaType || "",
         [
           {
             type: document.documentType || "Document",
@@ -121,7 +121,7 @@ export async function PUT(
         ]
       );
       await notify({
-        userId: document.application.userId,
+        userId: document.Application.userId,
         type: "VISA_DOCUMENT_REJECTED",
         title: "Document Rejected",
         message: `Document "${document.documentType || "Document"}" was rejected. ${rejectionReason}`,
@@ -140,7 +140,7 @@ export async function PUT(
         await notifyMultiple(adminIds, {
           type: "ADMIN_VISA_DOCUMENT_UPLOADED",
           title: "Visa document rejected",
-          message: `${document.application.user?.name || document.application.user.email || "Applicant"}'s ${document.documentType || "document"} was rejected.`,
+          message: `${document.Application.User_Application_userIdToUser?.name || document.Application.User_Application_userIdToUser.email || "Applicant"}'s ${document.documentType || "document"} was rejected.`,
           link: `/admin/applications/${document.applicationId}`,
           data: {
             applicationId: document.applicationId,
@@ -160,15 +160,13 @@ export async function PUT(
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2>Document rejected</h2>
               <p><strong>Application:</strong> ${document.applicationId}</p>
-              <p><strong>Applicant:</strong> ${
-                document.application.user?.name || document.application.user.email
-              }</p>
+              <p><strong>Applicant:</strong> ${document.Application.User_Application_userIdToUser?.name || document.Application.User_Application_userIdToUser.email
+            }</p>
               <p><strong>Document:</strong> ${document.documentType || "Document"}</p>
               <p><strong>Reason:</strong> ${rejectionReason}</p>
               <p>
-                <a href="${process.env.NEXTAUTH_URL || "https://travunited.com"}/admin/applications/${
-            document.applicationId
-          }" style="display:inline-block;padding:10px 16px;background:#dc2626;color:#fff;text-decoration:none;border-radius:6px;">
+                <a href="${process.env.NEXTAUTH_URL || "https://travunited.com"}/admin/applications/${document.applicationId
+            }" style="display:inline-block;padding:10px 16px;background:#dc2626;color:#fff;text-decoration:none;border-radius:6px;">
                   Review application
                 </a>
               </p>

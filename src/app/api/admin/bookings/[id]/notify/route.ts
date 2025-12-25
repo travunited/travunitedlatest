@@ -12,7 +12,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -34,7 +34,7 @@ export async function POST(
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Booking_userIdToUser: {
           select: {
             email: true,
           },
@@ -52,7 +52,7 @@ export async function POST(
     // Send email notification
     try {
       await sendTourStatusUpdateEmail(
-        booking.user.email,
+        booking.User_Booking_userIdToUser.email,
         booking.id,
         booking.tourName || "",
         booking.status
@@ -90,8 +90,8 @@ export async function POST(
       // Don't fail if notification fails, email was sent
     }
 
-    return NextResponse.json({ 
-      message: "Notification sent successfully" 
+    return NextResponse.json({
+      message: "Notification sent successfully"
     });
   } catch (error) {
     console.error("Error sending notification:", error);

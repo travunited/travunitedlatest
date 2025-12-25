@@ -59,7 +59,7 @@ export async function PUT(
         processedById: adminId,
       },
       include: {
-        processedBy: {
+        User_Booking_processedByIdToUser: {
           select: {
             id: true,
             name: true,
