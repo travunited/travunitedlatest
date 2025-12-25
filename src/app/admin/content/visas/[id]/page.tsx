@@ -794,8 +794,10 @@ export default function AdminVisaEditorPage() {
         // entryTypeLegacy is handled separately in the API
         ...(entryType && entryType.trim() !== "" ? { structuredEntryType: entryType } : {}),
         ...(entryTypeLegacy && entryTypeLegacy.trim() !== "" ? { entryTypeLegacy } : {}),
-        ...(visaMode && visaMode.trim() !== "" ? { visaMode } : {}),
-        ...(stayType && stayType.trim() !== "" ? { stayType } : {}),
+        // Always include visaMode to allow setting it to null (empty string) when "Not specified" is selected
+        visaMode: visaMode || "",
+        // Always include stayType to allow setting it to null (empty string) when "Not specified" is selected
+        stayType: stayType || "",
         ...(visaSubTypeLabel && visaSubTypeLabel.trim() !== "" ? { visaSubTypeLabel } : {}),
         sampleVisaImageUrl: formData.sampleVisaImageUrl ? formData.sampleVisaImageUrl : null,
         priceInInr: Number(formData.priceInInr),

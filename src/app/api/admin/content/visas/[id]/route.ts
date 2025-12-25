@@ -228,15 +228,16 @@ export async function PUT(
     const stayDurationDays = body.stayDurationDays !== undefined ? body.stayDurationDays : existingVisa.stayDurationDays;
     const validityDays = body.validityDays !== undefined ? body.validityDays : existingVisa.validityDays;
     const currency = body.currency !== undefined ? body.currency : existingVisa.currency;
-    // Only use body values if they're non-empty strings, otherwise use existing values
-    const visaMode = (body.visaMode !== undefined && body.visaMode !== null && body.visaMode !== "")
-      ? body.visaMode
+    // Handle visaMode: if explicitly provided in body, use it (even if empty string to set to null), otherwise use existing value
+    const visaMode = body.visaMode !== undefined 
+      ? (body.visaMode || "")  // Allow empty string to explicitly set to null
       : existingVisa.visaMode;
     const structuredEntryType = (body.structuredEntryType !== undefined && body.structuredEntryType !== null && body.structuredEntryType !== "")
       ? body.structuredEntryType
       : null;
-    const stayType = (body.stayType !== undefined && body.stayType !== null && body.stayType !== "")
-      ? body.stayType
+    // Handle stayType: if explicitly provided in body, use it (even if empty string to set to null), otherwise use existing value
+    const stayType = body.stayType !== undefined
+      ? (body.stayType || "")  // Allow empty string to explicitly set to null
       : existingVisa.stayType;
     const visaSubTypeLabel = body.visaSubTypeLabel !== undefined ? body.visaSubTypeLabel : existingVisa.visaSubTypeLabel;
     const requirements = body.requirements !== undefined ? body.requirements : [];
@@ -324,11 +325,17 @@ export async function PUT(
     let parsedEntryType: EntryType | null = null;
     let parsedStayType: StayType | null = null;
     try {
-      // Only normalize enum values if they are actually provided and not empty
-      if (visaMode !== undefined && visaMode !== null && visaMode !== "") {
-        parsedVisaMode = normalizeEnumInput(visaMode, Object.values(VisaMode), "visaMode");
+      // Handle visaMode: if explicitly provided in body (even if empty), process it; otherwise use existing value
+      if (body.visaMode !== undefined) {
+        // visaMode was explicitly provided in the request body
+        if (visaMode !== null && visaMode !== "") {
+          parsedVisaMode = normalizeEnumInput(visaMode, Object.values(VisaMode), "visaMode");
+        } else {
+          // Empty string means "not specified", set to null
+          parsedVisaMode = null;
+        }
       } else {
-        // Use existing visaMode if not being updated
+        // visaMode not provided in body, use existing value
         parsedVisaMode = existingVisa.visaMode as VisaMode | null;
       }
       
@@ -357,10 +364,17 @@ export async function PUT(
         parsedEntryType = existingVisa.entryType as EntryType | null;
       }
       
-      if (stayType !== undefined && stayType !== null && stayType !== "") {
-        parsedStayType = normalizeEnumInput(stayType, Object.values(StayType), "stayType");
+      // Handle stayType: if explicitly provided in body (even if empty), process it; otherwise use existing value
+      if (body.stayType !== undefined) {
+        // stayType was explicitly provided in the request body
+        if (stayType !== null && stayType !== "") {
+          parsedStayType = normalizeEnumInput(stayType, Object.values(StayType), "stayType");
+        } else {
+          // Empty string means "not specified", set to null
+          parsedStayType = null;
+        }
       } else {
-        // Use existing stayType if not being updated
+        // stayType not provided in body, use existing value
         parsedStayType = existingVisa.stayType as StayType | null;
       }
     } catch (enumError) {
