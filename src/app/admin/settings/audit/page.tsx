@@ -42,7 +42,13 @@ export default function AuditLogPage() {
       const response = await fetch("/api/admin/settings/admins");
       if (response.ok) {
         const data = await response.json();
-        setAdmins(data.map((a: any) => ({ id: a.id, name: a.name, email: a.email })));
+        if (Array.isArray(data)) {
+          setAdmins(data
+            .filter((a: any) => a && a.id && a.email)
+            .map((a: any) => ({ id: a.id, name: a.name || a.email || "Unknown", email: a.email })));
+        } else {
+          setAdmins([]);
+        }
       }
     } catch (error) {
       console.error("Error fetching admins:", error);

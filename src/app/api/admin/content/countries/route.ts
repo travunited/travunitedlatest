@@ -58,7 +58,22 @@ export async function GET(req: Request) {
       },
     });
 
-    return NextResponse.json(countries);
+    // Filter out countries with missing names (safety check) and ensure proper serialization
+    const validCountries = countries
+      .filter((country) => country && country.id && country.name)
+      .map((country) => ({
+        id: country.id,
+        name: country.name,
+        code: country.code,
+        region: country.region,
+        flagUrl: country.flagUrl,
+        isActive: country.isActive,
+        createdAt: country.createdAt.toISOString(),
+        updatedAt: country.updatedAt.toISOString(),
+        _count: country._count,
+      }));
+
+    return NextResponse.json(validCountries);
   } catch (error) {
     console.error("Error fetching countries:", error);
     return NextResponse.json(

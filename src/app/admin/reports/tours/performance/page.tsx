@@ -39,10 +39,18 @@ export default function TourPerformancePage() {
       const response = await fetch("/api/admin/content/countries");
       if (response.ok) {
         const data = await response.json();
-        setCountries(data.map((c: any) => ({ id: c.id, name: c.name })));
+        // Filter out invalid entries and ensure name exists
+        if (Array.isArray(data)) {
+          setCountries(data
+            .filter((c: any) => c && c.id && c.name)
+            .map((c: any) => ({ id: c.id, name: c.name })));
+        } else {
+          setCountries([]);
+        }
       }
     } catch (error) {
       console.error("Error fetching countries:", error);
+      setCountries([]);
     }
   }, []);
 

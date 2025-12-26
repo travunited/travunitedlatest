@@ -105,11 +105,17 @@ function AdminBookingsPageContent() {
       const response = await fetch("/api/admin/settings/admins");
       if (response.ok) {
         const data = await response.json();
-        setAdmins(data.map((admin: { id: string; name: string; email: string }) => ({
-          id: admin.id,
-          name: admin.name,
-          email: admin.email,
-        })));
+        if (Array.isArray(data)) {
+          setAdmins(data
+            .filter((admin: any) => admin && admin.id && admin.email)
+            .map((admin: any) => ({
+              id: admin.id,
+              name: admin.name || admin.email || "Unknown",
+              email: admin.email,
+            })));
+        } else {
+          setAdmins([]);
+        }
       }
     } catch (error) {
       console.error("Error fetching admins:", error);
