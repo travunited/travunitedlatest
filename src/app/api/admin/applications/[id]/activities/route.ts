@@ -41,7 +41,7 @@ export async function GET(
             name: true,
           },
         },
-        ApplicationDocument: {
+        documents: {
           orderBy: {
             updatedAt: "desc",
           },
@@ -85,7 +85,7 @@ export async function GET(
     }
 
     // Add document review activities
-    application.ApplicationDocument.forEach((doc) => {
+    application.documents.forEach((doc) => {
       if (doc.updatedAt > doc.createdAt) {
         const statusText = doc.status === "APPROVED" ? "Verified" : doc.status === "REJECTED" ? "Rejected" : "Pending";
         activities.push({
