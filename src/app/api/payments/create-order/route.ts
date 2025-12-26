@@ -49,8 +49,33 @@ export async function POST(req: Request) {
       );
     }
 
+    // Normalize amount: if it's already in paise (very large number), convert back to rupees
+    // Razorpay maximum is 99,99,999 paise (₹9,99,999.99)
+    // If amount > 1000000, assume it's already in paise and convert to rupees
+    let normalizedAmount = amount;
+    if (amount > 1000000) {
+      // Likely already in paise, convert to rupees
+      normalizedAmount = amount / 100;
+      console.warn("Amount appears to be in paise, converting to rupees:", { original: amount, normalized: normalizedAmount });
+    }
+
+    // Validate Razorpay maximum limit (99,99,999 paise = ₹9,99,999.99)
+    const RAZORPAY_MAX_AMOUNT_PAISE = 9999999; // ₹9,99,999.99
+    const amountInPaise = Math.round(normalizedAmount * 100);
+    
+    if (amountInPaise > RAZORPAY_MAX_AMOUNT_PAISE) {
+      return NextResponse.json(
+        { 
+          error: `Payment amount (₹${normalizedAmount.toLocaleString()}) exceeds the maximum allowed limit of ₹9,99,999.99. Please contact support for large payments.`,
+          code: "AMOUNT_EXCEEDS_LIMIT"
+        },
+        { status: 400 }
+      );
+    }
+
     // Handle free bookings/applications (amount <= 0)
-    if (amount <= 0) {
+    // Use normalizedAmount for all calculations
+    if (normalizedAmount <= 0) {
       // Ensure entities belong to current user
       if (applicationId) {
         const application = await prisma.application.findUnique({
@@ -90,7 +115,7 @@ export async function POST(req: Request) {
         userId: session.user.id,
         applicationId: applicationId || null,
         bookingId: bookingId || null,
-        amount: 0,
+        amount: normalizedAmount,
         currency: "INR",
         status: "COMPLETED",
         provider: "NONE",
@@ -257,7 +282,7 @@ export async function POST(req: Request) {
       userId: session.user.id,
       applicationId: applicationId || null,
       bookingId: bookingId || null,
-      amount,
+      amount: normalizedAmount,
       currency: "INR",
       status: "PENDING",
       provider: "RAZORPAY",
@@ -281,7 +306,7 @@ export async function POST(req: Request) {
         where: { id: applicationId },
         data: {
           status: "PAYMENT_PENDING",
-          totalAmount: amount,
+          totalAmount: normalizedAmount,
         },
       });
     }
@@ -297,7 +322,7 @@ export async function POST(req: Request) {
 
     const razorpay = ensureRazorpayClient();
     const order = await razorpay.orders.create({
-      amount: Math.round(amount * 100),
+      amount: amountInPaise,
       currency: "INR",
       receipt: payment.id,
       notes: {
@@ -320,13 +345,13 @@ export async function POST(req: Request) {
       entityId: payment.id,
       action: AuditAction.CREATE,
       description: `Payment initiated for ${applicationId ? "application" : "booking"} ${applicationId || bookingId}`,
-      metadata: {
-        applicationId,
-        bookingId,
-        amount,
-        currency: "INR",
-        razorpayOrderId: order.id,
-      },
+        metadata: {
+          applicationId,
+          bookingId,
+          amount: normalizedAmount,
+          currency: "INR",
+          razorpayOrderId: order.id,
+        },
     });
 
     return NextResponse.json({

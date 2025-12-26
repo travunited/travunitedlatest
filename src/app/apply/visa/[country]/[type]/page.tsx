@@ -1203,7 +1203,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: Math.round(totalAmount * 100), // Convert to paise for payment API
+          amount: totalAmount, // Send amount in rupees (backend will convert to paise)
           applicationId: draftId,
           promoCodeId: appliedPromoCode?.id,
           discountAmount: discountAmountInPaise > 0 ? discountAmountInPaise : undefined,

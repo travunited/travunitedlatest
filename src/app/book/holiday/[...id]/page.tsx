@@ -1020,13 +1020,11 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
     try {
       const amount = formData.paymentType === "full" ? finalAmount : advanceAmount;
       const discountAmountInPaise = appliedPromoCode?.discountAmount || 0;
-      const amountInPaise = Math.round(amount * 100);
-
       const response = await fetch("/api/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: amountInPaise,
+          amount: amount, // Send amount in rupees (backend will convert to paise)
           bookingId: ensuredBookingId,
           paymentType: formData.paymentType,
           promoCodeId: appliedPromoCode?.id,
