@@ -331,6 +331,13 @@ type AddOnForm = {
   sortOrder: number;
 };
 
+type OptionalActivity = {
+  uid: string;
+  name: string;
+  description: string;
+  price: number;
+};
+
 type FormState = {
   // Basic Info
   countryId: string;
@@ -397,6 +404,8 @@ type FormState = {
   cancellationTerms: string;
   amenities: string; // JSON array string
   showAmenities: boolean;
+  optionalActivities: string; // JSON array string
+  showOptionalActivities: boolean;
 
   // Images & Media
   imageUrl: string;
@@ -485,6 +494,8 @@ const defaultForm: FormState = {
   cancellationTerms: "",
   amenities: "[]",
   showAmenities: false,
+  optionalActivities: "[]",
+  showOptionalActivities: false,
 
   // Images & Media
   imageUrl: "",
@@ -654,6 +665,8 @@ export default function AdminTourEditorPage() {
       cancellationTerms: data.cancellationTerms ?? "",
       amenities: parseJsonField(data.amenities),
       showAmenities: data.showAmenities ?? false,
+      optionalActivities: parseJsonField(data.optionalActivities),
+      showOptionalActivities: data.showOptionalActivities ?? false,
 
       // Images & Media
       imageUrl: data.imageUrl ?? "",
@@ -946,6 +959,8 @@ export default function AdminTourEditorPage() {
         cancellationTerms: formData.cancellationTerms || null,
         amenities: parseJsonString(formData.amenities, []),
         showAmenities: formData.showAmenities,
+        optionalActivities: parseJsonString(formData.optionalActivities, []),
+        showOptionalActivities: formData.showOptionalActivities,
 
         // Images & Media
         imageUrl: formData.imageUrl || null,
@@ -956,7 +971,6 @@ export default function AdminTourEditorPage() {
         images: galleryUrls,
         ogImage: formData.ogImage || null,
         twitterImage: formData.twitterImage || null,
-        mapLogisticsImageUrl: formData.mapLogisticsImageUrl || null,
 
         // SEO & Social
         metaTitle: formData.metaTitle || null,
@@ -2132,10 +2146,159 @@ const ContentTab = memo(({ formData, updateForm }: {
           onChange={(value) => updateForm("importantNotes", value)}
         />
       </label>
+
+      {/* Optional Activities Section */}
+      <div className="border-t border-neutral-200 pt-4 mt-4">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <span className="text-sm font-medium text-neutral-700">Optional Activities</span>
+            <p className="text-xs text-neutral-500 mt-1">
+              Display optional activities section on the tour details page
+            </p>
+          </div>
+          <CheckboxInput
+            checked={formData.showOptionalActivities}
+            onChange={(checked) => updateForm("showOptionalActivities", checked)}
+            label=""
+          />
+        </div>
+        {formData.showOptionalActivities && (
+          <OptionalActivitiesInput
+            value={formData.optionalActivities}
+            onChange={(value) => updateForm("optionalActivities", value)}
+          />
+        )}
+      </div>
     </div>
   );
 });
 ContentTab.displayName = "ContentTab";
+
+// Optional Activities Input Component
+const OptionalActivitiesInput = memo(({ value, onChange }: {
+  value: string; // JSON array string
+  onChange: (value: string) => void;
+}) => {
+  const activities = useMemo(() => {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [value]);
+
+  const addActivity = useCallback(() => {
+    const newActivity: OptionalActivity = {
+      uid: uid(),
+      name: "",
+      description: "",
+      price: 0,
+    };
+    const updated = [...activities, newActivity];
+    onChange(JSON.stringify(updated));
+  }, [activities, onChange]);
+
+  const updateActivity = useCallback((uidValue: string, key: keyof OptionalActivity, value: string | number) => {
+    const updated = activities.map((activity: any) =>
+      activity.uid === uidValue ? { ...activity, [key]: value } : activity
+    );
+    onChange(JSON.stringify(updated));
+  }, [activities, onChange]);
+
+  const removeActivity = useCallback((uidValue: string) => {
+    const updated = activities.filter((activity: any) => activity.uid !== uidValue);
+    onChange(JSON.stringify(updated));
+  }, [activities, onChange]);
+
+  return (
+    <div className="space-y-4">
+      {activities.length === 0 && (
+        <div className="rounded-lg border-2 border-dashed border-neutral-200 p-4 text-center">
+          <p className="text-sm text-neutral-600 mb-3">No optional activities added yet.</p>
+          <button
+            type="button"
+            onClick={addActivity}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition"
+          >
+            <Plus size={16} />
+            Add Activity
+          </button>
+        </div>
+      )}
+
+      {activities.length > 0 && (
+        <div className="space-y-4">
+          {activities.map((activity: any, index: number) => (
+            <div
+              key={activity.uid || index}
+              className="border border-neutral-200 rounded-lg p-4 bg-white"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm font-semibold text-neutral-900">
+                    Activity #{index + 1}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeActivity(activity.uid)}
+                  className="text-sm text-red-600 hover:text-red-700 inline-flex items-center gap-1"
+                >
+                  <Trash2 size={14} />
+                  Remove
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <label className="flex flex-col">
+                  <span className="text-xs font-medium text-neutral-600">Activity Name</span>
+                  <TextInput
+                    value={activity.name || ""}
+                    onChange={(value) => updateActivity(activity.uid, "name", value)}
+                    placeholder="e.g., Desert Safari, City Tour, Burj Khalifa tickets"
+                    className="text-sm"
+                  />
+                </label>
+
+                <label className="flex flex-col">
+                  <span className="text-xs font-medium text-neutral-600">Description</span>
+                  <TextareaInput
+                    rows={3}
+                    value={activity.description || ""}
+                    onChange={(value) => updateActivity(activity.uid, "description", value)}
+                    placeholder="Brief description of the activity"
+                    className="text-sm"
+                  />
+                </label>
+
+                <label className="flex flex-col">
+                  <span className="text-xs font-medium text-neutral-600">Price (INR)</span>
+                  <NumberInput
+                    min={0}
+                    value={activity.price || 0}
+                    onChange={(value) => updateActivity(activity.uid, "price", value ?? 0)}
+                    className="text-sm"
+                  />
+                </label>
+              </div>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={addActivity}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-50 text-primary-700 text-sm font-medium hover:bg-primary-100 transition border border-primary-200"
+          >
+            <Plus size={16} />
+            Add Another Activity
+          </button>
+        </div>
+      )}
+    </div>
+  );
+});
+OptionalActivitiesInput.displayName = "OptionalActivitiesInput";
 
 const ItineraryTab = memo(({
   days,

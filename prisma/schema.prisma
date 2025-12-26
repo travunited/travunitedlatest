@@ -498,6 +498,8 @@ model Tour {
   amenities            String?
   showAmenities        Boolean     @default(false)
   mapLogisticsImageUrl String?
+  optionalActivities   String?
+  showOptionalActivities Boolean   @default(false)
   Booking              Booking[]
   Country              Country?    @relation(fields: [countryId], references: [id])
   TourAddOn            TourAddOn[]

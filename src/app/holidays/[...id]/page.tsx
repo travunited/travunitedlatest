@@ -164,6 +164,14 @@ export default async function TourDetailPage({
   const availableDates = parseJsonArray(tour.availableDates);
   const hotelCategories = parseJsonArray(tour.hotelCategories);
   const amenities = parseJsonArray(tour.amenities);
+  const optionalActivities = tour.optionalActivities ? (() => {
+    try {
+      const parsed = JSON.parse(tour.optionalActivities);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })() : [];
   const customizationOptions = parseJsonObject(tour.customizationOptions);
   const seasonalPricing = parseJsonObject(tour.seasonalPricing);
 
@@ -366,6 +374,36 @@ export default async function TourDetailPage({
                     </Section>
                   )}
                 </div>
+              )}
+
+              {/* Optional Activities */}
+              {tour.showOptionalActivities && optionalActivities.length > 0 && (
+                <Section title="Optional Activities">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {optionalActivities.map((activity: any, index: number) => (
+                      <div
+                        key={index}
+                        className="border border-neutral-200 rounded-lg p-4 bg-white"
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="text-base font-semibold text-neutral-900">
+                            {activity.name || `Activity ${index + 1}`}
+                          </h4>
+                          {activity.price > 0 && (
+                            <span className="text-lg font-bold text-primary-600 whitespace-nowrap ml-2">
+                              ₹{activity.price.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                        {activity.description && (
+                          <p className="text-sm text-neutral-600 mt-2">
+                            {activity.description}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </Section>
               )}
 
               {/* Booking Policies & Cancellation */}
