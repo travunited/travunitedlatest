@@ -55,7 +55,41 @@ BEGIN
         ALTER TABLE "ApplicationDocument" ADD COLUMN "fileSize" INTEGER;
     END IF;
 
-    -- Ensure PromoCodeUsage table exists and has correct structure
+    -- Ensure PromoCode table exists FIRST (before PromoCodeUsage which references it)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'PromoCode') THEN
+        CREATE TABLE "PromoCode" (
+            "id" TEXT NOT NULL,
+            "code" TEXT NOT NULL,
+            "description" TEXT,
+            "discountType" "PromoDiscountType" NOT NULL,
+            "discountValue" INTEGER NOT NULL,
+            "minPurchaseAmount" INTEGER,
+            "maxDiscountAmount" INTEGER,
+            "applicableTo" "PromoApplicableType" NOT NULL DEFAULT 'BOTH',
+            "visaIds" TEXT[],
+            "countryIds" TEXT[],
+            "tourIds" TEXT[],
+            "maxUses" INTEGER,
+            "maxUsesPerUser" INTEGER NOT NULL DEFAULT 1,
+            "currentUses" INTEGER NOT NULL DEFAULT 0,
+            "restrictedUserIds" TEXT[],
+            "restrictedEmails" TEXT[],
+            "newUsersOnly" BOOLEAN NOT NULL DEFAULT false,
+            "validFrom" TIMESTAMP(3) NOT NULL,
+            "validUntil" TIMESTAMP(3) NOT NULL,
+            "isActive" BOOLEAN NOT NULL DEFAULT true,
+            "createdBy" TEXT NOT NULL,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+            CONSTRAINT "PromoCode_pkey" PRIMARY KEY ("id")
+        );
+
+        CREATE UNIQUE INDEX IF NOT EXISTS "PromoCode_code_key" ON "PromoCode"("code");
+        CREATE INDEX IF NOT EXISTS "PromoCode_isActive_idx" ON "PromoCode"("isActive");
+    END IF;
+
+    -- Ensure PromoCodeUsage table exists and has correct structure (after PromoCode)
     IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'PromoCodeUsage') THEN
         CREATE TABLE "PromoCodeUsage" (
             "id" TEXT NOT NULL,
@@ -72,7 +106,7 @@ BEGIN
             CONSTRAINT "PromoCodeUsage_pkey" PRIMARY KEY ("id")
         );
 
-        -- Add foreign keys for PromoCodeUsage
+        -- Add foreign keys for PromoCodeUsage (PromoCode should exist now)
         ALTER TABLE "PromoCodeUsage" ADD CONSTRAINT "PromoCodeUsage_promoCodeId_fkey" 
         FOREIGN KEY ("promoCodeId") REFERENCES "PromoCode"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
         
@@ -113,40 +147,6 @@ BEGIN
         END IF;
     END IF;
 
-    -- Ensure PromoCode table exists (should exist, but check)
-    IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'PromoCode') THEN
-
-        CREATE TABLE "PromoCode" (
-            "id" TEXT NOT NULL,
-            "code" TEXT NOT NULL,
-            "description" TEXT,
-            "discountType" "PromoDiscountType" NOT NULL,
-            "discountValue" INTEGER NOT NULL,
-            "minPurchaseAmount" INTEGER,
-            "maxDiscountAmount" INTEGER,
-            "applicableTo" "PromoApplicableType" NOT NULL DEFAULT 'BOTH',
-            "visaIds" TEXT[],
-            "countryIds" TEXT[],
-            "tourIds" TEXT[],
-            "maxUses" INTEGER,
-            "maxUsesPerUser" INTEGER NOT NULL DEFAULT 1,
-            "currentUses" INTEGER NOT NULL DEFAULT 0,
-            "restrictedUserIds" TEXT[],
-            "restrictedEmails" TEXT[],
-            "newUsersOnly" BOOLEAN NOT NULL DEFAULT false,
-            "validFrom" TIMESTAMP(3) NOT NULL,
-            "validUntil" TIMESTAMP(3) NOT NULL,
-            "isActive" BOOLEAN NOT NULL DEFAULT true,
-            "createdBy" TEXT NOT NULL,
-            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-            CONSTRAINT "PromoCode_pkey" PRIMARY KEY ("id")
-        );
-
-        CREATE UNIQUE INDEX IF NOT EXISTS "PromoCode_code_key" ON "PromoCode"("code");
-        CREATE INDEX IF NOT EXISTS "PromoCode_isActive_idx" ON "PromoCode"("isActive");
-    END IF;
 
 END $$;
 
