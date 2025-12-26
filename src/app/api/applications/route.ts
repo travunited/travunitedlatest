@@ -32,27 +32,9 @@ export async function GET(req: Request) {
         ],
       },
       include: {
-        ApplicationDocument: {
-          select: {
-            id: true,
-            documentType: true,
-            status: true,
-          },
-        },
-        VisaSubType: {
-          select: {
-            id: true,
-            label: true,
-            code: true,
-          },
-        },
-        Visa: {
-          select: {
-            id: true,
-            name: true,
-            visaSubTypeLabel: true,
-            entryType: true,
-            entryTypeLegacy: true,
+        documents: {
+          include: {
+            VisaDocumentRequirement: true,
           },
         },
         PromoCodeUsage: {

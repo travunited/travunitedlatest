@@ -137,7 +137,7 @@ export async function GET(req: NextRequest) {
 
       // Document verifications
       const documentVerifications = applications.reduce((sum, app) =>
-        sum + (Array.isArray(app.ApplicationDocument) ? app.ApplicationDocument.length : 0), 0
+        sum + (Array.isArray(app.documents) ? app.documents.length : 0), 0
       );
 
       return {

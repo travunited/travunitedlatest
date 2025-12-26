@@ -33,10 +33,6 @@ export async function GET(
         documents: {
           include: {
             VisaDocumentRequirement: true,
-          },
-        },
-        ApplicationDocument: {
-          include: {
             Traveller: {
               select: {
                 id: true,
