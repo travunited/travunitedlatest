@@ -495,6 +495,8 @@ model Tour {
   childPricingValue    Int?
   childAgeLimit        Int?        @default(12)
   requiredDocuments    Json?
+  amenities            String?
+  showAmenities        Boolean     @default(false)
   Booking              Booking[]
   Country              Country?    @relation(fields: [countryId], references: [id])
   TourAddOn            TourAddOn[]

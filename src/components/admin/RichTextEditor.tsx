@@ -179,8 +179,8 @@ export function RichTextEditor({
 
   return (
     <div className={`border border-neutral-300 rounded-lg bg-white ${className}`}>
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-1 p-2 border-b border-neutral-200 bg-neutral-50 rounded-t-lg">
+      {/* Toolbar - Sticky */}
+      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 p-2 border-b border-neutral-200 bg-neutral-50 rounded-t-lg">
         {/* Text Styles */}
         <button
           type="button"

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Metadata } from "next";
 import { formatDate } from "@/lib/dateFormat";
 import { getMediaProxyUrl } from "@/lib/media";
+import { getAbsoluteImageUrl } from "@/lib/og-image";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 import { ShareButton } from "@/components/ui/ShareButton";
 import { publishReadyPosts } from "@/lib/blog/publishReady";
@@ -37,12 +38,7 @@ export async function generateMetadata({
   if (post.coverImage) {
     const imageUrl = getMediaProxyUrl(post.coverImage);
     if (imageUrl) {
-      // Ensure absolute URL for social media
-      ogImage = imageUrl.startsWith("http") 
-        ? imageUrl 
-        : imageUrl.startsWith("/")
-        ? `${siteUrl}${imageUrl}`
-        : `${siteUrl}/${imageUrl}`;
+      ogImage = getAbsoluteImageUrl(imageUrl, siteUrl);
     }
   }
   

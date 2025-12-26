@@ -331,6 +331,8 @@ type FormState = {
   customizationOptions: string; // JSON string
   bookingPolicies: string;
   cancellationTerms: string;
+  amenities: string; // JSON array string
+  showAmenities: boolean;
 
   // Images & Media
   imageUrl: string;
@@ -416,6 +418,8 @@ const defaultForm: FormState = {
   customizationOptions: "{}",
   bookingPolicies: "",
   cancellationTerms: "",
+  amenities: "[]",
+  showAmenities: false,
 
   // Images & Media
   imageUrl: "",
@@ -582,6 +586,8 @@ export default function AdminTourEditorPage() {
       customizationOptions: parseJsonField(data.customizationOptions, "{}"),
       bookingPolicies: data.bookingPolicies ?? "",
       cancellationTerms: data.cancellationTerms ?? "",
+      amenities: parseJsonField(data.amenities),
+      showAmenities: data.showAmenities ?? false,
 
       // Images & Media
       imageUrl: data.imageUrl ?? "",
@@ -871,6 +877,8 @@ export default function AdminTourEditorPage() {
         customizationOptions: parseJsonString(formData.customizationOptions, {}),
         bookingPolicies: formData.bookingPolicies || null,
         cancellationTerms: formData.cancellationTerms || null,
+        amenities: parseJsonString(formData.amenities, []),
+        showAmenities: formData.showAmenities,
 
         // Images & Media
         imageUrl: formData.imageUrl || null,
@@ -1881,6 +1889,37 @@ const AvailabilityTab = memo(({ formData, updateForm }: {
           Last date for booking (leave empty for no deadline)
         </p>
       </label>
+
+      {/* Amenities Section */}
+      <div className="border-t border-neutral-200 pt-4 mt-4">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-medium text-neutral-700">Amenities</h3>
+            <p className="text-xs text-neutral-500 mt-1">
+              Display amenities section on the tour details page
+            </p>
+          </div>
+          <CheckboxInput
+            checked={formData.showAmenities}
+            onChange={(checked) => updateForm("showAmenities", checked)}
+            label="Enable Amenities"
+          />
+        </div>
+        {formData.showAmenities && (
+          <label className="flex flex-col">
+            <span className="text-sm font-medium text-neutral-700">Amenities (one per line)</span>
+            <JsonArrayTextarea
+              value={formData.amenities}
+              onChange={(value) => updateForm("amenities", value)}
+              rows={6}
+              placeholder="Wi-Fi&#10;Swimming Pool&#10;Gym&#10;Spa&#10;Restaurant"
+            />
+            <p className="text-xs text-neutral-500 mt-1">
+              List amenities available for this tour (one per line)
+            </p>
+          </label>
+        )}
+      </div>
     </div>
   );
 });

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
+import { getAbsoluteImageUrl } from "@/lib/og-image";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 import { ShareButton } from "@/components/sharing/ShareButton";
 import { VisaDetailClient } from "./VisaDetailClient";
@@ -102,12 +103,7 @@ export async function generateMetadata({
   if (visa.heroImageUrl) {
     const imageUrl = getMediaProxyUrl(visa.heroImageUrl);
     if (imageUrl) {
-      // Ensure absolute URL for social media
-      ogImage = imageUrl.startsWith("http")
-        ? imageUrl
-        : imageUrl.startsWith("/")
-          ? `${siteUrl}${imageUrl}`
-          : `${siteUrl}/${imageUrl}`;
+      ogImage = getAbsoluteImageUrl(imageUrl, siteUrl);
     }
   }
 

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
+import { getAbsoluteImageUrl } from "@/lib/og-image";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 import { PhotoGallery } from "@/components/tours/PhotoGallery";
 import { BackToHolidaysButton } from "./BackToHolidaysButton";
@@ -57,23 +58,14 @@ export async function generateMetadata({
         : undefined;
 
   if (rawOgImage) {
-    // Convert relative URLs to absolute URLs for social media
-    ogImage = rawOgImage.startsWith("http")
-      ? rawOgImage
-      : rawOgImage.startsWith("/")
-        ? `${siteUrl}${rawOgImage}`
-        : `${siteUrl}/${rawOgImage}`;
+    ogImage = getAbsoluteImageUrl(rawOgImage, siteUrl);
   }
 
   // Get Twitter image
   let twitterImage: string | undefined;
   if (tour.twitterImage) {
     const rawTwitterImage = getMediaProxyUrl(tour.twitterImage);
-    twitterImage = rawTwitterImage.startsWith("http")
-      ? rawTwitterImage
-      : rawTwitterImage.startsWith("/")
-        ? `${siteUrl}${rawTwitterImage}`
-        : `${siteUrl}/${rawTwitterImage}`;
+    twitterImage = getAbsoluteImageUrl(rawTwitterImage, siteUrl);
   }
 
   return {
@@ -171,6 +163,7 @@ export default async function TourDetailPage({
   const citiesCovered = parseJsonArray(tour.citiesCovered);
   const availableDates = parseJsonArray(tour.availableDates);
   const hotelCategories = parseJsonArray(tour.hotelCategories);
+  const amenities = parseJsonArray(tour.amenities);
   const customizationOptions = parseJsonObject(tour.customizationOptions);
   const seasonalPricing = parseJsonObject(tour.seasonalPricing);
 
@@ -428,6 +421,23 @@ export default async function TourDetailPage({
                       </p>
                     </div>
                   ) : null}
+                </Section>
+              )}
+
+              {/* Amenities */}
+              {tour.showAmenities && amenities.length > 0 && (
+                <Section title="Amenities">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {amenities.map((amenity, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 px-4 py-2 bg-neutral-50 rounded-lg border border-neutral-200"
+                      >
+                        <div className="w-2 h-2 bg-primary-600 rounded-full" />
+                        <span className="text-neutral-700 text-sm">{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
                 </Section>
               )}
 

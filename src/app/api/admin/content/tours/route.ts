@@ -207,6 +207,8 @@ function buildTourData(body: any, resolvedSlug: string) {
     customizationOptions: stringifyJson(body.customizationOptions),
     bookingPolicies: body.bookingPolicies || null,
     cancellationTerms: body.cancellationTerms || null,
+    amenities: stringifyJson(body.amenities),
+    showAmenities: body.showAmenities ?? false,
 
     // Images & Media
     imageUrl: normalizeMediaInput(body.imageUrl),
