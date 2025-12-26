@@ -384,11 +384,12 @@ export async function POST(req: Request) {
     }
 
     // Handle Razorpay errors
-    if (prismaError?.error?.description || prismaError?.error?.reason) {
-      console.error("Razorpay error in payment create-order:", prismaError.error);
+    const razorpayError = error as any;
+    if (razorpayError?.error?.description || razorpayError?.error?.reason) {
+      console.error("Razorpay error in payment create-order:", razorpayError.error);
       return NextResponse.json(
         { 
-          error: prismaError.error.description || prismaError.error.reason || "Payment gateway error" 
+          error: razorpayError.error.description || razorpayError.error.reason || "Payment gateway error" 
         },
         { status: 500 }
       );
