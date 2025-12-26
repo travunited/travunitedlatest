@@ -50,6 +50,7 @@ function AdminFormSubmissionsPageContent() {
       }
     } catch (error) {
       console.error("Error fetching form submissions:", error);
+      setSubmissions([]);
     } finally {
       setLoading(false);
       setInitialLoad(false);
@@ -93,14 +94,21 @@ function AdminFormSubmissionsPageContent() {
 
   // Calculate statistics
   const stats = useMemo(() => {
-    const total = submissions.length;
-    const contact = submissions.filter((s) => s.formType === "CONTACT").length;
-    const help = submissions.filter((s) => s.formType === "HELP").length;
-    const support = submissions.filter((s) => s.formType === "SUPPORT").length;
-    const today = submissions.filter((s) => {
-      const submissionDate = new Date(s.createdAt);
-      const today = new Date();
-      return submissionDate.toDateString() === today.toDateString();
+    // Filter out invalid submissions before calculating stats
+    const validSubmissions = submissions.filter((s) => s && s.id && s.email);
+    const total = validSubmissions.length;
+    const contact = validSubmissions.filter((s) => s.formType === "CONTACT").length;
+    const help = validSubmissions.filter((s) => s.formType === "HELP").length;
+    const support = validSubmissions.filter((s) => s.formType === "SUPPORT").length;
+    const today = validSubmissions.filter((s) => {
+      if (!s.createdAt) return false;
+      try {
+        const submissionDate = new Date(s.createdAt);
+        const today = new Date();
+        return submissionDate.toDateString() === today.toDateString();
+      } catch {
+        return false;
+      }
     }).length;
 
     return { total, contact, help, support, today };
