@@ -41,9 +41,9 @@ export async function GET(
             name: true,
           },
         },
-        documents: {
-          include: {
-            VisaDocumentRequirement: true,
+        ApplicationDocument: {
+          orderBy: {
+            updatedAt: "desc",
           },
         },
         User_Application_processedByIdToUser: {
@@ -52,8 +52,8 @@ export async function GET(
             email: true,
           },
         },
-      } as any,
-    }) as any;
+      },
+    });
 
     if (!application) {
       return NextResponse.json(
@@ -85,7 +85,7 @@ export async function GET(
     }
 
     // Add document review activities
-    application.documents.forEach((doc: any) => {
+    application.ApplicationDocument.forEach((doc) => {
       if (doc.updatedAt > doc.createdAt) {
         const statusText = doc.status === "APPROVED" ? "Verified" : doc.status === "REJECTED" ? "Rejected" : "Pending";
         activities.push({
