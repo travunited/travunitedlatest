@@ -2,6 +2,22 @@
 -- This ensures the ApplicationDocument table exists and has correct relations
 -- Also fixes any PromoCodeUsage relation issues
 
+-- Create PromoDiscountType enum if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PromoDiscountType') THEN
+        EXECUTE 'CREATE TYPE "PromoDiscountType" AS ENUM (''PERCENTAGE'', ''FIXED_AMOUNT'', ''FREE'')';
+    END IF;
+END $$;
+
+-- Create PromoApplicableType enum if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PromoApplicableType') THEN
+        EXECUTE 'CREATE TYPE "PromoApplicableType" AS ENUM (''VISAS'', ''TOURS'', ''BOTH'')';
+    END IF;
+END $$;
+
 DO $$ 
 BEGIN
     -- Ensure ApplicationDocument table exists (it should, but check to be safe)
@@ -99,21 +115,6 @@ BEGIN
 
     -- Ensure PromoCode table exists (should exist, but check)
     IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'PromoCode') THEN
-        -- Create PromoDiscountType enum if it doesn't exist
-        DO $$ 
-        BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PromoDiscountType') THEN
-                CREATE TYPE "PromoDiscountType" AS ENUM ('PERCENTAGE', 'FIXED_AMOUNT', 'FREE');
-            END IF;
-        END $$;
-
-        -- Create PromoApplicableType enum if it doesn't exist
-        DO $$ 
-        BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PromoApplicableType') THEN
-                CREATE TYPE "PromoApplicableType" AS ENUM ('VISAS', 'TOURS', 'BOTH');
-            END IF;
-        END $$;
 
         CREATE TABLE "PromoCode" (
             "id" TEXT NOT NULL,
