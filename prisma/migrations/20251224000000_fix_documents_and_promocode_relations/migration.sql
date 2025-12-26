@@ -5,17 +5,17 @@
 -- Create PromoDiscountType enum if it doesn't exist
 DO $$ 
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PromoDiscountType') THEN
-        EXECUTE 'CREATE TYPE "PromoDiscountType" AS ENUM (''PERCENTAGE'', ''FIXED_AMOUNT'', ''FREE'')';
-    END IF;
+    CREATE TYPE "PromoDiscountType" AS ENUM ('PERCENTAGE', 'FIXED_AMOUNT', 'FREE');
+EXCEPTION
+    WHEN duplicate_object THEN null;
 END $$;
 
 -- Create PromoApplicableType enum if it doesn't exist
 DO $$ 
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'PromoApplicableType') THEN
-        EXECUTE 'CREATE TYPE "PromoApplicableType" AS ENUM (''VISAS'', ''TOURS'', ''BOTH'')';
-    END IF;
+    CREATE TYPE "PromoApplicableType" AS ENUM ('VISAS', 'TOURS', 'BOTH');
+EXCEPTION
+    WHEN duplicate_object THEN null;
 END $$;
 
 DO $$ 
