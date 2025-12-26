@@ -382,9 +382,14 @@ export default async function VisaDetailPage({
                 <div className="mb-6">
                   {visa.govtFee !== null && visa.serviceFee !== null ? (
                     <>
-                      <div className="text-4xl font-bold text-primary-600 mb-1">
-                        {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
-                        {(visa.govtFee + visa.serviceFee).toLocaleString()}
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="text-4xl font-bold text-primary-600">
+                          {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                          {(visa.govtFee + visa.serviceFee).toLocaleString()}
+                        </div>
+                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-md whitespace-nowrap">
+                          All taxes included
+                        </span>
                       </div>
                       <div className="text-xs text-neutral-500 mb-2">
                         Govt: {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
@@ -395,9 +400,14 @@ export default async function VisaDetailPage({
                     </>
                   ) : (
                     <>
-                      <div className="text-4xl font-bold text-primary-600 mb-1">
-                        {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
-                        {visa.priceInInr.toLocaleString()}
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="text-4xl font-bold text-primary-600">
+                          {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                          {visa.priceInInr.toLocaleString()}
+                        </div>
+                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-md whitespace-nowrap">
+                          All taxes included
+                        </span>
                       </div>
                       <div className="text-sm text-neutral-500">Per traveller</div>
                     </>

@@ -1298,8 +1298,13 @@ export default function VisaApplicationPage({ params }: { params: { country: str
               <p className="text-neutral-600 mb-4">
                 Processing: {visaLoading ? "Fetching..." : visaProcessing}
               </p>
-              <div className="text-2xl font-bold text-primary-600">
-                {visaLoading ? "—" : `₹${visaPrice.toLocaleString()}`}
+              <div className="flex items-center gap-2">
+                <div className="text-2xl font-bold text-primary-600">
+                  {visaLoading ? "—" : `₹${visaPrice.toLocaleString()}`}
+                </div>
+                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded whitespace-nowrap">
+                  All taxes included
+                </span>
               </div>
             </div>
             <div className="space-y-4">
@@ -1797,13 +1802,17 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                     </div>
                   </div>
                 )}
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-2">
                   <span className="font-semibold text-neutral-900">Total Amount</span>
-                  <span className="text-2xl font-bold text-primary-600">
-                    ₹{totalAmount.toLocaleString()}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold text-primary-600">
+                      ₹{totalAmount.toLocaleString()}
+                    </span>
+                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded whitespace-nowrap">
+                      All taxes included
+                    </span>
+                  </div>
                 </div>
-                <p className="text-xs text-neutral-600 mt-1">Tax included</p>
               </div>
             </div>
           </div>

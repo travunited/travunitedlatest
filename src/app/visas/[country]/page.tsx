@@ -162,9 +162,14 @@ export default async function CountryVisasPage({
                     <div>
                       {visa.govtFee !== null && visa.serviceFee !== null ? (
                         <>
-                          <div className="text-3xl font-bold text-primary-600">
-                            {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
-                            {(visa.govtFee + visa.serviceFee).toLocaleString()}
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="text-3xl font-bold text-primary-600">
+                              {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                              {(visa.govtFee + visa.serviceFee).toLocaleString()}
+                            </div>
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded whitespace-nowrap">
+                              All taxes included
+                            </span>
                           </div>
                           <div className="text-xs text-neutral-500 mt-1">
                             Govt: {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
@@ -175,9 +180,14 @@ export default async function CountryVisasPage({
                         </>
                       ) : (
                         <>
-                          <div className="text-3xl font-bold text-primary-600">
-                            {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
-                            {visa.priceInInr.toLocaleString()}
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="text-3xl font-bold text-primary-600">
+                              {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                              {visa.priceInInr.toLocaleString()}
+                            </div>
+                            <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded whitespace-nowrap">
+                              All taxes included
+                            </span>
                           </div>
                           <div className="text-sm text-neutral-500">Per traveller</div>
                         </>
