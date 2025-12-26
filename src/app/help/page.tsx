@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { HelpCircle, Mail, Phone, MessageCircle, ChevronDown, ChevronUp, CheckCircle, AlertCircle } from "lucide-react";
@@ -76,7 +76,7 @@ const faqCategories = {
   ],
 };
 
-export default function HelpPage() {
+function HelpPageContent() {
   const searchParams = useSearchParams();
   const [activeCategory, setActiveCategory] = useState<keyof typeof faqCategories>("visas");
   const [openFaqs, setOpenFaqs] = useState<Record<string, boolean>>({});
@@ -406,3 +406,26 @@ export default function HelpPage() {
   );
 }
 
+export default function HelpPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white">
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              Help & Support
+            </h1>
+            <p className="text-xl text-white/90 max-w-2xl">
+              Find answers to common questions or get in touch with our support team
+            </p>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center text-neutral-600">Loading...</div>
+        </div>
+      </div>
+    }>
+      <HelpPageContent />
+    </Suspense>
+  );
+}

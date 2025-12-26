@@ -20,6 +20,7 @@ import { ShareButton } from "@/components/sharing/ShareButton";
 import { VisaDetailClient } from "./VisaDetailClient";
 import { BackToVisasButton } from "./BackToVisasButton";
 import { InformationOnlyCTAs } from "./InformationOnlyCTAs";
+import { SampleVisaPreview } from "@/components/visa/SampleVisaPreview";
 
 const visaModeLabels: Record<string, string> = {
   EVISA: "eVisa",
@@ -331,19 +332,11 @@ export default async function VisaDetailPage({
                   <h2 className="text-2xl font-bold text-neutral-900">Visa Sample</h2>
                   <div className="border border-neutral-200 rounded-2xl p-4 flex items-start gap-3 bg-neutral-50">
                     <FileText className="text-primary-600 mt-1" size={20} />
-                    <div>
+                    <div className="flex-1">
                       <p className="text-sm text-neutral-700 mb-2">
                         View a sample of the approved visa document for reference.
                       </p>
-                      <a
-                        href={sampleVisaUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700"
-                      >
-                        <span>Open visa sample</span>
-                        <ArrowRight size={16} className="ml-1" />
-                      </a>
+                      <SampleVisaPreview sampleVisaUrl={sampleVisaUrl} />
                     </div>
                   </div>
                 </section>

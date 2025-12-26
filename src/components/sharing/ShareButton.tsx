@@ -4,13 +4,13 @@ import { useState } from "react";
 import {
   Share2,
   Facebook,
-  Twitter,
   MessageCircle,
   Linkedin,
   Link as LinkIcon,
   Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { XIcon } from "@/components/ui/XIcon";
 
 interface ShareButtonProps {
   url: string;
@@ -48,9 +48,9 @@ export function ShareButton({
       },
     },
     {
-      name: "Twitter",
-      icon: Twitter,
-      color: "bg-[#1DA1F2] hover:bg-[#1A91DA]",
+      name: "X",
+      icon: XIcon,
+      color: "bg-[#000000] hover:bg-[#1A1A1A]",
       onClick: () => {
         window.open(
           `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle)}`,

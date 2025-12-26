@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Share2, Facebook, Twitter, Linkedin, MessageCircle, Link as LinkIcon, Check } from "lucide-react";
+import { Share2, Facebook, Linkedin, MessageCircle, Link as LinkIcon, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { XIcon } from "./XIcon";
 
 interface ShareButtonProps {
   url: string;
@@ -95,8 +96,8 @@ export function ShareButton({ url, title, description = "", variant = "full" }: 
                   }}
                   className="w-full flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-neutral-50 transition-colors text-left"
                 >
-                  <Twitter size={18} className="text-sky-500" />
-                  <span className="text-sm text-neutral-700">Twitter</span>
+                  <XIcon size={18} className="text-neutral-900" />
+                  <span className="text-sm text-neutral-700">X</span>
                 </button>
                 <button
                   onClick={(e) => {
@@ -202,8 +203,8 @@ export function ShareButton({ url, title, description = "", variant = "full" }: 
                 }}
                 className="w-full flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-neutral-50 transition-colors text-left"
               >
-                <Twitter size={18} className="text-sky-500" />
-                <span className="text-sm text-neutral-700">Twitter</span>
+                <XIcon size={18} className="text-neutral-900" />
+                <span className="text-sm text-neutral-700">X</span>
               </button>
               <button
                 onClick={(e) => {

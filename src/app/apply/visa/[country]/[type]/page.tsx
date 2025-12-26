@@ -213,6 +213,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
 
   useEffect(() => {
     let isMounted = true;
+    let redirecting = false;
+    
     async function loadVisa() {
       setVisaLoading(true);
       try {
@@ -227,7 +229,9 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         
         // Block VOA and Visa-Free Entry visas from application flow
         if (data.visaMode === "VOA" || data.visaMode === "VISA_FREE_ENTRY") {
-          router.push(`/visas/${params.country}/${params.type}`);
+          redirecting = true;
+          // Use replace instead of push to avoid breaking back navigation
+          router.replace(`/visas/${params.country}/${params.type}`);
           return;
         }
         
@@ -240,11 +244,13 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         }));
       } catch (error) {
         console.error("Failed to load visa", error);
-        if (isMounted) {
-          router.push("/visas");
+        if (isMounted && !redirecting) {
+          redirecting = true;
+          // Use replace instead of push to avoid breaking back navigation
+          router.replace("/visas");
         }
       } finally {
-        if (isMounted) {
+        if (isMounted && !redirecting) {
           setVisaLoading(false);
         }
       }
@@ -2031,12 +2037,18 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     <div className="min-h-screen bg-neutral-50">
       <div className="bg-white border-b border-neutral-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Link
-            href={`/visas/${params.country}/${params.type}`}
-            className="text-primary-600 hover:text-primary-700 text-sm"
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              // Use router.back() to go back in browser history
+              // This ensures proper back navigation without breaking browser history
+              router.back();
+            }}
+            className="text-primary-600 hover:text-primary-700 text-sm text-left"
+            type="button"
           >
             ← Back to Visa Details
-          </Link>
+          </button>
           <button
             type="button"
             onClick={handleStartFreshApplication}
