@@ -558,14 +558,17 @@ export default function AdminTourEditorPage() {
   const [coverImageMode, setCoverImageMode] = useState<"url" | "upload">("url");
   const [heroImageMode, setHeroImageMode] = useState<"url" | "upload">("url");
   const [featuredImageMode, setFeaturedImageMode] = useState<"url" | "upload">("url");
+  const [mapLogisticsImageMode, setMapLogisticsImageMode] = useState<"url" | "upload">("url");
   const [coverUploading, setCoverUploading] = useState(false);
   const [heroUploading, setHeroUploading] = useState(false);
   const [featuredUploading, setFeaturedUploading] = useState(false);
   const [galleryUploading, setGalleryUploading] = useState(false);
+  const [mapLogisticsUploading, setMapLogisticsUploading] = useState(false);
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
   const [heroUploadError, setHeroUploadError] = useState<string | null>(null);
   const [featuredUploadError, setFeaturedUploadError] = useState<string | null>(null);
   const [galleryUploadError, setGalleryUploadError] = useState<string | null>(null);
+  const [mapLogisticsUploadError, setMapLogisticsUploadError] = useState<string | null>(null);
   const [draggingGalleryIndex, setDraggingGalleryIndex] = useState<number | null>(null);
 
   const fetchCountries = useCallback(async () => {
