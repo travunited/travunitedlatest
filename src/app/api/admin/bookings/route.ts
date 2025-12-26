@@ -194,11 +194,38 @@ export async function GET(req: Request) {
       const source = "WEBSITE"; // TODO: Add source field to Booking model if needed
 
       return {
-        ...booking,
+        id: booking.id,
+        tourId: booking.tourId,
+        tourName: booking.tourName,
+        status: booking.status,
+        totalAmount: booking.totalAmount,
+        currency: booking.currency,
+        travelDate: booking.travelDate,
+        voucherUrl: booking.voucherUrl,
+        notes: booking.notes,
+        createdAt: booking.createdAt,
+        updatedAt: booking.updatedAt,
+        foodPreference: booking.foodPreference,
+        foodPreferenceNotes: booking.foodPreferenceNotes,
+        languagePreference: booking.languagePreference,
+        languagePreferenceOther: booking.languagePreferenceOther,
+        driverPreference: booking.driverPreference,
+        specialRequests: booking.specialRequests,
+        policyAccepted: booking.policyAccepted,
+        policyAcceptedAt: booking.policyAcceptedAt,
+        policyAcceptedByUserId: booking.policyAcceptedByUserId,
+        cancellationReason: booking.cancellationReason,
+        policyVersion: booking.policyVersion,
+        policyAcceptedIp: booking.policyAcceptedIp,
+        policyAcceptedUserAgent: booking.policyAcceptedUserAgent,
+        documents: booking.documents,
+        source: booking.source,
+        invoiceUrl: booking.invoiceUrl,
+        invoiceUploadedAt: booking.invoiceUploadedAt,
+        invoiceUploadedByAdminId: booking.invoiceUploadedByAdminId,
         amountPaid,
         pendingBalance: pendingBalance > 0 ? pendingBalance : 0,
         paymentStatus,
-        source,
         travellersCount: booking.BookingTraveller.length,
         user: booking.User_Booking_userIdToUser,
         processedBy: booking.User_Booking_processedByIdToUser,
@@ -212,7 +239,37 @@ export async function GET(req: Request) {
       filteredBookings = bookingsWithPayment.filter((b) => b.paymentStatus === paymentStatus);
     }
 
-    return NextResponse.json(filteredBookings);
+    // Transform bookings and ensure proper serialization, filter out invalid entries
+    const transformedBookings = filteredBookings
+      .filter((booking) => booking && booking.id && booking.user && booking.user.email)
+      .map((booking) => ({
+        id: booking.id,
+        tourName: booking.tourName,
+        status: booking.status,
+        totalAmount: booking.totalAmount,
+        currency: booking.currency,
+        travelDate: booking.travelDate ? (booking.travelDate instanceof Date ? booking.travelDate.toISOString() : booking.travelDate) : null,
+        createdAt: booking.createdAt instanceof Date ? booking.createdAt.toISOString() : (typeof booking.createdAt === 'string' ? booking.createdAt : new Date(booking.createdAt).toISOString()),
+        updatedAt: booking.updatedAt instanceof Date ? booking.updatedAt.toISOString() : (typeof booking.updatedAt === 'string' ? booking.updatedAt : new Date(booking.updatedAt).toISOString()),
+        user: {
+          name: booking.user?.name || "Unknown",
+          email: booking.user?.email || "",
+          phone: booking.user?.phone || null,
+        },
+        processedBy: booking.processedBy ? {
+          id: booking.processedBy.id,
+          name: booking.processedBy.name || "Unknown",
+          email: booking.processedBy.email || "",
+        } : null,
+        amountPaid: booking.amountPaid,
+        pendingBalance: booking.pendingBalance,
+        paymentStatus: booking.paymentStatus,
+        source: booking.source,
+        travellersCount: booking.travellersCount,
+        tour: booking.tour,
+      }));
+
+    return NextResponse.json(transformedBookings);
   } catch (error) {
     console.error("Error fetching bookings:", error);
     return NextResponse.json(

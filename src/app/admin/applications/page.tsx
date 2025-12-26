@@ -68,10 +68,20 @@ function AdminApplicationsPageContent() {
       const response = await fetch(`/api/admin/applications?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setApplications(data);
+        // Ensure data is an array and filter out invalid entries
+        if (Array.isArray(data)) {
+          setApplications(data.filter((app: any) => app && app.id && app.user && app.user.email));
+        } else {
+          setApplications([]);
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Failed to fetch applications:", errorData);
+        setApplications([]);
       }
     } catch (error) {
       console.error("Error fetching applications:", error);
+      setApplications([]);
     } finally {
       setLoading(false);
       setInitialLoad(false);

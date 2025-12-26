@@ -87,10 +87,20 @@ function AdminBookingsPageContent() {
       const response = await fetch(`/api/admin/bookings?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setBookings(data);
+        // Ensure data is an array and filter out invalid entries
+        if (Array.isArray(data)) {
+          setBookings(data.filter((booking: any) => booking && booking.id && booking.user && booking.user.email));
+        } else {
+          setBookings([]);
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Failed to fetch bookings:", errorData);
+        setBookings([]);
       }
     } catch (error) {
       console.error("Error fetching bookings:", error);
+      setBookings([]);
     } finally {
       setLoading(false);
       setInitialLoad(false);

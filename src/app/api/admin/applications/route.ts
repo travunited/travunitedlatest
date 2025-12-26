@@ -120,7 +120,29 @@ export async function GET(req: Request) {
       },
     });
 
-    return NextResponse.json(applications);
+    // Transform applications and ensure proper serialization
+    const transformedApplications = applications
+      .filter((app) => app && app.id && app.User_Application_userIdToUser)
+      .map((app) => ({
+        id: app.id,
+        country: app.country,
+        visaType: app.visaType,
+        status: app.status,
+        totalAmount: app.totalAmount,
+        currency: app.currency,
+        createdAt: app.createdAt.toISOString(),
+        updatedAt: app.updatedAt.toISOString(),
+        user: {
+          name: app.User_Application_userIdToUser?.name || "Unknown",
+          email: app.User_Application_userIdToUser?.email || "",
+        },
+        processedBy: app.User_Application_processedByIdToUser ? {
+          name: app.User_Application_processedByIdToUser.name || "Unknown",
+          email: app.User_Application_processedByIdToUser.email || "",
+        } : null,
+      }));
+
+    return NextResponse.json(transformedApplications);
   } catch (error) {
     console.error("Error fetching applications:", error);
     return NextResponse.json(
