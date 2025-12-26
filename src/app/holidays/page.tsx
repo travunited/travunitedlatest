@@ -27,13 +27,13 @@ export default async function HolidaysPage({
     ];
   }
 
-  let tours: Prisma.TourGetPayload<{ include: { country: true } }>[] = [];
+  let tours: any[] = [];
   try {
     tours = await prisma.tour.findMany({
       where,
       orderBy: { createdAt: "desc" },
       include: {
-        country: true,
+        Country: true,
       },
     });
   } catch (error) {
@@ -95,8 +95,8 @@ export default async function HolidaysPage({
         price: tour.basePriceInInr ?? tour.price ?? 0,
         originalPrice: tour.originalPrice,
         currency: tour.currency || "INR",
-        countryName: tour.country?.name || tour.destinationCountry || "Global",
-        countryCode: tour.country?.code || "GLOBAL",
+        countryName: (tour as any).Country?.name || tour.destinationCountry || "Global",
+        countryCode: (tour as any).Country?.code || "GLOBAL",
         isFeatured: tour.isFeatured,
         allowAdvance: tour.allowAdvance,
         tourType: tour.tourType,
@@ -120,10 +120,10 @@ export default async function HolidaysPage({
   const countryFilters = Array.from(
     new Map(
       tours
-        .filter((tour) => tour.country?.code || tour.destinationCountry)
+        .filter((tour) => (tour as any).Country?.code || tour.destinationCountry)
         .map((tour) => {
-          const code = tour.country?.code || tour.destinationCountry?.substring(0, 3).toUpperCase() || "GLOBAL";
-          const name = tour.country?.name || tour.destinationCountry || "Global";
+          const code = (tour as any).Country?.code || tour.destinationCountry?.substring(0, 3).toUpperCase() || "GLOBAL";
+          const name = (tour as any).Country?.name || tour.destinationCountry || "Global";
           return [code, { code, name }];
         })
     ).values()
@@ -164,8 +164,8 @@ export default async function HolidaysPage({
         </div>
       </div>
 
-      <HolidaysGridClient 
-        tours={formatted} 
+      <HolidaysGridClient
+        tours={formatted}
         countries={countryFilters}
         regions={regions}
         tourTypes={tourTypes}

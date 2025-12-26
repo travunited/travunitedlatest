@@ -45,7 +45,7 @@ export async function GET(req: Request) {
 
     let ownerId: string | null = null;
 
-    const document = await prisma.applicationDocument.findFirst({
+    const document = await prisma.document.findFirst({
       where: { filePath: key },
       select: {
         Application: {

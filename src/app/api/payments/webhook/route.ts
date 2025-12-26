@@ -58,33 +58,27 @@ export async function POST(req: Request) {
           razorpayOrderId: order_id,
         },
         include: {
-          application: {
+          Application: {
             include: {
-              user: {
+              User_Application_userIdToUser: {
                 select: { email: true, name: true, id: true, role: true },
-              },
-              promoCode: {
-                select: { code: true },
               },
             },
           },
-          booking: {
+          Booking: {
             include: {
-              user: {
-                select: { email: true, name: true, id: true, role: true },
-              },
-              promoCode: {
-                select: { code: true },
+              User_Booking_userIdToUser: {
+                select: { email: true, id: true, role: true },
               },
             },
           },
-          user: {
+          User: {
             select: { id: true },
           },
-          promoCode: {
+          PromoCode: {
             select: { code: true },
           },
-        },
+        } as any,
       });
 
       if (!payment) {
@@ -107,20 +101,21 @@ export async function POST(req: Request) {
       });
 
       // Record promo code usage if promo code was applied
-      if (payment.promoCodeId && payment.discountAmount && payment.discountAmount > 0) {
+      const p = payment as any;
+      if (p.promoCodeId && p.discountAmount && p.discountAmount > 0) {
         try {
           // Get the original amount before discount
-          const originalAmount = payment.amount + (payment.discountAmount || 0);
-          
+          const originalAmount = p.amount + (p.discountAmount || 0);
+
           await recordPromoCodeUsage({
-            promoCodeId: payment.promoCodeId,
-            userId: payment.userId,
+            promoCodeId: p.promoCodeId,
+            userId: p.userId,
             originalAmount: originalAmount,
-            discountAmount: payment.discountAmount,
-            finalAmount: payment.amount,
-            applicationId: payment.applicationId || undefined,
-            bookingId: payment.bookingId || undefined,
-            paymentId: payment.id,
+            discountAmount: p.discountAmount,
+            finalAmount: p.amount,
+            applicationId: p.applicationId || undefined,
+            bookingId: p.bookingId || undefined,
+            paymentId: p.id,
           });
         } catch (error) {
           // Log error but don't fail the webhook processing
@@ -128,7 +123,11 @@ export async function POST(req: Request) {
         }
       }
 
-      if (payment.applicationId && payment.application) {
+      if (payment.applicationId && (payment as any).Application) {
+        const application = (payment as any).Application;
+        const user = application.User_Application_userIdToUser;
+        const promoCodeCode = (payment as any).PromoCode?.code || null;
+
         // Update status to DOCUMENTS_PENDING - documents will be uploaded after payment
         await prisma.application.update({
           where: { id: payment.applicationId },
@@ -139,19 +138,19 @@ export async function POST(req: Request) {
 
         // Send payment success email with instructions to upload documents
         await sendVisaPaymentSuccessEmail(
-          payment.application.user.email,
+          user.email,
           payment.applicationId,
-          payment.application.country || "",
-          payment.application.visaType || "",
+          application.country || "",
+          application.visaType || "",
           payment.amount,
-          payment.application.user.role || "CUSTOMER",
-          payment.promoCode?.code || payment.application.promoCode?.code || null,
-          payment.discountAmount || null
+          user.role || "CUSTOMER",
+          promoCodeCode,
+          (payment as any).discountAmount || null
         );
-        
+
         // Send notification to upload documents
         await notify({
-          userId: payment.application.userId,
+          userId: application.userId,
           type: "VISA_PAYMENT_SUCCESS",
           title: "Payment Successful - Upload Documents",
           message: `Payment of ₹${payment.amount.toLocaleString()} received. Please upload required documents to complete your application.`,
@@ -159,24 +158,24 @@ export async function POST(req: Request) {
           data: {
             applicationId: payment.applicationId,
             amount: payment.amount,
-            country: payment.application.country,
-            visaType: payment.application.visaType,
+            country: application.country,
+            visaType: application.visaType,
           },
           sendEmail: false, // Email already sent above
         });
-        
+
         // Notify admins about payment success and pending documents
         const adminIds = await getAdminUserIds();
         if (adminIds.length > 0) {
           await notifyMultiple(adminIds, {
             type: "ADMIN_APPLICATION_ASSIGNED",
             title: "Payment Received - Documents Pending",
-            message: `Payment received for ${payment.application.country || ""} ${payment.application.visaType || ""} application. Waiting for document upload.`,
+            message: `Payment received for ${application.country || ""} ${application.visaType || ""} application. Waiting for document upload.`,
             link: `/admin/applications/${payment.applicationId}`,
             data: {
               applicationId: payment.applicationId,
-              country: payment.application.country,
-              visaType: payment.application.visaType,
+              country: application.country,
+              visaType: application.visaType,
             },
             sendEmail: false,
             roleScope: "STAFF_ADMIN",
@@ -184,22 +183,24 @@ export async function POST(req: Request) {
         }
       }
 
-      if (payment.bookingId && payment.booking) {
+      if (payment.bookingId && (payment as any).Booking) {
         const booking = await prisma.booking.findUnique({
           where: { id: payment.bookingId },
           include: {
-            user: {
+            User_Booking_userIdToUser: {
               select: { email: true, id: true, role: true },
             },
-            promoCode: {
-              select: { code: true },
+            PromoCodeUsage: {
+              include: { promoCode: { select: { code: true } } }
             },
-          },
+          } as any,
         });
 
-        if (booking && booking.user) {
-          const isAdvance = payment.amount < booking.totalAmount;
-          const pendingBalance = booking.totalAmount - payment.amount;
+        if (booking && (booking as any).User_Booking_userIdToUser) {
+          const user = (booking as any).User_Booking_userIdToUser;
+          const isAdvance = payment.amount < (booking as any).totalAmount;
+          const pendingBalance = (booking as any).totalAmount - payment.amount;
+          const promoCodeCode = (payment as any).PromoCode?.code || (booking as any).PromoCodeUsage?.[0]?.promoCode?.code || null;
 
           await prisma.booking.update({
             where: { id: payment.bookingId },
@@ -209,28 +210,28 @@ export async function POST(req: Request) {
           });
 
           await sendTourPaymentSuccessEmail(
-            booking.user.email,
+            user.email,
             payment.bookingId,
-            booking.tourName || "",
+            (booking as any).tourName || "",
             payment.amount,
             isAdvance,
             isAdvance ? pendingBalance : undefined,
-            booking.user.role || "CUSTOMER",
-            payment.promoCode?.code || booking.promoCode?.code || null,
-            payment.discountAmount || null
+            user.role || "CUSTOMER",
+            promoCodeCode,
+            (payment as any).discountAmount || null
           );
           await notify({
-            userId: booking.userId,
+            userId: (booking as any).userId,
             type: isAdvance ? "TOUR_PAYMENT_SUCCESS" : "TOUR_BOOKING_CONFIRMED",
             title: isAdvance ? "Advance Payment Received" : "Tour Booking Confirmed",
             message: isAdvance
-              ? `Advance payment of ₹${payment.amount.toLocaleString()} received for ${booking.tourName || ""}. Pending balance: ₹${pendingBalance.toLocaleString()}`
-              : `Your tour booking "${booking.tourName || ""}" is confirmed.`,
+              ? `Advance payment of ₹${payment.amount.toLocaleString()} received for ${(booking as any).tourName || ""}. Pending balance: ₹${pendingBalance.toLocaleString()}`
+              : `Your tour booking "${(booking as any).tourName || ""}" is confirmed.`,
             link: `/dashboard/bookings/${payment.bookingId}`,
             data: {
               bookingId: payment.bookingId,
               amount: payment.amount,
-              tourName: booking.tourName,
+              tourName: (booking as any).tourName,
               isAdvance,
               pendingBalance: isAdvance ? pendingBalance : undefined,
             },
@@ -260,7 +261,7 @@ export async function POST(req: Request) {
 
       // Only update if not already completed (idempotency)
       const updated = await prisma.payment.updateMany({
-        where: { 
+        where: {
           razorpayOrderId: order_id,
           status: { not: "COMPLETED" }, // Don't override completed payments
         },
@@ -272,21 +273,21 @@ export async function POST(req: Request) {
       const failedPayments = await prisma.payment.findMany({
         where: { razorpayOrderId: order_id },
         include: {
-          application: {
+          Application: {
             include: {
-              user: {
+              User_Application_userIdToUser: {
                 select: { id: true },
               },
             },
           },
-          booking: {
+          Booking: {
             include: {
-              user: {
+              User_Booking_userIdToUser: {
                 select: { id: true },
               },
             },
           },
-        },
+        } as any,
       });
 
       for (const payment of failedPayments) {
@@ -306,34 +307,35 @@ export async function POST(req: Request) {
         });
 
         // Notify user about payment failure and send email
-        if (payment.applicationId && payment.application) {
+        if (payment.applicationId && (payment as any).Application) {
           const application = await prisma.application.findUnique({
             where: { id: payment.applicationId },
             include: {
-              user: {
+              User_Application_userIdToUser: {
                 select: { email: true, role: true },
               },
-            },
+            } as any,
           });
-          
-          if (application) {
+
+          if (application && (application as any).User_Application_userIdToUser) {
+            const user = (application as any).User_Application_userIdToUser;
             try {
               await sendVisaPaymentFailedEmail(
-                application.user.email,
+                user.email,
                 payment.applicationId,
                 application.country || "",
                 application.visaType || "",
                 payment.amount,
                 "Payment was declined or failed. Please try again with a different payment method.",
-                application.user.role || "CUSTOMER"
+                user.role || "CUSTOMER"
               );
             } catch (emailError) {
               console.error("Error sending visa payment failed email:", emailError);
             }
           }
-          
+
           await notify({
-            userId: payment.application.userId,
+            userId: (payment as any).Application.userId,
             type: "VISA_PAYMENT_FAILED",
             title: "Payment Failed",
             message: `Your payment attempt for ₹${payment.amount.toLocaleString()} failed. Please try again.`,
@@ -346,33 +348,34 @@ export async function POST(req: Request) {
           });
         }
 
-        if (payment.bookingId && payment.booking) {
+        if (payment.bookingId && (payment as any).Booking) {
           const booking = await prisma.booking.findUnique({
             where: { id: payment.bookingId },
             include: {
-              user: {
+              User_Booking_userIdToUser: {
                 select: { email: true, role: true },
               },
-            },
+            } as any,
           });
-          
-          if (booking) {
+
+          if (booking && (booking as any).User_Booking_userIdToUser) {
+            const user = (booking as any).User_Booking_userIdToUser;
             try {
               await sendTourPaymentFailedEmail(
-                booking.user.email,
+                user.email,
                 payment.bookingId,
-                booking.tourName || "",
+                (booking as any).tourName || "",
                 payment.amount,
                 "Payment was declined or failed. Please try again with a different payment method.",
-                booking.user.role || "CUSTOMER"
+                user.role || "CUSTOMER"
               );
             } catch (emailError) {
               console.error("Error sending tour payment failed email:", emailError);
             }
           }
-          
+
           await notify({
-            userId: payment.booking.userId,
+            userId: (payment as any).Booking.userId,
             type: "TOUR_PAYMENT_FAILED",
             title: "Payment Failed",
             message: `Your payment attempt for ₹${payment.amount.toLocaleString()} failed. Please try again.`,

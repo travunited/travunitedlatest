@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -23,19 +23,19 @@ export async function GET(
     const application = await prisma.application.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             name: true,
             email: true,
             phone: true,
           },
         },
-        visa: {
+        Visa: {
           include: {
-            country: true,
+            Country: true,
           },
         },
-        payments: {
+        Payment: {
           where: {
             status: "COMPLETED",
           },
@@ -43,9 +43,9 @@ export async function GET(
             createdAt: "desc",
           },
         },
-        travellers: {
+        ApplicationTraveller: {
           include: {
-            traveller: true,
+            Traveller: true,
           },
         },
       },
@@ -68,7 +68,8 @@ export async function GET(
     }
 
     // Get completed payments
-    const completedPayments = application.payments.filter(p => p.status === "COMPLETED");
+    const payments = (application as any).Payment || [];
+    const completedPayments = payments.filter((p: any) => p.status === "COMPLETED");
     if (completedPayments.length === 0) {
       return NextResponse.json(
         { error: "No completed payments found for this application" },
@@ -76,8 +77,8 @@ export async function GET(
       );
     }
 
-    const totalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0);
-    const latestPayment = completedPayments[0];
+    const totalPaid = completedPayments.reduce((sum: number, p: any) => sum + p.amount, 0);
+    const latestPayment = completedPayments[0] as any;
 
     // Generate invoice number
     const year = new Date(application.createdAt).getFullYear();
@@ -91,8 +92,12 @@ export async function GET(
     const companyGSTIN = process.env.COMPANY_GSTIN;
 
     // Prepare invoice data
-    const visaName = application.visa?.name || application.visaType || "Visa Application";
-    const countryName = application.visa?.country?.name || application.country || "";
+    const visa = (application as any).Visa;
+    const travellers = (application as any).ApplicationTraveller || [];
+    const user = (application as any).User_Application_userIdToUser;
+
+    const visaName = visa?.name || application.visaType || "Visa Application";
+    const countryName = visa?.Country?.name || application.country || "";
 
     const invoiceData = {
       invoiceNumber,
@@ -107,26 +112,26 @@ export async function GET(
       companyPhone,
       companyEmail,
       companyGSTIN,
-      customerName: application.user.name || "Customer",
-      customerEmail: application.user.email,
-      customerPhone: application.user.phone || undefined,
+      customerName: user?.name || "Customer",
+      customerEmail: user?.email,
+      customerPhone: user?.phone || undefined,
       itemName: `${countryName} ${visaName}`,
-      itemDescription: application.visa?.processingTime 
-        ? `Processing Time: ${application.visa.processingTime}`
+      itemDescription: visa?.processingTime
+        ? `Processing Time: ${visa.processingTime}`
         : undefined,
-      quantity: application.travellers.length,
+      quantity: travellers.length,
       subtotal: application.totalAmount,
       tax: 0,
       discount: application.totalAmount - totalPaid > 0 ? application.totalAmount - totalPaid : 0,
       total: totalPaid,
       currency: application.currency || "INR",
       paymentStatus: application.status === "APPROVED" || application.status === "IN_PROCESS" ? "Paid" : "Partial",
-      paymentDate: latestPayment.createdAt 
+      paymentDate: latestPayment.createdAt
         ? new Date(latestPayment.createdAt).toLocaleDateString("en-IN", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
         : undefined,
       paymentMethod: "Online Payment",
       transactionId: latestPayment.razorpayPaymentId || latestPayment.razorpayOrderId || undefined,

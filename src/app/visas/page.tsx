@@ -10,7 +10,7 @@ export default async function VisasPage() {
   const countries = await prisma.country.findMany({
     where: {
       isActive: true,
-      visas: {
+      Visa: {
         some: {
           isActive: true,
         },
@@ -19,9 +19,9 @@ export default async function VisasPage() {
     orderBy: { name: "asc" },
     include: {
       _count: {
-        select: { visas: true },
+        select: { Visa: true },
       },
-      visas: {
+      Visa: {
         where: { isActive: true },
         select: { slug: true, heroImageUrl: true },
       },
@@ -35,9 +35,9 @@ export default async function VisasPage() {
     region: country.region || "",
     flagUrl: getCountryFlagUrl(country.flagUrl, country.code, 160),
     heroImage:
-      getMediaProxyUrl(country.visas[0]?.heroImageUrl) ||
+      getMediaProxyUrl((country as any).Visa[0]?.heroImageUrl) ||
       "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=600&q=80",
-    visaCount: country._count.visas,
+    visaCount: (country as any)._count.Visa,
   }));
 
   return (

@@ -127,7 +127,7 @@ export async function POST(
     await uploadVisaDocument(key, buffer, file.type);
 
     // Save document record
-    const document = await prisma.applicationDocument.create({
+    const document = await prisma.document.create({
       data: {
         id: crypto.randomUUID(),
         updatedAt: new Date(),

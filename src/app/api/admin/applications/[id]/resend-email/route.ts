@@ -44,9 +44,9 @@ export async function POST(
             role: true,
           },
         },
-        ApplicationDocument: {
-          where: {
-            status: "REJECTED",
+        documents: {
+          include: {
+            VisaDocumentRequirement: true,
           },
         },
       },
@@ -77,8 +77,8 @@ export async function POST(
           break;
 
         case "docs_rejected":
-          const rejectedDocs = application.ApplicationDocument.map(doc => ({
-            type: doc.documentType || "Document",
+          const rejectedDocs = application.documents.filter(doc => doc.status === "REJECTED").map(doc => ({
+            type: doc.VisaDocumentRequirement?.name || "Document",
             reason: doc.rejectionReason || "Document does not meet requirements",
           }));
           emailSent = await sendVisaDocumentRejectedEmail(

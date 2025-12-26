@@ -23,7 +23,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -81,7 +81,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -92,7 +92,10 @@ export async function DELETE(
     const traveller = await prisma.traveller.findUnique({
       where: { id: params.id },
       include: {
-        applications: {
+        ApplicationTraveller: {
+          select: { id: true },
+        },
+        BookingTraveller: {
           select: { id: true },
         },
       },
@@ -105,12 +108,16 @@ export async function DELETE(
       );
     }
 
-    // Check if traveller is used in any applications
-    if (traveller.applications && traveller.applications.length > 0) {
+    // Check if traveller is used in any applications or bookings
+    const appCount = (traveller as any).ApplicationTraveller?.length || 0;
+    const bookingCount = (traveller as any).BookingTraveller?.length || 0;
+
+    if (appCount > 0 || bookingCount > 0) {
       return NextResponse.json(
-        { 
-          error: "Cannot delete traveller. This traveller is associated with one or more visa applications. Please delete the applications first.",
-          applicationsCount: traveller.applications.length,
+        {
+          error: `Cannot delete traveller. This traveller is associated with ${appCount} applications and ${bookingCount} bookings. Please delete them first.`,
+          applicationsCount: appCount,
+          bookingsCount: bookingCount,
         },
         { status: 400 }
       );
@@ -123,17 +130,17 @@ export async function DELETE(
     return NextResponse.json({ message: "Traveller deleted successfully" });
   } catch (error: any) {
     console.error("Error deleting traveller:", error);
-    
+
     // Handle foreign key constraint error
     if (error.code === 'P2003') {
       return NextResponse.json(
-        { 
+        {
           error: "Cannot delete traveller. This traveller is associated with one or more visa applications. Please delete the applications first.",
         },
         { status: 400 }
       );
     }
-    
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

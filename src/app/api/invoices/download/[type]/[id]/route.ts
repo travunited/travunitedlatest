@@ -38,19 +38,19 @@ export async function GET(
       const application = await prisma.application.findUnique({
         where: { id: resolvedParams.id },
         include: {
-          user: {
+          User_Application_userIdToUser: {
             select: {
               name: true,
               email: true,
               phone: true,
             },
           },
-          visa: {
+          Visa: {
             include: {
-              country: true,
+              Country: true,
             },
           },
-          payments: {
+          Payment: {
             where: {
               status: "COMPLETED",
             },
@@ -58,9 +58,9 @@ export async function GET(
               createdAt: "desc",
             },
           },
-          travellers: {
+          ApplicationTraveller: {
             include: {
-              traveller: true,
+              Traveller: true,
             },
           },
         },
@@ -131,7 +131,8 @@ export async function GET(
 
       // Fallback: Generate invoice on-the-fly if not in storage or storage access fails
       try {
-        const completedPayments = application.payments.filter(p => p.status === "COMPLETED");
+        const payments = (application as any).Payment || [];
+        const completedPayments = payments.filter((p: any) => p.status === "COMPLETED");
         if (completedPayments.length === 0) {
           return NextResponse.json(
             { error: "No completed payments found for this application" },
@@ -139,8 +140,8 @@ export async function GET(
           );
         }
 
-        const totalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0);
-        const latestPayment = completedPayments[0];
+        const totalPaid = completedPayments.reduce((sum: number, p: any) => sum + p.amount, 0);
+        const latestPayment = completedPayments[0] as any;
 
         // Generate invoice number
         const year = new Date(application.createdAt).getFullYear();
@@ -154,8 +155,12 @@ export async function GET(
         const companyGSTIN = process.env.COMPANY_GSTIN;
 
         // Prepare invoice data
-        const visaName = application.visa?.name || application.visaType || "Visa Application";
-        const countryName = application.visa?.country?.name || application.country || "";
+        const visa = (application as any).Visa;
+        const travellers = (application as any).ApplicationTraveller || [];
+        const user = (application as any).User_Application_userIdToUser;
+
+        const visaName = visa?.name || application.visaType || "Visa Application";
+        const countryName = visa?.Country?.name || application.country || "";
 
         const invoiceData = {
           invoiceNumber,
@@ -170,14 +175,14 @@ export async function GET(
           companyPhone,
           companyEmail,
           companyGSTIN,
-          customerName: application.user.name || "Customer",
-          customerEmail: application.user.email,
-          customerPhone: application.user.phone || undefined,
+          customerName: user?.name || "Customer",
+          customerEmail: user?.email,
+          customerPhone: user?.phone || undefined,
           itemName: `${countryName} ${visaName}`,
-          itemDescription: application.visa?.processingTime
-            ? `Processing Time: ${application.visa.processingTime}`
+          itemDescription: visa?.processingTime
+            ? `Processing Time: ${visa.processingTime}`
             : undefined,
-          quantity: application.travellers.length,
+          quantity: travellers.length,
           subtotal: application.totalAmount,
           tax: 0,
           discount: application.totalAmount - totalPaid > 0 ? application.totalAmount - totalPaid : 0,
@@ -224,14 +229,14 @@ export async function GET(
       const booking = await prisma.booking.findUnique({
         where: { id: resolvedParams.id },
         include: {
-          user: {
+          User_Booking_userIdToUser: {
             select: {
               name: true,
               email: true,
               phone: true,
             },
           },
-          payments: {
+          Payment: {
             where: {
               status: "COMPLETED",
             },
@@ -239,9 +244,9 @@ export async function GET(
               createdAt: "desc",
             },
           },
-          travellers: {
+          BookingTraveller: {
             include: {
-              traveller: true,
+              Traveller: true,
             },
           },
         },
@@ -312,11 +317,12 @@ export async function GET(
 
       // Fallback: Generate invoice on-the-fly if not in storage or storage access fails
       try {
-        const completedPayments = booking.payments?.filter(p => p.status === "COMPLETED") || [];
+        const payments = (booking as any).Payment || [];
+        const completedPayments = payments.filter((p: any) => p.status === "COMPLETED") || [];
         // Relaxed check: Allow invoice generation even if no payments are recorded (e.g. for offline payments or admin bookings)
 
-        const totalPaid = completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-        const latestPayment = completedPayments[0];
+        const totalPaid = completedPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+        const latestPayment = completedPayments[0] as any;
 
         // Generate invoice number
         const year = new Date(booking.createdAt).getFullYear();
@@ -330,9 +336,12 @@ export async function GET(
         const companyGSTIN = process.env.COMPANY_GSTIN;
 
         // Safely get traveller count
-        const travellerCount = booking.travellers?.length || 1;
+        const travellers = (booking as any).BookingTraveller || [];
+        const travellerCount = travellers.length || 1;
 
         // Prepare invoice data
+        const user = (booking as any).User_Booking_userIdToUser;
+
         const invoiceData = {
           invoiceNumber,
           invoiceDate: new Date(booking.createdAt).toLocaleDateString("en-IN", {
@@ -346,9 +355,9 @@ export async function GET(
           companyPhone,
           companyEmail,
           companyGSTIN,
-          customerName: booking.user?.name || "Customer",
-          customerEmail: booking.user?.email || "customer@example.com",
-          customerPhone: booking.user?.phone || undefined,
+          customerName: user?.name || "Customer",
+          customerEmail: user?.email || "customer@example.com",
+          customerPhone: user?.phone || undefined,
           itemName: booking.tourName || "Tour Package",
           itemDescription: booking.travelDate
             ? `Travel Date: ${new Date(booking.travelDate).toLocaleDateString("en-IN")}`

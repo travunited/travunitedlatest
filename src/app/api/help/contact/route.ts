@@ -6,6 +6,7 @@ import { notifyMultiple } from "@/lib/notifications";
 import { AuditAction, AuditEntityType } from "@prisma/client";
 import { logAuditEvent } from "@/lib/audit";
 import { getSupportAdminEmail } from "@/lib/admin-contacts";
+import crypto from "crypto";
 export const dynamic = "force-dynamic";
 
 const contactSchema = z.object({
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
     // Handle both JSON and form data
     let body;
     const contentType = req.headers.get("content-type");
-    
+
     if (contentType?.includes("application/json")) {
       try {
         body = await req.json();
@@ -55,6 +56,8 @@ export async function POST(req: Request) {
     // Save to database
     const contactMessage = await prisma.contactMessage.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         name: data.name,
         email: data.email,
         phone: data.phone || null,

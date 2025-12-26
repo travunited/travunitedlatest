@@ -3,13 +3,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
+import crypto from "crypto";
 export const dynamic = "force-dynamic";
 
 // Merge guest application with user account after login/signup
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -80,6 +81,8 @@ export async function POST(req: Request) {
         // Create new application from guest data
         const newApplication = await prisma.application.create({
           data: {
+            id: crypto.randomUUID(),
+            updatedAt: new Date(),
             userId: session.user.id,
             visaId: guestApp.visaId || null,
             visaTypeId: guestApp.visaType,

@@ -13,7 +13,7 @@ export async function GET(
     const resolvedParams = await Promise.resolve(params);
     // Decode the slug to handle URL-encoded characters and forward slashes
     const decodedSlug = decodeURIComponent(resolvedParams.slug);
-    
+
     const tour = await prisma.tour.findFirst({
       where: {
         slug: decodedSlug,
@@ -24,9 +24,9 @@ export async function GET(
         ],
       },
       include: {
-        country: true,
-        days: { orderBy: { dayIndex: "asc" } },
-        addOns: {
+        Country: true,
+        TourDay: { orderBy: { dayIndex: "asc" } },
+        TourAddOn: {
           where: { isActive: true },
           orderBy: { sortOrder: "asc" },
         },
@@ -67,7 +67,10 @@ export async function GET(
       imageUrl: getMediaProxyUrl(tour.imageUrl),
       heroImageUrl: getMediaProxyUrl(tour.heroImageUrl),
       featuredImage: getMediaProxyUrl(tour.featuredImage),
-      addOns: (tour.addOns || []).map((addOn) => ({
+      Country: (tour as any).Country,
+      TourDay: (tour as any).TourDay,
+      TourAddOn: (tour as any).TourAddOn,
+      addOns: ((tour as any).TourAddOn || []).map((addOn: any) => ({
         id: addOn.id,
         name: addOn.name,
         description: addOn.description,

@@ -79,11 +79,14 @@ export async function GET(req: NextRequest) {
         Application_Application_processedByIdToUser: {
           where: dateFilter,
           include: {
-            ApplicationDocument: {
+            documents: {
               where: {
                 status: {
                   in: ["APPROVED", "REJECTED"],
                 },
+              },
+              include: {
+                VisaDocumentRequirement: true,
               },
             },
           },

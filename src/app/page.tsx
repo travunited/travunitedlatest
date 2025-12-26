@@ -13,9 +13,7 @@ export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function Home() {
   // Fetch featured visas (max 6) with error handling
-  let featuredVisas: Prisma.VisaGetPayload<{
-    include: { country: { select: { id: true; name: true; code: true; flagUrl: true } } };
-  }>[] = [];
+  let featuredVisas: any[] = [];
   try {
     featuredVisas = await prisma.visa.findMany({
       where: {
@@ -23,7 +21,7 @@ export default async function Home() {
         isFeatured: true,
       },
       include: {
-        country: {
+        Country: {
           select: {
             id: true,
             name: true,
@@ -43,9 +41,7 @@ export default async function Home() {
   }
 
   // Fetch featured tours (max 8) with error handling
-  let featuredTours: Prisma.TourGetPayload<{
-    include: { country: { select: { id: true; name: true; code: true } } };
-  }>[] = [];
+  let featuredTours: any[] = [];
   try {
     featuredTours = await prisma.tour.findMany({
       where: {
@@ -54,7 +50,7 @@ export default async function Home() {
         status: "active",
       },
       include: {
-        country: {
+        Country: {
           select: {
             id: true,
             name: true,
@@ -83,7 +79,7 @@ export default async function Home() {
       console.error("Error auto-publishing scheduled blog posts:", publishError);
       // Continue even if publish fails - don't block page rendering
     }
-    
+
     // Fetch only published posts (scheduled posts are now promoted)
     featuredBlogs = await prisma.blogPost.findMany({
       where: {
@@ -115,14 +111,14 @@ export default async function Home() {
         category = String(visa.category);
       }
     }
-    
+
     return {
       id: String(visa.id || ''),
       slug: String(visa.slug || ''),
       name: String(visa.name || ''),
       subtitle: visa.subtitle ? String(visa.subtitle) : null,
-      country: String(visa.country?.name || ''),
-      countryCode: String(visa.country?.code?.toLowerCase() || ''),
+      country: String((visa as any).Country?.name || ''),
+      countryCode: String((visa as any).Country?.code?.toLowerCase() || ''),
       price: Number(visa.priceInInr || 0),
       processingTime: String(visa.processingTime || ''),
       entryType: visa.entryType ? String(visa.entryType) : null,
@@ -167,7 +163,7 @@ export default async function Home() {
         category = String(post.category);
       }
     }
-    
+
     return {
       id: post.slug,
       title: post.title,
@@ -179,7 +175,7 @@ export default async function Home() {
   });
 
   // Ensure arrays are valid and filter out any invalid entries
-  const safeVisaCards = Array.isArray(visaCards) 
+  const safeVisaCards = Array.isArray(visaCards)
     ? visaCards.filter((card) => card && typeof card === 'object' && typeof card.id === 'string' && typeof card.name === 'string')
     : [];
   const safeTourCards = Array.isArray(tourCards)

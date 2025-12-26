@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -34,14 +34,14 @@ export async function GET(
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
-        user: {
+        User_Booking_userIdToUser: {
           select: {
             name: true,
             email: true,
             phone: true,
           },
         },
-        payments: {
+        Payment: {
           where: {
             status: "COMPLETED",
           },
@@ -49,9 +49,9 @@ export async function GET(
             createdAt: "desc",
           },
         },
-        travellers: {
+        BookingTraveller: {
           include: {
-            traveller: true,
+            Traveller: true,
           },
         },
       },
@@ -74,7 +74,8 @@ export async function GET(
     }
 
     // Get completed payments
-    const completedPayments = booking.payments?.filter(p => p.status === "COMPLETED") || [];
+    const payments = (booking as any).Payment || [];
+    const completedPayments = payments.filter((p: any) => p.status === "COMPLETED");
     if (completedPayments.length === 0) {
       return NextResponse.json(
         { error: "No completed payments found for this booking" },
@@ -82,8 +83,8 @@ export async function GET(
       );
     }
 
-    const totalPaid = completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-    const latestPayment = completedPayments[0];
+    const totalPaid = completedPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+    const latestPayment = completedPayments[0] as any;
 
     // Generate invoice number
     const year = new Date(booking.createdAt).getFullYear();
@@ -97,9 +98,12 @@ export async function GET(
     const companyGSTIN = process.env.COMPANY_GSTIN;
 
     // Safely get traveller count
-    const travellerCount = booking.travellers?.length || 1;
+    const travellers = (booking as any).BookingTraveller || [];
+    const travellerCount = travellers.length || 1;
 
     // Prepare invoice data
+    const user = (booking as any).User_Booking_userIdToUser;
+
     const invoiceData = {
       invoiceNumber,
       invoiceDate: new Date(booking.createdAt).toLocaleDateString("en-IN", {
@@ -113,11 +117,11 @@ export async function GET(
       companyPhone,
       companyEmail,
       companyGSTIN,
-      customerName: booking.user?.name || "Customer",
-      customerEmail: booking.user?.email || "customer@example.com",
-      customerPhone: booking.user?.phone || undefined,
+      customerName: user?.name || "Customer",
+      customerEmail: user?.email || "customer@example.com",
+      customerPhone: user?.phone || undefined,
       itemName: booking.tourName || "Tour Package",
-      itemDescription: booking.travelDate 
+      itemDescription: booking.travelDate
         ? `Travel Date: ${new Date(booking.travelDate).toLocaleDateString("en-IN")}`
         : undefined,
       quantity: travellerCount,
@@ -127,22 +131,22 @@ export async function GET(
       total: totalPaid,
       currency: booking.currency || "INR",
       paymentStatus: booking.status === "BOOKED" || booking.status === "CONFIRMED" ? "Paid" : "Partial",
-      paymentDate: latestPayment?.createdAt 
+      paymentDate: latestPayment?.createdAt
         ? new Date(latestPayment.createdAt).toLocaleDateString("en-IN", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
         : undefined,
       paymentMethod: "Online Payment",
       transactionId: latestPayment?.razorpayPaymentId || latestPayment?.razorpayOrderId || undefined,
       bookingId: booking.id,
       travelDate: booking.travelDate
         ? new Date(booking.travelDate).toLocaleDateString("en-IN", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
         : undefined,
       notes: `Thank you for booking with ${companyName}. Your booking reference is ${booking.id}.`,
     };
@@ -162,7 +166,7 @@ export async function GET(
     const errorStack = error instanceof Error ? error.stack : undefined;
     console.error("Error details:", { errorMessage, errorStack });
     return NextResponse.json(
-      { 
+      {
         error: "Internal server error",
         message: process.env.NODE_ENV === "development" ? errorMessage : undefined
       },

@@ -49,7 +49,7 @@ export async function GET(
             createdAt: "asc",
           },
         },
-        ApplicationDocument: {
+        documents: {
           include: {
             VisaDocumentRequirement: true,
             Traveller: {
@@ -134,7 +134,7 @@ export async function GET(
       ...application,
       user: application.User_Application_userIdToUser,
       travellers: application.ApplicationTraveller,
-      documents: application.ApplicationDocument,
+      documents: application.documents,
       processedBy: application.User_Application_processedByIdToUser,
       visa: application.Visa,
       visaSubType: application.VisaSubType,
@@ -200,7 +200,7 @@ export async function DELETE(
     // Delete in proper order within a transaction to handle foreign key constraints
     await prisma.$transaction(async (tx) => {
       // 1. Delete documents first
-      await tx.applicationDocument.deleteMany({
+      await tx.document.deleteMany({
         where: {
           applicationId: params.id,
         },

@@ -38,7 +38,7 @@ export async function POST(
             Traveller: true,
           },
         },
-        ApplicationDocument: true,
+        documents: true,
       },
     });
 
@@ -70,7 +70,7 @@ export async function POST(
       const app = application as any;
       const user = app.User_Application_userIdToUser;
       const travellers = app.ApplicationTraveller;
-      const documents = app.ApplicationDocument;
+      const documents = app.documents;
 
       // Send confirmation email to user
       await sendVisaStatusUpdateEmail(

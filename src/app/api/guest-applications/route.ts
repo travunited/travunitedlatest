@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { cookies } from "next/headers";
+import crypto from "crypto";
 export const dynamic = "force-dynamic";
 
 const guestApplicationSchema = z.object({
@@ -68,6 +69,8 @@ export async function POST(req: Request) {
       // Create new guest application
       guestApplication = await prisma.guestApplication.create({
         data: {
+          id: crypto.randomUUID(),
+          updatedAt: new Date(),
           guestId,
           country: data.country,
           visaType: data.visaType,

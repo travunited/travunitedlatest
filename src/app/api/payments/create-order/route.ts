@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import crypto from "crypto";
 import { z } from "zod";
 import { AuditAction, AuditEntityType } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
@@ -23,7 +24,7 @@ const orderSchema = z.object({
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -32,12 +33,12 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    
+
     // Convert amount to number if it's a string
     if (body.amount && typeof body.amount === 'string') {
       body.amount = parseFloat(body.amount);
     }
-    
+
     const { amount, applicationId, bookingId, paymentType, promoCodeId, discountAmount } = orderSchema.parse(body);
 
     if (!applicationId && !bookingId) {
@@ -85,6 +86,7 @@ export async function POST(req: Request) {
       // Create free payment record
       const payment = await prisma.payment.create({
         data: {
+          id: crypto.randomUUID(),
           userId: session.user.id,
           applicationId: applicationId || null,
           bookingId: bookingId || null,
@@ -93,6 +95,7 @@ export async function POST(req: Request) {
           status: "COMPLETED",
           provider: "NONE",
           method: "FREE",
+          updatedAt: new Date(),
           promoCodeId: promoCodeId || null,
           discountAmount: discountAmount || 0,
           metadata: {
@@ -221,6 +224,7 @@ export async function POST(req: Request) {
 
     const payment = await prisma.payment.create({
       data: {
+        id: crypto.randomUUID(),
         userId: session.user.id,
         applicationId: applicationId || null,
         bookingId: bookingId || null,
@@ -228,6 +232,7 @@ export async function POST(req: Request) {
         currency: "INR",
         status: "PENDING",
         provider: "RAZORPAY",
+        updatedAt: new Date(),
         promoCodeId: promoCodeId || null,
         discountAmount: discountAmount || 0,
       } as any,

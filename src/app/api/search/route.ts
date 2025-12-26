@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       };
 
       if (country) {
-        visaWhere.country = {
+        visaWhere.Country = {
           OR: [
             { code: country.toUpperCase() },
             { code: country.toLowerCase() },
@@ -54,7 +54,7 @@ export async function GET(req: Request) {
       results.visas = await prisma.visa.findMany({
         where: visaWhere,
         include: {
-          country: {
+          Country: {
             select: {
               id: true,
               name: true,
@@ -97,7 +97,7 @@ export async function GET(req: Request) {
       results.tours = await prisma.tour.findMany({
         where: tourWhere,
         include: {
-          country: {
+          Country: {
             select: {
               id: true,
               name: true,

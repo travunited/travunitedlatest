@@ -32,13 +32,13 @@ model Application {
   User_Application_userIdToUser        User                   @relation("Application_userIdToUser", fields: [userId], references: [id])
   Visa                                 Visa?                  @relation(fields: [visaId], references: [id])
   VisaSubType                          VisaSubType?           @relation(fields: [visaSubTypeId], references: [id])
-  ApplicationDocument                  ApplicationDocument[]
+  documents                            Document[]
   ApplicationTraveller                 ApplicationTraveller[]
   Payment                              Payment[]
   Review                               Review[]
 }
 
-model ApplicationDocument {
+model Document {
   id                      String                   @id
   applicationId           String
   travellerId             String?
@@ -53,6 +53,8 @@ model ApplicationDocument {
   Application             Application              @relation(fields: [applicationId], references: [id])
   VisaDocumentRequirement VisaDocumentRequirement? @relation(fields: [requirementId], references: [id])
   Traveller               Traveller?               @relation(fields: [travellerId], references: [id])
+
+  @@map("ApplicationDocument")
 }
 
 model ApplicationTraveller {
@@ -342,10 +344,13 @@ model Payment {
   updatedAt         DateTime
   provider          String?
   method            String?
+  promoCodeId       String?
+  discountAmount    Int?
   metadata          Json?
   Application       Application? @relation(fields: [applicationId], references: [id])
   Booking           Booking?     @relation(fields: [bookingId], references: [id])
   User              User         @relation(fields: [userId], references: [id])
+  PromoCode         PromoCode?   @relation(fields: [promoCodeId], references: [id])
 }
 
 model Review {
@@ -537,7 +542,7 @@ model Traveller {
   passportExpiry       DateTime?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime
-  ApplicationDocument  ApplicationDocument[]
+  Document             Document[]
   ApplicationTraveller ApplicationTraveller[]
   BookingTraveller     BookingTraveller[]
   User                 User                   @relation(fields: [userId], references: [id])
@@ -634,7 +639,7 @@ model VisaDocumentRequirement {
   sortOrder           Int                   @default(0)
   createdAt           DateTime              @default(now())
   updatedAt           DateTime
-  ApplicationDocument ApplicationDocument[]
+  Document            Document[]
   Visa                Visa                  @relation(fields: [visaId], references: [id])
 }
 
@@ -826,6 +831,7 @@ model PromoCode {
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   usages            PromoCodeUsage[]
+  Payment           Payment[]
 }
 
 model PromoCodeUsage {
@@ -843,4 +849,24 @@ model PromoCodeUsage {
   finalAmount    Int
   ipAddress      String?
   usedAt         DateTime     @default(now())
+}
+
+model GuestApplication {
+  id                String    @id
+  guestId           String
+  country           String
+  visaType          String
+  visaId            String?
+  selectedSubTypeId String?
+  travelDate        DateTime?
+  tripType          String?
+  nationality       String?
+  purposeOfTravel   String?
+  stepCompleted     Int       @default(1)
+  formData          Json?
+  expiresAt         DateTime
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime
+
+  @@index([guestId])
 }

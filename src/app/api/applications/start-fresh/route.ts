@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
       // Delete related records in proper order to handle foreign key constraints
       // 1. Delete documents first
-      await tx.applicationDocument.deleteMany({
+      await tx.document.deleteMany({
         where: {
           applicationId: { in: applicationIds },
         },

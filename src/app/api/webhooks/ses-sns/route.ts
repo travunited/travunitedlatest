@@ -78,7 +78,7 @@ async function logEmailEvent(
 ): Promise<void> {
   try {
     // Check if event already exists
-    const existing = await prisma.emailEvent.findUnique({
+    const existing = await prisma.email_events.findUnique({
       where: {
         email_type: {
           email: email.toLowerCase(),
@@ -89,19 +89,19 @@ async function logEmailEvent(
 
     if (existing) {
       // Update existing event
-      await prisma.emailEvent.update({
+      await prisma.email_events.update({
         where: {
           id: existing.id,
         },
         data: {
           count: existing.count + 1,
-          lastOccurred: new Date(),
+          last_occurred: new Date(),
           details: details as any,
         },
       });
     } else {
       // Create new event
-      await prisma.emailEvent.create({
+      await prisma.email_events.create({
         data: {
           id: `${email.toLowerCase()}-${type}-${Date.now()}`,
           type,
@@ -111,7 +111,7 @@ async function logEmailEvent(
         },
       });
     }
-    
+
     console.log(`[SES] ${type.toUpperCase()} logged for ${email}`);
   } catch (error) {
     console.error(`[SES] Failed to log ${type} for ${email}:`, error);
@@ -125,7 +125,7 @@ async function logEmailEvent(
  */
 async function handleBounce(notification: SESBounceNotification): Promise<void> {
   const { bounce } = notification;
-  
+
   console.log(`[SES] Bounce notification received:`, {
     type: bounce.bounceType,
     subType: bounce.bounceSubType,
@@ -134,7 +134,7 @@ async function handleBounce(notification: SESBounceNotification): Promise<void> 
 
   for (const recipient of bounce.bouncedRecipients) {
     const email = recipient.emailAddress;
-    
+
     await logEmailEvent("bounce", email, {
       bounceType: bounce.bounceType,
       bounceSubType: bounce.bounceSubType,
@@ -145,16 +145,16 @@ async function handleBounce(notification: SESBounceNotification): Promise<void> 
     // If it's a permanent bounce, mark the email as invalid and prevent future emails
     if (bounce.bounceType === "Permanent") {
       console.log(`[SES] Permanent bounce detected for ${email} - blocking future emails`);
-      
+
       try {
         // Update user record to prevent future emails
         await prisma.user.updateMany({
           where: { email: email.toLowerCase() },
-          data: { 
+          data: {
             isActive: false, // Deactivate account to prevent emails
           }
         });
-        
+
         // Log to audit trail
         console.log(`[SES] User ${email} deactivated due to permanent bounce`);
       } catch (error) {
@@ -169,7 +169,7 @@ async function handleBounce(notification: SESBounceNotification): Promise<void> 
  */
 async function handleComplaint(notification: SESComplaintNotification): Promise<void> {
   const { complaint } = notification;
-  
+
   console.log(`[SES] Complaint notification received:`, {
     type: complaint.complaintFeedbackType,
     recipients: complaint.complainedRecipients.length,
@@ -177,26 +177,26 @@ async function handleComplaint(notification: SESComplaintNotification): Promise<
 
   for (const recipient of complaint.complainedRecipients) {
     const email = recipient.emailAddress;
-    
+
     await logEmailEvent("complaint", email, {
       complaintFeedbackType: complaint.complaintFeedbackType,
       timestamp: complaint.timestamp,
     });
 
     console.log(`[SES] Complaint from ${email} - unsubscribing immediately`);
-    
+
     try {
       // Immediately deactivate user to stop all future emails
       await prisma.user.updateMany({
         where: { email: email.toLowerCase() },
-        data: { 
+        data: {
           isActive: false, // Deactivate to prevent all future emails
         }
       });
-      
+
       // Log to audit trail
       console.log(`[SES] User ${email} deactivated due to spam complaint`);
-      
+
       // Note: In a production system, you might want to:
       // 1. Create an admin notification
       // 2. Add to suppression list
@@ -220,7 +220,7 @@ export async function POST(req: NextRequest) {
     // Handle subscription confirmation
     if (snsMessage.Type === "SubscriptionConfirmation") {
       console.log("[SES SNS] Subscription confirmation received");
-      
+
       if (snsMessage.SubscribeURL) {
         try {
           // Auto-confirm the subscription
@@ -234,14 +234,14 @@ export async function POST(req: NextRequest) {
           console.error("[SES SNS] Error confirming subscription:", error);
         }
       }
-      
+
       return NextResponse.json({ message: "Subscription confirmation processed" });
     }
 
     // Handle notification
     if (snsMessage.Type === "Notification") {
       const notification: SESNotification = JSON.parse(snsMessage.Message);
-      
+
       if (notification.notificationType === "Bounce") {
         await handleBounce(notification as SESBounceNotification);
       } else if (notification.notificationType === "Complaint") {
@@ -249,7 +249,7 @@ export async function POST(req: NextRequest) {
       } else {
         console.log("[SES SNS] Unknown notification type:", (notification as any).notificationType);
       }
-      
+
       return NextResponse.json({ message: "Notification processed" });
     }
 
@@ -262,13 +262,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Unknown message type" });
   } catch (error: any) {
     console.error("[SES SNS] Webhook error:", error);
-    
+
     // Return 200 anyway to prevent SNS from retrying
     // Log the error for investigation
     return NextResponse.json(
-      { 
-        error: "Webhook processing failed", 
-        message: error.message 
+      {
+        error: "Webhook processing failed",
+        message: error.message
       },
       { status: 200 } // Return 200 to prevent retries
     );

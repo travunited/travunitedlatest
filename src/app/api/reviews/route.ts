@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import crypto from "crypto";
 import { z } from "zod";
 import { AuditAction, AuditEntityType, ReviewType } from "@prisma/client";
 import { authOptions } from "@/lib/auth";
@@ -24,7 +25,7 @@ const FINAL_TOUR_STATUSES = ["COMPLETED"];
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -70,7 +71,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -171,6 +172,7 @@ export async function POST(req: Request) {
 
     const review = await prisma.review.create({
       data: {
+        id: crypto.randomUUID(),
         type: data.type === "visa" ? ReviewType.VISA : ReviewType.TOUR,
         rating: data.rating,
         title: data.title || null,
@@ -178,6 +180,7 @@ export async function POST(req: Request) {
         userId: session.user.id,
         applicationId: data.type === "visa" ? data.applicationId! : null,
         bookingId: data.type === "tour" ? data.bookingId! : null,
+        updatedAt: new Date(),
       },
     });
 

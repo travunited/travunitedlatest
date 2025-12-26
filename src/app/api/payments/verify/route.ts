@@ -20,7 +20,7 @@ const verifySchema = z.object({
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -63,8 +63,8 @@ export async function POST(req: Request) {
         razorpayOrderId: razorpay_order_id,
       },
       include: {
-        booking: true,
-        application: true,
+        Booking: true,
+        Application: true,
       },
     });
 
@@ -87,7 +87,7 @@ export async function POST(req: Request) {
     const razorpay = ensureRazorpayClient();
     try {
       const razorpayPayment = await razorpay.payments.fetch(razorpay_payment_id);
-      
+
       if (razorpayPayment.status !== "captured" && razorpayPayment.status !== "authorized") {
         return NextResponse.json(
           { error: "Payment not captured" },
@@ -124,9 +124,9 @@ export async function POST(req: Request) {
     });
 
     // Update booking status if applicable
-    if (payment.bookingId && payment.booking) {
-      const booking = payment.booking;
-      const isAdvance = payment.amount < booking.totalAmount;
+    if (payment.bookingId && (payment as any).Booking) {
+      const booking = (payment as any).Booking;
+      const isAdvance = payment.amount < (booking as any).totalAmount;
 
       await prisma.booking.update({
         where: { id: payment.bookingId },
@@ -137,7 +137,7 @@ export async function POST(req: Request) {
     }
 
     // Update application status if applicable
-    if (payment.applicationId && payment.application) {
+    if (payment.applicationId && (payment as any).Application) {
       await prisma.application.update({
         where: { id: payment.applicationId },
         data: {

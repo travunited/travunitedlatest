@@ -14,7 +14,7 @@ export async function GET(
     // Handle both sync and async params (Next.js 15+ uses async params)
     const resolvedParams = await Promise.resolve(params);
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -41,9 +41,9 @@ export async function GET(
             name: true,
           },
         },
-        ApplicationDocument: {
-          orderBy: {
-            updatedAt: "desc",
+        documents: {
+          include: {
+            VisaDocumentRequirement: true,
           },
         },
         User_Application_processedByIdToUser: {

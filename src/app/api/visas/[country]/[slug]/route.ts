@@ -22,20 +22,20 @@ export async function GET(
     const visa = await prisma.visa.findFirst({
       where: {
         slug,
-        country: {
+        Country: {
           code: countryCode,
         },
         isActive: true,
       },
       include: {
-        country: true,
-        requirements: {
+        Country: true,
+        VisaDocumentRequirement: {
           orderBy: { sortOrder: "asc" },
         },
-        faqs: {
+        VisaFaq: {
           orderBy: { sortOrder: "asc" },
         },
-        subTypes: {
+        VisaSubType: {
           orderBy: { sortOrder: "asc" },
         },
       },
@@ -74,14 +74,14 @@ export async function GET(
       heroImageUrl: visa.heroImageUrl,
       currency: visa.currency,
       country: {
-        id: visa.country.id,
-        name: visa.country.name,
-        code: visa.country.code,
-        flagUrl: visa.country.flagUrl,
+        id: (visa as any).Country.id,
+        name: (visa as any).Country.name,
+        code: (visa as any).Country.code,
+        flagUrl: (visa as any).Country.flagUrl,
       },
-      requirements: visa.requirements,
-      faqs: visa.faqs,
-      subTypes: visa.subTypes,
+      requirements: (visa as any).VisaDocumentRequirement,
+      faqs: (visa as any).VisaFaq,
+      subTypes: (visa as any).VisaSubType,
     });
   } catch (error) {
     console.error("[VisaDetailAPI] Fetch failed", error);

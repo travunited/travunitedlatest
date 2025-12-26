@@ -68,7 +68,7 @@ export async function GET(req: Request) {
 
     const mappedApplications = applications.map((app: any) => ({
       ...app,
-      documents: app.ApplicationDocument,
+      documents: app.documents,
       visaSubType: app.VisaSubType,
       visa: app.Visa,
       promoCode: app.PromoCodeUsage?.[0]?.promoCode,

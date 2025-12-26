@@ -20,7 +20,7 @@ export async function GET(req: Request) {
         destinationState: true,
         citiesCovered: true,
         primaryDestination: true,
-        country: {
+        Country: {
           select: {
             name: true,
             code: true,
@@ -31,17 +31,17 @@ export async function GET(req: Request) {
 
     // Extract unique destinations from various fields
     const destinations = new Set<string>();
-    
+
     tours.forEach((tour) => {
       if (tour.destinationCountry) destinations.add(tour.destinationCountry);
       if (tour.destinationState) destinations.add(tour.destinationState);
       if (tour.primaryDestination) destinations.add(tour.primaryDestination);
-      
+
       // Parse citiesCovered if it's JSON
       if (tour.citiesCovered) {
         try {
-          const cities = typeof tour.citiesCovered === "string" 
-            ? JSON.parse(tour.citiesCovered) 
+          const cities = typeof tour.citiesCovered === "string"
+            ? JSON.parse(tour.citiesCovered)
             : tour.citiesCovered;
           if (Array.isArray(cities)) {
             cities.forEach((city: string) => destinations.add(city));
@@ -53,8 +53,8 @@ export async function GET(req: Request) {
           }
         }
       }
-      
-      if (tour.country?.name) destinations.add(tour.country.name);
+
+      if ((tour as any).Country?.name) destinations.add((tour as any).Country.name);
     });
 
     // Filter by query if provided

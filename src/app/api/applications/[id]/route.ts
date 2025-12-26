@@ -30,6 +30,11 @@ export async function GET(
             Traveller: true,
           },
         },
+        documents: {
+          include: {
+            VisaDocumentRequirement: true,
+          },
+        },
         ApplicationDocument: {
           include: {
             Traveller: {
@@ -79,7 +84,7 @@ export async function GET(
     const mappedApplication = {
       ...app,
       travellers: app.ApplicationTraveller,
-      documents: app.ApplicationDocument,
+      documents: app.documents,
       user: app.User_Application_userIdToUser,
       visa: app.Visa,
       visaSubType: app.VisaSubType,

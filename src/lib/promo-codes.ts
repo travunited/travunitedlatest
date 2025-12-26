@@ -276,12 +276,10 @@ export async function recordPromoCodeUsage(params: {
           userId: params.userId,
           applicationId: params.applicationId || null,
           bookingId: params.bookingId || null,
-          paymentId: params.paymentId || null,
           originalAmount: params.originalAmount,
           discountAmount: params.discountAmount,
           finalAmount: params.finalAmount,
           ipAddress: params.ipAddress,
-          userAgent: params.userAgent,
         },
       });
 

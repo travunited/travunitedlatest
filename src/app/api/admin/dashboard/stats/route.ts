@@ -71,7 +71,7 @@ export async function GET(req: Request) {
         processedById: null,
       },
       include: {
-        ApplicationDocument: {
+        documents: {
           select: {
             id: true,
             status: true,
@@ -84,14 +84,14 @@ export async function GET(req: Request) {
     const applicationsWithPendingDocs = await prisma.application.findMany({
       where: {
         status: "SUBMITTED",
-        ApplicationDocument: {
+        documents: {
           some: {
             status: "PENDING",
           },
         },
       },
       include: {
-        ApplicationDocument: {
+        documents: {
           select: {
             id: true,
             status: true,
@@ -103,14 +103,14 @@ export async function GET(req: Request) {
     // Pending Work - Applications with rejected documents
     const applicationsWithRejectedDocs = await prisma.application.findMany({
       where: {
-        ApplicationDocument: {
+        documents: {
           some: {
             status: "REJECTED",
           },
         },
       },
       include: {
-        ApplicationDocument: {
+        documents: {
           where: {
             status: "REJECTED",
           },

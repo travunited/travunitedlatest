@@ -37,7 +37,7 @@ export async function PUT(
     const body = await req.json();
     const { status, rejectionReason } = body;
 
-    const document = await prisma.applicationDocument.findUnique({
+    const document = await prisma.document.findUnique({
       where: { id: params.docId },
       include: {
         Application: {
@@ -65,7 +65,7 @@ export async function PUT(
     const normalizedStatus = status === "VERIFIED" ? "APPROVED" : status;
 
     // Update document status
-    const updated = await prisma.applicationDocument.update({
+    const updatedDoc = await prisma.document.update({
       where: { id: params.docId },
       data: {
         status: normalizedStatus,
@@ -177,7 +177,10 @@ export async function PUT(
       }
     }
 
-    return NextResponse.json(updated);
+    return NextResponse.json({
+      message: `Document ${status.toLowerCase()} successfully`,
+      document: updatedDoc,
+    });
   } catch (error) {
     console.error("Error reviewing document:", error);
     return NextResponse.json(
@@ -186,4 +189,3 @@ export async function PUT(
     );
   }
 }
-

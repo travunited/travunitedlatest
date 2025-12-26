@@ -57,7 +57,7 @@ export async function POST(
     }
 
     // Find the rejected document
-    const existingDoc = await prisma.applicationDocument.findUnique({
+    const existingDoc = await prisma.document.findUnique({
       where: { id: documentId },
     });
 
@@ -109,7 +109,7 @@ export async function POST(
     await uploadVisaDocument(key, buffer, file.type);
 
     // Update document record - clear rejection reason when re-uploading
-    await prisma.applicationDocument.update({
+    await prisma.document.update({
       where: { id: documentId },
       data: {
         filePath: key,

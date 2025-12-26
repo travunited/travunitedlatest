@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   try {
     const rawBody = await req.text();
     const signature = req.headers.get("x-razorpay-signature");
-    
+
     // Use the provided webhook secret
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || "TRAVunited@@@1234";
 
@@ -102,7 +102,11 @@ export async function POST(req: Request) {
       });
 
       // Update application status if applicable
-      if (payment.applicationId && payment.application) {
+      const p = payment as any;
+      if (payment.applicationId && p.Application) {
+        const application = p.Application;
+        const user = application.User_Application_userIdToUser;
+
         await prisma.application.update({
           where: { id: payment.applicationId },
           data: {
@@ -111,16 +115,19 @@ export async function POST(req: Request) {
         });
 
         await sendVisaPaymentSuccessEmail(
-          payment.application.user.email,
+          user.email,
           payment.applicationId,
-          payment.application.country || "",
-          payment.application.visaType || "",
+          application.country || "",
+          application.visaType || "",
           payment.amount
         );
       }
 
       // Update booking status if applicable
-      if (payment.bookingId && payment.booking) {
+      if (payment.bookingId && p.Booking) {
+        const bookingInclude = p.Booking;
+        const user = bookingInclude.User_Booking_userIdToUser;
+
         const booking = await prisma.booking.findUnique({
           where: { id: payment.bookingId },
         });
@@ -137,7 +144,7 @@ export async function POST(req: Request) {
           });
 
           await sendTourPaymentSuccessEmail(
-            payment.booking.user.email,
+            user.email,
             payment.bookingId,
             booking.tourName || "",
             payment.amount,
@@ -179,7 +186,7 @@ export async function POST(req: Request) {
 
       // Only update if not already completed (idempotency)
       const updated = await prisma.payment.updateMany({
-        where: { 
+        where: {
           razorpayOrderId: order_id,
           status: { not: "COMPLETED" }, // Don't override completed payments
         },
@@ -219,10 +226,12 @@ export async function POST(req: Request) {
         const amountFormatted = `₹${payment.amount.toLocaleString()}`;
         const baseMessage = `${amountFormatted} payment failed.`;
 
-        if (payment.applicationId && payment.application) {
+        if (payment.applicationId && (payment as any).Application) {
+          const application = (payment as any).Application;
+          const user = application.User_Application_userIdToUser;
           try {
             await notify({
-              userId: payment.application.userId,
+              userId: application.userId,
               type: "VISA_PAYMENT_FAILED",
               title: "Payment Failed",
               message: `${baseMessage} ${failureReason}`,
@@ -237,25 +246,27 @@ export async function POST(req: Request) {
             console.error("Failed to notify applicant about payment failure:", notifyError);
           }
 
-          if (payment.application.user?.email) {
+          if (user?.email) {
             try {
               await sendVisaPaymentFailedEmail(
-                payment.application.user.email,
+                user.email,
                 payment.applicationId,
-                payment.application.country || "",
-                payment.application.visaType || "",
+                application.country || "",
+                application.visaType || "",
                 payment.amount,
                 failureReason,
-                payment.application.user.role || "CUSTOMER"
+                user.role || "CUSTOMER"
               );
             } catch (emailError) {
               console.error("Failed to send visa payment failure email:", emailError);
             }
           }
-        } else if (payment.bookingId && payment.booking) {
+        } else if (payment.bookingId && (payment as any).Booking) {
+          const bookingInclude = (payment as any).Booking;
+          const user = bookingInclude.User_Booking_userIdToUser;
           try {
             await notify({
-              userId: payment.booking.userId,
+              userId: bookingInclude.userId,
               type: "TOUR_PAYMENT_FAILED",
               title: "Payment Failed",
               message: `${baseMessage} ${failureReason}`,
@@ -270,15 +281,18 @@ export async function POST(req: Request) {
             console.error("Failed to notify customer about tour payment failure:", notifyError);
           }
 
-          if (payment.booking.user?.email) {
+          if (user?.email) {
             try {
+              const booking = await prisma.booking.findUnique({
+                where: { id: payment.bookingId },
+              });
               await sendTourPaymentFailedEmail(
-                payment.booking.user.email,
+                user.email,
                 payment.bookingId,
-                payment.booking.tourName || payment.booking.tour?.name || "Tour",
+                booking?.tourName || bookingInclude.Tour?.name || "Tour",
                 payment.amount,
                 failureReason,
-                payment.booking.user.role || "CUSTOMER"
+                user.role || "CUSTOMER"
               );
             } catch (emailError) {
               console.error("Failed to send tour payment failure email:", emailError);
@@ -324,7 +338,7 @@ export async function POST(req: Request) {
 
 // Also handle GET requests for webhook verification/testing
 export async function GET() {
-  return NextResponse.json({ 
+  return NextResponse.json({
     message: "Razorpay webhook endpoint is active",
     webhookUrl: "https://travunited.com/api/webhooks/razorpay",
     timestamp: new Date().toISOString(),

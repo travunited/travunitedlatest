@@ -40,7 +40,7 @@ export async function GET(req: Request) {
         slug: true,
         subtitle: true,
         category: true,
-        country: {
+        Country: {
           select: {
             id: true,
             name: true,

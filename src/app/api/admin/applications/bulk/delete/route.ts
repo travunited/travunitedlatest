@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     // Delete in proper order within a transaction to handle foreign key constraints
     await prisma.$transaction(async (tx) => {
       // 1. Delete documents first
-      await tx.applicationDocument.deleteMany({
+      await tx.document.deleteMany({
         where: {
           applicationId: {
             in: idsToDelete,
@@ -123,12 +123,12 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ 
-      message: `Successfully deleted ${idsToDelete.length} application(s)` 
+    return NextResponse.json({
+      message: `Successfully deleted ${idsToDelete.length} application(s)`
     });
   } catch (error: any) {
     console.error("Error bulk deleting applications:", error);
-    
+
     // Provide more specific error messages
     if (error.code === "P2003") {
       return NextResponse.json(

@@ -22,24 +22,24 @@ import {
  * - Logging audit events
  */
 export const paymentInclude = {
-  booking: {
+  Booking: {
     include: {
-      user: {
+      User_Booking_userIdToUser: {
         select: { email: true, name: true, id: true, role: true },
       },
-      tour: {
+      Tour: {
         select: { name: true },
       },
     },
   },
-  application: {
+  Application: {
     include: {
-      user: {
+      User_Application_userIdToUser: {
         select: { email: true, name: true, id: true, role: true },
       },
     },
   },
-  user: {
+  User: {
     select: { id: true, email: true, name: true, role: true },
   },
 } as const;
@@ -67,7 +67,10 @@ export async function handlePaymentSuccess({
   }
 
   // Handle booking payment success
-  if (bookingId && payment.booking) {
+  if (bookingId && (payment as any).Booking) {
+    const booking = (payment as any).Booking;
+    const user = booking.User_Booking_userIdToUser;
+    const tour = booking.Tour;
     // Update booking status to BOOKED
     await prisma.booking.update({
       where: { id: bookingId },
@@ -79,9 +82,9 @@ export async function handlePaymentSuccess({
     // Send email notification
     try {
       await sendTourPaymentSuccessEmail(
-        payment.booking.user.email,
+        user.email,
         bookingId,
-        payment.booking.tourName || payment.booking.tour?.name || "Tour",
+        booking.tourName || tour?.name || "Tour",
         payment.amount,
         false // isAdvance - for free bookings, this is always false
       );
@@ -93,13 +96,13 @@ export async function handlePaymentSuccess({
     // Send in-app notification
     try {
       await notify({
-        userId: payment.booking.userId,
+        userId: booking.userId,
         type: "TOUR_PAYMENT_SUCCESS",
         title: payment.amount === 0 ? "Booking Confirmed!" : "Payment Successful",
         message:
           payment.amount === 0
-            ? `Your free booking for ${payment.booking.tourName || "tour"} has been confirmed.`
-            : `Payment of ₹${payment.amount.toLocaleString()} received for your tour booking. Your booking is now confirmed.`,
+            ? `Your free booking for ${booking.tourName || "tour"} has been confirmed.`
+            : `Payment of ₹${payment.amount.toLocaleString()} received for your tour booking. Your booking now confirmed.`,
         link: `/dashboard/bookings/${bookingId}`,
         data: {
           bookingId,
@@ -118,7 +121,7 @@ export async function handlePaymentSuccess({
         entityType: AuditEntityType.BOOKING,
         entityId: bookingId,
         action: AuditAction.CREATE,
-        description: `Booking confirmed${payment.amount === 0 ? " (FREE)" : ""} - ${payment.booking.tourName}`,
+        description: `Booking confirmed${payment.amount === 0 ? " (FREE)" : ""} - ${booking.tourName}`,
         metadata: {
           bookingId,
           amount: payment.amount,
@@ -134,7 +137,9 @@ export async function handlePaymentSuccess({
   }
 
   // Handle application payment success
-  if (applicationId && payment.application) {
+  if (applicationId && (payment as any).Application) {
+    const application = (payment as any).Application;
+    const user = application.User_Application_userIdToUser;
     // Update application status to SUBMITTED
     await prisma.application.update({
       where: { id: applicationId },
@@ -146,12 +151,12 @@ export async function handlePaymentSuccess({
     // Send email notification
     try {
       await sendVisaPaymentSuccessEmail(
-        payment.application.user.email,
+        user.email,
         applicationId,
-        payment.application.country || "",
-        payment.application.visaType || "",
+        application.country || "",
+        application.visaType || "",
         payment.amount,
-        payment.application.user.role || "CUSTOMER"
+        user.role || "CUSTOMER"
       );
     } catch (emailError) {
       console.error("Error sending visa payment success email:", emailError);
@@ -161,12 +166,12 @@ export async function handlePaymentSuccess({
     // Send in-app notification
     try {
       await notify({
-        userId: payment.application.userId,
+        userId: application.userId,
         type: "VISA_PAYMENT_SUCCESS",
         title: payment.amount === 0 ? "Application Submitted!" : "Payment Successful",
         message:
           payment.amount === 0
-            ? `Your free visa application for ${payment.application.country} ${payment.application.visaType} has been submitted.`
+            ? `Your free visa application for ${application.country} ${application.visaType} has been submitted.`
             : `Payment of ₹${payment.amount.toLocaleString()} received for your visa application. Your application has been submitted.`,
         link: `/dashboard/applications/${applicationId}`,
         data: {
@@ -186,7 +191,7 @@ export async function handlePaymentSuccess({
         entityType: AuditEntityType.APPLICATION,
         entityId: applicationId,
         action: AuditAction.CREATE,
-        description: `Application submitted${payment.amount === 0 ? " (FREE)" : ""} - ${payment.application.country} ${payment.application.visaType}`,
+        description: `Application submitted${payment.amount === 0 ? " (FREE)" : ""} - ${application.country} ${application.visaType}`,
         metadata: {
           applicationId,
           amount: payment.amount,
@@ -320,37 +325,39 @@ export async function notifyAdminsOfPaymentFailure(
 }
 
 function buildPaymentContext(payment: PaymentWithRelations) {
-  if (payment.application) {
+  const p = payment as any;
+  if (p.Application) {
+    const application = p.Application;
+    const user = application.User_Application_userIdToUser || p.User;
     return {
       label: "Application",
       reference: payment.applicationId,
       customer:
-        payment.application.user?.name ||
-        payment.application.user?.email ||
-        payment.user?.email ||
+        user?.name ||
+        user?.email ||
         "Customer",
       adminLink: `/admin/applications/${payment.applicationId}`,
       adminEmail: getVisaAdminEmail(),
       category: "visa" as const,
-      subject: `${payment.application.country || ""} ${
-        payment.application.visaType || ""
-      }`.trim() || `Application ${payment.applicationId}`,
+      subject: `${application.country || ""} ${application.visaType || ""
+        }`.trim() || `Application ${payment.applicationId}`,
     };
   }
 
-  if (payment.booking) {
+  if (p.Booking) {
+    const booking = p.Booking;
+    const user = booking.User_Booking_userIdToUser || p.User;
     return {
       label: "Booking",
       reference: payment.bookingId,
       customer:
-        payment.booking.user?.name ||
-        payment.booking.user?.email ||
-        payment.user?.email ||
+        user?.name ||
+        user?.email ||
         "Customer",
       adminLink: `/admin/bookings/${payment.bookingId}`,
       adminEmail: getTourAdminEmail(),
       category: "tours" as const,
-      subject: payment.booking.tourName || payment.booking.tour?.name || `Booking ${payment.bookingId}`,
+      subject: booking.tourName || booking.Tour?.name || `Booking ${payment.bookingId}`,
     };
   }
 
