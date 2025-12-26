@@ -5,11 +5,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   req: Request,
-  { params }: { params: { key: string } }
+  { params }: { params: Promise<{ key: string }> | { key: string } }
 ) {
   try {
+    // Handle both sync and async params (Next.js 15+ uses async params)
+    const resolvedParams = await Promise.resolve(params);
     const policy = await prisma.sitePolicy.findUnique({
-      where: { key: params.key },
+      where: { key: resolvedParams.key },
     });
 
     if (!policy) {

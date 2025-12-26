@@ -30,13 +30,15 @@ function readableToWebStream(stream: Readable): ReadableStream<Uint8Array> {
 
 export async function GET(
   request: Request,
-  { params }: { params: { key: string[] } }
+  { params }: { params: Promise<{ key: string[] }> | { key: string[] } }
 ) {
-  const keyPath = params.key?.join("/");
+  // Handle both sync and async params (Next.js 15+ uses async params)
+  const resolvedParams = await Promise.resolve(params);
+  const keyPath = resolvedParams.key?.join("/");
 
   // Validate key path - must be a valid path, not just a single character or empty
   if (!keyPath || keyPath.length < 3 || keyPath.trim().length === 0) {
-    console.error("Media proxy error: Invalid key path", { key: keyPath, params: params.key });
+    console.error("Media proxy error: Invalid key path", { key: keyPath, params: resolvedParams.key });
     return NextResponse.json({ error: "Invalid media path" }, { status: 400 });
   }
 

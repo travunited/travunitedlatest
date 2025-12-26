@@ -6,11 +6,13 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   req: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> | { slug: string } }
 ) {
   try {
+    // Handle both sync and async params (Next.js 15+ uses async params)
+    const resolvedParams = await Promise.resolve(params);
     // Decode the slug to handle URL-encoded characters and forward slashes
-    const decodedSlug = decodeURIComponent(params.slug);
+    const decodedSlug = decodeURIComponent(resolvedParams.slug);
     
     const tour = await prisma.tour.findFirst({
       where: {

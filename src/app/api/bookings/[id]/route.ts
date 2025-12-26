@@ -8,9 +8,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    // Handle both sync and async params (Next.js 15+ uses async params)
+    const resolvedParams = await Promise.resolve(params);
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -21,7 +23,7 @@ export async function GET(
     }
 
     const booking = await prisma.booking.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: {
         BookingTraveller: {
           include: {

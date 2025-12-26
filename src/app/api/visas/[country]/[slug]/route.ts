@@ -10,11 +10,13 @@ interface RouteParams {
 
 export async function GET(
   _request: Request,
-  { params }: { params: RouteParams }
+  { params }: { params: Promise<RouteParams> | RouteParams }
 ) {
-  const countryCode = params.country.toUpperCase();
+  // Handle both sync and async params (Next.js 15+ uses async params)
+  const resolvedParams = await Promise.resolve(params);
+  const countryCode = resolvedParams.country.toUpperCase();
   // Decode URL-encoded slug
-  const slug = decodeURIComponent(params.slug);
+  const slug = decodeURIComponent(resolvedParams.slug);
 
   try {
     const visa = await prisma.visa.findFirst({
