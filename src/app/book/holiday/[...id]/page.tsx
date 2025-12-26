@@ -680,7 +680,12 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
           setTimeout(() => setValidationError(null), 5000);
           return;
         }
+        // Check nationality for document requirements
+        const isIndian = (traveller.nationality || "").toLowerCase().trim() === "india" ||
+          (traveller.nationality || "").toLowerCase().trim() === "indian";
+
         if (requiresPassport) {
+          // For international tours, all travellers need passport
           if (!traveller.nationality) {
             setValidationError(`Traveller ${index + 1}: Nationality is required.`);
             setTimeout(() => setValidationError(null), 5000);
@@ -701,12 +706,55 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
             setTimeout(() => setValidationError(null), 5000);
             return;
           }
-        }
-        const expiryIssue = getPassportExpiryError(traveller);
-        if (expiryIssue) {
-          setValidationError(`Traveller ${index + 1}: ${expiryIssue}`);
-          setTimeout(() => setValidationError(null), 5000);
-          return;
+          const expiryIssue = getPassportExpiryError(traveller);
+          if (expiryIssue) {
+            setValidationError(`Traveller ${index + 1}: ${expiryIssue}`);
+            setTimeout(() => setValidationError(null), 5000);
+            return;
+          }
+        } else {
+          // For domestic tours, validate based on nationality
+          if (!traveller.nationality) {
+            setValidationError(`Traveller ${index + 1}: Nationality is required.`);
+            setTimeout(() => setValidationError(null), 5000);
+            return;
+          }
+          if (isIndian) {
+            // Indian travellers need PAN and Aadhaar
+            if (!traveller.panNumber || traveller.panNumber.trim().length === 0) {
+              setValidationError(`Traveller ${index + 1}: PAN number is required for Indian travellers.`);
+              setTimeout(() => setValidationError(null), 5000);
+              return;
+            }
+            if (!traveller.aadharFileKey) {
+              setValidationError(`Traveller ${index + 1}: Aadhaar document upload is required for Indian travellers.`);
+              setTimeout(() => setValidationError(null), 5000);
+              return;
+            }
+          } else {
+            // Non-Indian travellers need passport
+            if (!traveller.passportNumber) {
+              setValidationError(`Traveller ${index + 1}: Passport number is required for non-Indian travellers.`);
+              setTimeout(() => setValidationError(null), 5000);
+              return;
+            }
+            if (!traveller.passportIssuingCountry) {
+              setValidationError(`Traveller ${index + 1}: Passport issuing country is required.`);
+              setTimeout(() => setValidationError(null), 5000);
+              return;
+            }
+            if (!traveller.passportFileKey) {
+              setValidationError(`Traveller ${index + 1}: Please upload a passport copy.`);
+              setTimeout(() => setValidationError(null), 5000);
+              return;
+            }
+            const expiryIssue = getPassportExpiryError(traveller);
+            if (expiryIssue) {
+              setValidationError(`Traveller ${index + 1}: ${expiryIssue}`);
+              setTimeout(() => setValidationError(null), 5000);
+              return;
+            }
+          }
         }
       }
     }
@@ -774,7 +822,12 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
         setTimeout(() => setValidationError(null), 5000);
         return null;
       }
+      // Check nationality for document requirements
+      const isIndian = (traveller.nationality || "").toLowerCase().trim() === "india" ||
+        (traveller.nationality || "").toLowerCase().trim() === "indian";
+
       if (requiresPassport) {
+        // For international tours, all travellers need passport
         if (!traveller.nationality || !traveller.passportNumber || !traveller.passportIssuingCountry) {
           setValidationError(`Traveller ${index + 1}: Complete passport details are required.`);
           setTimeout(() => setValidationError(null), 5000);
@@ -785,12 +838,50 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
           setTimeout(() => setValidationError(null), 5000);
           return null;
         }
-      }
-      const expiryIssue = getPassportExpiryError(traveller);
-      if (expiryIssue) {
-        setValidationError(`Traveller ${index + 1}: ${expiryIssue}`);
-        setTimeout(() => setValidationError(null), 5000);
-        return null;
+        const expiryIssue = getPassportExpiryError(traveller);
+        if (expiryIssue) {
+          setValidationError(`Traveller ${index + 1}: ${expiryIssue}`);
+          setTimeout(() => setValidationError(null), 5000);
+          return null;
+        }
+      } else {
+        // For domestic tours, validate based on nationality
+        if (!traveller.nationality) {
+          setValidationError(`Traveller ${index + 1}: Nationality is required.`);
+          setTimeout(() => setValidationError(null), 5000);
+          return null;
+        }
+        if (isIndian) {
+          // Indian travellers need PAN and Aadhaar
+          if (!traveller.panNumber || traveller.panNumber.trim().length === 0) {
+            setValidationError(`Traveller ${index + 1}: PAN number is required for Indian travellers.`);
+            setTimeout(() => setValidationError(null), 5000);
+            return null;
+          }
+          if (!traveller.aadharFileKey) {
+            setValidationError(`Traveller ${index + 1}: Aadhaar document upload is required for Indian travellers.`);
+            setTimeout(() => setValidationError(null), 5000);
+            return null;
+          }
+        } else {
+          // Non-Indian travellers need passport
+          if (!traveller.passportNumber || !traveller.passportIssuingCountry) {
+            setValidationError(`Traveller ${index + 1}: Complete passport details are required for non-Indian travellers.`);
+            setTimeout(() => setValidationError(null), 5000);
+            return null;
+          }
+          if (!traveller.passportFileKey) {
+            setValidationError(`Traveller ${index + 1}: Please upload a passport copy.`);
+            setTimeout(() => setValidationError(null), 5000);
+            return null;
+          }
+          const expiryIssue = getPassportExpiryError(traveller);
+          if (expiryIssue) {
+            setValidationError(`Traveller ${index + 1}: ${expiryIssue}`);
+            setTimeout(() => setValidationError(null), 5000);
+            return null;
+          }
+        }
       }
     }
 
@@ -1534,10 +1625,10 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">Traveller Information</h2>
             <p className="text-neutral-600 mb-6">
-              Provide traveller details exactly as they appear on the passport.
+              Provide traveller details exactly as they appear on official documents.
               {requiresPassport
                 ? " Passport fields and document uploads are required for this tour."
-                : " Passport details are optional for this tour but recommended for faster processing."}
+                : " Indian travellers must provide PAN and Aadhaar. Non-Indian travellers must provide passport details."}
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
               <p className="text-sm text-blue-800">
@@ -1638,7 +1729,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          Nationality {requiresPassport && "*"}
+                          Nationality *
                         </label>
                         <input
                           type="text"
@@ -1653,13 +1744,15 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                     {(() => {
                       const isIndian = (traveller.nationality || "").toLowerCase().trim() === "india" ||
                         (traveller.nationality || "").toLowerCase().trim() === "indian";
-                      const showPassport = requiresPassport || !isIndian;
-                      // Show Indian docs (PAN/Aadhaar) for all Indian travellers, regardless of tour type
-                      const showIndianDocs = isIndian;
+                      // For Indian travellers: show passport only if tour requires it (international tours)
+                      // For non-Indian travellers: always show passport
+                      const showPassport = !isIndian || requiresPassport;
+                      // Show Indian docs (PAN/Aadhaar) for Indian travellers on domestic tours
+                      const showIndianDocs = isIndian && !requiresPassport;
 
                       return (
                         <div className="space-y-4">
-                          {/* Passport section - show if tour requires passport OR traveller is not Indian */}
+                          {/* Passport section - show for non-Indians or if tour requires passport */}
                           {showPassport && (
                             <div className="border border-dashed border-neutral-200 rounded-lg p-4 bg-neutral-50">
                               <div className="flex items-center justify-between mb-4">
@@ -1668,9 +1761,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                                   <p className="text-sm text-neutral-600">
                                     {requiresPassport
                                       ? "All fields below are required for international tours."
-                                      : isIndian
-                                        ? "Passport required for non-Indian travellers."
-                                        : "Passport details are required for non-Indian travellers."}
+                                      : "Passport details are required for non-Indian travellers."}
                                   </p>
                                 </div>
                               </div>
@@ -1686,7 +1777,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg uppercase"
                                     maxLength={20}
                                     placeholder="Enter passport number"
-                                    required={requiresPassport || !isIndian}
+                                    required={showPassport}
                                   />
                                 </div>
                                 <div>
@@ -1698,8 +1789,8 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                                     value={traveller.passportIssuingCountry}
                                     onChange={(e) => updateTraveller(index, "passportIssuingCountry", e.target.value)}
                                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                                    placeholder="India"
-                                    required={requiresPassport || !isIndian}
+                                    placeholder="Enter issuing country"
+                                    required={showPassport}
                                   />
                                 </div>
                                 <div>
@@ -1711,7 +1802,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                                     value={traveller.passportExpiry}
                                     onChange={(e) => updateTraveller(index, "passportExpiry", e.target.value)}
                                     className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                                    required={requiresPassport || !isIndian}
+                                    required={showPassport}
                                   />
                                   {expiryIssue && (
                                     <p className="text-sm text-red-600 mt-1">{expiryIssue}</p>
@@ -1726,7 +1817,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                                     accept=".pdf,image/*"
                                     onChange={(e) => handlePassportFileChange(index, e.target.files?.[0] || null)}
                                     className="w-full text-sm text-neutral-600"
-                                    required={requiresPassport || !isIndian}
+                                    required={showPassport}
                                   />
                                   <div className="text-xs mt-1 text-neutral-500">
                                     Accepted: PDF, JPG, PNG up to 10MB
@@ -1757,9 +1848,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                                 <div>
                                   <h4 className="font-medium text-neutral-900">Indian ID Documents</h4>
                                   <p className="text-sm text-neutral-600">
-                                    {requiresPassport
-                                      ? "PAN and Aadhaar are recommended for Indian travellers (in addition to passport)."
-                                      : "PAN and Aadhaar are required for Indian travellers on domestic tours."}
+                                    PAN and Aadhaar are required for Indian travellers on domestic tours.
                                   </p>
                                 </div>
                               </div>

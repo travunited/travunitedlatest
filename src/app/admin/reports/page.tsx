@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -62,16 +62,24 @@ export default function ReportsOverviewPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  // Extract user role as a primitive value to avoid unnecessary re-renders from session object reference changes
+  const userRole = session?.user?.role;
+
   useEffect(() => {
+    // Only run redirect logic when status changes, not when session object reference changes
     if (status === "unauthenticated") {
       router.replace("/login");
-    } else if (status === "authenticated") {
-      const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
+      return;
+    }
+    
+    if (status === "authenticated") {
+      const isSuperAdmin = userRole === "SUPER_ADMIN";
       if (!isSuperAdmin) {
         router.replace("/admin");
+        return;
       }
     }
-  }, [session, status, router]);
+  }, [status, userRole, router]);
 
   if (status === "loading") {
     return (
@@ -87,7 +95,7 @@ export default function ReportsOverviewPage() {
   }
 
   // Prevent flicker: if not authenticated or not super-admin, bail after redirect
-  if (status !== "authenticated" || session?.user?.role !== "SUPER_ADMIN") {
+  if (status !== "authenticated" || userRole !== "SUPER_ADMIN") {
     return null;
   }
 

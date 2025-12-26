@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Download, FileDown, Globe, TrendingUp, FileText, RefreshCw } from "lucide-react";
@@ -54,6 +54,10 @@ export default function CountryWiseVisaReportPage() {
   const dateTo = useMemo(() => filters.dateTo, [filters.dateTo]);
   const countryIds = useMemo(() => filters.countryIds || [], [filters.countryIds]);
 
+  // Track if component has mounted to prevent duplicate fetches
+  const hasMountedRef = useRef(false);
+  const isInitialMountRef = useRef(true);
+
   const fetchReport = useCallback(async (showRefreshing = false) => {
     if (showRefreshing) {
       setRefreshing(true);
@@ -101,14 +105,20 @@ export default function CountryWiseVisaReportPage() {
         router.push("/admin");
         return;
       }
+      hasMountedRef.current = true;
+      isInitialMountRef.current = false;
       fetchReport();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.role, status]);
 
-  // Refetch when filters change
+  // Refetch when filters change (but not on initial mount)
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.role === "SUPER_ADMIN") {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (hasMountedRef.current && status === "authenticated" && session?.user?.role === "SUPER_ADMIN") {
       fetchReport();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
