@@ -1068,7 +1068,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         //   documents: {},
         // });
 
-        setCurrentStep(6);
+        setCurrentStep(5);
       } else {
         const errorData = await response.json();
         let errorMessage = errorData.error || "Failed to save application. Please try again.";
@@ -1833,7 +1833,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           </div>
         );
 
-      case 6:
+      case 5:
         return (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-neutral-900 mb-4">
@@ -1942,7 +1942,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           </div>
         );
 
-      case 7:
+      case 6:
         const baseVisaTotalAmount = visaPrice * Math.max(formData.travellers?.length ?? 1, 1);
         const visaDiscountAmount = appliedPromoCode ? appliedPromoCode.discountAmount / 100 : 0; // Convert from paise to rupees
         const visaTotalAmount = Math.max(0, baseVisaTotalAmount - visaDiscountAmount);
@@ -2125,7 +2125,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
             <ArrowLeft size={20} />
             <span>Previous</span>
           </button>
-          {currentStep < 5 && (
+          {currentStep < 4 && (
             <button
               onClick={nextStep}
               className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 flex items-center space-x-2"
@@ -2134,38 +2134,39 @@ export default function VisaApplicationPage({ params }: { params: { country: str
               <ArrowRight size={20} />
             </button>
           )}
-          {currentStep === 6 && (
-            <button
-              onClick={prevStep}
-              className="px-6 py-3 border border-neutral-300 rounded-lg font-medium hover:bg-neutral-50 flex items-center space-x-2"
-            >
-              <ArrowLeft size={20} />
-              <span>Previous</span>
-            </button>
-          )}
-          {currentStep === 5 && (
+          {currentStep === 4 && (
             <button
               onClick={handleConfirmAndPay}
               disabled={loading}
               className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
-              <span>{loading ? "Saving..." : "Confirm & Continue"}</span>
+              <span>{loading ? "Saving..." : "Continue to Terms & Conditions"}</span>
               <ArrowRight size={20} />
             </button>
           )}
-          {currentStep === 6 && (
+          {currentStep === 5 && (
             <button
               onClick={() => {
                 if (!termsAccepted) {
                   alert("Please accept the Terms & Conditions to proceed");
                   return;
                 }
-                setCurrentStep(7);
+                setCurrentStep(6);
               }}
               disabled={!termsAccepted}
               className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               <span>Continue to Payment</span>
+              <ArrowRight size={20} />
+            </button>
+          )}
+          {currentStep === 6 && (
+            <button
+              onClick={handleVisaPayment}
+              disabled={loading}
+              className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              <span>{loading ? "Processing..." : "Proceed to Payment"}</span>
               <ArrowRight size={20} />
             </button>
           )}
