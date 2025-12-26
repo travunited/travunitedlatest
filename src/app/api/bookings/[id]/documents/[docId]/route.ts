@@ -30,7 +30,7 @@ export async function PATCH(
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Booking_userIdToUser: {
           select: {
             id: true,
             email: true,
@@ -38,7 +38,7 @@ export async function PATCH(
             role: true,
           },
         },
-        tour: {
+        Tour: {
           select: { name: true },
         },
       },
@@ -127,9 +127,8 @@ export async function PATCH(
       userId: booking.userId,
       type: "TOUR_BOOKING_DOCUMENT_UPLOADED",
       title: "Document re-uploaded",
-      message: `We received the updated ${documentName} for your ${
-        booking.tourName || booking.tour?.name || "tour"
-      } booking.`,
+      message: `We received the updated ${documentName} for your ${booking.tourName || (booking as any).Tour?.name || "tour"
+        } booking.`,
       link: bookingLink,
       data: {
         bookingId: params.id,
@@ -144,7 +143,7 @@ export async function PATCH(
       await notifyMultiple(adminIds, {
         type: "ADMIN_TOUR_DOCUMENT_UPLOADED",
         title: "Tour document re-uploaded",
-        message: `${booking.user?.name || booking.user?.email || "Customer"} re-uploaded ${documentName} for booking ${params.id}.`,
+        message: `${(booking as any).User_Booking_userIdToUser?.name || (booking as any).User_Booking_userIdToUser?.email || "Customer"} re-uploaded ${documentName} for booking ${params.id}.`,
         link: `/admin/bookings/${params.id}`,
         data: {
           bookingId: params.id,
@@ -164,7 +163,7 @@ export async function PATCH(
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>Document re-uploaded</h2>
             <p><strong>Booking:</strong> ${params.id}</p>
-            <p><strong>Customer:</strong> ${booking.user?.name || "Unknown"} (${booking.user?.email || "N/A"})</p>
+            <p><strong>Customer:</strong> ${(booking as any).User_Booking_userIdToUser?.name || "Unknown"} (${(booking as any).User_Booking_userIdToUser?.email || "N/A"})</p>
             <p><strong>Document:</strong> ${documentName}</p>
             <p>
               <a href="${adminLink}" style="display:inline-block;padding:10px 16px;background:#16a34a;color:#fff;text-decoration:none;border-radius:6px;">

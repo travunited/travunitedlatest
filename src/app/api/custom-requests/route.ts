@@ -29,6 +29,8 @@ export async function POST(req: Request) {
     // Create custom tour request
     const request = await prisma.customTourRequest.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         name: data.name,
         email: data.email,
         phone: data.phone,

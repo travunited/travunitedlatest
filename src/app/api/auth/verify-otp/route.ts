@@ -69,66 +69,14 @@ export async function POST(req: Request) {
       console.error("Failed to send welcome email:", error);
     }
 
-    // Merge guest application if exists (non-blocking)
+    // Guest applications are now handled via preliminary user accounts created during draft saving,
+    // so no manual merge of a separate GuestApplication model is required here.
     try {
       const { cookies } = await import("next/headers");
       const cookieStore = await cookies();
-      const guestId = cookieStore.get("guest_id")?.value;
-      
-      if (guestId) {
-        // Import merge logic
-        const { prisma } = await import("@/lib/prisma");
-        const guestApplications = await prisma.guestApplication.findMany({
-          where: {
-            guestId,
-            expiresAt: {
-              gt: new Date(),
-            },
-          },
-        });
-
-        for (const guestApp of guestApplications) {
-          // Check if user already has an application for this visa
-          const existingApp = await prisma.application.findFirst({
-            where: {
-              userId: user.id,
-              country: guestApp.country,
-              visaType: guestApp.visaType,
-              status: {
-                in: ["DRAFT", "PAYMENT_PENDING"],
-              },
-            },
-          });
-
-          if (!existingApp) {
-            // Create new application from guest data
-            await prisma.application.create({
-              data: {
-                userId: user.id,
-                visaId: guestApp.visaId || null,
-                visaTypeId: guestApp.visaType,
-                country: guestApp.country,
-                visaType: guestApp.visaType,
-                visaSubTypeId: guestApp.selectedSubTypeId || null,
-                status: "DRAFT",
-                totalAmount: 0,
-                currency: "INR",
-              },
-            });
-          }
-
-          // Delete guest application after merge
-          await prisma.guestApplication.delete({
-            where: { id: guestApp.id },
-          });
-        }
-
-        // Clear guest cookie
-        cookieStore.delete("guest_id");
-      }
-    } catch (error) {
-      // Non-blocking - don't fail verification if merge fails
-      console.error("Error merging guest application during verification:", error);
+      cookieStore.delete("guest_id");
+    } catch (cookieError) {
+      // Ignore cookie deletion errors
     }
 
     return NextResponse.json(

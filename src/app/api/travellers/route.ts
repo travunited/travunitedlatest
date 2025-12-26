@@ -20,7 +20,7 @@ const travellerSchema = z.object({
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -50,7 +50,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -63,6 +63,8 @@ export async function POST(req: Request) {
 
     const traveller = await prisma.traveller.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         userId: session.user.id,
         firstName: data.firstName,
         lastName: data.lastName,

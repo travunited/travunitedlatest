@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -79,13 +79,13 @@ export async function GET(req: NextRequest) {
       applications = await prisma.application.findMany({
         where,
         include: {
-          visa: {
+          Visa: {
             include: {
-              country: true,
+              Country: true,
             },
           },
-          travellers: true,
-          payments: {
+          ApplicationTraveller: true,
+          Payment: {
             where: {
               status: "COMPLETED",
             },
@@ -100,8 +100,8 @@ export async function GET(req: NextRequest) {
     // Filter by country if specified
     let filteredApplications = applications;
     if (countryIds.length > 0) {
-      filteredApplications = applications.filter((app) => {
-        const countryId = app.visa?.countryId;
+      filteredApplications = applications.filter((app: any) => {
+        const countryId = app.Visa?.countryId;
         return countryId && countryIds.includes(countryId);
       });
     }
@@ -122,10 +122,10 @@ export async function GET(req: NextRequest) {
     }> = {};
 
     try {
-      filteredApplications.forEach((app) => {
+      filteredApplications.forEach((app: any) => {
         const visaId = app.visaId || "unknown";
-        const visaName = app.visaType || app.visa?.name || "Unknown";
-        const countryName = app.visa?.country?.name || app.country || "Unknown";
+        const visaName = app.visaType || app.Visa?.name || "Unknown";
+        const countryName = app.Visa?.Country?.name || app.country || "Unknown";
         const key = `${visaId}-${visaName}`;
 
         if (!visaTypeMap[key]) {
@@ -145,11 +145,11 @@ export async function GET(req: NextRequest) {
         }
 
         visaTypeMap[key].totalApplications++;
-        visaTypeMap[key].totalTravellers += (Array.isArray(app.travellers) ? app.travellers.length : 0);
+        visaTypeMap[key].totalTravellers += (Array.isArray(app.ApplicationTraveller) ? app.ApplicationTraveller.length : 0);
 
-        if (app.payments && Array.isArray(app.payments) && app.payments.length > 0) {
+        if (app.Payment && Array.isArray(app.Payment) && app.Payment.length > 0) {
           visaTypeMap[key].paidApplications++;
-          visaTypeMap[key].totalRevenue += app.payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+          visaTypeMap[key].totalRevenue += app.Payment.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
         }
 
         if (app.status === "APPROVED") {
@@ -161,8 +161,8 @@ export async function GET(req: NextRequest) {
         }
 
         // Check for refunds
-        if (app.payments && Array.isArray(app.payments)) {
-          const refundedPayments = app.payments.filter((p) => p.status === "REFUNDED");
+        if (app.Payment && Array.isArray(app.Payment)) {
+          const refundedPayments = app.Payment.filter((p: any) => p.status === "REFUNDED");
           if (refundedPayments.length > 0) {
             visaTypeMap[key].refundedCount++;
           }
@@ -325,16 +325,16 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching visa type performance report:", error);
     const errorMessage = error instanceof Error ? error.message : "Internal server error";
     const errorStack = error instanceof Error ? error.stack : undefined;
-    
+
     // Log full error details for debugging
     console.error("Full error details:", {
       message: errorMessage,
       stack: errorStack,
       error: error,
     });
-    
+
     return NextResponse.json(
-      { 
+      {
         error: errorMessage,
         // Only include stack in development
         ...(process.env.NODE_ENV === "development" && errorStack ? { details: errorStack } : {})

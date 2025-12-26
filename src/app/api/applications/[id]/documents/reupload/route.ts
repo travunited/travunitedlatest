@@ -16,7 +16,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -27,7 +27,7 @@ export async function POST(
     const application = await prisma.application.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             id: true,
             email: true,
@@ -105,7 +105,7 @@ export async function POST(
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const key = `applications/${params.id}/${existingDoc.travellerId}/${existingDoc.documentType}-${Date.now()}-${file.name}`;
-    
+
     await uploadVisaDocument(key, buffer, file.type);
 
     // Update document record - clear rejection reason when re-uploading
@@ -127,9 +127,8 @@ export async function POST(
       userId: application.userId,
       type: "VISA_DOCUMENT_UPLOADED",
       title: "Document re-uploaded",
-      message: `We received the updated ${documentName} for your ${
-        application.country || "visa"
-      } application.`,
+      message: `We received the updated ${documentName} for your ${application.country || "visa"
+        } application.`,
       link: applicantLink,
       data: {
         applicationId: params.id,
@@ -140,11 +139,14 @@ export async function POST(
     });
 
     const adminIds = await getAdminUserIds();
+    const appWithUser = application as any;
+    const user = appWithUser.User_Application_userIdToUser;
+
     if (adminIds.length) {
       await notifyMultiple(adminIds, {
         type: "ADMIN_VISA_DOCUMENT_UPLOADED",
         title: "Visa document re-uploaded",
-        message: `${application.user?.name || application.user?.email || "Applicant"} re-uploaded ${documentName} for application ${params.id}.`,
+        message: `${user?.name || user?.email || "Applicant"} re-uploaded ${documentName} for application ${params.id}.`,
         link: `/admin/applications/${params.id}`,
         data: {
           applicationId: params.id,
@@ -164,7 +166,7 @@ export async function POST(
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>Document re-uploaded</h2>
             <p><strong>Application:</strong> ${params.id}</p>
-            <p><strong>Applicant:</strong> ${application.user?.name || "Unknown"} (${application.user?.email || "N/A"})</p>
+            <p><strong>Applicant:</strong> ${user?.name || "Unknown"} (${user?.email || "N/A"})</p>
             <p><strong>Document:</strong> ${documentName}</p>
             <p>
               <a href="${adminLink}" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;">

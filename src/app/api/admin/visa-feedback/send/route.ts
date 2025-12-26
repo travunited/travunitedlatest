@@ -52,7 +52,7 @@ export async function GET(req: Request) {
 
     // Get Google Review URL from settings
     const googleReviewUrl = generalSettings.googleReviewUrl || "";
-    
+
     if (!googleReviewUrl || googleReviewUrl.trim() === "" || googleReviewUrl === "https://g.page/r/YOUR_GOOGLE_BUSINESS_REVIEW_LINK") {
       return NextResponse.json({
         message: "Google Review URL is not configured. Please set it in Admin Settings → General Settings → Feedback Email Settings",
@@ -79,7 +79,7 @@ export async function GET(req: Request) {
         feedbackEmailSentAt: null,
       },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             email: true,
             role: true,
@@ -92,15 +92,15 @@ export async function GET(req: Request) {
     let sentCount = 0;
     let errorCount = 0;
 
-    for (const application of eligibleApplications) {
+    for (const application of eligibleApplications as any[]) {
       try {
         await sendVisaFeedbackEmail(
-          application.user.email,
+          application.User_Application_userIdToUser.email,
           application.id,
           application.country || "",
           application.visaType || "",
           googleReviewUrl,
-          application.user.role || "CUSTOMER"
+          application.User_Application_userIdToUser.role || "CUSTOMER"
         );
 
         // Mark as sent

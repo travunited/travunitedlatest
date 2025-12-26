@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     const payments = await prisma.payment.findMany({
       where,
       include: {
-        application: {
+        Application: {
           select: {
             id: true,
             country: true,
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
             createdAt: true,
           },
         },
-        booking: {
+        Booking: {
           select: {
             id: true,
             tourName: true,
@@ -154,7 +154,7 @@ export async function GET(req: NextRequest) {
         console.error("PDF error details:", pdfError instanceof Error ? pdfError.message : String(pdfError));
         console.error("PDF error stack:", pdfError instanceof Error ? pdfError.stack : undefined);
         return NextResponse.json(
-          { 
+          {
             error: "Failed to generate PDF",
             message: pdfError instanceof Error ? pdfError.message : "Unknown error occurred during PDF generation"
           },
@@ -219,7 +219,7 @@ export async function GET(req: NextRequest) {
     console.error("Error details:", error instanceof Error ? error.message : String(error));
     console.error("Error stack:", error instanceof Error ? error.stack : undefined);
     return NextResponse.json(
-      { 
+      {
         error: "Internal server error",
         message: error instanceof Error ? error.message : "Unknown error occurred"
       },

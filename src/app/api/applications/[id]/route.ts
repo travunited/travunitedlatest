@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -23,14 +23,14 @@ export async function GET(
     const application = await prisma.application.findUnique({
       where: { id: params.id },
       include: {
-        travellers: {
+        ApplicationTraveller: {
           include: {
-            traveller: true,
+            Traveller: true,
           },
         },
-        documents: {
+        ApplicationDocument: {
           include: {
-            traveller: {
+            Traveller: {
               select: {
                 id: true,
                 firstName: true,
@@ -39,29 +39,28 @@ export async function GET(
             },
           },
         },
-        user: {
+        User_Application_userIdToUser: {
           select: {
             name: true,
             email: true,
             phone: true,
           },
         },
-        visa: {
+        Visa: {
           include: {
-            country: true,
+            Country: true,
           },
         },
-        visaSubType: {
+        VisaSubType: {
           select: {
             id: true,
             label: true,
             code: true,
           },
         },
-        promoCode: {
-          select: {
-            id: true,
-            code: true,
+        PromoCodeUsage: {
+          include: {
+            promoCode: true,
           },
         },
       },
@@ -74,7 +73,24 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(application);
+    const app = application as any;
+    const mappedApplication = {
+      ...app,
+      travellers: app.ApplicationTraveller,
+      documents: app.ApplicationDocument,
+      user: app.User_Application_userIdToUser,
+      visa: app.Visa,
+      visaSubType: app.VisaSubType,
+      promoCode: app.PromoCodeUsage?.[0]?.promoCode,
+      ApplicationTraveller: undefined,
+      ApplicationDocument: undefined,
+      User_Application_userIdToUser: undefined,
+      Visa: undefined,
+      VisaSubType: undefined,
+      PromoCodeUsage: undefined,
+    };
+
+    return NextResponse.json(mappedApplication);
   } catch (error) {
     console.error("Error fetching application:", error);
     return NextResponse.json(
@@ -90,7 +106,7 @@ export async function PATCH(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -119,7 +135,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    
+
     // Only allow updating certain fields
     const allowedUpdates: any = {};
     if (body.totalAmount !== undefined) allowedUpdates.totalAmount = body.totalAmount;

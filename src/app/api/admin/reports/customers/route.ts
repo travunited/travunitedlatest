@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -38,18 +38,18 @@ export async function GET(req: NextRequest) {
         role: "CUSTOMER",
       },
       include: {
-        applications: {
+        Application_Application_userIdToUser: {
           include: {
-            payments: {
+            Payment: {
               where: {
                 status: "COMPLETED",
               },
             },
           },
         },
-        bookings: {
+        Booking_Booking_userIdToUser: {
           include: {
-            payments: {
+            Payment: {
               where: {
                 status: "COMPLETED",
               },
@@ -63,24 +63,24 @@ export async function GET(req: NextRequest) {
     });
 
     // Calculate customer metrics
-    const customerData = users.map((user) => {
-      const visaApplications = user.applications.length;
-      const tourBookings = user.bookings.length;
-      
-      const visaRevenue = user.applications.reduce((sum, app) => {
-        return sum + app.payments.reduce((pSum, p) => pSum + p.amount, 0);
+    const customerData = users.map((user: any) => {
+      const visaApplications = user.Application_Application_userIdToUser.length;
+      const tourBookings = user.Booking_Booking_userIdToUser.length;
+
+      const visaRevenue = user.Application_Application_userIdToUser.reduce((sum: number, app: any) => {
+        return sum + app.Payment.reduce((pSum: number, p: any) => pSum + p.amount, 0);
       }, 0);
-      
-      const tourRevenue = user.bookings.reduce((sum, booking) => {
-        return sum + booking.payments.reduce((pSum, p) => pSum + p.amount, 0);
+
+      const tourRevenue = user.Booking_Booking_userIdToUser.reduce((sum: number, booking: any) => {
+        return sum + booking.Payment.reduce((pSum: number, p: any) => pSum + p.amount, 0);
       }, 0);
-      
+
       const totalLifetimeRevenue = visaRevenue + tourRevenue;
 
       // Get last activity date
       const lastActivity = Math.max(
-        ...user.applications.map((a) => a.updatedAt.getTime()),
-        ...user.bookings.map((b) => b.updatedAt.getTime()),
+        ...user.Application_Application_userIdToUser.map((a: any) => a.updatedAt.getTime()),
+        ...user.Booking_Booking_userIdToUser.map((b: any) => b.updatedAt.getTime()),
         user.createdAt.getTime()
       );
 

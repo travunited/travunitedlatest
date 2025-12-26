@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -77,13 +77,13 @@ export async function GET(req: NextRequest) {
     const bookings = await prisma.booking.findMany({
       where,
       include: {
-        tour: {
+        Tour: {
           include: {
-            country: true,
+            Country: true,
           },
         },
-        travellers: true,
-        payments: {
+        BookingTraveller: true,
+        Payment: {
           where: {
             status: "COMPLETED",
           },
@@ -94,8 +94,8 @@ export async function GET(req: NextRequest) {
     // Filter by country if specified
     let filteredBookings = bookings;
     if (countryIds.length > 0) {
-      filteredBookings = bookings.filter((booking) => {
-        const countryId = booking.tour?.countryId;
+      filteredBookings = bookings.filter((booking: any) => {
+        const countryId = booking.Tour?.countryId;
         return countryId && countryIds.includes(countryId);
       });
     }
@@ -112,10 +112,10 @@ export async function GET(req: NextRequest) {
       cancelledCount: number;
     }> = {};
 
-    filteredBookings.forEach((booking) => {
+    filteredBookings.forEach((booking: any) => {
       const tourId = booking.tourId || "unknown";
-      const tourName = booking.tourName || booking.tour?.name || "Unknown";
-      const countryName = booking.tour?.country?.name || "Unknown";
+      const tourName = booking.tourName || booking.Tour?.name || "Unknown";
+      const countryName = booking.Tour?.Country?.name || "Unknown";
       const key = `${tourId}-${tourName}`;
 
       if (!tourMap[key]) {
@@ -132,11 +132,11 @@ export async function GET(req: NextRequest) {
       }
 
       tourMap[key].totalBookings++;
-      tourMap[key].totalTravellers += (Array.isArray(booking.travellers) ? booking.travellers.length : 0);
+      tourMap[key].totalTravellers += (Array.isArray(booking.BookingTraveller) ? booking.BookingTraveller.length : 0);
 
-      if (booking.payments && Array.isArray(booking.payments) && booking.payments.length > 0) {
+      if (booking.Payment && Array.isArray(booking.Payment) && booking.Payment.length > 0) {
         tourMap[key].paidBookings++;
-        tourMap[key].totalRevenue += booking.payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        tourMap[key].totalRevenue += booking.Payment.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
       }
 
       if (booking.status === "CANCELLED") {
@@ -251,16 +251,16 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching tour performance report:", error);
     const errorMessage = error instanceof Error ? error.message : "Internal server error";
     const errorStack = error instanceof Error ? error.stack : undefined;
-    
+
     // Log full error details for debugging
     console.error("Full error details:", {
       message: errorMessage,
       stack: errorStack,
       error: error,
     });
-    
+
     return NextResponse.json(
-      { 
+      {
         error: errorMessage,
         // Only include stack in development
         ...(process.env.NODE_ENV === "development" && errorStack ? { details: errorStack } : {})

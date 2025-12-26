@@ -1,5 +1,6 @@
 import { AuditAction, AuditEntityType, Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
+import crypto from "crypto";
 
 type LogAuditEventOptions = {
   adminId?: string | null;
@@ -39,6 +40,7 @@ export async function logAuditEvent({
 
     await prisma.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         adminId: validAdminId,
         entityId: entityId ?? null,
         entityType,

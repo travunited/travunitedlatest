@@ -41,9 +41,9 @@ export async function POST(req: Request) {
 
     // Get session - draft can be saved even without login, but we'll create/find user
     const session = await getServerSession(authOptions);
-    
+
     let userId: string;
-    
+
     if (session?.user?.id) {
       // User is logged in
       userId = session.user.id;
@@ -52,16 +52,18 @@ export async function POST(req: Request) {
       let user = await prisma.user.findUnique({
         where: { email: data.primaryContact.email },
       });
-      
+
       if (!user) {
         // Create a guest user account (they'll need to set password later)
         // Generate a random password hash (user will need to reset password to access)
         const bcrypt = await import("bcryptjs");
         const randomPassword = Math.random().toString(36).slice(-12);
         const passwordHash = await bcrypt.default.hash(randomPassword, 10);
-        
+
         user = await prisma.user.create({
           data: {
+            id: crypto.randomUUID(),
+            updatedAt: new Date(),
             email: data.primaryContact.email,
             name: data.primaryContact.name || null,
             phone: data.primaryContact.phone || null,
@@ -135,6 +137,8 @@ export async function POST(req: Request) {
               if (!traveller) {
                 traveller = await prisma.traveller.create({
                   data: {
+                    id: crypto.randomUUID(),
+                    updatedAt: new Date(),
                     userId,
                     firstName: travellerData.firstName,
                     lastName: travellerData.lastName,
@@ -150,6 +154,7 @@ export async function POST(req: Request) {
               // Link traveller to application
               await prisma.applicationTraveller.create({
                 data: {
+                  id: crypto.randomUUID(),
                   applicationId: data.draftId,
                   travellerId: traveller.id,
                 },
@@ -180,7 +185,7 @@ export async function POST(req: Request) {
       const visa = await prisma.visa.findFirst({
         where: {
           slug: data.visaType,
-          country: {
+          Country: {
             code: data.country.toUpperCase(),
           },
         },
@@ -190,6 +195,8 @@ export async function POST(req: Request) {
 
     const draft = await prisma.application.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         userId,
         visaTypeId: visaId || "",
         country: data.country,
@@ -228,6 +235,8 @@ export async function POST(req: Request) {
           if (!traveller) {
             traveller = await prisma.traveller.create({
               data: {
+                id: crypto.randomUUID(),
+                updatedAt: new Date(),
                 userId,
                 firstName: travellerData.firstName,
                 lastName: travellerData.lastName,
@@ -243,6 +252,7 @@ export async function POST(req: Request) {
           // Link traveller to application
           await prisma.applicationTraveller.create({
             data: {
+              id: crypto.randomUUID(),
               applicationId: draft.id,
               travellerId: traveller.id,
             },

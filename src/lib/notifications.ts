@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { sendUserEmail } from "./email";
+import crypto from "crypto";
 import { UserRole, Prisma } from "@prisma/client";
 
 export type NotificationType =
@@ -89,6 +90,8 @@ export async function notify(params: NotificationParams): Promise<void> {
     // Create in-app notification
     const notification = await prisma.notification.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         userId,
         type,
         title,

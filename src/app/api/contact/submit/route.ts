@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { getSupportAdminEmail } from "@/lib/admin-contacts";
+import crypto from "crypto";
 export const dynamic = "force-dynamic";
 
 const contactSchema = z.object({
@@ -42,6 +43,8 @@ export async function POST(req: Request) {
     // Persist message
     await prisma.contactMessage.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         name: data.name,
         email: data.email,
         phone: data.phone || null,
@@ -97,9 +100,9 @@ export async function POST(req: Request) {
     console.error("Error submitting contact form:", error);
     const errorMessage = error instanceof Error ? error.message : "Internal server error";
     return NextResponse.json(
-        { success: false, error: errorMessage },
-        { status: 500 }
-      );
+      { success: false, error: errorMessage },
+      { status: 500 }
+    );
   }
 }
 

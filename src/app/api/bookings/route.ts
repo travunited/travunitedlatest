@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -22,10 +22,10 @@ export async function GET(req: Request) {
         userId: session.user.id,
       },
       include: {
-        promoCode: {
+        PromoCodeUsage: {
           select: {
             id: true,
-            code: true,
+            promoCodeId: true,
           },
         },
       },
@@ -34,7 +34,10 @@ export async function GET(req: Request) {
       },
     });
 
-    return NextResponse.json(bookings);
+    return NextResponse.json(bookings.map(booking => ({
+      ...booking,
+      promoCode: (booking as any).PromoCodeUsage?.[0], // Map single usage back if exists
+    })));
   } catch (error) {
     console.error("Error fetching bookings:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";

@@ -163,7 +163,7 @@ export async function PATCH(
 
     await logAuditEvent({
       adminId: session.user.id,
-      entityType: AuditEntityType.TEAM,
+      entityType: AuditEntityType.OTHER,
       entityId: teamMember.id,
       action: AuditAction.UPDATE,
       description: `Updated team member: ${teamMember.name}`,
@@ -226,7 +226,7 @@ export async function DELETE(
 
     await logAuditEvent({
       adminId: session.user.id,
-      entityType: AuditEntityType.TEAM,
+      entityType: AuditEntityType.OTHER,
       entityId: teamMember.id,
       action: AuditAction.DELETE,
       description: `Deleted team member: ${teamMember.name}`,

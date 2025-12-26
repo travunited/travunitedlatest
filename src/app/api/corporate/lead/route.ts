@@ -4,6 +4,7 @@ import { AuditAction, AuditEntityType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { logAuditEvent } from "@/lib/audit";
 import { notify, notifyMultiple } from "@/lib/notifications";
+import crypto from "crypto";
 import {
   sendCorporateLeadAdminEmail,
   sendCorporateLeadConfirmationEmail,
@@ -26,6 +27,8 @@ export async function POST(req: Request) {
 
     const lead = await prisma.corporateLead.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         companyName: data.companyName,
         contactName: data.contactPerson,
         email: data.email,

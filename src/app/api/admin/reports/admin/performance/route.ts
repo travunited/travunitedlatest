@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -76,10 +76,10 @@ export async function GET(req: NextRequest) {
         ...(adminId ? { id: adminId } : {}),
       },
       include: {
-        processedApplications: {
+        Application_Application_processedByIdToUser: {
           where: dateFilter,
           include: {
-            documents: {
+            ApplicationDocument: {
               where: {
                 status: {
                   in: ["APPROVED", "REJECTED"],
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
             },
           },
         },
-        processedBookings: {
+        Booking_Booking_processedByIdToUser: {
           where: dateFilter,
         },
       },
@@ -96,21 +96,21 @@ export async function GET(req: NextRequest) {
 
     // Calculate performance metrics for each admin
     const adminData = admins.map((admin) => {
-      const applications = Array.isArray(admin.processedApplications) ? admin.processedApplications : [];
-      const bookings = Array.isArray(admin.processedBookings) ? admin.processedBookings : [];
-      
+      const applications = Array.isArray(admin.Application_Application_processedByIdToUser) ? admin.Application_Application_processedByIdToUser : [];
+      const bookings = Array.isArray(admin.Booking_Booking_processedByIdToUser) ? admin.Booking_Booking_processedByIdToUser : [];
+
       // Applications assigned
       const applicationsAssigned = applications.length;
-      
+
       // Applications processed (status changed from NEW/IN_PROCESS to APPROVED/REJECTED)
-      const applicationsProcessed = applications.filter((app) => 
+      const applicationsProcessed = applications.filter((app) =>
         app.status === "APPROVED" || app.status === "REJECTED"
       ).length;
-      
+
       // Calculate average processing time
       let totalProcessingTime = 0;
       let processedCount = 0;
-      
+
       applications.forEach((app) => {
         if ((app.status === "APPROVED" || app.status === "REJECTED") && app.updatedAt && app.createdAt) {
           const processingTime = app.updatedAt.getTime() - app.createdAt.getTime();
@@ -118,23 +118,23 @@ export async function GET(req: NextRequest) {
           processedCount++;
         }
       });
-      
+
       const avgProcessingTime = processedCount > 0
         ? totalProcessingTime / processedCount / (1000 * 60 * 60) // Convert to hours
         : 0;
-      
+
       // Pending applications > 7 days
       const now = new Date();
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const pendingOver7Days = applications.filter((app) => 
+      const pendingOver7Days = applications.filter((app) =>
         (app.status === "SUBMITTED" || app.status === "IN_PROCESS") &&
         app.createdAt &&
         app.createdAt < sevenDaysAgo
       ).length;
-      
+
       // Document verifications
-      const documentVerifications = applications.reduce((sum, app) => 
-        sum + (Array.isArray(app.documents) ? app.documents.length : 0), 0
+      const documentVerifications = applications.reduce((sum, app) =>
+        sum + (Array.isArray(app.ApplicationDocument) ? app.ApplicationDocument.length : 0), 0
       );
 
       return {
@@ -243,16 +243,16 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching admin performance report:", error);
     const errorMessage = error instanceof Error ? error.message : "Internal server error";
     const errorStack = error instanceof Error ? error.stack : undefined;
-    
+
     // Log full error details for debugging
     console.error("Full error details:", {
       message: errorMessage,
       stack: errorStack,
       error: error,
     });
-    
+
     return NextResponse.json(
-      { 
+      {
         error: errorMessage,
         // Only include stack in development
         ...(process.env.NODE_ENV === "development" && errorStack ? { details: errorStack } : {})

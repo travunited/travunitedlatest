@@ -14,7 +14,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -33,21 +33,21 @@ export async function GET(
     const review = await prisma.review.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             name: true,
             email: true,
           },
         },
-        application: {
+        Application: {
           select: {
             id: true,
             country: true,
             visaType: true,
           },
         },
-        booking: {
+        Booking: {
           select: {
             id: true,
             tourName: true,
@@ -79,7 +79,7 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },

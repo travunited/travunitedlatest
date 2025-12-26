@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -50,14 +50,14 @@ export async function GET(req: NextRequest) {
     const applications = await prisma.application.findMany({
       where,
       include: {
-        payments: {
+        Payment: {
           where: {
             status: "COMPLETED",
           },
         },
-        visa: {
+        Visa: {
           include: {
-            country: true,
+            Country: true,
           },
         },
       },
@@ -75,10 +75,10 @@ export async function GET(req: NextRequest) {
       decidedCount: number;
     }> = {};
 
-    applications.forEach((app) => {
-      const countryId = app.visa?.countryId || "unknown";
-      const countryName = app.visa?.country?.name || app.country || "Unknown";
-      
+    applications.forEach((app: any) => {
+      const countryId = app.Visa?.countryId || "unknown";
+      const countryName = app.Visa?.Country?.name || app.country || "Unknown";
+
       if (!countryMap[countryId]) {
         countryMap[countryId] = {
           countryId,
@@ -93,10 +93,10 @@ export async function GET(req: NextRequest) {
       }
 
       countryMap[countryId].totalApplications++;
-      
-      if (app.payments.length > 0) {
+
+      if (app.Payment.length > 0) {
         countryMap[countryId].paidApplications++;
-        countryMap[countryId].totalRevenue += app.payments.reduce((sum, p) => sum + p.amount, 0);
+        countryMap[countryId].totalRevenue += app.Payment.reduce((sum: number, p: any) => sum + p.amount, 0);
       }
 
       if (app.status === "APPROVED") {

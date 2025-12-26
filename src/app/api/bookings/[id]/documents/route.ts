@@ -28,8 +28,8 @@ export async function POST(
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
-        travellers: true,
-        user: {
+        BookingTraveller: true,
+        User_Booking_userIdToUser: {
           select: {
             id: true,
             email: true,
@@ -37,7 +37,7 @@ export async function POST(
             role: true,
           },
         },
-        tour: {
+        Tour: {
           select: {
             name: true,
           },
@@ -87,7 +87,7 @@ export async function POST(
 
     // Validate travellerId if provided
     if (travellerId) {
-      const traveller = booking.travellers.find((t) => t.id === travellerId);
+      const traveller = (booking as any).BookingTraveller.find((t: any) => t.id === travellerId);
       if (!traveller) {
         return NextResponse.json(
           { error: "Traveller not found in this booking" },
@@ -107,6 +107,8 @@ export async function POST(
     // Create document record
     const document = await prisma.bookingDocument.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         bookingId: params.id,
         travellerId: travellerId || null,
         type: documentType,
@@ -123,9 +125,8 @@ export async function POST(
       userId: booking.userId,
       type: "TOUR_BOOKING_DOCUMENT_UPLOADED",
       title: "Document received",
-      message: `We received ${documentName} for your ${
-        booking.tourName || booking.tour?.name || "tour"
-      } booking.`,
+      message: `We received ${documentName} for your ${booking.tourName || (booking as any).Tour?.name || "tour"
+        } booking.`,
       link: bookingLink,
       data: {
         bookingId: params.id,
@@ -140,7 +141,7 @@ export async function POST(
       await notifyMultiple(adminIds, {
         type: "ADMIN_TOUR_DOCUMENT_UPLOADED",
         title: "New tour document uploaded",
-        message: `${booking.user?.name || booking.user?.email || "Customer"} uploaded ${documentName} for booking ${params.id}.`,
+        message: `${(booking as any).User_Booking_userIdToUser?.name || (booking as any).User_Booking_userIdToUser?.email || "Customer"} uploaded ${documentName} for booking ${params.id}.`,
         link: `/admin/bookings/${params.id}`,
         data: {
           bookingId: params.id,
@@ -160,7 +161,7 @@ export async function POST(
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>New booking document received</h2>
             <p><strong>Booking:</strong> ${params.id}</p>
-            <p><strong>Customer:</strong> ${booking.user?.name || "Unknown"} (${booking.user?.email || "N/A"})</p>
+            <p><strong>Customer:</strong> ${(booking as any).User_Booking_userIdToUser?.name || "Unknown"} (${(booking as any).User_Booking_userIdToUser?.email || "N/A"})</p>
             <p><strong>Document:</strong> ${documentName}</p>
             <p>
               <a href="${adminLink}" style="display:inline-block;padding:10px 16px;background:#16a34a;color:#fff;text-decoration:none;border-radius:6px;">

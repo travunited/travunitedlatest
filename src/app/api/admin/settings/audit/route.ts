@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -60,7 +60,7 @@ export async function GET(req: Request) {
     const logs = await prisma.auditLog.findMany({
       where,
       include: {
-        admin: {
+        User: {
           select: {
             id: true,
             name: true,
@@ -74,20 +74,20 @@ export async function GET(req: Request) {
       take: 500,
     });
 
-    const formatted = logs.map((log) => ({
+    const formatted = logs.map((log: any) => ({
       id: log.id,
       timestamp: log.timestamp,
-      adminUser: log.admin
+      adminUser: log.User
         ? {
-            id: log.admin.id,
-            name: log.admin.name,
-            email: log.admin.email,
-          }
+          id: log.User.id,
+          name: log.User.name,
+          email: log.User.email,
+        }
         : {
-            id: null,
-            name: "System",
-            email: "system@travunited.com",
-          },
+          id: null,
+          name: "System",
+          email: "system@travunited.com",
+        },
       entityType: log.entityType,
       entityId: log.entityId,
       action: log.action,

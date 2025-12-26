@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     const passwordReset = await prisma.passwordReset.findUnique({
       where: { id: resetId },
       include: {
-        user: {
+        User: {
           select: {
             id: true,
             email: true,
@@ -120,9 +120,10 @@ export async function POST(req: Request) {
       });
     });
 
+    const user = (passwordReset as any).User;
     console.log("[Password Reset] Successfully reset password", {
       userId: passwordReset.userId,
-      userEmail: passwordReset.user.email,
+      userEmail: user?.email,
       resetId,
       timestamp: new Date().toISOString(),
     });

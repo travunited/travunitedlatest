@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -39,8 +39,8 @@ export async function GET(
         updatedAt: true,
         _count: {
           select: {
-            processedApplications: true,
-            processedBookings: true,
+            Application_Application_processedByIdToUser: true,
+            Booking_Booking_processedByIdToUser: true,
           },
         },
       },
@@ -64,8 +64,8 @@ export async function GET(
       ...admin,
       lastLogin: admin.updatedAt, // Proxy for last login
       stats: {
-        applicationsHandled: admin._count.processedApplications,
-        bookingsHandled: admin._count.processedBookings,
+        applicationsHandled: (admin._count as any).Application_Application_processedByIdToUser,
+        bookingsHandled: (admin._count as any).Booking_Booking_processedByIdToUser,
         lastActive: admin.updatedAt,
       },
     });
@@ -84,7 +84,7 @@ export async function PUT(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },

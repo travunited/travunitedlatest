@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -55,20 +55,20 @@ export async function GET(req: NextRequest) {
     const payments = await prisma.payment.findMany({
       where,
       include: {
-        user: {
+        User: {
           select: {
             name: true,
             email: true,
           },
         },
-        application: {
+        Application: {
           select: {
             id: true,
             country: true,
             visaType: true,
           },
         },
-        booking: {
+        Booking: {
           select: {
             id: true,
             tourName: true,
@@ -102,11 +102,11 @@ export async function GET(req: NextRequest) {
     // Export handling
     if (format === "pdf") {
       const headers = ["Date & Time", "Payment ID", "Type", "Customer", "Status", "Amount (INR)"];
-      const rows = filteredPayments.slice(0, 200).map((payment) => [
+      const rows = filteredPayments.slice(0, 200).map((payment: any) => [
         payment.createdAt.toISOString(),
         payment.razorpayPaymentId?.slice(0, 20) || "N/A",
         payment.applicationId ? "Visa" : payment.bookingId ? "Tour" : "N/A",
-        payment.user.name || payment.user.email,
+        payment.User.name || payment.User.email,
         payment.status,
         payment.amount,
       ]);
@@ -140,19 +140,19 @@ export async function GET(req: NextRequest) {
     }
 
     if (format === "xlsx" || format === "csv") {
-      const exportData = filteredPayments.map((payment) => ({
+      const exportData = filteredPayments.map((payment: any) => ({
         "Date & Time": payment.createdAt.toISOString(),
         "Payment ID": payment.razorpayPaymentId || "N/A",
         "Order ID": payment.razorpayOrderId || "N/A",
         "Application/Booking ID": payment.applicationId || payment.bookingId || "N/A",
         "Type": payment.applicationId ? "Visa" : payment.bookingId ? "Tour" : "N/A",
-        "Customer Name": payment.user.name || "N/A",
-        "Customer Email": payment.user.email,
+        "Customer Name": payment.User.name || "N/A",
+        "Customer Email": payment.User.email,
         "Payment Status": payment.status,
         "Amount (INR)": payment.amount,
         "Currency": payment.currency,
-        "Country": payment.application?.country || "N/A",
-        "Visa Type / Tour": payment.application?.visaType || payment.booking?.tourName || "N/A",
+        "Country": payment.Application?.country || "N/A",
+        "Visa Type / Tour": payment.Application?.visaType || payment.Booking?.tourName || "N/A",
       }));
 
       if (format === "xlsx") {
@@ -195,7 +195,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       summary,
-      rows: paginatedPayments.map((p) => ({
+      rows: paginatedPayments.map((p: any) => ({
         id: p.id,
         date: p.createdAt,
         paymentId: p.razorpayPaymentId,
@@ -203,14 +203,14 @@ export async function GET(req: NextRequest) {
         applicationId: p.applicationId,
         bookingId: p.bookingId,
         type: p.applicationId ? "Visa" : p.bookingId ? "Tour" : "Other",
-        customerName: p.user.name,
-        customerEmail: p.user.email,
+        customerName: p.User.name,
+        customerEmail: p.User.email,
         status: p.status,
         amount: p.amount,
         currency: p.currency,
-        country: p.application?.country,
-        visaType: p.application?.visaType,
-        tourName: p.booking?.tourName,
+        country: p.Application?.country,
+        visaType: p.Application?.visaType,
+        tourName: p.Booking?.tourName,
       })),
       pagination: {
         page,

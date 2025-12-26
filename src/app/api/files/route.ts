@@ -29,13 +29,13 @@ export async function GET(req: Request) {
     }
 
     const key = decodeURIComponent(keyParam);
-    console.log("[Files API] Request received:", { 
-      key: key.substring(0, 100), 
+    console.log("[Files API] Request received:", {
+      key: key.substring(0, 100),
       keyLength: key.length,
-      userId: session.user.id, 
-      role: session.user.role 
+      userId: session.user.id,
+      role: session.user.role
     });
-    
+
     // If the key is already a full URL, just redirect directly (fallback for legacy stored URLs)
     if (key.startsWith("http://") || key.startsWith("https://")) {
       console.log("[Files API] Key is full URL, redirecting directly");
@@ -48,14 +48,14 @@ export async function GET(req: Request) {
     const document = await prisma.applicationDocument.findFirst({
       where: { filePath: key },
       select: {
-        application: {
+        Application: {
           select: { userId: true },
         },
       },
     });
 
-    if (document?.application?.userId) {
-      ownerId = document.application.userId;
+    if ((document as any)?.Application?.userId) {
+      ownerId = (document as any).Application.userId;
     } else {
       const application = await prisma.application.findFirst({
         where: { visaDocumentUrl: key },
@@ -82,28 +82,28 @@ export async function GET(req: Request) {
               ],
             },
             select: {
-              booking: {
+              Booking: {
                 select: { userId: true },
               },
             },
           });
 
-          if (bookingTraveller?.booking?.userId) {
-            ownerId = bookingTraveller.booking.userId;
+          if ((bookingTraveller as any)?.Booking?.userId) {
+            ownerId = (bookingTraveller as any).Booking.userId;
           } else {
             // Check for BookingDocument files (table may not exist)
             try {
               const bookingDocument = await prisma.bookingDocument.findFirst({
                 where: { key: key },
                 select: {
-                  booking: {
+                  Booking: {
                     select: { userId: true },
                   },
                 },
               });
 
-              if (bookingDocument?.booking?.userId) {
-                ownerId = bookingDocument.booking.userId;
+              if ((bookingDocument as any)?.Booking?.userId) {
+                ownerId = (bookingDocument as any).Booking.userId;
               }
             } catch (bookingDocError) {
               // Table doesn't exist, skip this check
@@ -128,15 +128,15 @@ export async function GET(req: Request) {
         // If the table doesn't exist or there's a Prisma error, log it but don't fail yet
         console.error("[Files API] Error querying CareerApplication (exact match):", careerQueryError);
         const errorMessage = careerQueryError instanceof Error ? careerQueryError.message : String(careerQueryError);
-        console.error("[Files API] CareerApplication query error details:", { 
+        console.error("[Files API] CareerApplication query error details:", {
           message: errorMessage,
-          error: careerQueryError 
+          error: careerQueryError
         });
-        
+
         // If it's a table not found error, return 404
         if (errorMessage.includes("does not exist") || errorMessage.includes("CareerApplication")) {
           return NextResponse.json(
-            { 
+            {
               error: "File not found",
               details: process.env.NODE_ENV === "development" ? "CareerApplication table may not exist" : undefined
             },
@@ -147,12 +147,12 @@ export async function GET(req: Request) {
       }
 
       if (careerApp) {
-        console.log("[Files API] CareerApplication found:", { 
-          appId: careerApp.id, 
+        console.log("[Files API] CareerApplication found:", {
+          appId: careerApp.id,
           requestedKey: key,
           storedResumeUrl: careerApp.resumeUrl,
           keysMatch: careerApp.resumeUrl === key,
-          isAdmin 
+          isAdmin
         });
 
         // Career resumes are accessible to admins only
@@ -163,10 +163,10 @@ export async function GET(req: Request) {
             { status: 403 }
           );
         }
-        
+
         // Admin can access, continue to generate signed URL
         const actualKey = careerApp.resumeUrl || key;
-        
+
         if (!actualKey || actualKey.trim() === "") {
           console.log("[Files API] Career resume URL is empty");
           return NextResponse.json(
@@ -174,7 +174,7 @@ export async function GET(req: Request) {
             { status: 404 }
           );
         }
-        
+
         // Set a flag so we know this is a career resume (no ownerId needed for admins)
         ownerId = "CAREER_RESUME";
         console.log("[Files API] Career resume found, setting ownerId flag, will use key:", actualKey);
@@ -214,12 +214,12 @@ export async function GET(req: Request) {
       console.error("[Files API] Error generating signed URL for file:", key, minioError);
       const errorMessage = minioError instanceof Error ? minioError.message : String(minioError);
       const errorStack = minioError instanceof Error ? minioError.stack : undefined;
-      console.error("[Files API] MinIO error details:", { 
+      console.error("[Files API] MinIO error details:", {
         message: errorMessage,
         stack: errorStack,
-        error: minioError 
+        error: minioError
       });
-      
+
       // Check if it's a career application and provide a better error message
       if (ownerId === "CAREER_RESUME") {
         try {
@@ -227,10 +227,10 @@ export async function GET(req: Request) {
             where: { resumeUrl: key },
             select: { id: true },
           });
-          
+
           if (careerApp) {
             return NextResponse.json(
-              { 
+              {
                 error: "Resume file not available. The file may have been deleted or moved from storage.",
                 details: process.env.NODE_ENV === "development" ? errorMessage : undefined
               },
@@ -241,9 +241,9 @@ export async function GET(req: Request) {
           console.error("[Files API] Error querying CareerApplication in error handler:", careerQueryError);
         }
       }
-      
+
       return NextResponse.json(
-        { 
+        {
           error: "File not found or unavailable",
           details: process.env.NODE_ENV === "development" ? errorMessage : undefined
         },
@@ -260,7 +260,7 @@ export async function GET(req: Request) {
       error,
     });
     return NextResponse.json(
-      { 
+      {
         error: "Internal server error",
         message: process.env.NODE_ENV === "development" ? errorMessage : undefined
       },

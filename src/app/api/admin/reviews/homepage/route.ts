@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 // Validate link URL (http/https only)
 function validateLink(link?: string | null): string | null {
   if (!link || link.trim() === "") return null;
-  
+
   try {
     const url = new URL(link);
     if (!["http:", "https:"].includes(url.protocol)) {
@@ -47,7 +47,7 @@ const homepageReviewSchema = z.object({
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -101,7 +101,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -134,6 +134,8 @@ export async function POST(req: Request) {
     // Create review (homepage reviews don't have userId, applicationId, or bookingId)
     const review = await prisma.review.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         type: "VISA", // Default type for homepage reviews (can be changed if needed)
         reviewerName: data.reviewerName,
         title: data.title && data.title.trim() ? data.title.trim() : null,

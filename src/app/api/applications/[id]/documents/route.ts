@@ -16,7 +16,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -27,7 +27,7 @@ export async function POST(
     const application = await prisma.application.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             id: true,
             email: true,
@@ -123,12 +123,14 @@ export async function POST(
       requirementId || "general",
       `${Date.now()}-${file.name}`,
     ].join("/");
-    
+
     await uploadVisaDocument(key, buffer, file.type);
 
     // Save document record
     const document = await prisma.applicationDocument.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         applicationId: params.id,
         travellerId: resolvedTravellerId,
         requirementId: requirementId,
@@ -146,9 +148,8 @@ export async function POST(
       userId: application.userId,
       type: "VISA_DOCUMENT_UPLOADED",
       title: "Document received",
-      message: `We received ${documentName} for your ${
-        application.country || "visa"
-      } application.`,
+      message: `We received ${documentName} for your ${application.country || "visa"
+        } application.`,
       link: applicantLink,
       data: {
         applicationId: params.id,
@@ -160,11 +161,14 @@ export async function POST(
     });
 
     const adminIds = await getAdminUserIds();
+    const appWithUser = application as any;
+    const userProperties = appWithUser.User_Application_userIdToUser;
+
     if (adminIds.length) {
       await notifyMultiple(adminIds, {
         type: "ADMIN_VISA_DOCUMENT_UPLOADED",
         title: "New visa document uploaded",
-        message: `${application.user?.name || application.user?.email || "Applicant"} uploaded ${documentName} for application ${params.id}.`,
+        message: `${userProperties?.name || userProperties?.email || "Applicant"} uploaded ${documentName} for application ${params.id}.`,
         link: `/admin/applications/${params.id}`,
         data: {
           applicationId: params.id,
@@ -184,13 +188,12 @@ export async function POST(
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2>New document received</h2>
             <p><strong>Application:</strong> ${params.id}</p>
-            <p><strong>Applicant:</strong> ${application.user?.name || "Unknown"} (${application.user?.email || "N/A"})</p>
+            <p><strong>Applicant:</strong> ${userProperties?.name || "Unknown"} (${userProperties?.email || "N/A"})</p>
             <p><strong>Document:</strong> ${documentName}</p>
-            ${
-              requirement?.name
-                ? `<p><strong>Requirement:</strong> ${requirement.name}</p>`
-                : ""
-            }
+            ${requirement?.name
+            ? `<p><strong>Requirement:</strong> ${requirement.name}</p>`
+            : ""
+          }
             <p>
               <a href="${adminLink}" style="display:inline-block;padding:10px 16px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;">
                 Review application

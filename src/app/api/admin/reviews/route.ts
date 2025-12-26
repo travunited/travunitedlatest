@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -59,7 +59,7 @@ export async function GET(req: Request) {
     }
 
     if (tourName) {
-      where.booking = {
+      where.Booking = {
         tourName: {
           contains: tourName,
           mode: "insensitive",
@@ -70,20 +70,20 @@ export async function GET(req: Request) {
     const reviews = await prisma.review.findMany({
       where,
       include: {
-        user: {
+        User: {
           select: {
             name: true,
             email: true,
           },
         },
-        application: tourName ? undefined : {
+        Application: tourName ? undefined : {
           select: {
             id: true,
             country: true,
             visaType: true,
           },
         },
-        booking: {
+        Booking: {
           select: {
             id: true,
             tourName: true,

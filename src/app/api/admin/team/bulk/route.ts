@@ -63,6 +63,7 @@ export async function POST(req: Request) {
           data: {
             isActive: false,
             updatedBy: session.user.id,
+            updatedAt: new Date(),
           },
         });
         break;
@@ -73,6 +74,7 @@ export async function POST(req: Request) {
           data: {
             isFeatured: true,
             updatedBy: session.user.id,
+            updatedAt: new Date(),
           },
         });
         break;
@@ -83,6 +85,7 @@ export async function POST(req: Request) {
           data: {
             isFeatured: false,
             updatedBy: session.user.id,
+            updatedAt: new Date(),
           },
         });
         break;
@@ -93,6 +96,7 @@ export async function POST(req: Request) {
           data: {
             isActive: true,
             updatedBy: session.user.id,
+            updatedAt: new Date(),
           },
         });
         break;
@@ -103,6 +107,7 @@ export async function POST(req: Request) {
           data: {
             isActive: false,
             updatedBy: session.user.id,
+            updatedAt: new Date(),
           },
         });
         break;
@@ -117,7 +122,7 @@ export async function POST(req: Request) {
     // Log audit event for bulk action
     await logAuditEvent({
       adminId: session.user.id,
-      entityType: AuditEntityType.TEAM,
+      entityType: AuditEntityType.OTHER,
       entityId: null,
       action: AuditAction.UPDATE,
       description: `Bulk ${action} on ${teamMembers.length} team members`,

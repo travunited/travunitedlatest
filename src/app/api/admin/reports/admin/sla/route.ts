@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     const applications = await prisma.application.findMany({
       where,
       include: {
-        payments: {
+        Payment: {
           where: {
             status: "COMPLETED",
           },
@@ -58,9 +58,9 @@ export async function GET(req: NextRequest) {
             createdAt: "asc",
           },
         },
-        visa: {
+        Visa: {
           include: {
-            country: true,
+            Country: true,
           },
         },
       },
@@ -69,8 +69,8 @@ export async function GET(req: NextRequest) {
     // Filter by country if specified
     let filteredApplications = applications;
     if (countryIds.length > 0) {
-      filteredApplications = applications.filter((app) => {
-        const countryId = app.visa?.countryId;
+      filteredApplications = applications.filter((app: any) => {
+        const countryId = app.Visa?.countryId;
         return countryId && countryIds.includes(countryId);
       });
     }
@@ -101,8 +101,8 @@ export async function GET(req: NextRequest) {
       }
 
       // Time from payment to final decision
-      if (app.payments.length > 0 && (app.status === "APPROVED" || app.status === "REJECTED")) {
-        const firstPayment = app.payments[0];
+      if (app.Payment.length > 0 && (app.status === "APPROVED" || app.status === "REJECTED")) {
+        const firstPayment = app.Payment[0];
         const timeToDecision = app.updatedAt.getTime() - firstPayment.createdAt.getTime();
         slaMetrics.timeToDecision.push(timeToDecision / (1000 * 60 * 60)); // Convert to hours
       }
@@ -117,8 +117,8 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      if (app.payments.length > 0 && app.status !== "APPROVED" && app.status !== "REJECTED") {
-        const firstPayment = app.payments[0];
+      if (app.Payment.length > 0 && app.status !== "APPROVED" && app.status !== "REJECTED") {
+        const firstPayment = app.Payment[0];
         if (firstPayment.createdAt < fortyEightHoursAgo) {
           slaMetrics.slaBreaches.notDecided48h++;
         }

@@ -92,7 +92,7 @@ export async function POST(req: Request) {
           const path = err.path.join(".");
           return `${path}: ${err.message}`;
         });
-        
+
         const errorMessage = `Validation failed: ${errorMessages.join(", ")}`;
         console.error("Booking validation error:", {
           errors: validationError.errors,
@@ -131,7 +131,7 @@ export async function POST(req: Request) {
     // Handle gracefully if SitePolicy table doesn't exist yet
     let refundPolicy = null;
     let termsPolicy = null;
-    
+
     try {
       [refundPolicy, termsPolicy] = await Promise.all([
         prisma.sitePolicy.findUnique({ where: { key: "refund_cancellation" } }),
@@ -166,7 +166,7 @@ export async function POST(req: Request) {
         OR: [{ id: data.tourId }, { slug: data.tourId }],
       },
       include: {
-        addOns: {
+        TourAddOn: {
           where: { isActive: true },
           orderBy: { sortOrder: "asc" },
         },
@@ -298,9 +298,9 @@ export async function POST(req: Request) {
       }
 
       // Check nationality for document requirements
-      const isIndian = (traveller.nationality || "").toLowerCase().trim() === "india" || 
-                       (traveller.nationality || "").toLowerCase().trim() === "indian";
-      
+      const isIndian = (traveller.nationality || "").toLowerCase().trim() === "india" ||
+        (traveller.nationality || "").toLowerCase().trim() === "indian";
+
       // Indian travellers: require PAN + Aadhaar (unless tour requires passport)
       if (isIndian) {
         if (requiresPassport) {
@@ -446,14 +446,14 @@ export async function POST(req: Request) {
       );
     }
 
-    const tourAddOns = tourRecord.addOns ?? [];
+    const tourAddOns = (tourRecord as any).TourAddOn ?? [];
     const requestedAddOns = new Map<string, number>();
     (data.selectedAddOns || []).forEach((selection) => {
       const current = requestedAddOns.get(selection.addOnId) ?? 0;
       requestedAddOns.set(selection.addOnId, current + (selection.quantity ?? 1));
     });
 
-    const addOnById = new Map(tourAddOns.map((addOn) => [addOn.id, addOn]));
+    const addOnById = new Map((tourAddOns as any[]).map((addOn: any) => [addOn.id, addOn]));
     const addOnErrors: string[] = [];
     const bookingAddOnPayload: Array<{
       addOnId: string;
@@ -503,8 +503,8 @@ export async function POST(req: Request) {
     });
 
     tourAddOns
-      .filter((addOn) => addOn.isRequired)
-      .forEach((addOn) => includeAddOn(addOn.id, 1, "required"));
+      .filter((addOn: any) => addOn.isRequired)
+      .forEach((addOn: any) => includeAddOn(addOn.id, 1, "required"));
 
     if (addOnErrors.length > 0) {
       return NextResponse.json(
@@ -525,7 +525,7 @@ export async function POST(req: Request) {
     // Determine booking status based on customised package
     const isCustomisedPackage = data.customisedPackage?.isCustomisedPackage || false;
     const initialStatus = isCustomisedPackage ? "REQUEST_RECEIVED" : "DRAFT";
-    
+
     // Calculate total amount for customised packages
     let finalTotalAmount = totalAmount;
     if (isCustomisedPackage && data.customisedPackage) {
@@ -554,6 +554,8 @@ export async function POST(req: Request) {
 
       const bookingRecord = await tx.booking.create({
         data: {
+          id: crypto.randomUUID(),
+          updatedAt: new Date(),
           userId,
           tourId: tourRecord.id,
           tourName: data.tourName || tourRecord.name,
@@ -573,17 +575,31 @@ export async function POST(req: Request) {
           policyVersion: data.policyVersion || null,
           policyAcceptedIp: ipAddress,
           policyAcceptedUserAgent: userAgent,
-          promoCodeId: data.promoCodeId || null,
-          discountAmount: data.discountAmount || 0,
-          // documents field is optional (Json?) and will be null by default
-          // If the column doesn't exist, the migration needs to be run
+          // PromoCodeUsage relation will be handled separately
         },
       });
+
+      // Handle promo code usage if provided
+      if (data.promoCodeId) {
+        await (tx as any).promoCodeUsage.create({
+          data: {
+            id: crypto.randomUUID(),
+            promoCodeId: data.promoCodeId,
+            userId,
+            bookingId: bookingRecord.id,
+            originalAmount: finalTotalAmount + (data.discountAmount || 0),
+            discountAmount: data.discountAmount || 0,
+            finalAmount: finalTotalAmount,
+            ipAddress,
+          },
+        });
+      }
 
       if (bookingAddOnPayload.length > 0) {
         for (const payload of bookingAddOnPayload) {
           await tx.bookingAddOn.create({
             data: {
+              id: crypto.randomUUID(),
               bookingId: bookingRecord.id,
               ...payload,
             },
@@ -630,6 +646,8 @@ export async function POST(req: Request) {
         } else {
           traveller = await tx.traveller.create({
             data: {
+              id: crypto.randomUUID(),
+              updatedAt: new Date(),
               userId,
               firstName: travellerData.firstName.trim(),
               lastName: travellerData.lastName.trim(),
@@ -663,6 +681,8 @@ export async function POST(req: Request) {
 
         await tx.bookingTraveller.create({
           data: {
+            id: crypto.randomUUID(),
+            updatedAt: new Date(),
             bookingId: bookingRecord.id,
             travellerId: traveller.id,
             firstName: travellerData.firstName.trim(),
@@ -796,7 +816,7 @@ export async function POST(req: Request) {
               return `${idx + 1}. ${t.firstName} ${t.lastName}${docs.length > 0 ? ` - Documents: ${docs.join(", ")}` : " - No documents uploaded yet"}`;
             }).join("<br>");
 
-            const travellersList = data.travellers.map((t, idx) => 
+            const travellersList = data.travellers.map((t, idx) =>
               `${idx + 1}. ${t.firstName} ${t.lastName} (Age: ${t.age || "N/A"}, Gender: ${t.gender || "N/A"}, Passport: ${t.passportNumber || "N/A"})`
             ).join("<br>");
 
@@ -845,7 +865,7 @@ export async function POST(req: Request) {
       bookingId: booking.id,
       totalAmount: finalTotalAmount,
       status: initialStatus,
-      message: isCustomisedPackage 
+      message: isCustomisedPackage
         ? "Custom package request submitted successfully. Our team will review and get back to you soon."
         : "Booking created successfully",
     });
@@ -856,7 +876,7 @@ export async function POST(req: Request) {
         const path = err.path.join(".");
         return `${path}: ${err.message}`;
       });
-      
+
       console.error("Booking validation error (catch block):", {
         errors: error.errors,
       });

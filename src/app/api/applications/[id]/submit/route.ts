@@ -14,7 +14,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -25,7 +25,7 @@ export async function POST(
     const application = await prisma.application.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             id: true,
             email: true,
@@ -33,12 +33,12 @@ export async function POST(
             role: true,
           },
         },
-        travellers: {
+        ApplicationTraveller: {
           include: {
-            traveller: true,
+            Traveller: true,
           },
         },
-        documents: true,
+        ApplicationDocument: true,
       },
     });
 
@@ -67,14 +67,19 @@ export async function POST(
 
     // Send email notifications
     try {
+      const app = application as any;
+      const user = app.User_Application_userIdToUser;
+      const travellers = app.ApplicationTraveller;
+      const documents = app.ApplicationDocument;
+
       // Send confirmation email to user
       await sendVisaStatusUpdateEmail(
-        application.user.email,
+        user.email,
         application.id,
         application.country || "",
         application.visaType || "",
         "SUBMITTED",
-        application.user.role || "CUSTOMER"
+        user.role || "CUSTOMER"
       );
 
       // Send notification to user
@@ -94,14 +99,14 @@ export async function POST(
 
       // Send email to admin with all application details
       const visaAdminEmail = getVisaAdminEmail();
-      const travellersList = application.travellers.map((at, idx) => 
-        `${idx + 1}. ${at.traveller.firstName} ${at.traveller.lastName} (DOB: ${at.traveller.dateOfBirth ? new Date(at.traveller.dateOfBirth).toLocaleDateString() : "N/A"}, Passport: ${at.traveller.passportNumber || "N/A"})`
+      const travellersList = travellers.map((at: any, idx: number) =>
+        `${idx + 1}. ${at.Traveller.firstName} ${at.Traveller.lastName} (DOB: ${at.Traveller.dateOfBirth ? new Date(at.Traveller.dateOfBirth).toLocaleDateString() : "N/A"}, Passport: ${at.Traveller.passportNumber || "N/A"})`
       ).join("<br>");
 
-      const documentsList = application.documents.length > 0
-        ? application.documents.map((doc, idx) => 
-            `${idx + 1}. ${doc.documentType || "Document"} - ${doc.status}${doc.travellerId ? ` (Traveller: ${application.travellers.find(at => at.travellerId === doc.travellerId)?.traveller.firstName || "N/A"})` : ""}`
-          ).join("<br>")
+      const documentsList = documents.length > 0
+        ? documents.map((doc: any, idx: number) =>
+          `${idx + 1}. ${doc.documentType || "Document"} - ${doc.status}${doc.travellerId ? ` (Traveller: ${travellers.find((at: any) => at.travellerId === doc.travellerId)?.Traveller.firstName || "N/A"})` : ""}`
+        ).join("<br>")
         : "No documents uploaded";
 
       try {
@@ -116,10 +121,10 @@ export async function POST(
                 <li><strong>Application ID:</strong> ${application.id}</li>
                 <li><strong>Country:</strong> ${application.country || "N/A"}</li>
                 <li><strong>Visa Type:</strong> ${application.visaType || "N/A"}</li>
-                <li><strong>Customer:</strong> ${application.user.name || "N/A"} (${application.user.email})</li>
+                <li><strong>Customer:</strong> ${user.name || "N/A"} (${user.email})</li>
                 <li><strong>Total Amount:</strong> ₹${application.totalAmount.toLocaleString()}</li>
-                <li><strong>Number of Travellers:</strong> ${application.travellers.length}</li>
-                <li><strong>Documents Uploaded:</strong> ${application.documents.length}</li>
+                <li><strong>Number of Travellers:</strong> ${travellers.length}</li>
+                <li><strong>Documents Uploaded:</strong> ${documents.length}</li>
               </ul>
               <h3>Travellers:</h3>
               <p>${travellersList}</p>

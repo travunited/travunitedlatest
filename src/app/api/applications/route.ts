@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -32,21 +32,21 @@ export async function GET(req: Request) {
         ],
       },
       include: {
-        documents: {
+        ApplicationDocument: {
           select: {
             id: true,
             documentType: true,
             status: true,
           },
         },
-        visaSubType: {
+        VisaSubType: {
           select: {
             id: true,
             label: true,
             code: true,
           },
         },
-        visa: {
+        Visa: {
           select: {
             id: true,
             name: true,
@@ -55,10 +55,9 @@ export async function GET(req: Request) {
             entryTypeLegacy: true,
           },
         },
-        promoCode: {
-          select: {
-            id: true,
-            code: true,
+        PromoCodeUsage: {
+          include: {
+            promoCode: true,
           },
         },
       },
@@ -67,7 +66,19 @@ export async function GET(req: Request) {
       },
     });
 
-    return NextResponse.json(applications);
+    const mappedApplications = applications.map((app: any) => ({
+      ...app,
+      documents: app.ApplicationDocument,
+      visaSubType: app.VisaSubType,
+      visa: app.Visa,
+      promoCode: app.PromoCodeUsage?.[0]?.promoCode,
+      ApplicationDocument: undefined,
+      VisaSubType: undefined,
+      Visa: undefined,
+      PromoCodeUsage: undefined,
+    }));
+
+    return NextResponse.json(mappedApplications);
   } catch (error) {
     console.error("Error fetching applications:", error);
     return NextResponse.json(

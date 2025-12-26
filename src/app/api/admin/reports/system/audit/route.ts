@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
     const auditLogs = await prisma.auditLog.findMany({
       where,
       include: {
-        admin: {
+        User: {
           select: {
             name: true,
             email: true,
@@ -74,9 +74,9 @@ export async function GET(req: NextRequest) {
     // Export handling
     if (format === "pdf") {
       const headers = ["Timestamp", "Actor", "Action", "Entity Type", "Entity ID", "Description"];
-      const rows = auditLogs.slice(0, 500).map((log) => [
+      const rows = auditLogs.slice(0, 500).map((log: any) => [
         log.timestamp.toISOString(),
-        log.admin?.name || log.admin?.email || "System",
+        log.User?.name || log.User?.email || "System",
         log.action,
         log.entityType,
         log.entityId || "N/A",
@@ -109,9 +109,9 @@ export async function GET(req: NextRequest) {
     }
 
     if (format === "xlsx" || format === "csv") {
-      const exportData = auditLogs.map((log) => ({
+      const exportData = auditLogs.map((log: any) => ({
         "Timestamp": log.timestamp.toISOString(),
-        "Actor": log.admin?.name || log.admin?.email || "System",
+        "Actor": log.User?.name || log.User?.email || "System",
         "Action": log.action,
         "Entity Type": log.entityType,
         "Entity ID": log.entityId || "N/A",
@@ -136,8 +136,8 @@ export async function GET(req: NextRequest) {
           ...exportData.map((row) =>
             Object.values(row).map((v) => {
               const str = String(v);
-              return str.includes(",") || str.includes('"') || str.includes("\n") 
-                ? `"${str.replace(/"/g, '""')}"` 
+              return str.includes(",") || str.includes('"') || str.includes("\n")
+                ? `"${str.replace(/"/g, '""')}"`
                 : str;
             }).join(",")
           ),
@@ -169,10 +169,10 @@ export async function GET(req: NextRequest) {
         totalLogs: auditLogs.length,
         actionCounts,
       },
-      rows: paginatedLogs.map((log) => ({
+      rows: paginatedLogs.map((log: any) => ({
         id: log.id,
         timestamp: log.timestamp,
-        actor: log.admin?.name || log.admin?.email || "System",
+        actor: log.User?.name || log.User?.email || "System",
         action: log.action,
         entityType: log.entityType,
         entityId: log.entityId,

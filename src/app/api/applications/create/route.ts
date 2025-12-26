@@ -15,10 +15,10 @@ const validatePhoneNumber = (phone: string): { valid: boolean; message?: string 
   if (!phone || phone.trim() === "") {
     return { valid: true }; // Phone is optional
   }
-  
+
   // Remove all non-digit characters for validation
   const digitsOnly = phone.replace(/\D/g, "");
-  
+
   // Check if it's a valid Indian mobile number (10 digits)
   if (digitsOnly.length === 10) {
     // Check if it starts with 6-9 (valid Indian mobile prefixes)
@@ -27,7 +27,7 @@ const validatePhoneNumber = (phone: string): { valid: boolean; message?: string 
     }
     return { valid: false, message: "Phone number must start with 6, 7, 8, or 9" };
   }
-  
+
   // Check if it's E.164 format (international)
   if (phone.startsWith("+")) {
     const e164Pattern = /^\+[1-9]\d{1,14}$/;
@@ -36,16 +36,16 @@ const validatePhoneNumber = (phone: string): { valid: boolean; message?: string 
     }
     return { valid: false, message: "Invalid international phone format. Use E.164 format (e.g., +911234567890)" };
   }
-  
+
   // If it has digits but wrong length
   if (digitsOnly.length > 0 && digitsOnly.length < 10) {
     return { valid: false, message: "Phone number must be 10 digits" };
   }
-  
+
   if (digitsOnly.length > 10 && !phone.startsWith("+")) {
     return { valid: false, message: "Phone number must be 10 digits or use international format (+country code)" };
   }
-  
+
   return { valid: false, message: "Invalid phone number format" };
 };
 
@@ -122,9 +122,9 @@ export async function POST(req: Request) {
 
     if (!user?.emailVerified) {
       return NextResponse.json(
-        { 
+        {
           error: "Email verification required",
-          message: "Please verify your email before submitting the application. You can continue filling the form, but verification is required for submission." 
+          message: "Please verify your email before submitting the application. You can continue filling the form, but verification is required for submission."
         },
         { status: 403 }
       );
@@ -228,7 +228,7 @@ export async function POST(req: Request) {
     if (data.visaId) {
       const visaRecord = await prisma.visa.findUnique({
         where: { id: data.visaId },
-        include: { country: true },
+        include: { Country: true },
       });
 
       if (!visaRecord) {
@@ -239,13 +239,15 @@ export async function POST(req: Request) {
         id: visaRecord.id,
         slug: visaRecord.slug,
         name: visaRecord.name,
-        countryCode: visaRecord.country.code,
+        countryCode: visaRecord.Country.code,
       };
     }
 
     // Create application with PAYMENT_PENDING status (documents will be uploaded after payment)
     const application = await prisma.application.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         userId,
         visaId: linkedVisa?.id ?? null,
         visaTypeId: linkedVisa?.slug ?? `${data.country}-${data.visaType}`,
@@ -255,10 +257,23 @@ export async function POST(req: Request) {
         status: "PAYMENT_PENDING", // Changed from DRAFT - payment comes before documents
         totalAmount: data.totalAmount ?? 0,
         currency: "INR",
-        promoCodeId: data.promoCodeId || null,
-        discountAmount: data.discountAmount || 0,
       },
     });
+
+    // Handle promo code usage if provided
+    if (data.promoCodeId) {
+      await prisma.promoCodeUsage.create({
+        data: {
+          id: crypto.randomUUID(),
+          promoCodeId: data.promoCodeId,
+          userId,
+          applicationId: application.id,
+          originalAmount: (data.totalAmount ?? 0) + (data.discountAmount ?? 0),
+          discountAmount: data.discountAmount ?? 0,
+          finalAmount: data.totalAmount ?? 0,
+        },
+      });
+    }
 
     // Create travellers
     const travellerMappings: { inputIndex: number; travellerId: string }[] = [];
@@ -276,6 +291,8 @@ export async function POST(req: Request) {
       if (!traveller) {
         traveller = await prisma.traveller.create({
           data: {
+            id: crypto.randomUUID(),
+            updatedAt: new Date(),
             userId,
             firstName: travellerData.firstName,
             lastName: travellerData.lastName,
@@ -289,6 +306,7 @@ export async function POST(req: Request) {
       // Link traveller to application
       await prisma.applicationTraveller.create({
         data: {
+          id: crypto.randomUUID(),
           applicationId: application.id,
           travellerId: traveller.id,
         },
@@ -334,7 +352,7 @@ export async function POST(req: Request) {
 
         // Send email to admin with application details
         const visaAdminEmail = getVisaAdminEmail();
-        const travellersList = data.travellers.map((t, idx) => 
+        const travellersList = data.travellers.map((t, idx) =>
           `${idx + 1}. ${t.firstName} ${t.lastName} (DOB: ${t.dateOfBirth}, Passport: ${t.passportNumber || "N/A"})`
         ).join("<br>");
 
@@ -407,16 +425,16 @@ export async function POST(req: Request) {
     }
 
     console.error("Error creating application:", error);
-    
+
     // Handle Prisma errors
     if (error && typeof error === 'object' && 'code' in error) {
       const prismaError = error as { code?: string; meta?: any; message?: string };
-      
+
       // Handle missing table/column errors
       if (prismaError.code === "P2021" || prismaError.code === "P2019") {
         console.error("Database schema error:", prismaError);
         return NextResponse.json(
-          { 
+          {
             error: "Database schema error",
             message: prismaError.message || "A required database table or column is missing. Please run migrations.",
             code: prismaError.code
@@ -424,11 +442,11 @@ export async function POST(req: Request) {
           { status: 500 }
         );
       }
-      
+
       // Handle foreign key constraint errors
       if (prismaError.code === "P2003") {
         return NextResponse.json(
-          { 
+          {
             error: "Invalid reference",
             message: prismaError.message || "The selected visa or related entity does not exist."
           },
@@ -436,13 +454,13 @@ export async function POST(req: Request) {
         );
       }
     }
-    
+
     // Generic error response with more details in development
     return NextResponse.json(
-      { 
+      {
         error: "Internal server error",
-        message: process.env.NODE_ENV === 'development' && error instanceof Error 
-          ? error.message 
+        message: process.env.NODE_ENV === 'development' && error instanceof Error
+          ? error.message
           : "An unexpected error occurred while creating the application. Please try again.",
         ...(process.env.NODE_ENV === 'development' && { stack: error instanceof Error ? error.stack : undefined })
       },

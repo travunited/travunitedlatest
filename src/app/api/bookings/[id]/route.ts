@@ -12,7 +12,7 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -23,21 +23,21 @@ export async function GET(
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       include: {
-        travellers: {
+        BookingTraveller: {
           include: {
-            traveller: true,
+            Traveller: true,
           },
         },
-        user: {
+        User_Booking_userIdToUser: {
           select: {
             name: true,
             email: true,
           },
         },
-        promoCode: {
+        PromoCodeUsage: {
           select: {
             id: true,
-            code: true,
+            promoCodeId: true,
           },
         },
       },
@@ -50,7 +50,12 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(booking);
+    return NextResponse.json({
+      ...booking,
+      travellers: (booking as any).BookingTraveller,
+      user: (booking as any).User_Booking_userIdToUser,
+      promoCode: (booking as any).PromoCodeUsage?.[0], // Map single usage back if exists
+    });
   } catch (error) {
     console.error("Error fetching booking:", error);
     return NextResponse.json(

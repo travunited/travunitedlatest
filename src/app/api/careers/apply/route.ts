@@ -79,13 +79,15 @@ export async function POST(req: Request) {
     // Upload resume to MinIO
     const arrayBuffer = await resumeFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    
+
     await uploadVisaDocument(fileName, buffer, resumeFile.type);
     console.log("[Career Apply] Resume uploaded to MinIO successfully:", fileName);
 
     // Create database record
     const application = await prisma.careerApplication.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         name,
         email,
         phone,
@@ -109,7 +111,7 @@ export async function POST(req: Request) {
     // Send email notification to admin
     const adminEmail = getSupportAdminEmail();
     const resumeDownloadUrl = `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/files?key=${encodeURIComponent(fileName)}`;
-    
+
     const emailSubject = `New Career Application – ${positionTitle} – ${name}`;
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

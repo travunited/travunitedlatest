@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -51,8 +51,8 @@ export async function GET(req: Request) {
           updatedAt: true,
           _count: {
             select: {
-              processedApplications: true,
-              processedBookings: true,
+              Application_Application_processedByIdToUser: true,
+              Booking_Booking_processedByIdToUser: true,
             },
           },
         },
@@ -70,8 +70,8 @@ export async function GET(req: Request) {
         createdAt: admin.createdAt,
         lastLogin: admin.updatedAt, // Proxy for last login
         stats: {
-          applicationsHandled: admin._count.processedApplications,
-          bookingsHandled: admin._count.processedBookings,
+          applicationsHandled: (admin._count as any).Application_Application_processedByIdToUser,
+          bookingsHandled: (admin._count as any).Booking_Booking_processedByIdToUser,
           lastActive: admin.updatedAt,
         },
       }));
@@ -113,7 +113,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -164,6 +164,8 @@ export async function POST(req: Request) {
     // Create admin user
     const admin = await prisma.user.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         name,
         email,
         passwordHash,

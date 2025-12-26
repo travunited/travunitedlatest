@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -55,31 +55,31 @@ export async function GET(req: NextRequest) {
     const applications = await prisma.application.findMany({
       where,
       include: {
-        user: {
+        User_Application_userIdToUser: {
           select: {
             name: true,
             email: true,
           },
         },
-        travellers: {
+        ApplicationTraveller: {
           include: {
-            traveller: true,
+            Traveller: true,
           },
         },
-        payments: {
+        Payment: {
           where: {
             status: "COMPLETED",
           },
         },
-        processedBy: {
+        User_Application_processedByIdToUser: {
           select: {
             name: true,
             email: true,
           },
         },
-        visa: {
+        Visa: {
           include: {
-            country: true,
+            Country: true,
           },
         },
       },
@@ -91,8 +91,8 @@ export async function GET(req: NextRequest) {
     // Filter by country if specified
     let filteredApplications = applications;
     if (countryIds.length > 0) {
-      filteredApplications = applications.filter((app) => {
-        const countryId = app.visa?.countryId || app.visa?.country?.id;
+      filteredApplications = applications.filter((app: any) => {
+        const countryId = app.Visa?.countryId || app.Visa?.Country?.id;
         return countryId && countryIds.includes(countryId);
       });
     }
@@ -102,11 +102,11 @@ export async function GET(req: NextRequest) {
     let paidCount = 0;
     let totalRevenue = 0;
 
-    filteredApplications.forEach((app) => {
+    filteredApplications.forEach((app: any) => {
       statusCounts[app.status] = (statusCounts[app.status] || 0) + 1;
-      if (app.payments.length > 0) {
+      if (app.Payment.length > 0) {
         paidCount++;
-        totalRevenue += app.payments.reduce((sum, p) => sum + p.amount, 0);
+        totalRevenue += app.Payment.reduce((sum: number, p: any) => sum + p.amount, 0);
       }
     });
 
@@ -117,19 +117,19 @@ export async function GET(req: NextRequest) {
     // Export handling
     if (format === "pdf") {
       const headers = ["Reference", "Date", "Country", "Visa Type", "Travellers", "Status", "Assigned To", "Amount (INR)"];
-      const rows = filteredApplications.slice(0, 200).map((app) => {
+      const rows = filteredApplications.slice(0, 200).map((app: any) => {
         const year = new Date(app.createdAt).getFullYear();
         const refSuffix = app.id.slice(-5).toUpperCase();
         const referenceNumber = `TRV-${year}-${refSuffix}`;
-        
+
         return [
           referenceNumber,
           app.createdAt.toISOString().split("T")[0],
-          app.visa?.country?.name || app.country || "N/A",
+          app.Visa?.Country?.name || app.country || "N/A",
           app.visaType || "N/A",
-          app.travellers.length,
+          app.ApplicationTraveller.length,
           app.status,
-          app.processedBy?.name || app.processedBy?.email || "Unassigned",
+          app.User_Application_processedByIdToUser?.name || app.User_Application_processedByIdToUser?.email || "Unassigned",
           app.totalAmount,
         ];
       });
@@ -162,25 +162,25 @@ export async function GET(req: NextRequest) {
     }
 
     if (format === "xlsx" || format === "csv") {
-      const exportData = filteredApplications.map((app) => {
+      const exportData = filteredApplications.map((app: any) => {
         const year = new Date(app.createdAt).getFullYear();
         const refSuffix = app.id.slice(-5).toUpperCase();
         const referenceNumber = `TRV-${year}-${refSuffix}`;
-        
+
         return {
           "Application ID": app.id,
           "Reference Number": referenceNumber,
           "Created Date": app.createdAt.toISOString().split("T")[0],
-          "Country": app.visa?.country?.name || app.country || "N/A",
+          "Country": app.Visa?.Country?.name || app.country || "N/A",
           "Visa Type": app.visaType || "N/A",
-          "Number of Travellers": app.travellers.length,
+          "Number of Travellers": app.ApplicationTraveller.length,
           "Status": app.status,
-          "Assigned Admin": app.processedBy?.name || app.processedBy?.email || "Unassigned",
-          "Payment Status": app.payments.length > 0 ? "Paid" : "Unpaid",
+          "Assigned Admin": app.User_Application_processedByIdToUser?.name || app.User_Application_processedByIdToUser?.email || "Unassigned",
+          "Payment Status": app.Payment.length > 0 ? "Paid" : "Unpaid",
           "Total Amount (INR)": app.totalAmount,
-          "Amount Paid (INR)": app.payments.reduce((sum, p) => sum + p.amount, 0),
-          "Customer Name": app.user.name || "N/A",
-          "Customer Email": app.user.email,
+          "Amount Paid (INR)": app.Payment.reduce((sum: number, p: any) => sum + p.amount, 0),
+          "Customer Name": app.User_Application_userIdToUser.name || "N/A",
+          "Customer Email": app.User_Application_userIdToUser.email,
         };
       });
 
@@ -234,28 +234,28 @@ export async function GET(req: NextRequest) {
         daily: [], // Can be added for daily breakdown
         statusBreakdown: Object.entries(statusCounts).map(([status, count]) => ({ status, count })),
       },
-      rows: paginatedApplications.map((app) => {
+      rows: paginatedApplications.map((app: any) => {
         const year = new Date(app.createdAt).getFullYear();
         const refSuffix = app.id.slice(-5).toUpperCase();
         const referenceNumber = `TRV-${year}-${refSuffix}`;
-        
+
         return {
           id: app.id,
           referenceNumber,
           createdAt: app.createdAt,
-          country: app.visa?.country?.name || app.country,
+          country: app.Visa?.Country?.name || app.country,
           visaType: app.visaType,
-          travellerCount: app.travellers.length,
+          travellerCount: app.ApplicationTraveller.length,
           status: app.status,
-          assignedAdmin: app.processedBy?.name || app.processedBy?.email,
-          paymentStatus: app.payments.length > 0 ? "Paid" : "Unpaid",
+          assignedAdmin: app.User_Application_processedByIdToUser?.name || app.User_Application_processedByIdToUser?.email,
+          paymentStatus: app.Payment.length > 0 ? "Paid" : "Unpaid",
           totalAmount: app.totalAmount,
-          amountPaid: app.payments.reduce((sum, p) => sum + p.amount, 0),
-          customerName: app.user.name,
-          customerEmail: app.user.email,
+          amountPaid: app.Payment.reduce((sum: number, p: any) => sum + p.amount, 0),
+          customerName: app.User_Application_userIdToUser.name,
+          customerEmail: app.User_Application_userIdToUser.email,
+          travelDate: app.travelDate,
         };
-      }),
-      pagination: {
+      }), pagination: {
         page,
         limit,
         total: filteredApplications.length,

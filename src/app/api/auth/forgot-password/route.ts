@@ -22,21 +22,21 @@ function respond(resetId?: string, emailSent?: boolean, error?: string) {
   } = {
     message: "If an account exists with this email, a reset link has been sent.",
   };
-  
+
   if (resetId) {
     responseData.resetId = resetId;
   }
-  
+
   // Always include emailSent as boolean when provided (not undefined)
   if (typeof emailSent === "boolean") {
     responseData.emailSent = emailSent;
   }
-  
+
   // Include error in non-production or if explicitly provided
   if (error && (process.env.NODE_ENV !== "production" || error)) {
     responseData.error = error;
   }
-  
+
   return NextResponse.json(responseData, { status: 200 });
 }
 
@@ -54,13 +54,13 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { email } = forgotPasswordSchema.parse(body);
     const normalizedEmail = email.trim().toLowerCase();
-    
+
     console.log("[Password Reset] 🔍 Looking up user", {
       providedEmail: email,
       normalizedEmail,
       timestamp: new Date().toISOString(),
     });
-    
+
     if (!normalizedEmail) {
       console.log("[Password Reset] ⚠️ Empty email after normalization");
       return respond(undefined, false); // Return emailSent: false
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       where: { email: { equals: normalizedEmail, mode: "insensitive" } },
       select: { id: true, email: true, role: true, isActive: true },
     });
-    
+
     console.log("[Password Reset] 👤 User lookup result", {
       found: !!user,
       userId: user?.id || null,
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
       normalizedEmail,
       timestamp: new Date().toISOString(),
     });
-    
+
     if (!user) {
       console.log("[Password Reset] ⚠️ User not found - returning silent success", {
         normalizedEmail,
@@ -98,6 +98,7 @@ export async function POST(req: Request) {
     const userAgent = req.headers.get("user-agent") || undefined;
     const reset = await prisma.passwordReset.create({
       data: {
+        id: crypto.randomUUID(),
         userId: user.id,
         tokenHash,
         expiresAt,
@@ -130,7 +131,7 @@ export async function POST(req: Request) {
 
     let emailSent = false;
     let emailError: string | undefined = undefined;
-    
+
     // Send email using the exact same pattern as contact form
     try {
       console.log("[Password Reset] 📧 Attempting to send magic link email", {
@@ -141,10 +142,10 @@ export async function POST(req: Request) {
         magicLinkPreview: magicLink.slice(0, 80) + "...",
         timestamp: new Date().toISOString(),
       });
-      
+
       // Call sendPasswordResetEmail (which calls sendEmail - same as contact form)
       emailSent = await sendPasswordResetEmail(user.email, magicLink, user.role);
-      
+
       if (emailSent) {
         console.log("[Password Reset] ✅ Magic link email sent successfully", {
           userId: user.id,
@@ -186,7 +187,7 @@ export async function POST(req: Request) {
       emailSent: emailSent, // Always include as boolean
       ...(emailError && process.env.NODE_ENV !== "production" ? { error: emailError } : {}),
     };
-    
+
     // Log the exact response being sent
     console.log("[Password Reset] 📤 Sending response to client", {
       resetId: reset.id,
@@ -196,7 +197,7 @@ export async function POST(req: Request) {
       responseData,
       timestamp: new Date().toISOString(),
     });
-    
+
     return NextResponse.json(responseData, { status: 200 });
   } catch (error) {
     if (error instanceof z.ZodError) {

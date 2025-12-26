@@ -27,7 +27,7 @@ function toRecord(value: Prisma.JsonValue | null | undefined): SettingRecord {
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -125,7 +125,7 @@ export async function GET(req: Request) {
 export async function PUT(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -207,6 +207,7 @@ export async function PUT(req: Request) {
           },
         },
         create: {
+          updatedAt: new Date(),
           key: GENERAL_KEY,
           value: {
             companyName,
@@ -252,6 +253,7 @@ export async function PUT(req: Request) {
           },
         },
         create: {
+          updatedAt: new Date(),
           key: EMAIL_SNIPPETS_KEY,
           value: {
             // General emails
@@ -292,6 +294,7 @@ export async function PUT(req: Request) {
           },
         },
         create: {
+          updatedAt: new Date(),
           key: ANALYTICS_KEY,
           value: {
             analyticsEnabled,
@@ -310,6 +313,7 @@ export async function PUT(req: Request) {
           },
         },
         create: {
+          updatedAt: new Date(),
           key: SYSTEM_FLAGS_KEY,
           value: {
             registrationsEnabled,
@@ -331,6 +335,7 @@ export async function PUT(req: Request) {
           },
         },
         create: {
+          updatedAt: new Date(),
           key: EMAIL_CONFIG_KEY,
           value: {
             awsAccessKeyId,

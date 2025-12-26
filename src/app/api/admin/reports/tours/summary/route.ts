@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -54,25 +54,25 @@ export async function GET(req: NextRequest) {
     const bookings = await prisma.booking.findMany({
       where,
       include: {
-        user: {
+        User_Booking_userIdToUser: {
           select: {
             name: true,
             email: true,
           },
         },
-        travellers: {
+        BookingTraveller: {
           include: {
-            traveller: true,
+            Traveller: true,
           },
         },
-        payments: {
+        Payment: {
           where: {
             status: "COMPLETED",
           },
         },
-        tour: {
+        Tour: {
           include: {
-            country: true,
+            Country: true,
           },
         },
       },
@@ -87,12 +87,12 @@ export async function GET(req: NextRequest) {
     let totalRevenue = 0;
     let totalTravellers = 0;
 
-    bookings.forEach((booking) => {
+    bookings.forEach((booking: any) => {
       statusCounts[booking.status] = (statusCounts[booking.status] || 0) + 1;
-      totalTravellers += booking.travellers.length;
-      if (booking.payments.length > 0) {
+      totalTravellers += booking.BookingTraveller.length;
+      if (booking.Payment.length > 0) {
         paidCount++;
-        totalRevenue += booking.payments.reduce((sum, p) => sum + p.amount, 0);
+        totalRevenue += booking.Payment.reduce((sum: number, p: any) => sum + p.amount, 0);
       }
     });
 
@@ -102,17 +102,17 @@ export async function GET(req: NextRequest) {
     // Export handling
     if (format === "pdf") {
       const headers = ["Reference", "Date", "Tour Name", "Country", "Travellers", "Status", "Amount (INR)"];
-      const rows = bookings.slice(0, 200).map((booking) => {
+      const rows = bookings.slice(0, 200).map((booking: any) => {
         const year = new Date(booking.createdAt).getFullYear();
         const refSuffix = booking.id.slice(-5).toUpperCase();
         const referenceNumber = `TRB-${year}-${refSuffix}`;
-        
+
         return [
           referenceNumber,
           booking.createdAt.toISOString().split("T")[0],
-          booking.tourName || booking.tour?.name || "N/A",
-          booking.tour?.country?.name || "N/A",
-          booking.travellers.length,
+          booking.tourName || booking.Tour?.name || "N/A",
+          booking.Tour?.Country?.name || "N/A",
+          booking.BookingTraveller.length,
           booking.status,
           booking.totalAmount,
         ];
@@ -145,24 +145,24 @@ export async function GET(req: NextRequest) {
     }
 
     if (format === "xlsx" || format === "csv") {
-      const exportData = bookings.map((booking) => {
+      const exportData = bookings.map((booking: any) => {
         const year = new Date(booking.createdAt).getFullYear();
         const refSuffix = booking.id.slice(-5).toUpperCase();
         const referenceNumber = `TRB-${year}-${refSuffix}`;
-        
+
         return {
           "Booking ID": booking.id,
           "Reference Number": referenceNumber,
           "Date": booking.createdAt.toISOString().split("T")[0],
-          "Tour Name": booking.tourName || booking.tour?.name || "N/A",
-          "Country": booking.tour?.country?.name || "N/A",
-          "Number of Travellers": booking.travellers.length,
+          "Tour Name": booking.tourName || booking.Tour?.name || "N/A",
+          "Country": booking.Tour?.Country?.name || "N/A",
+          "Number of Travellers": booking.BookingTraveller.length,
           "Status": booking.status,
-          "Payment Status": booking.payments.length > 0 ? "Paid" : "Unpaid",
+          "Payment Status": booking.Payment.length > 0 ? "Paid" : "Unpaid",
           "Total Amount (INR)": booking.totalAmount,
-          "Amount Paid (INR)": booking.payments.reduce((sum, p) => sum + p.amount, 0),
-          "Customer Name": booking.user.name || "N/A",
-          "Customer Email": booking.user.email,
+          "Amount Paid (INR)": booking.Payment.reduce((sum: number, p: any) => sum + p.amount, 0),
+          "Customer Name": booking.User_Booking_userIdToUser.name || "N/A",
+          "Customer Email": booking.User_Booking_userIdToUser.email,
           "Travel Date": booking.travelDate ? new Date(booking.travelDate).toISOString().split("T")[0] : "N/A",
         };
       });
@@ -213,24 +213,24 @@ export async function GET(req: NextRequest) {
         avgBookingValue,
         avgGroupSize,
       },
-      rows: paginatedBookings.map((booking) => {
+      rows: paginatedBookings.map((booking: any) => {
         const year = new Date(booking.createdAt).getFullYear();
         const refSuffix = booking.id.slice(-5).toUpperCase();
         const referenceNumber = `TRB-${year}-${refSuffix}`;
-        
+
         return {
           id: booking.id,
           referenceNumber,
           createdAt: booking.createdAt,
-          tourName: booking.tourName || booking.tour?.name,
-          country: booking.tour?.country?.name,
-          travellerCount: booking.travellers.length,
+          tourName: booking.tourName || booking.Tour?.name,
+          country: booking.Tour?.Country?.name,
+          travellerCount: booking.BookingTraveller.length,
           status: booking.status,
-          paymentStatus: booking.payments.length > 0 ? "Paid" : "Unpaid",
+          paymentStatus: booking.Payment.length > 0 ? "Paid" : "Unpaid",
           totalAmount: booking.totalAmount,
-          amountPaid: booking.payments.reduce((sum, p) => sum + p.amount, 0),
-          customerName: booking.user.name,
-          customerEmail: booking.user.email,
+          amountPaid: booking.Payment.reduce((sum: number, p: any) => sum + p.amount, 0),
+          customerName: booking.User_Booking_userIdToUser.name,
+          customerEmail: booking.User_Booking_userIdToUser.email,
           travelDate: booking.travelDate,
         };
       }),

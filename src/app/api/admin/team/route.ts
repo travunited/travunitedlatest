@@ -77,11 +77,11 @@ export async function GET(req: Request) {
     const [items, total] = await Promise.all([
       prisma.teamMember.findMany({
         where,
-        orderBy: sort === "sortOrder:asc" 
+        orderBy: sort === "sortOrder:asc"
           ? { sortOrder: "asc" }
           : sort === "sortOrder:desc"
-          ? { sortOrder: "desc" }
-          : { createdAt: "desc" },
+            ? { sortOrder: "desc" }
+            : { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
       }),
@@ -161,6 +161,8 @@ export async function POST(req: Request) {
 
     const teamMember = await prisma.teamMember.create({
       data: {
+        id: crypto.randomUUID(),
+        updatedAt: new Date(),
         name,
         title: title || null,
         slug: finalSlug,
@@ -182,7 +184,7 @@ export async function POST(req: Request) {
 
     await logAuditEvent({
       adminId: session.user.id,
-      entityType: AuditEntityType.TEAM,
+      entityType: AuditEntityType.OTHER,
       entityId: teamMember.id,
       action: AuditAction.CREATE,
       description: `Created team member: ${name}`,
