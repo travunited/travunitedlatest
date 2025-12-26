@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { ensureRazorpayClient } from "@/lib/razorpay-server";
 import { logAuditEvent } from "@/lib/audit";
 import { handlePaymentSuccess } from "@/lib/payment-helpers";
+import { analyzePrismaError, logPrismaError } from "@/lib/prisma-error-handler";
 export const dynamic = "force-dynamic";
 
 
@@ -84,25 +85,33 @@ export async function POST(req: Request) {
       }
 
       // Create free payment record
+      const paymentData: any = {
+        id: crypto.randomUUID(),
+        userId: session.user.id,
+        applicationId: applicationId || null,
+        bookingId: bookingId || null,
+        amount: 0,
+        currency: "INR",
+        status: "COMPLETED",
+        provider: "NONE",
+        method: "FREE",
+        updatedAt: new Date(),
+        metadata: {
+          note: "Free booking/application - no payment required",
+          paymentType: paymentType || null,
+        },
+      };
+
+      // Only include promo code fields if they exist (check schema first)
+      if (promoCodeId) {
+        paymentData.promoCodeId = promoCodeId;
+      }
+      if (discountAmount !== undefined) {
+        paymentData.discountAmount = discountAmount || 0;
+      }
+
       const payment = await prisma.payment.create({
-        data: {
-          id: crypto.randomUUID(),
-          userId: session.user.id,
-          applicationId: applicationId || null,
-          bookingId: bookingId || null,
-          amount: 0,
-          currency: "INR",
-          status: "COMPLETED",
-          provider: "NONE",
-          method: "FREE",
-          updatedAt: new Date(),
-          promoCodeId: promoCodeId || null,
-          discountAmount: discountAmount || 0,
-          metadata: {
-            note: "Free booking/application - no payment required",
-            paymentType: paymentType || null,
-          },
-        } as any, // Type assertion needed until Prisma client is regenerated
+        data: paymentData,
       });
 
       // Record promo code usage for free payments if promo code was applied
@@ -242,20 +251,29 @@ export async function POST(req: Request) {
       }
     }
 
+    // Build payment data object (only include fields that exist in schema)
+    const paymentData: any = {
+      id: crypto.randomUUID(),
+      userId: session.user.id,
+      applicationId: applicationId || null,
+      bookingId: bookingId || null,
+      amount,
+      currency: "INR",
+      status: "PENDING",
+      provider: "RAZORPAY",
+      updatedAt: new Date(),
+    };
+
+    // Only include promo code fields if they exist (check schema first)
+    if (promoCodeId) {
+      paymentData.promoCodeId = promoCodeId;
+    }
+    if (discountAmount !== undefined) {
+      paymentData.discountAmount = discountAmount || 0;
+    }
+
     const payment = await prisma.payment.create({
-      data: {
-        id: crypto.randomUUID(),
-        userId: session.user.id,
-        applicationId: applicationId || null,
-        bookingId: bookingId || null,
-        amount,
-        currency: "INR",
-        status: "PENDING",
-        provider: "RAZORPAY",
-        updatedAt: new Date(),
-        promoCodeId: promoCodeId || null,
-        discountAmount: discountAmount || 0,
-      } as any,
+      data: paymentData,
     });
 
     if (applicationId) {
@@ -327,9 +345,71 @@ export async function POST(req: Request) {
       );
     }
 
-    console.error("Error creating payment order:", error);
+    // Handle Prisma database errors
+    const errorInfo = analyzePrismaError(error);
+    if (errorInfo.isPrismaError) {
+      logPrismaError("Payment create-order", error);
+
+      // Handle specific error codes with appropriate status codes
+      if (errorInfo.code === 'P2002') {
+        return NextResponse.json(
+          { error: "Duplicate payment record. Please try again." },
+          { status: 409 }
+        );
+      }
+
+      if (errorInfo.code === 'P2003') {
+        return NextResponse.json(
+          { error: "Referenced record not found. Please check your application or booking." },
+          { status: 404 }
+        );
+      }
+
+      // Handle schema mismatch (migration not applied)
+      if (errorInfo.isSchemaMismatch || errorInfo.message?.includes('promoCodeId') || errorInfo.message?.includes('discountAmount')) {
+        console.error("Schema mismatch detected. Migration may not be applied.");
+        return NextResponse.json(
+          { 
+            error: errorInfo.userFriendlyMessage,
+            code: "SCHEMA_MISMATCH"
+          },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(
+        { error: errorInfo.userFriendlyMessage },
+        { status: 500 }
+      );
+    }
+
+    // Handle Razorpay errors
+    if (prismaError?.error?.description || prismaError?.error?.reason) {
+      console.error("Razorpay error in payment create-order:", prismaError.error);
+      return NextResponse.json(
+        { 
+          error: prismaError.error.description || prismaError.error.reason || "Payment gateway error" 
+        },
+        { status: 500 }
+      );
+    }
+
+    // Generic error handling
+    const errorMessage = error instanceof Error ? error.message : "Internal server error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    
+    console.error("Error creating payment order:", {
+      message: errorMessage,
+      stack: errorStack,
+      error: error,
+    });
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { 
+        error: process.env.NODE_ENV === "development" 
+          ? errorMessage 
+          : "An error occurred while processing your payment. Please try again or contact support." 
+      },
       { status: 500 }
     );
   }
