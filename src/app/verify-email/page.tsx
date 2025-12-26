@@ -17,9 +17,9 @@ function VerifyEmailContent() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
-  
-  const email = searchParams.get("email") || session?.user?.email || "";
-  const redirectUrl = searchParams.get("redirect") || "/dashboard";
+
+  const email = searchParams?.get("email") || session?.user?.email || "";
+  const redirectUrl = searchParams?.get("redirect") || "/dashboard";
 
   useEffect(() => {
     // Check if email is already verified
@@ -70,7 +70,7 @@ function VerifyEmailContent() {
         setOtpError(data.error || "OTP verification failed");
       } else {
         setEmailVerified(true);
-        
+
         // Merge guest application if exists
         try {
           const mergeResponse = await fetch("/api/guest-applications/merge", {
@@ -85,7 +85,7 @@ function VerifyEmailContent() {
         } catch (error) {
           console.error("Error merging guest application:", error);
         }
-        
+
         // Try to auto-login if user is not already logged in and we have email
         // Note: We need password to login, so we'll redirect to login page if not authenticated
         if (sessionStatus !== "authenticated" && email) {
@@ -187,7 +187,7 @@ function VerifyEmailContent() {
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-blue-800">
-              <strong>You can continue filling your application</strong> while we verify your email. 
+              <strong>You can continue filling your application</strong> while we verify your email.
               Once verified, you'll be able to submit your application.
             </p>
           </div>

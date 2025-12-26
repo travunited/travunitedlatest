@@ -13,7 +13,7 @@ export const fetchCache = "force-no-store";
 function BookingThankYouContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const bookingId = searchParams.get("bookingId");
+  const bookingId = searchParams?.get("bookingId");
   const [booking, setBooking] = useState<any>(null);
 
   useEffect(() => {
@@ -32,15 +32,15 @@ function BookingThankYouContent() {
         }
       };
       fetchBooking();
-      
+
       // Poll for payment status update (in case webhook is delayed)
       const interval = setInterval(() => {
         fetchBooking();
       }, 3000); // Check every 3 seconds
-      
+
       // Stop polling after 30 seconds
       setTimeout(() => clearInterval(interval), 30000);
-      
+
       return () => clearInterval(interval);
     }
   }, [bookingId]);
@@ -62,23 +62,23 @@ function BookingThankYouContent() {
             <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
               <CheckCircle size={40} className="text-green-600" />
             </div>
-            
+
             <h1 className="text-3xl font-bold text-neutral-900 mb-4">
-              {booking?.status === "BOOKED" 
-                ? "Booking Confirmed!" 
+              {booking?.status === "BOOKED"
+                ? "Booking Confirmed!"
                 : booking?.status === "PAYMENT_PENDING"
-                ? "Payment Processing..."
-                : "Booking Received!"}
+                  ? "Payment Processing..."
+                  : "Booking Received!"}
             </h1>
-            
+
             <p className="text-lg text-neutral-600">
-              {booking?.status === "BOOKED" 
+              {booking?.status === "BOOKED"
                 ? "Thank you for your booking. Your tour has been confirmed and payment received."
                 : booking?.status === "PAYMENT_PENDING"
-                ? "Your payment is being processed. You'll receive a confirmation email shortly."
-                : "Thank you for your booking. We're processing your request."}
+                  ? "Your payment is being processed. You'll receive a confirmation email shortly."
+                  : "Thank you for your booking. We're processing your request."}
             </p>
-            
+
             {booking?.status === "PAYMENT_PENDING" && (
               <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <p className="text-sm text-yellow-800">

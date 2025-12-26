@@ -9,7 +9,7 @@ import { Mail, Lock, ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
 
 function LoginPageContent() {
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState(searchParams.get("email") || "");
+  const [email, setEmail] = useState(searchParams?.get("email") || "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -18,7 +18,7 @@ function LoginPageContent() {
 
   // Show success message if email was just verified
   useEffect(() => {
-    if (searchParams.get("verified") === "true") {
+    if (searchParams?.get("verified") === "true") {
       setSuccess("Email verified successfully! Please login with your password.");
       // Clear the verified param from URL
       router.replace("/login", { scroll: false });
@@ -27,7 +27,7 @@ function LoginPageContent() {
 
   // Show message if password was just changed
   useEffect(() => {
-    if (searchParams.get("passwordChanged") === "true") {
+    if (searchParams?.get("passwordChanged") === "true") {
       setSuccess("Your password has been changed successfully. Please log in with your new password.");
       // Clear the passwordChanged param from URL
       router.replace("/login", { scroll: false });
@@ -111,7 +111,7 @@ function LoginPageContent() {
                 <p className="text-sm">{success}</p>
               </div>
             )}
-            
+
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-2 text-red-700">
                 <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
@@ -119,7 +119,7 @@ function LoginPageContent() {
                   <span className="text-sm block">{error}</span>
                   {error.includes("verify your email") && email && (
                     <div className="mt-2 space-y-2">
-                      <Link 
+                      <Link
                         href={`/verify-email?email=${encodeURIComponent(email)}&redirect=/dashboard`}
                         className="text-sm text-primary-600 hover:text-primary-700 underline block"
                       >

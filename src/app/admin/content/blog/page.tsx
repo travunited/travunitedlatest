@@ -47,9 +47,9 @@ const SearchInput = memo(({ value, onChange, placeholder }: {
   );
 }, (prevProps, nextProps) => {
   // Custom comparison: only re-render if value or onChange reference changes
-  return prevProps.value === nextProps.value && 
-         prevProps.placeholder === nextProps.placeholder &&
-         prevProps.onChange === nextProps.onChange;
+  return prevProps.value === nextProps.value &&
+    prevProps.placeholder === nextProps.placeholder &&
+    prevProps.onChange === nextProps.onChange;
 });
 SearchInput.displayName = "SearchInput";
 
@@ -74,7 +74,7 @@ export default function AdminBlogPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,12 +84,12 @@ export default function AdminBlogPage() {
   const [publishingReady, setPublishingReady] = useState(false);
 
   // Filters
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
+  const [searchQuery, setSearchQuery] = useState(searchParams?.get("search") || "");
   const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft">(
-    (searchParams.get("status") as "all" | "published" | "draft") || "all"
+    (searchParams?.get("status") as "all" | "published" | "draft") || "all"
   );
   const [dateFilter, setDateFilter] = useState<"all" | "7days" | "30days" | "year">(
-    (searchParams.get("date") as "all" | "7days" | "30days" | "year") || "all"
+    (searchParams?.get("date") as "all" | "7days" | "30days" | "year") || "all"
   );
   const [showFilters, setShowFilters] = useState(false);
 
@@ -400,7 +400,7 @@ export default function AdminBlogPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-          <h1 className="text-3xl font-bold text-neutral-900">Blog Content Management</h1>
+            <h1 className="text-3xl font-bold text-neutral-900">Blog Content Management</h1>
             <p className="text-sm text-neutral-600 mt-1">
               {filteredPosts.length} post{filteredPosts.length !== 1 ? "s" : ""} found
             </p>
@@ -562,7 +562,7 @@ export default function AdminBlogPage() {
                 <tbody className="divide-y divide-neutral-200">
                   {paginatedPosts.map((post) => (
                     <motion.tr
-                key={post.id}
+                      key={post.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       className="hover:bg-neutral-50"
@@ -587,11 +587,10 @@ export default function AdminBlogPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            post.published
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${post.published
                               ? "bg-green-100 text-green-700"
                               : "bg-neutral-100 text-neutral-700"
-                          }`}
+                            }`}
                         >
                           {post.published ? "Published" : "Draft"}
                         </span>
@@ -599,11 +598,10 @@ export default function AdminBlogPage() {
                       <td className="px-4 py-3">
                         <button
                           onClick={() => handleToggleFeatured(post)}
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
-                            post.isFeatured
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${post.isFeatured
                               ? "text-amber-600 bg-amber-50 hover:bg-amber-100"
                               : "text-neutral-500 bg-neutral-100 hover:bg-neutral-200"
-                          }`}
+                            }`}
                           title={post.isFeatured ? "Remove from homepage" : "Show on homepage"}
                         >
                           <Star size={12} className={post.isFeatured ? "fill-amber-500 text-amber-500" : ""} />
@@ -612,9 +610,9 @@ export default function AdminBlogPage() {
                       </td>
                       <td className="px-4 py-3">
                         {post.category ? (
-                        <span className="px-2 py-1 bg-neutral-100 text-neutral-700 rounded-full text-xs">
-                          {post.category}
-                        </span>
+                          <span className="px-2 py-1 bg-neutral-100 text-neutral-700 rounded-full text-xs">
+                            {post.category}
+                          </span>
                         ) : (
                           <span className="text-neutral-400 text-xs">—</span>
                         )}
@@ -635,8 +633,8 @@ export default function AdminBlogPage() {
                           >
                             <Eye size={16} />
                           </Link>
-                  <Link
-                    href={`/admin/content/blog/${post.id}`}
+                          <Link
+                            href={`/admin/content/blog/${post.id}`}
                             className="p-1.5 text-neutral-600 hover:text-primary-600 hover:bg-neutral-100 rounded"
                             title="Edit"
                           >
@@ -712,14 +710,14 @@ export default function AdminBlogPage() {
               ) : (
                 <>
                   <Edit size={48} className="mx-auto mb-4" />
-            <p className="text-neutral-600 mb-4">No blog posts found</p>
-            <Link
-              href="/admin/content/blog/new"
-              className="inline-flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-medium"
-            >
-              <Plus size={20} />
-              <span>Create Your First Post</span>
-            </Link>
+                  <p className="text-neutral-600 mb-4">No blog posts found</p>
+                  <Link
+                    href="/admin/content/blog/new"
+                    className="inline-flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-medium"
+                  >
+                    <Plus size={20} />
+                    <span>Create Your First Post</span>
+                  </Link>
                 </>
               )}
             </div>

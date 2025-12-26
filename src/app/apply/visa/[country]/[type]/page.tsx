@@ -214,7 +214,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   useEffect(() => {
     let isMounted = true;
     let redirecting = false;
-    
+
     async function loadVisa() {
       setVisaLoading(true);
       try {
@@ -226,7 +226,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         }
         const data: VisaDetailsResponse = await response.json();
         if (!isMounted) return;
-        
+
         // Block VOA and Visa-Free Entry visas from application flow
         if (data.visaMode === "VOA" || data.visaMode === "VISA_FREE_ENTRY") {
           redirecting = true;
@@ -234,7 +234,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           router.replace(`/visas/${params.country}/${params.type}`);
           return;
         }
-        
+
         setVisaInfo(data);
         setFormData((prev) => ({
           ...prev,
@@ -280,10 +280,10 @@ export default function VisaApplicationPage({ params }: { params: { country: str
 
   // Load guest application data on mount (if not editing existing application)
   useEffect(() => {
-    const editId = searchParams.get("edit");
-    const applicationId = searchParams.get("applicationId");
-    const restored = searchParams.get("restored");
-    
+    const editId = searchParams?.get("edit");
+    const applicationId = searchParams?.get("applicationId");
+    const restored = searchParams?.get("restored");
+
     // Skip guest loading if editing existing application or if user is logged in (they should have merged data)
     if (editId || applicationId) {
       setIsLoadingGuestData(false);
@@ -303,7 +303,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           const guestData = await response.json();
           if (guestData.id) {
             setGuestApplicationId(guestData.id);
-            
+
             // Restore form data from guest application
             if (guestData.formData) {
               const restoredData = guestData.formData;
@@ -316,7 +316,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                   id: t.id || `traveller-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
                 })) || prev.travellers,
               }));
-              
+
               // Restore step (but don't go beyond step 2 if not logged in)
               if (guestData.stepCompleted && guestData.stepCompleted > 1) {
                 // If logged in, can go to any step; if not, max step 2
@@ -340,8 +340,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
 
   // Load existing application data if editing
   useEffect(() => {
-    const editId = searchParams.get("edit");
-    const applicationId = searchParams.get("applicationId");
+    const editId = searchParams?.get("edit");
+    const applicationId = searchParams?.get("applicationId");
 
     if (editId || applicationId) {
       const appId = editId || applicationId;
@@ -399,8 +399,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
 
   // Auto-draft loading disabled - drafts should not be loaded automatically
   useEffect(() => {
-    const editId = searchParams.get("edit");
-    const applicationId = searchParams.get("applicationId");
+    const editId = searchParams?.get("edit");
+    const applicationId = searchParams?.get("applicationId");
 
     // Skip localStorage if editing existing application
     if (editId || applicationId) {
@@ -490,7 +490,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     ) {
       return;
     }
-    
+
     // If user is logged in and has a visa ID, clear draft data
     if (session?.user?.id && visaInfo?.id) {
       try {
@@ -508,7 +508,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         // Continue with redirect anyway
       }
     }
-    
+
     // Redirect to visa selection page (visa listing page)
     router.push("/visas");
   };
@@ -883,7 +883,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     if (currentStep < steps.length) {
       const nextStepNum = currentStep + 1;
       setCurrentStep(nextStepNum);
-      
+
       // Save guest application when moving to next step
       if (!session?.user && visaInfo) {
         saveGuestApplication(nextStepNum);
@@ -1779,9 +1779,9 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                           countryId: visaInfo?.country?.id,
                         }),
                       });
-                      
+
                       const result = await response.json();
-                      
+
                       if (result.valid && result.promoCode) {
                         setAppliedPromoCode({
                           id: result.promoCode.id,
@@ -1790,7 +1790,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                           message: result.message,
                         });
                       }
-                      
+
                       return result;
                     }}
                     appliedCode={appliedPromoCode ? {
@@ -2258,10 +2258,10 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         onContinue={async () => {
           setShowAccountGate(false);
           setIsGuestMode(false);
-          
+
           // Refresh session to get updated user data
           router.refresh();
-          
+
           // Merge guest application after login
           try {
             const mergeResponse = await fetch("/api/guest-applications/merge", {
@@ -2281,7 +2281,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                     id: t.id || `traveller-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
                   })) || prev.travellers,
                 }));
-                
+
                 // Navigate to last completed step or current step if it's ahead
                 if (mergeData.lastStepCompleted && mergeData.lastStepCompleted >= currentStep) {
                   setCurrentStep(mergeData.lastStepCompleted);
@@ -2291,7 +2291,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           } catch (error) {
             console.error("Error merging guest application:", error);
           }
-          
+
           // Continue to next step if we're at step 2
           if (currentStep === 2 && currentStep < steps.length) {
             setCurrentStep(currentStep + 1);

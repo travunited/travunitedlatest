@@ -13,7 +13,7 @@ export const fetchCache = "force-no-store";
 function SignupPageContent() {
   const searchParams = useSearchParams();
   const [name, setName] = useState("");
-  const [email, setEmail] = useState(searchParams.get("email") || "");
+  const [email, setEmail] = useState(searchParams?.get("email") || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
@@ -53,7 +53,7 @@ function SignupPageContent() {
         // Show OTP verification step
         if (data.requiresVerification) {
           // Get redirect URL from search params
-          const redirectUrl = searchParams.get("redirect") || "/dashboard";
+          const redirectUrl = searchParams?.get("redirect") || "/dashboard";
           // Redirect to email verification page
           router.push(`/verify-email?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(redirectUrl)}`);
         } else {
@@ -73,7 +73,7 @@ function SignupPageContent() {
             } catch (error) {
               console.error("Error merging guest application:", error);
             }
-            const redirectUrl = searchParams.get("redirect") || "/dashboard";
+            const redirectUrl = searchParams?.get("redirect") || "/dashboard";
             router.push(redirectUrl);
           } else {
             router.push("/login");
@@ -126,7 +126,7 @@ function SignupPageContent() {
           } catch (error) {
             console.error("Error merging guest application:", error);
           }
-          const redirectUrl = searchParams.get("redirect") || "/dashboard";
+          const redirectUrl = searchParams?.get("redirect") || "/dashboard";
           router.push(redirectUrl);
         } else {
           router.push("/login");

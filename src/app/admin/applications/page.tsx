@@ -36,7 +36,7 @@ function AdminApplicationsPageContent() {
   const [admins, setAdmins] = useState<Array<{ id: string; name: string; email: string }>>([]);
 
   // Filters
-  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "ALL");
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams?.get("status") || "ALL");
   const [countryFilter, setCountryFilter] = useState<string>("");
   const [visaTypeFilter, setVisaTypeFilter] = useState<string>("");
   const [assignedFilter, setAssignedFilter] = useState<string>("ALL");
@@ -44,7 +44,7 @@ function AdminApplicationsPageContent() {
   const [dateTo, setDateTo] = useState<string>("");
   const [assignedAdminFilter, setAssignedAdminFilter] = useState<string>("");
 
-  const searchParamsKey = useMemo(() => searchParams.toString(), [searchParams]);
+  const searchParamsKey = useMemo(() => searchParams?.toString() || "", [searchParams]);
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -588,8 +588,8 @@ function AdminApplicationsPageContent() {
         {bulkActionMessage && (
           <div
             className={`mb-6 rounded-lg p-4 flex items-center space-x-2 ${bulkActionMessage.type === "success"
-                ? "bg-green-50 border border-green-200 text-green-700"
-                : "bg-red-50 border border-red-200 text-red-700"
+              ? "bg-green-50 border border-green-200 text-green-700"
+              : "bg-red-50 border border-red-200 text-red-700"
               }`}
           >
             {bulkActionMessage.type === "success" ? (
@@ -709,8 +709,8 @@ function AdminApplicationsPageContent() {
                       key={option.field}
                       onClick={() => handleSortChange(option.field)}
                       className={`inline-flex items-center gap-1 rounded-full border px-4 py-1.5 text-sm transition-colors ${sortField === option.field
-                          ? "border-neutral-900 bg-neutral-900 text-white"
-                          : "border-neutral-200 text-neutral-600 hover:border-neutral-400"
+                        ? "border-neutral-900 bg-neutral-900 text-white"
+                        : "border-neutral-200 text-neutral-600 hover:border-neutral-400"
                         }`}
                     >
                       <ArrowUpDown size={14} />

@@ -9,7 +9,7 @@ import { CheckCircle, FileText, ArrowRight } from "lucide-react";
 function ThankYouContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const applicationId = searchParams.get("applicationId");
+  const applicationId = searchParams?.get("applicationId");
   const [application, setApplication] = useState<any>(null);
 
   useEffect(() => {
@@ -20,7 +20,7 @@ function ThankYouContent() {
           if (res.ok) {
             const data = await res.json();
             setApplication(data);
-            
+
             // If status is DOCUMENTS_PENDING, redirect to document upload page
             if (data.status === "DOCUMENTS_PENDING") {
               router.push(`/dashboard/applications/${applicationId}/documents`);
@@ -33,15 +33,15 @@ function ThankYouContent() {
         }
       };
       fetchApplication();
-      
+
       // Poll for payment status update (in case webhook is delayed)
       const interval = setInterval(() => {
         fetchApplication();
       }, 3000); // Check every 3 seconds
-      
+
       // Stop polling after 30 seconds
       setTimeout(() => clearInterval(interval), 30000);
-      
+
       return () => clearInterval(interval);
     }
   }, [applicationId, router]);
@@ -58,11 +58,11 @@ function ThankYouContent() {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
             <CheckCircle size={40} className="text-green-600" />
           </div>
-          
+
           <h1 className="text-3xl font-bold text-neutral-900 mb-4">
             Application Submitted Successfully!
           </h1>
-          
+
           <p className="text-lg text-neutral-600 mb-8">
             Thank you for your visa application. We&rsquo;ve received your submission and will process it shortly.
           </p>

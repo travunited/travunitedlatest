@@ -88,16 +88,16 @@ function HelpPageContent() {
   // Pre-fill form from query parameters
   useEffect(() => {
     if (formRef.current && searchParams) {
-      const subject = searchParams.get("subject");
-      const message = searchParams.get("message");
-      
+      const subject = searchParams?.get("subject");
+      const message = searchParams?.get("message");
+
       if (subject) {
         const subjectInput = formRef.current.querySelector<HTMLInputElement>('input[name="subject"]');
         if (subjectInput) {
           subjectInput.value = subject;
         }
       }
-      
+
       if (message) {
         const messageInput = formRef.current.querySelector<HTMLTextAreaElement>('textarea[name="message"]');
         if (messageInput) {
@@ -156,11 +156,10 @@ function HelpPageContent() {
                   <button
                     key={category}
                     onClick={() => setActiveCategory(category as keyof typeof faqCategories)}
-                    className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${
-                      activeCategory === category
+                    className={`w-full text-left px-4 py-2 rounded-lg transition-colors ${activeCategory === category
                         ? "bg-primary-600 text-white"
                         : "text-neutral-700 hover:bg-neutral-200"
-                    }`}
+                      }`}
                   >
                     {category.charAt(0).toUpperCase() + category.slice(1)}
                   </button>
@@ -261,18 +260,18 @@ function HelpPageContent() {
                   e.preventDefault();
                   setSubmitError("");
                   setSubmitting(true);
-                  
+
                   const formData = new FormData(e.currentTarget);
                   const name = formData.get("name") as string;
                   const email = formData.get("email") as string;
                   const phone = formData.get("phone") as string;
                   const subject = formData.get("subject") as string;
                   const message = formData.get("message") as string;
-                  
+
                   try {
                     const response = await fetch("/api/help/contact", {
                       method: "POST",
-                      headers: { 
+                      headers: {
                         "Content-Type": "application/json",
                       },
                       body: JSON.stringify({
@@ -283,9 +282,9 @@ function HelpPageContent() {
                         message,
                       }),
                     });
-                    
+
                     const result = await response.json();
-                    
+
                     if (response.ok && result.ok) {
                       setSubmitSuccess(true);
                       setSubmitError("");

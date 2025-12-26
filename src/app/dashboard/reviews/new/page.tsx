@@ -13,8 +13,8 @@ function NewReviewContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const type = (searchParams.get("type") || "visa").toLowerCase();
-  const targetId = searchParams.get("id");
+  const type = (searchParams?.get("type") || "visa").toLowerCase();
+  const targetId = searchParams?.get("id");
 
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState("");
@@ -96,9 +96,8 @@ function NewReviewContent() {
                     key={star}
                     type="button"
                     onClick={() => setRating(star)}
-                    className={`p-3 rounded-full ${
-                      rating >= star ? "text-amber-500" : "text-neutral-300"
-                    }`}
+                    className={`p-3 rounded-full ${rating >= star ? "text-amber-500" : "text-neutral-300"
+                      }`}
                     aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
                   >
                     <Star

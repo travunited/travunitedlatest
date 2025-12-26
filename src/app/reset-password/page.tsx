@@ -10,9 +10,9 @@ import { Lock, CheckCircle, AlertCircle, ArrowRight, Loader2, Eye, EyeOff } from
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const resetId = searchParams.get("id") || searchParams.get("resetId");
-  const token = searchParams.get("token");
-  
+  const resetId = searchParams?.get("id") || searchParams?.get("resetId");
+  const token = searchParams?.get("token");
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -40,7 +40,7 @@ function ResetPasswordContent() {
         );
 
         const data = await response.json();
-        
+
         // Debug: Log validation response
         console.log("[Reset Password] Token validation response:", {
           status: response.status,
@@ -73,7 +73,7 @@ function ResetPasswordContent() {
       setPasswordStrength(null);
       return;
     }
-    
+
     let strength: "weak" | "medium" | "strong" = "weak";
     if (password.length >= 8) {
       strength = "medium";
@@ -115,7 +115,7 @@ function ResetPasswordContent() {
       });
 
       const data = await response.json();
-      
+
       // Debug: Log the response
       console.log("[Reset Password] API Response:", {
         status: response.status,
@@ -134,7 +134,7 @@ function ResetPasswordContent() {
               password,
               redirect: false,
             });
-            
+
             if (signInResult?.ok) {
               // Wait a moment for session to update
               setTimeout(async () => {
@@ -143,7 +143,7 @@ function ResetPasswordContent() {
                 const sessionRes = await fetch("/api/auth/session");
                 const session = await sessionRes.json();
                 const role = session?.user?.role;
-                
+
                 // Redirect based on role
                 if (role === "STAFF_ADMIN" || role === "SUPER_ADMIN") {
                   router.push("/admin");
@@ -309,31 +309,28 @@ function ResetPasswordContent() {
               {password && (
                 <div className="mt-2">
                   <div className="flex items-center space-x-2 mb-1">
-                    <div className={`flex-1 h-2 rounded-full ${
-                      passwordStrength === "weak" ? "bg-red-200" :
-                      passwordStrength === "medium" ? "bg-yellow-200" :
-                      passwordStrength === "strong" ? "bg-green-200" : "bg-neutral-200"
-                    }`}>
-                      <div className={`h-full rounded-full transition-all ${
-                        passwordStrength === "weak" ? "bg-red-500 w-1/3" :
-                        passwordStrength === "medium" ? "bg-yellow-500 w-2/3" :
-                        passwordStrength === "strong" ? "bg-green-500 w-full" : ""
-                      }`} />
+                    <div className={`flex-1 h-2 rounded-full ${passwordStrength === "weak" ? "bg-red-200" :
+                        passwordStrength === "medium" ? "bg-yellow-200" :
+                          passwordStrength === "strong" ? "bg-green-200" : "bg-neutral-200"
+                      }`}>
+                      <div className={`h-full rounded-full transition-all ${passwordStrength === "weak" ? "bg-red-500 w-1/3" :
+                          passwordStrength === "medium" ? "bg-yellow-500 w-2/3" :
+                            passwordStrength === "strong" ? "bg-green-500 w-full" : ""
+                        }`} />
                     </div>
                     {passwordStrength && (
-                      <span className={`text-xs font-medium ${
-                        passwordStrength === "weak" ? "text-red-600" :
-                        passwordStrength === "medium" ? "text-yellow-600" :
-                        "text-green-600"
-                      }`}>
+                      <span className={`text-xs font-medium ${passwordStrength === "weak" ? "text-red-600" :
+                          passwordStrength === "medium" ? "text-yellow-600" :
+                            "text-green-600"
+                        }`}>
                         {passwordStrength.charAt(0).toUpperCase() + passwordStrength.slice(1)}
                       </span>
                     )}
                   </div>
                   <p className="text-xs text-neutral-500">
                     {password.length < 8 ? "At least 8 characters required" :
-                     passwordStrength === "weak" ? "Consider adding numbers or uppercase letters" :
-                     passwordStrength === "medium" ? "Good password" : "Strong password"}
+                      passwordStrength === "weak" ? "Consider adding numbers or uppercase letters" :
+                        passwordStrength === "medium" ? "Good password" : "Strong password"}
                   </p>
                 </div>
               )}
@@ -355,9 +352,8 @@ function ResetPasswordContent() {
                   required
                   minLength={8}
                   disabled={loading}
-                  className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 transition-colors ${
-                    confirmPassword && password !== confirmPassword ? "border-red-300" : "border-neutral-300"
-                  }`}
+                  className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 transition-colors ${confirmPassword && password !== confirmPassword ? "border-red-300" : "border-neutral-300"
+                    }`}
                   placeholder="Confirm your password"
                 />
                 <button

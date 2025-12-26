@@ -151,7 +151,7 @@ export default function AdminVisaEditorPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
-  const cloneSourceId = searchParams.get("clone");
+  const cloneSourceId = searchParams?.get("clone");
 
   const isNew = params.id === "new";
   const [activeTab, setActiveTab] = useState("basic");
@@ -208,7 +208,7 @@ export default function AdminVisaEditorPage() {
   const initialFormStateRef = useRef<any>(null);
   const isRestoringRef = useRef(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const combinedFormState = useMemo(() => ({
     formData,
     requirements,
@@ -292,7 +292,7 @@ export default function AdminVisaEditorPage() {
       const storageKey = `admin-form-${formPersistenceKey}`;
       localStorage.setItem(storageKey, JSON.stringify(stateToSave));
       setLastSaveTime(Date.now());
-      
+
       // Show subtle feedback
       setShowDraftSaved(true);
       setTimeout(() => {
@@ -361,7 +361,7 @@ export default function AdminVisaEditorPage() {
       try {
         const storageKey = `admin-form-${formPersistenceKey}`;
         const stored = localStorage.getItem(storageKey);
-        
+
         if (!stored) {
           console.log("No draft found for", formPersistenceKey);
           return false;
@@ -369,7 +369,7 @@ export default function AdminVisaEditorPage() {
 
         const restoredState = JSON.parse(stored);
         const savedAt = restoredState._savedAt;
-        
+
         // Check if draft is recent (within 7 days)
         if (!savedAt || Date.now() - savedAt > 7 * 24 * 60 * 60 * 1000) {
           console.log("Draft expired, clearing");
@@ -379,7 +379,7 @@ export default function AdminVisaEditorPage() {
 
         // Remove metadata
         const { _savedAt, ...cleanState } = restoredState;
-        
+
         if (Object.keys(cleanState).length === 0) {
           return false;
         }
@@ -487,7 +487,7 @@ export default function AdminVisaEditorPage() {
     const draftKey = `admin-form-${formPersistenceKey}`;
     let draftData: any = null;
     let shouldUseDraft = false;
-    
+
     try {
       const stored = localStorage.getItem(draftKey);
       if (stored) {
@@ -502,9 +502,9 @@ export default function AdminVisaEditorPage() {
     } catch (error) {
       console.error("Error checking draft:", error);
     }
-    
+
     isRestoringRef.current = true;
-    
+
     // Base form data from server
     const baseFormData = {
       countryId: data.countryId,
@@ -537,7 +537,7 @@ export default function AdminVisaEditorPage() {
       sampleVisaImageUrl: data.sampleVisaImageUrl || "",
       currency: data.currency || "INR",
     };
-    
+
     // Merge draft with server data (draft takes precedence for user edits)
     if (shouldUseDraft && draftData?.formData) {
       console.log("Merging draft with server data");
@@ -545,7 +545,7 @@ export default function AdminVisaEditorPage() {
     } else {
       setFormData(baseFormData);
     }
-    
+
     // Use draft arrays if they exist and have content, otherwise use server data
     if (shouldUseDraft && draftData?.requirements && Array.isArray(draftData.requirements) && draftData.requirements.length > 0) {
       console.log("Using draft requirements");
@@ -563,7 +563,7 @@ export default function AdminVisaEditorPage() {
         }))
       );
     }
-    
+
     if (shouldUseDraft && draftData?.faqs && Array.isArray(draftData.faqs) && draftData.faqs.length > 0) {
       console.log("Using draft faqs");
       setFaqs(draftData.faqs);
@@ -578,19 +578,19 @@ export default function AdminVisaEditorPage() {
         }))
       );
     }
-    
-    
+
+
     // Restore UI state from draft if available
     if (shouldUseDraft) {
       if (draftData?.activeTab) setActiveTab(draftData.activeTab);
       if (draftData?.heroImageMode) setHeroImageMode(draftData.heroImageMode);
       if (draftData?.sampleVisaImageMode) setSampleVisaImageMode(draftData.sampleVisaImageMode);
-      
+
       // Show notification that draft was restored
       setShowDraftSaved(true);
       setTimeout(() => setShowDraftSaved(false), 3000);
     }
-    
+
     // Reset restoring flag and mark as initialized after state updates settle
     setTimeout(() => {
       isRestoringRef.current = false;

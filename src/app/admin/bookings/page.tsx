@@ -48,7 +48,7 @@ function AdminBookingsPageContent() {
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
   // Filters
-  const [statusFilter, setStatusFilter] = useState<string>(searchParams.get("status") || "ALL");
+  const [statusFilter, setStatusFilter] = useState<string>(searchParams?.get("status") || "ALL");
   const [tourFilter, setTourFilter] = useState<string>("");
   const [assignedFilter, setAssignedFilter] = useState<string>("ALL");
   const [assignedAdminFilter, setAssignedAdminFilter] = useState<string>("");
@@ -61,7 +61,7 @@ function AdminBookingsPageContent() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const debouncedSearchQuery = useDebounce(searchQuery, 500);
 
-  const searchParamsKey = useMemo(() => searchParams.toString(), [searchParams]);
+  const searchParamsKey = useMemo(() => searchParams?.toString() || "", [searchParams]);
 
   const fetchBookings = useCallback(async () => {
     try {
@@ -498,8 +498,8 @@ function AdminBookingsPageContent() {
             </div>
             {bulkActionMessage && (
               <div className={`mb-3 p-2 rounded text-sm ${bulkActionMessage.type === "success"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-700"
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
                 }`}>
                 {bulkActionMessage.text}
               </div>
@@ -692,10 +692,10 @@ function AdminBookingsPageContent() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${booking.paymentStatus === "PAID" ? "bg-green-100 text-green-700" :
-                            booking.paymentStatus === "PARTIAL" ? "bg-yellow-100 text-yellow-700" :
-                              booking.paymentStatus === "FAILED" ? "bg-red-100 text-red-700" :
-                                booking.paymentStatus === "REFUNDED" ? "bg-purple-100 text-purple-700" :
-                                  "bg-neutral-100 text-neutral-700"
+                          booking.paymentStatus === "PARTIAL" ? "bg-yellow-100 text-yellow-700" :
+                            booking.paymentStatus === "FAILED" ? "bg-red-100 text-red-700" :
+                              booking.paymentStatus === "REFUNDED" ? "bg-purple-100 text-purple-700" :
+                                "bg-neutral-100 text-neutral-700"
                           }`}>
                           {booking.paymentStatus || "PENDING"}
                         </span>
