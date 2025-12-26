@@ -69,9 +69,9 @@ export async function GET(req: Request) {
 
     // Filter applications with rejected documents
     if (rejected) {
-      where.ApplicationDocument = {
+      where.documents = {
         some: {
-          status: "REJECTED",
+          status: "PENDING",
         },
       };
     }

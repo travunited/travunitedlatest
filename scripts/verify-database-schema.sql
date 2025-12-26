@@ -7,7 +7,7 @@ SELECT
     table_name,
     CASE 
         WHEN table_name IN (
-            'User', 'Application', 'ApplicationTraveller', 'ApplicationDocument',
+            'User', 'Application', 'ApplicationTraveller', 'Document',
             'Traveller', 'Booking', 'BookingTraveller', 'BookingDocument',
             'Country', 'Visa', 'VisaDocumentRequirement', 'VisaFaq', 'VisaSubType',
             'TourDay', 'Tour', 'TourAddOn', 'BookingAddOn',

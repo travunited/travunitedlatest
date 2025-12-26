@@ -54,7 +54,6 @@ export async function GET(req: Request) {
       visaSubType: app.VisaSubType,
       visa: app.Visa,
       promoCode: app.PromoCodeUsage?.[0]?.promoCode,
-      ApplicationDocument: undefined,
       VisaSubType: undefined,
       Visa: undefined,
       PromoCodeUsage: undefined,

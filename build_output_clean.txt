@@ -1,0 +1,315 @@
+
+> travunited@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.33
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Skipping linting
+   Checking validity of types ...
+   Collecting page data ...
+Razorpay credentials are not set. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your environment.
+Razorpay credentials are not set. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in your environment.
+   Generating static pages (0/75) ...
+   Generating static pages (18/75) 
+   Generating static pages (37/75) 
+   Generating static pages (56/75) 
+ ✓ Generating static pages (75/75)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                                Size     First Load JS
+┌ ƒ /                                                      7.44 kB         145 kB
+├ ○ /_not-found                                            883 B          88.4 kB
+├ ○ /about                                                 196 B          96.4 kB
+├ ○ /about/team                                            3.98 kB         105 kB
+├ ƒ /admin                                                 2.77 kB         156 kB
+├ ƒ /admin/applications                                    6.42 kB         160 kB
+├ ƒ /admin/applications/[id]                               8.73 kB         168 kB
+├ ƒ /admin/bookings                                        5.41 kB         159 kB
+├ ƒ /admin/bookings/[id]                                   10.5 kB         169 kB
+├ ƒ /admin/bookings/tours/new                              3.54 kB         157 kB
+├ ƒ /admin/careers                                         2.76 kB         156 kB
+├ ƒ /admin/careers/[id]                                    3.09 kB         157 kB
+├ ƒ /admin/content/blog                                    5.13 kB         159 kB
+├ ƒ /admin/content/blog/[id]                               124 kB          283 kB
+├ ƒ /admin/content/countries                               4.88 kB         167 kB
+├ ƒ /admin/content/countries/[id]                          2.26 kB         156 kB
+├ ƒ /admin/content/tours                                   6.56 kB         164 kB
+├ ƒ /admin/content/tours/[id]                              35.4 kB         189 kB
+├ ƒ /admin/content/visas                                   5.12 kB         162 kB
+├ ƒ /admin/content/visas/[id]                              10.3 kB         164 kB
+├ ƒ /admin/corporate-leads                                 2.58 kB         156 kB
+├ ƒ /admin/corporate-leads/[id]                            2.79 kB         156 kB
+├ ƒ /admin/customers                                       2.84 kB         156 kB
+├ ƒ /admin/customers/[id]                                  3.92 kB         158 kB
+├ ƒ /admin/email-test                                      4.05 kB         158 kB
+├ ƒ /admin/form-submissions                                3.25 kB         157 kB
+├ ƒ /admin/form-submissions/[id]                           2.39 kB         156 kB
+├ ƒ /admin/login                                           547 B            88 kB
+├ ƒ /admin/promo-codes                                     2.83 kB         156 kB
+├ ƒ /admin/promo-codes/[id]                                3.55 kB         157 kB
+├ ƒ /admin/promo-codes/[id]/analytics                      2.61 kB         156 kB
+├ ƒ /admin/promo-codes/new                                 3.18 kB         157 kB
+├ ƒ /admin/reports                                         1.8 kB          155 kB
+├ ƒ /admin/reports/admin/performance                       2.33 kB         158 kB
+├ ƒ /admin/reports/admin/sla                               2.19 kB         158 kB
+├ ƒ /admin/reports/corporate                               2.86 kB         159 kB
+├ ƒ /admin/reports/customers                               2.45 kB         158 kB
+├ ƒ /admin/reports/finance/payments                        3.23 kB         159 kB
+├ ƒ /admin/reports/finance/revenue                         2.34 kB         158 kB
+├ ƒ /admin/reports/system/audit                            2.47 kB         158 kB
+├ ƒ /admin/reports/tours/performance                       2.41 kB         158 kB
+├ ƒ /admin/reports/tours/summary                           3.1 kB          159 kB
+├ ƒ /admin/reports/visas/by-country                        2.49 kB         158 kB
+├ ƒ /admin/reports/visas/performance                       2.44 kB         158 kB
+├ ƒ /admin/reports/visas/summary                           3.32 kB         159 kB
+├ ƒ /admin/reviews                                         3.29 kB         157 kB
+├ ƒ /admin/reviews/[id]                                    3.84 kB         157 kB
+├ ƒ /admin/reviews/homepage                                5.12 kB         164 kB
+├ ƒ /admin/settings/admins                                 3.86 kB         157 kB
+├ ƒ /admin/settings/admins/[id]                            3.76 kB         157 kB
+├ ƒ /admin/settings/audit                                  2.87 kB         156 kB
+├ ƒ /admin/settings/email-templates                        8.74 kB         162 kB
+├ ƒ /admin/settings/general                                7.8 kB          161 kB
+├ ƒ /admin/settings/reports                                2.84 kB         156 kB
+├ ƒ /admin/team                                            3.82 kB         163 kB
+├ ƒ /admin/team/[id]                                       3.83 kB         163 kB
+├ ƒ /api/admin/applications                                0 B                0 B
+├ ƒ /api/admin/applications/[id]                           0 B                0 B
+├ ƒ /api/admin/applications/[id]/activities                0 B                0 B
+├ ƒ /api/admin/applications/[id]/assign                    0 B                0 B
+├ ƒ /api/admin/applications/[id]/claim                     0 B                0 B
+├ ƒ /api/admin/applications/[id]/documents/[docId]/review  0 B                0 B
+├ ƒ /api/admin/applications/[id]/invoice                   0 B                0 B
+├ ƒ /api/admin/applications/[id]/notes                     0 B                0 B
+├ ƒ /api/admin/applications/[id]/resend-email              0 B                0 B
+├ ƒ /api/admin/applications/[id]/status                    0 B                0 B
+├ ƒ /api/admin/applications/[id]/visa                      0 B                0 B
+├ ƒ /api/admin/applications/bulk/assign                    0 B                0 B
+├ ƒ /api/admin/applications/bulk/delete                    0 B                0 B
+├ ƒ /api/admin/applications/bulk/resend-email              0 B                0 B
+├ ƒ /api/admin/applications/bulk/status                    0 B                0 B
+├ ƒ /api/admin/applications/export                         0 B                0 B
+├ ƒ /api/admin/bookings                                    0 B                0 B
+├ ƒ /api/admin/bookings/[id]                               0 B                0 B
+├ ƒ /api/admin/bookings/[id]/activities                    0 B                0 B
+├ ƒ /api/admin/bookings/[id]/assign                        0 B                0 B
+├ ƒ /api/admin/bookings/[id]/cancel                        0 B                0 B
+├ ƒ /api/admin/bookings/[id]/claim                         0 B                0 B
+├ ƒ /api/admin/bookings/[id]/documents/[docId]/review      0 B                0 B
+├ ƒ /api/admin/bookings/[id]/invoice                       0 B                0 B
+├ ƒ /api/admin/bookings/[id]/notes                         0 B                0 B
+├ ƒ /api/admin/bookings/[id]/notify                        0 B                0 B
+├ ƒ /api/admin/bookings/[id]/offline-payment               0 B                0 B
+├ ƒ /api/admin/bookings/[id]/resend-email                  0 B                0 B
+├ ƒ /api/admin/bookings/[id]/status                        0 B                0 B
+├ ƒ /api/admin/bookings/[id]/voucher                       0 B                0 B
+├ ƒ /api/admin/bookings/bulk/assign                        0 B                0 B
+├ ƒ /api/admin/bookings/bulk/delete                        0 B                0 B
+├ ƒ /api/admin/bookings/bulk/resend-email                  0 B                0 B
+├ ƒ /api/admin/bookings/bulk/status                        0 B                0 B
+├ ƒ /api/admin/bookings/create                             0 B                0 B
+├ ƒ /api/admin/bookings/export                             0 B                0 B
+├ ƒ /api/admin/careers                                     0 B                0 B
+├ ƒ /api/admin/careers/[id]                                0 B                0 B
+├ ƒ /api/admin/careers/export                              0 B                0 B
+├ ƒ /api/admin/content/blog                                0 B                0 B
+├ ƒ /api/admin/content/blog/[id]                           0 B                0 B
+├ ƒ /api/admin/content/blog/bulk/delete                    0 B                0 B
+├ ƒ /api/admin/content/blog/bulk/status                    0 B                0 B
+├ ƒ /api/admin/content/blog/publish-ready                  0 B                0 B
+├ ƒ /api/admin/content/countries                           0 B                0 B
+├ ƒ /api/admin/content/countries/[id]                      0 B                0 B
+├ ƒ /api/admin/content/countries/bulk/delete               0 B                0 B
+├ ƒ /api/admin/content/countries/export                    0 B                0 B
+├ ƒ /api/admin/content/countries/import                    0 B                0 B
+├ ƒ /api/admin/content/countries/template                  0 B                0 B
+├ ƒ /api/admin/content/tours                               0 B                0 B
+├ ƒ /api/admin/content/tours/[id]                          0 B                0 B
+├ ƒ /api/admin/content/tours/bulk/delete                   0 B                0 B
+├ ƒ /api/admin/content/tours/bulk/featured                 0 B                0 B
+├ ƒ /api/admin/content/tours/bulk/status                   0 B                0 B
+├ ƒ /api/admin/content/tours/export                        0 B                0 B
+├ ƒ /api/admin/content/tours/import                        0 B                0 B
+├ ƒ /api/admin/content/tours/template                      0 B                0 B
+├ ƒ /api/admin/content/visas                               0 B                0 B
+├ ƒ /api/admin/content/visas/[id]                          0 B                0 B
+├ ƒ /api/admin/content/visas/[id]/draft                    0 B                0 B
+├ ƒ /api/admin/content/visas/bulk/delete                   0 B                0 B
+├ ƒ /api/admin/content/visas/export                        0 B                0 B
+├ ƒ /api/admin/content/visas/import                        0 B                0 B
+├ ƒ /api/admin/content/visas/template                      0 B                0 B
+├ ƒ /api/admin/corporate-leads                             0 B                0 B
+├ ƒ /api/admin/corporate-leads/[id]                        0 B                0 B
+├ ƒ /api/admin/corporate-leads/export                      0 B                0 B
+├ ƒ /api/admin/customers                                   0 B                0 B
+├ ƒ /api/admin/customers/[id]                              0 B                0 B
+├ ƒ /api/admin/customers/[id]/status                       0 B                0 B
+├ ƒ /api/admin/dashboard/stats                             0 B                0 B
+├ ƒ /api/admin/email-test                                  0 B                0 B
+├ ƒ /api/admin/email-test/config                           0 B                0 B
+├ ƒ /api/admin/email/clear-cache                           0 B                0 B
+├ ƒ /api/admin/email/diagnostics                           0 B                0 B
+├ ƒ /api/admin/email/test-all                              0 B                0 B
+├ ƒ /api/admin/form-submissions                            0 B                0 B
+├ ƒ /api/admin/form-submissions/[id]                       0 B                0 B
+├ ƒ /api/admin/form-submissions/export                     0 B                0 B
+├ ƒ /api/admin/policies                                    0 B                0 B
+├ ƒ /api/admin/policies/[key]                              0 B                0 B
+├ ƒ /api/admin/promo-codes                                 0 B                0 B
+├ ƒ /api/admin/promo-codes/[id]                            0 B                0 B
+├ ƒ /api/admin/promo-codes/[id]/analytics                  0 B                0 B
+├ ƒ /api/admin/promo-codes/[id]/analytics/export           0 B                0 B
+├ ƒ /api/admin/reports/admin/performance                   0 B                0 B
+├ ƒ /api/admin/reports/admin/sla                           0 B                0 B
+├ ƒ /api/admin/reports/corporate                           0 B                0 B
+├ ƒ /api/admin/reports/customers                           0 B                0 B
+├ ƒ /api/admin/reports/finance/payments                    0 B                0 B
+├ ƒ /api/admin/reports/finance/revenue                     0 B                0 B
+├ ƒ /api/admin/reports/system/audit                        0 B                0 B
+├ ƒ /api/admin/reports/tours/performance                   0 B                0 B
+├ ƒ /api/admin/reports/tours/summary                       0 B                0 B
+├ ƒ /api/admin/reports/visas/by-country                    0 B                0 B
+├ ƒ /api/admin/reports/visas/performance                   0 B                0 B
+├ ƒ /api/admin/reports/visas/summary                       0 B                0 B
+├ ƒ /api/admin/reviews                                     0 B                0 B
+├ ƒ /api/admin/reviews/[id]                                0 B                0 B
+├ ƒ /api/admin/reviews/[id]/notes                          0 B                0 B
+├ ƒ /api/admin/reviews/[id]/visibility                     0 B                0 B
+├ ƒ /api/admin/reviews/homepage                            0 B                0 B
+├ ƒ /api/admin/reviews/homepage/[id]                       0 B                0 B
+├ ƒ /api/admin/settings/admins                             0 B                0 B
+├ ƒ /api/admin/settings/admins/[id]                        0 B                0 B
+├ ƒ /api/admin/settings/admins/[id]/reset-password         0 B                0 B
+├ ƒ /api/admin/settings/admins/[id]/status                 0 B                0 B
+├ ƒ /api/admin/settings/audit                              0 B                0 B
+├ ƒ /api/admin/settings/general                            0 B                0 B
+├ ƒ /api/admin/settings/reports/admin-performance          0 B                0 B
+├ ƒ /api/admin/settings/reports/revenue                    0 B                0 B
+├ ƒ /api/admin/settings/reports/tours                      0 B                0 B
+├ ƒ /api/admin/settings/reports/visas                      0 B                0 B
+├ ƒ /api/admin/team                                        0 B                0 B
+├ ƒ /api/admin/team/[id]                                   0 B                0 B
+├ ƒ /api/admin/team/bulk                                   0 B                0 B
+├ ƒ /api/admin/team/upload                                 0 B                0 B
+├ ƒ /api/admin/test-password-reset-email                   0 B                0 B
+├ ƒ /api/admin/uploads                                     0 B                0 B
+├ ƒ /api/admin/visa-feedback/send                          0 B                0 B
+├ ƒ /api/applications                                      0 B                0 B
+├ ƒ /api/applications/[id]                                 0 B                0 B
+├ ƒ /api/applications/[id]/documents                       0 B                0 B
+├ ƒ /api/applications/[id]/documents/reupload              0 B                0 B
+├ ƒ /api/applications/[id]/submit                          0 B                0 B
+├ ƒ /api/applications/create                               0 B                0 B
+├ ƒ /api/applications/draft                                0 B                0 B
+├ ƒ /api/applications/expire                               0 B                0 B
+├ ƒ /api/applications/start-fresh                          0 B                0 B
+├ ƒ /api/auth/[...nextauth]                                0 B                0 B
+├ ƒ /api/auth/change-password                              0 B                0 B
+├ ƒ /api/auth/delete-account                               0 B                0 B
+├ ƒ /api/auth/forgot-password                              0 B                0 B
+├ ƒ /api/auth/resend-otp                                   0 B                0 B
+├ ƒ /api/auth/reset-password                               0 B                0 B
+├ ƒ /api/auth/signup                                       0 B                0 B
+├ ƒ /api/auth/test-otp-email                               0 B                0 B
+├ ƒ /api/auth/validate-reset-token                         0 B                0 B
+├ ƒ /api/auth/verify-email                                 0 B                0 B
+├ ƒ /api/auth/verify-otp                                   0 B                0 B
+├ ƒ /api/bookings                                          0 B                0 B
+├ ƒ /api/bookings/[id]                                     0 B                0 B
+├ ƒ /api/bookings/[id]/documents                           0 B                0 B
+├ ƒ /api/bookings/[id]/documents/[docId]                   0 B                0 B
+├ ƒ /api/bookings/create                                   0 B                0 B
+├ ƒ /api/bookings/passport-upload                          0 B                0 B
+├ ƒ /api/careers/apply                                     0 B                0 B
+├ ƒ /api/contact/submit                                    0 B                0 B
+├ ƒ /api/corporate/lead                                    0 B                0 B
+├ ƒ /api/custom-requests                                   0 B                0 B
+├ ƒ /api/email/send                                        0 B                0 B
+├ ƒ /api/email/test                                        0 B                0 B
+├ ƒ /api/files                                             0 B                0 B
+├ ƒ /api/guest-applications                                0 B                0 B
+├ ƒ /api/guest-applications/merge                          0 B                0 B
+├ ƒ /api/health/db                                         0 B                0 B
+├ ƒ /api/help/contact                                      0 B                0 B
+├ ƒ /api/invoices/application/[id]                         0 B                0 B
+├ ƒ /api/invoices/booking/[id]                             0 B                0 B
+├ ƒ /api/invoices/download/[type]/[id]                     0 B                0 B
+├ ƒ /api/media/[...key]                                    0 B                0 B
+├ ƒ /api/notifications                                     0 B                0 B
+├ ƒ /api/notifications/[id]                                0 B                0 B
+├ ƒ /api/notifications/[id]/read                           0 B                0 B
+├ ƒ /api/notifications/read-all                            0 B                0 B
+├ ƒ /api/notifications/unread-count                        0 B                0 B
+├ ƒ /api/payments/create-order                             0 B                0 B
+├ ƒ /api/payments/verify                                   0 B                0 B
+├ ƒ /api/payments/webhook                                  0 B                0 B
+├ ƒ /api/policies/[key]                                    0 B                0 B
+├ ƒ /api/policies/terms-content                            0 B                0 B
+├ ƒ /api/promo-codes/validate                              0 B                0 B
+├ ƒ /api/reviews                                           0 B                0 B
+├ ƒ /api/reviews/homepage                                  0 B                0 B
+├ ƒ /api/search                                            0 B                0 B
+├ ƒ /api/search/countries                                  0 B                0 B
+├ ƒ /api/search/tour-destinations                          0 B                0 B
+├ ƒ /api/search/visa-types                                 0 B                0 B
+├ ƒ /api/team                                              0 B                0 B
+├ ƒ /api/tours/[slug]                                      0 B                0 B
+├ ƒ /api/travellers                                        0 B                0 B
+├ ƒ /api/travellers/[id]                                   0 B                0 B
+├ ƒ /api/visas/[country]/[slug]                            0 B                0 B
+├ ƒ /api/webhooks/razorpay                                 0 B                0 B
+├ ƒ /api/webhooks/ses-sns                                  0 B                0 B
+├ ○ /applications/thank-you                                1.99 kB         134 kB
+├ ƒ /apply/visa/[country]/[type]                           16.8 kB         159 kB
+├ ƒ /blog                                                  2.52 kB         145 kB
+├ ƒ /blog/[id]                                             563 B           143 kB
+├ ƒ /book/holiday/[...id]                                  16.9 kB         159 kB
+├ ○ /bookings/thank-you                                    2.68 kB         135 kB
+├ ○ /careers                                               6.35 kB         139 kB
+├ ○ /contact                                               3.35 kB         127 kB
+├ ○ /cookies                                               196 B          96.4 kB
+├ ○ /corporate                                             2.69 kB         126 kB
+├ ƒ /country/[slug]                                        152 B          87.6 kB
+├ ƒ /dashboard                                             4.12 kB         146 kB
+├ ƒ /dashboard/applications                                3.64 kB         146 kB
+├ ƒ /dashboard/applications/[id]                           5.89 kB         112 kB
+├ ƒ /dashboard/applications/[id]/documents                 5.17 kB         147 kB
+├ ƒ /dashboard/applications/[id]/edit                      2.16 kB         108 kB
+├ ƒ /dashboard/bookings                                    3.38 kB         145 kB
+├ ƒ /dashboard/bookings/[id]                               4.46 kB         110 kB
+├ ƒ /dashboard/reviews                                     2.12 kB         144 kB
+├ ƒ /dashboard/reviews/new                                 2.52 kB         108 kB
+├ ƒ /dashboard/settings                                    3.68 kB         146 kB
+├ ƒ /dashboard/travellers                                  4.33 kB         146 kB
+├ ○ /faq                                                   3.12 kB        99.3 kB
+├ ○ /forgot-password                                       3.66 kB         136 kB
+├ ○ /help                                                  4.35 kB         128 kB
+├ ƒ /holidays                                              6.42 kB         144 kB
+├ ƒ /holidays/[...id]                                      4.37 kB         145 kB
+├ ○ /login                                                 3.21 kB         109 kB
+├ ○ /notifications                                         7.56 kB         145 kB
+├ ○ /privacy                                               196 B          96.4 kB
+├ ○ /refund                                                196 B          96.4 kB
+├ ○ /reset-password                                        3.67 kB         146 kB
+├ ○ /signup                                                3.79 kB         110 kB
+├ ○ /support                                               196 B          96.4 kB
+├ ○ /terms                                                 192 B          96.4 kB
+├ ƒ /tours                                                 6.41 kB         144 kB
+├ ○ /verify-email                                          2.84 kB         145 kB
+├ ƒ /visas                                                 4.6 kB          142 kB
+├ ƒ /visas/[country]                                       447 B          96.6 kB
+└ ƒ /visas/[country]/[type]                                3.06 kB         144 kB
++ First Load JS shared by all                              87.5 kB
+  ├ chunks/2117-5acda1df482d7c46.js                        31.9 kB
+  ├ chunks/fd9d1056-3d5a6f7dc10fe63b.js                    53.7 kB
+  └ other shared chunks (total)                            1.95 kB
+
+
+ƒ Middleware                                               49.3 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

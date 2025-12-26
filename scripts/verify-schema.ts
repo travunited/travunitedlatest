@@ -14,7 +14,7 @@ const EXPECTED_TABLES = [
   "User",
   "Application",
   "ApplicationTraveller",
-  "ApplicationDocument",
+  "Document",
   "Traveller",
   "Booking",
   "BookingTraveller",

@@ -86,7 +86,6 @@ export async function GET(
       visaSubType: app.VisaSubType,
       promoCode: app.PromoCodeUsage?.[0]?.promoCode,
       ApplicationTraveller: undefined,
-      ApplicationDocument: undefined,
       User_Application_userIdToUser: undefined,
       Visa: undefined,
       VisaSubType: undefined,
