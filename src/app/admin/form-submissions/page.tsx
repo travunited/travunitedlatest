@@ -37,7 +37,16 @@ function AdminFormSubmissionsPageContent() {
       const response = await fetch(`/api/admin/form-submissions?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setSubmissions(data);
+        // Ensure data is an array and filter out invalid entries
+        if (Array.isArray(data)) {
+          setSubmissions(data.filter((s) => s && s.id && s.email));
+        } else {
+          setSubmissions([]);
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Failed to fetch form submissions:", errorData);
+        setSubmissions([]);
       }
     } catch (error) {
       console.error("Error fetching form submissions:", error);
@@ -286,58 +295,62 @@ function AdminFormSubmissionsPageContent() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
               </div>
             )}
-            {submissions.map((submission, index) => {
-              const FormIcon = getFormTypeIcon(submission.formType);
-              return (
-                <motion.div
-                  key={submission.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-white rounded-xl shadow-medium border border-neutral-200 p-6 hover:shadow-large transition-all duration-200"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-start space-x-4">
-                        <div className={`h-12 w-12 rounded-lg ${getFormTypeColor(submission.formType)} flex items-center justify-center flex-shrink-0`}>
-                          <FormIcon size={20} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-semibold text-neutral-900 truncate">{submission.subject}</h3>
-                            <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${getFormTypeColor(submission.formType)} whitespace-nowrap`}>
-                              {submission.formType}
-                            </span>
+            {submissions
+              .filter((submission) => submission && submission.email) // Filter out invalid submissions
+              .map((submission, index) => {
+                const FormIcon = getFormTypeIcon(submission.formType);
+                return (
+                  <motion.div
+                    key={submission.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="bg-white rounded-xl shadow-medium border border-neutral-200 p-6 hover:shadow-large transition-all duration-200"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-start space-x-4">
+                          <div className={`h-12 w-12 rounded-lg ${getFormTypeColor(submission.formType)} flex items-center justify-center flex-shrink-0`}>
+                            <FormIcon size={20} />
                           </div>
-                          <div className="flex items-center space-x-4 text-sm text-neutral-600 mb-3">
-                            <div className="flex items-center space-x-1.5">
-                              <Mail size={14} />
-                              <a href={`mailto:${submission.email}`} className="hover:text-primary-600 transition-colors">
-                                {submission.email}
-                              </a>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h3 className="text-lg font-semibold text-neutral-900 truncate">{submission.subject || "No Subject"}</h3>
+                              <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${getFormTypeColor(submission.formType)} whitespace-nowrap`}>
+                                {submission.formType}
+                              </span>
                             </div>
-                            <div className="flex items-center space-x-1.5">
-                              <Clock size={14} />
-                              <span>{formatDate(submission.createdAt)}</span>
+                            <div className="flex items-center space-x-4 text-sm text-neutral-600 mb-3">
+                              {submission.email && (
+                                <div className="flex items-center space-x-1.5">
+                                  <Mail size={14} />
+                                  <a href={`mailto:${submission.email}`} className="hover:text-primary-600 transition-colors">
+                                    {submission.email}
+                                  </a>
+                                </div>
+                              )}
+                              <div className="flex items-center space-x-1.5">
+                                <Clock size={14} />
+                                <span>{formatDate(submission.createdAt)}</span>
+                              </div>
                             </div>
+                            <p className="text-sm text-neutral-700 line-clamp-2 mb-4">
+                              {submission.message || ""}
+                            </p>
+                            <Link
+                              href={`/admin/form-submissions/${submission.id}`}
+                              className="inline-flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors"
+                            >
+                              <Eye size={16} />
+                              <span>View Full Details</span>
+                            </Link>
                           </div>
-                          <p className="text-sm text-neutral-700 line-clamp-2 mb-4">
-                            {submission.message}
-                          </p>
-                          <Link
-                            href={`/admin/form-submissions/${submission.id}`}
-                            className="inline-flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors"
-                          >
-                            <Eye size={16} />
-                            <span>View Full Details</span>
-                          </Link>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </motion.div>
-              );
-            })}
+                  </motion.div>
+                );
+              })}
           </div>
         )}
       </div>

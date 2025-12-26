@@ -65,17 +65,37 @@ export async function GET(req: Request) {
       },
     });
 
-    // Map to include formType (defaulting to HELP for existing entries)
-    const mappedSubmissions = submissions.map((submission) => ({
-      ...submission,
-      formType: "HELP", // Default form type
-    }));
+    // Filter out submissions with missing email (shouldn't happen, but safety check)
+    // Map to include formType (defaulting to HELP for existing entries) and serialize dates
+    const mappedSubmissions = submissions
+      .filter((submission) => submission.email != null && submission.email.trim() !== "")
+      .map((submission) => ({
+        id: submission.id,
+        name: submission.name,
+        email: submission.email,
+        phone: submission.phone,
+        subject: submission.subject,
+        message: submission.message,
+        formType: "HELP", // Default form type
+        createdAt: submission.createdAt.toISOString(),
+        updatedAt: submission.updatedAt.toISOString(),
+      }));
 
     return NextResponse.json(mappedSubmissions);
   } catch (error) {
     console.error("Error fetching form submissions:", error);
+    const errorMessage = error instanceof Error ? error.message : "Internal server error";
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error("Full error details:", {
+      message: errorMessage,
+      stack: errorStack,
+    });
     return NextResponse.json(
-      { error: "Internal server error" },
+      { 
+        error: "Internal server error",
+        message: errorMessage,
+        ...(process.env.NODE_ENV === "development" && errorStack ? { details: errorStack } : {})
+      },
       { status: 500 }
     );
   }
