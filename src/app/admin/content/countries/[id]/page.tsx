@@ -127,9 +127,9 @@ export default function AdminCountryDetailPage() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link
           href="/admin/content/countries"
-          className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-900"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-colors shadow-sm"
         >
-          <ArrowLeft size={16} className="mr-2" />
+          <ArrowLeft size={16} />
           Back to Countries
         </Link>
         <div className="mt-4 bg-white border border-neutral-200 rounded-2xl p-6 space-y-6 shadow-sm">

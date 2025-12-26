@@ -906,9 +906,9 @@ export default function AdminVisaEditorPage() {
           <div>
             <Link
               href="/admin/content/visas"
-              className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-900"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-colors shadow-sm"
             >
-              <ArrowLeft size={16} className="mr-2" />
+              <ArrowLeft size={16} />
               Back to visas
             </Link>
             <div className="flex items-center gap-3 mt-3">

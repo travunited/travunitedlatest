@@ -456,7 +456,7 @@ export default function AdminApplicationDetailPage() {
         <div className="mb-8">
           <Link
             href="/admin/applications"
-            className="inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 mb-6 text-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-colors shadow-sm mb-6"
           >
             <ArrowLeft size={16} />
             Back to Applications

@@ -73,9 +73,9 @@ export default function NewPromoCodePage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Link
           href="/admin/promo-codes"
-          className="inline-flex items-center text-neutral-600 hover:text-neutral-900 mb-6"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-colors shadow-sm mb-6"
         >
-          <ArrowLeft size={20} className="mr-2" />
+          <ArrowLeft size={16} />
           Back to Promo Codes
         </Link>
 

@@ -243,6 +243,70 @@ const CheckboxInput = memo(({ checked, onChange, label, className = "" }: {
 });
 CheckboxInput.displayName = "CheckboxInput";
 
+// Theme options for tour packages
+const THEME_OPTIONS = [
+  "Adventure",
+  "Beach",
+  "Culture",
+  "Family",
+  "Honeymoon",
+  "Leisure",
+  "Nature",
+  "Religious",
+  "Wildlife",
+  "Wellness",
+  "History",
+  "Photography",
+  "Food & Culinary",
+  "Luxury",
+  "Budget",
+  "Solo Travel",
+  "Group Travel",
+] as const;
+
+// Stable component for theme multi-select with checkboxes
+const ThemeCheckboxGroup = memo(({ value, onChange }: {
+  value: string; // JSON array string
+  onChange: (value: string) => void;
+}) => {
+  const selectedThemes = useMemo(() => {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }, [value]);
+
+  const handleThemeToggle = useCallback((theme: string) => {
+    const currentSelected = selectedThemes;
+    const newSelected = currentSelected.includes(theme)
+      ? currentSelected.filter((t) => t !== theme)
+      : [...currentSelected, theme];
+    onChange(JSON.stringify(newSelected));
+  }, [selectedThemes, onChange]);
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-3 border border-neutral-300 rounded-lg bg-white">
+      {THEME_OPTIONS.map((theme) => (
+        <label
+          key={theme}
+          className="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded"
+        >
+          <input
+            type="checkbox"
+            checked={selectedThemes.includes(theme)}
+            onChange={() => handleThemeToggle(theme)}
+            className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+          />
+          <span className="text-sm text-neutral-700">{theme}</span>
+        </label>
+      ))}
+    </div>
+  );
+});
+ThemeCheckboxGroup.displayName = "ThemeCheckboxGroup";
+
 type CountryOption = { id: string; name: string };
 
 type DayState = {
@@ -1163,9 +1227,9 @@ export default function AdminTourEditorPage() {
         <div>
           <Link
             href="/admin/content/tours"
-            className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-900"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-colors shadow-sm"
           >
-            <ArrowLeft size={16} className="mr-2" />
+            <ArrowLeft size={16} />
             Back to Tours
           </Link>
           <h1 className="text-3xl font-bold text-neutral-900 mt-3">
@@ -1469,14 +1533,13 @@ const DestinationTab = memo(({ formData, updateForm, countries }: {
         />
       </label>
 
-      <label className="flex flex-col">
-        <span className="text-sm font-medium text-neutral-700">Themes (comma-separated)</span>
-        <CommaSeparatedInput
+      <div className="flex flex-col">
+        <span className="text-sm font-medium text-neutral-700 mb-2">Themes (select multiple)</span>
+        <ThemeCheckboxGroup
           value={formData.themes}
           onChange={(value) => updateForm("themes", value)}
-          placeholder="Honeymoon, Adventure, Beach, Culture"
         />
-      </label>
+      </div>
     </div>
   );
 });

@@ -212,9 +212,10 @@ export default function AdminCareerApplicationDetailPage() {
           <div className="flex items-center space-x-4">
             <Link
               href="/admin/careers"
-              className="text-neutral-600 hover:text-neutral-900"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-colors shadow-sm"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={16} />
+              Back to Careers
             </Link>
             <div>
               <h1 className="text-3xl font-bold text-neutral-900">{application.name}</h1>

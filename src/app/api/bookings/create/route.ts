@@ -513,7 +513,22 @@ export async function POST(req: Request) {
       );
     }
 
-    const totalAmount = Math.round(baseAmount + addOnsTotal);
+    // Calculate base amount (before GST)
+    const baseSubtotal = Math.round(baseAmount + addOnsTotal);
+    
+    // Calculate GST (5% for tours)
+    const GST_RATE = 0.05; // 5%
+    const gstAmount = Math.round(baseSubtotal * GST_RATE);
+    
+    // Calculate total amount (base + GST, before discount)
+    const totalAmountBeforeDiscount = baseSubtotal + gstAmount;
+    
+    // Apply discount if any
+    const discountAmountInRupees = data.discountAmount ? data.discountAmount / 100 : 0;
+    const totalAmount = discountAmountInRupees > 0 
+      ? Math.max(0, totalAmountBeforeDiscount - discountAmountInRupees)
+      : totalAmountBeforeDiscount;
+    
     const preferences = data.preferences || {};
     const consentTimestamp = new Date();
     const ipAddress =
@@ -531,8 +546,15 @@ export async function POST(req: Request) {
     if (isCustomisedPackage && data.customisedPackage) {
       const customBase = data.customisedPackage.customBasePrice || baseAmount;
       const customAddOns = data.customisedPackage.customAddOnsPrice || addOnsTotal;
+      const customSubtotal = customBase + customAddOns;
+      const customGstAmount = Math.round(customSubtotal * GST_RATE);
+      const customTotalBeforeDiscount = customSubtotal + customGstAmount;
       const discount = data.customisedPackage.customDiscount || 0;
-      finalTotalAmount = customBase + customAddOns - discount;
+      finalTotalAmount = Math.max(0, customTotalBeforeDiscount - discount);
+    } else {
+      // Use tourPrice from frontend (it already includes GST and discount)
+      // This ensures consistency with what the user sees
+      finalTotalAmount = data.tourPrice && data.tourPrice > 0 ? Math.round(data.tourPrice) : totalAmount;
     }
 
     const booking = await prisma.$transaction(async (tx) => {

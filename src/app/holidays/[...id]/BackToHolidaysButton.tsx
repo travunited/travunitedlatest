@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ArrowLeft } from "lucide-react";
 
 export function BackToHolidaysButton() {
   const router = useRouter();
@@ -68,9 +69,10 @@ export function BackToHolidaysButton() {
     <a
       href={backUrl}
       onClick={handleBack}
-      className="inline-flex items-center text-white/80 hover:text-white mb-4 text-sm transition-colors"
+      className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-white/20 rounded-lg text-sm font-medium text-neutral-700 hover:bg-white/90 transition-colors shadow-sm mb-4"
     >
-      ← Back to Holidays
+      <ArrowLeft size={16} />
+      Back to Holidays
     </a>
   );
 }

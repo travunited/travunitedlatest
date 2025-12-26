@@ -130,9 +130,9 @@ export default function EditPromoCodePage() {
         <div className="flex items-center justify-between mb-6">
           <Link
             href="/admin/promo-codes"
-            className="inline-flex items-center text-neutral-600 hover:text-neutral-900"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-colors shadow-sm"
           >
-            <ArrowLeft size={20} className="mr-2" />
+            <ArrowLeft size={16} />
             Back to Promo Codes
           </Link>
           <Link

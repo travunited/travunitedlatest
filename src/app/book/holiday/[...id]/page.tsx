@@ -480,6 +480,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
       return {
         baseAmount: 0,
         addOnTotal: 0,
+        gstAmount: 0,
         finalAmount: 0,
         advanceAmount: 0,
         remainingAmount: 0,
@@ -513,22 +514,29 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
     const selectedAddOnDetails = getSelectedAddOnDetails(normalizedTravellerCount);
     const addOnTotal = selectedAddOnDetails.reduce((sum, detail) => sum + detail.totalPrice, 0);
 
-    // Calculate subtotal before discount
+    // Calculate subtotal before GST and discount (base + add-ons)
     const subtotal = baseAmount + addOnTotal;
+
+    // Calculate GST (5% on subtotal for tours only)
+    const GST_RATE = 0.05; // 5%
+    const gstAmount = Math.round(subtotal * GST_RATE);
+
+    // Calculate amount after GST (before discount)
+    const amountAfterGST = subtotal + gstAmount;
 
     // Apply promo code discount if applicable
     const discountAmount = appliedPromoCode ? appliedPromoCode.discountAmount / 100 : 0; // Convert from paise to rupees
-    const finalAmount = Math.max(0, subtotal - discountAmount);
+    const finalAmount = Math.max(0, amountAfterGST - discountAmount);
 
     const advancePercentage = tour.advancePercentage ?? 0;
     const advanceAmount = formData.paymentType === "advance" && tour.allowAdvance
       ? Math.round(finalAmount * (advancePercentage / 100))
       : finalAmount;
     const remainingAmount = Math.max(finalAmount - advanceAmount, 0);
-    return { baseAmount, addOnTotal, finalAmount, advanceAmount, remainingAmount, subtotal, discountAmount };
+    return { baseAmount, addOnTotal, gstAmount, finalAmount, advanceAmount, remainingAmount, subtotal, discountAmount };
   };
 
-  const { baseAmount, addOnTotal, finalAmount, advanceAmount, remainingAmount, subtotal, discountAmount } = calculatePrice();
+  const { baseAmount, addOnTotal, gstAmount, finalAmount, advanceAmount, remainingAmount, subtotal, discountAmount } = calculatePrice();
   const selectedAddOnDetails = useMemo(
     () => getSelectedAddOnDetails(),
     [getSelectedAddOnDetails]
@@ -1339,15 +1347,18 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                     <span className="font-medium">{travellerCount}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-700">Base price:</span>
-                    <span className="font-medium">₹{baseAmount.toLocaleString()}</span>
+                    <span className="text-neutral-700">Base Amount:</span>
+                    <span className="font-medium">₹{subtotal.toLocaleString()}</span>
                   </div>
                   {addOnTotal > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-neutral-700">Add-ons:</span>
-                      <span className="font-medium">+₹{addOnTotal.toLocaleString()}</span>
+                    <div className="text-xs text-neutral-600 pl-4">
+                      Base Price: ₹{baseAmount.toLocaleString()} + Add-ons: ₹{addOnTotal.toLocaleString()}
                     </div>
                   )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-neutral-700">GST (5%)</span>
+                    <span className="font-medium">₹{gstAmount.toLocaleString()}</span>
+                  </div>
                   <div className="border-t border-blue-300 pt-2 mt-2">
                     <div className="flex justify-between">
                       <span className="font-semibold text-neutral-900">Total Amount:</span>
@@ -1355,6 +1366,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                         ₹{finalAmount.toLocaleString()}
                       </span>
                     </div>
+                    <div className="text-xs text-neutral-600 mt-0.5">Including 5% GST</div>
                   </div>
                 </div>
               </div>
@@ -1952,39 +1964,36 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
 
               {/* Price Summary */}
               <div className="bg-primary-50 rounded-lg p-4 border border-primary-200">
-                {discountAmount > 0 && appliedPromoCode && (
-                  <div className="mb-3 pb-3 border-b border-primary-200">
-                    <div className="flex justify-between items-center text-sm mb-2">
-                      <span className="text-neutral-700">Base Price</span>
-                      <span className="text-neutral-900">₹{baseAmount.toLocaleString()}</span>
+                <div className="space-y-2 mb-3 pb-3 border-b border-primary-200">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-neutral-700">Base Amount</span>
+                    <span className="text-neutral-900">₹{subtotal.toLocaleString()}</span>
+                  </div>
+                  {addOnTotal > 0 && (
+                    <div className="text-xs text-neutral-600 pl-4">
+                      Base Price: ₹{baseAmount.toLocaleString()} + Add-ons: ₹{addOnTotal.toLocaleString()}
                     </div>
-                    {addOnTotal > 0 && (
-                      <div className="flex justify-between items-center text-sm mb-2">
-                        <span className="text-neutral-700">Add-ons</span>
-                        <span className="text-neutral-900">₹{addOnTotal.toLocaleString()}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between items-center text-sm mb-2">
-                      <span className="text-neutral-700">Subtotal</span>
-                      <span className="text-neutral-900">₹{subtotal.toLocaleString()}</span>
-                    </div>
+                  )}
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-neutral-700">GST (5%)</span>
+                    <span className="text-neutral-900">₹{gstAmount.toLocaleString()}</span>
+                  </div>
+                  {discountAmount > 0 && appliedPromoCode && (
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-green-700">Discount ({appliedPromoCode.code})</span>
                       <span className="text-green-700 font-medium">-₹{discountAmount.toLocaleString()}</span>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
                 <div className="flex justify-between items-center">
-                  <span className="font-semibold text-neutral-900">Total Amount</span>
+                  <div>
+                    <span className="font-semibold text-neutral-900">Total Amount</span>
+                    <div className="text-xs text-neutral-600 mt-0.5">Including 5% GST</div>
+                  </div>
                   <span className="text-2xl font-bold text-primary-600">
                     ₹{finalAmount.toLocaleString()}
                   </span>
                 </div>
-                {addOnTotal > 0 && discountAmount === 0 && (
-                  <div className="text-xs text-neutral-600 mt-1">
-                    Base: ₹{baseAmount.toLocaleString()} + Add-ons: ₹{addOnTotal.toLocaleString()}
-                  </div>
-                )}
               </div>
 
               {/* Payment Option */}
@@ -2004,7 +2013,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                       <div className="font-medium text-neutral-900">Full Payment</div>
                       <div className="text-sm text-neutral-600">Pay the complete amount now</div>
                       <div className="text-lg font-bold text-primary-600 mt-1">
-                        ₹{baseAmount.toLocaleString()}
+                        ₹{finalAmount.toLocaleString()}
                       </div>
                     </div>
                   </label>
