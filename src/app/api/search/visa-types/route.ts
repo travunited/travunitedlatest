@@ -54,7 +54,16 @@ export async function GET(req: Request) {
       },
     });
 
-    return NextResponse.json(visas);
+    // Transform Country to country to match frontend interface
+    const transformedVisas = visas.map((visa) => {
+      const { Country, ...rest } = visa;
+      return {
+        ...rest,
+        country: Country,
+      };
+    });
+
+    return NextResponse.json(transformedVisas);
   } catch (error) {
     console.error("Error fetching visa types:", error);
     return NextResponse.json(

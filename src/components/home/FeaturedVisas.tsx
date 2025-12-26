@@ -143,15 +143,12 @@ export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
                     </div>
                     <div className="mt-auto flex items-center justify-between pt-4 border-t border-neutral-200">
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className="text-2xl font-bold text-primary-600">
-                            ₹{typeof visa.price === 'number' ? visa.price.toLocaleString() : '0'}
-                          </div>
-                          <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] font-semibold rounded whitespace-nowrap">
-                            All taxes included
-                          </span>
+                        <div className="text-2xl font-bold text-primary-600 mb-1">
+                          ₹{typeof visa.price === 'number' ? visa.price.toLocaleString() : '0'}
                         </div>
-                        <div className="text-xs text-neutral-500">starting from</div>
+                        <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] font-semibold rounded whitespace-nowrap">
+                          All taxes included
+                        </span>
                       </div>
                       <div className="flex items-center text-primary-600 font-medium group-hover:translate-x-1 transition-transform">
                         <span className="text-sm">View</span>

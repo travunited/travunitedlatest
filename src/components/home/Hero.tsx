@@ -61,18 +61,24 @@ export function Hero() {
   // Fetch visa types when country is selected
   useEffect(() => {
     if (selectedCountry && mode === "visa") {
+      // Clear visa types immediately when country changes
+      setVisaTypes([]);
+      setSelectedVisaType("");
+      
       const fetchVisaTypes = async () => {
         try {
           // selectedCountry is the country ID, use it directly to ensure exact match
           const response = await fetch(`/api/search/visa-types?country=${encodeURIComponent(selectedCountry)}`);
           if (response.ok) {
             const data = await response.json();
-            // Additional validation: filter visas to ensure they match the selected country by ID
-            const filteredData = data.filter((visa: VisaType) => 
-              visa.country.id === selectedCountry
-            );
+            // The API already filters by country, so we trust the response
+            // But add an additional safety check to ensure country IDs match
+            const filteredData = Array.isArray(data) 
+              ? data.filter((visa: VisaType) => visa.country?.id === selectedCountry)
+              : [];
             setVisaTypes(filteredData);
           } else {
+            console.error("Failed to fetch visa types:", response.status, response.statusText);
             setVisaTypes([]);
           }
         } catch (error) {
@@ -80,6 +86,7 @@ export function Hero() {
           setVisaTypes([]);
         }
       };
+      
       fetchVisaTypes();
     } else {
       setVisaTypes([]);
@@ -258,11 +265,17 @@ export function Hero() {
                 <select
                   value={selectedVisaType}
                   onChange={(e) => setSelectedVisaType(e.target.value)}
-                  disabled={!selectedCountry || visaTypes.length === 0}
+                  disabled={!selectedCountry}
                   className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <option value="">Select visa type</option>
-                  <option value="not-sure">Not sure - Show all types</option>
+                  <option value="">
+                    {selectedCountry 
+                      ? (visaTypes.length === 0 ? "Loading visa types..." : "Select visa type")
+                      : "Select a country first"}
+                  </option>
+                  {selectedCountry && (
+                    <option value="not-sure">Not sure - Show all types</option>
+                  )}
                   {visaTypes.map((visa) => (
                     <option key={visa.id} value={visa.id}>
                       {visa.name}

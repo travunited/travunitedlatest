@@ -44,7 +44,7 @@ export function TestimonialsClient({ reviews }: TestimonialsClientProps) {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {reviews.map((review, index) => {
             const reviewContent = (
               <motion.div
@@ -53,9 +53,10 @@ export function TestimonialsClient({ reviews }: TestimonialsClientProps) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                className={`bg-white rounded-2xl p-6 shadow-medium transition-shadow ${
+                className={`group bg-white rounded-2xl p-6 shadow-medium transition-all duration-300 flex flex-col h-full ${
                   review.link ? "hover:shadow-large cursor-pointer" : ""
                 }`}
+                style={{ minHeight: '320px' }}
               >
                 <Quote size={32} className="text-primary-200 mb-4" />
                 <div className="flex items-center mb-4">
@@ -72,10 +73,10 @@ export function TestimonialsClient({ reviews }: TestimonialsClientProps) {
                     {review.title}
                   </h3>
                 )}
-                <p className="text-neutral-700 mb-6 leading-relaxed">
+                <p className="text-neutral-700 mb-6 leading-relaxed line-clamp-4 group-hover:line-clamp-none transition-all duration-300 flex-grow">
                   &ldquo;{review.comment}&rdquo;
                 </p>
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-3 mt-auto">
                   {review.imageKey || review.imageUrl ? (
                     <Image
                       src={review.imageKey ? getMediaProxyUrl(review.imageKey) : review.imageUrl || ""}
