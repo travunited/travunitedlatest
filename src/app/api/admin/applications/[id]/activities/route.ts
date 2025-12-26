@@ -52,8 +52,8 @@ export async function GET(
             email: true,
           },
         },
-      },
-    });
+      } as any,
+    }) as any;
 
     if (!application) {
       return NextResponse.json(

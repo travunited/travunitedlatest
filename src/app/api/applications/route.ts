@@ -42,7 +42,7 @@ export async function GET(req: Request) {
             promoCode: true,
           },
         },
-      },
+      } as any,
       orderBy: {
         createdAt: "desc",
       },

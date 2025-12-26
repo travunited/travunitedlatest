@@ -66,8 +66,8 @@ export async function GET(
             promoCode: true,
           },
         },
-      },
-    });
+      } as any,
+    }) as any;
 
     if (!application || application.userId !== session.user.id) {
       return NextResponse.json(
