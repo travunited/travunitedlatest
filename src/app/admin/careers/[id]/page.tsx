@@ -36,6 +36,18 @@ export default function AdminCareerApplicationDetailPage() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [internalNotes, setInternalNotes] = useState("");
   const [savingNotes, setSavingNotes] = useState(false);
+  
+  // Basic Info form state
+  const [basicInfo, setBasicInfo] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    experience: "",
+    currentCompany: "",
+    expectedCtc: "",
+  });
+  const [savingBasicInfo, setSavingBasicInfo] = useState(false);
 
   const fetchApplication = useCallback(async () => {
     try {
@@ -45,6 +57,16 @@ export default function AdminCareerApplicationDetailPage() {
         setApplication(data);
         setSelectedStatus(data.status);
         setInternalNotes(data.internalNotes || "");
+        // Initialize basic info form state
+        setBasicInfo({
+          name: data.name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          location: data.location || "",
+          experience: data.experience?.toString() || "",
+          currentCompany: data.currentCompany || "",
+          expectedCtc: data.expectedCtc || "",
+        });
       }
     } catch (error) {
       console.error("Error fetching career application:", error);
@@ -114,6 +136,39 @@ export default function AdminCareerApplicationDetailPage() {
     }
   };
 
+  const handleSaveBasicInfo = async () => {
+    if (!application) return;
+
+    setSavingBasicInfo(true);
+    try {
+      const response = await fetch(`/api/admin/careers/${params.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: basicInfo.name,
+          email: basicInfo.email,
+          phone: basicInfo.phone,
+          location: basicInfo.location || null,
+          experience: basicInfo.experience ? parseInt(basicInfo.experience, 10) : null,
+          currentCompany: basicInfo.currentCompany || null,
+          expectedCtc: basicInfo.expectedCtc || null,
+        }),
+      });
+
+      if (response.ok) {
+        await fetchApplication();
+        alert("Basic information saved successfully");
+      } else {
+        const error = await response.json();
+        alert(error.error || "Failed to save basic information");
+      }
+    } catch (error) {
+      alert("An error occurred");
+    } finally {
+      setSavingBasicInfo(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
       NEW: "bg-blue-100 text-blue-700",
@@ -176,37 +231,106 @@ export default function AdminCareerApplicationDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Information */}
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <h2 className="text-xl font-bold text-neutral-900 mb-4">Basic Information</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-neutral-900">Basic Information</h2>
+                <button
+                  onClick={handleSaveBasicInfo}
+                  disabled={savingBasicInfo}
+                  className="inline-flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Save size={16} />
+                  <span>{savingBasicInfo ? "Saving..." : "Save Changes"}</span>
+                </button>
+              </div>
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <div className="flex items-center space-x-2 text-sm text-neutral-600 mb-1">
+                  <label className="flex items-center space-x-2 text-sm text-neutral-600 mb-1">
+                    <span>Name *</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={basicInfo.name}
+                    onChange={(e) => setBasicInfo({ ...basicInfo, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center space-x-2 text-sm text-neutral-600 mb-1">
                     <Mail size={16} />
-                    <span>Email</span>
-                  </div>
-                  <div className="font-medium text-neutral-900">{application.email}</div>
+                    <span>Email *</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={basicInfo.email}
+                    onChange={(e) => setBasicInfo({ ...basicInfo, email: e.target.value })}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
                 </div>
                 <div>
-                  <div className="flex items-center space-x-2 text-sm text-neutral-600 mb-1">
+                  <label className="flex items-center space-x-2 text-sm text-neutral-600 mb-1">
                     <Phone size={16} />
-                    <span>Phone</span>
-                  </div>
-                  <div className="font-medium text-neutral-900">{application.phone}</div>
+                    <span>Phone *</span>
+                  </label>
+                  <input
+                    type="tel"
+                    value={basicInfo.phone}
+                    onChange={(e) => setBasicInfo({ ...basicInfo, phone: e.target.value })}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  />
                 </div>
-                {application.location && (
-                  <div>
-                    <div className="flex items-center space-x-2 text-sm text-neutral-600 mb-1">
-                      <MapPin size={16} />
-                      <span>Location</span>
-                    </div>
-                    <div className="font-medium text-neutral-900">{application.location}</div>
-                  </div>
-                )}
                 <div>
-                  <div className="flex items-center space-x-2 text-sm text-neutral-600 mb-1">
+                  <label className="flex items-center space-x-2 text-sm text-neutral-600 mb-1">
+                    <MapPin size={16} />
+                    <span>Location</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={basicInfo.location}
+                    onChange={(e) => setBasicInfo({ ...basicInfo, location: e.target.value })}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="City, State"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-neutral-600 mb-1 block">Experience (Years)</label>
+                  <input
+                    type="number"
+                    value={basicInfo.experience}
+                    onChange={(e) => setBasicInfo({ ...basicInfo, experience: e.target.value })}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="e.g., 5"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-neutral-600 mb-1 block">Current Company</label>
+                  <input
+                    type="text"
+                    value={basicInfo.currentCompany}
+                    onChange={(e) => setBasicInfo({ ...basicInfo, currentCompany: e.target.value })}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="Company name"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-neutral-600 mb-1 block">Expected CTC</label>
+                  <input
+                    type="text"
+                    value={basicInfo.expectedCtc}
+                    onChange={(e) => setBasicInfo({ ...basicInfo, expectedCtc: e.target.value })}
+                    className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="e.g., ₹5,00,000"
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center space-x-2 text-sm text-neutral-600 mb-1">
                     <Calendar size={16} />
                     <span>Applied On</span>
-                  </div>
-                  <div className="font-medium text-neutral-900">{formatDate(application.createdAt)}</div>
+                  </label>
+                  <div className="font-medium text-neutral-900 py-2">{formatDate(application.createdAt)}</div>
                 </div>
               </div>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Mail, Phone, User, Trash2, CheckCircle, AlertCircle, Shield, Lock } from "lucide-react";
@@ -93,16 +93,23 @@ export default function AccountSettingsPage() {
       });
 
       if (response.ok) {
-        setSuccess("Password changed successfully!");
-        setPasswordData({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
-        setShowPasswordForm(false);
+        setSuccess("Password changed successfully! You will be logged out for security reasons.");
+        
+        // Wait a moment to show the success message, then sign out
+        setTimeout(async () => {
+          // Sign out from NextAuth session
+          await signOut({ redirect: false });
+          
+          // Clear any local storage
+          localStorage.clear();
+          
+          // Redirect to login page with message about new password
+          router.push("/login?passwordChanged=true");
+        }, 1500);
       } else {
         const data = await response.json();
         setError(data.error || "Failed to change password. Please check your current password.");
+        setLoading(false);
       }
     } catch (error) {
       setError("An error occurred. Please try again.");

@@ -80,7 +80,17 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { status, internalNotes } = body;
+    const { 
+      status, 
+      internalNotes,
+      name,
+      email,
+      phone,
+      location,
+      experience,
+      currentCompany,
+      expectedCtc,
+    } = body;
 
     const updateData: any = {};
     
@@ -97,6 +107,29 @@ export async function PUT(
 
     if (internalNotes !== undefined) {
       updateData.internalNotes = internalNotes;
+    }
+
+    // Basic Info fields
+    if (name !== undefined) {
+      updateData.name = name;
+    }
+    if (email !== undefined) {
+      updateData.email = email;
+    }
+    if (phone !== undefined) {
+      updateData.phone = phone;
+    }
+    if (location !== undefined) {
+      updateData.location = location || null;
+    }
+    if (experience !== undefined) {
+      updateData.experience = experience !== null && experience !== "" ? parseInt(experience.toString(), 10) : null;
+    }
+    if (currentCompany !== undefined) {
+      updateData.currentCompany = currentCompany || null;
+    }
+    if (expectedCtc !== undefined) {
+      updateData.expectedCtc = expectedCtc || null;
     }
 
     if (Object.keys(updateData).length === 0) {

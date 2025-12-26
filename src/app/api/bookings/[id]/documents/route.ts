@@ -8,6 +8,7 @@ import { sendEmail } from "@/lib/email";
 import { getAdminUserIds, getTourAdminEmail } from "@/lib/admin-contacts";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300; // 5 minutes for large file uploads
 
 const APP_BASE_URL = process.env.NEXTAUTH_URL || "https://travunited.com";
 

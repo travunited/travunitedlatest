@@ -11,6 +11,7 @@ import {
 } from "@/lib/image-upload-config";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300; // 5 minutes for large file uploads
 
 const sanitizeFileName = (value: string) =>
   value.replace(/[^a-zA-Z0-9.\-_]/g, "_").replace(/_+/g, "_");
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
       console.error("File too large:", file.size);
       return NextResponse.json(
         { 
-          error: "Image too large. Maximum allowed size is 5 MB.",
+          error: "Image too large. Maximum allowed size is 10 MB.",
           code: "FILE_TOO_LARGE"
         },
         { status: 400 }

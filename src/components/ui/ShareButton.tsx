@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Share2, Facebook, Linkedin, MessageCircle, Link as LinkIcon, Check } from "lucide-react";
+import { Share2, Facebook, Linkedin, MessageCircle, Instagram, Link as LinkIcon, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { XIcon } from "./XIcon";
 
@@ -37,9 +37,41 @@ export function ShareButton({ url, title, description = "", variant = "full" }: 
     }
   };
 
-  const handleShare = (platform: keyof typeof shareLinks) => {
-    window.open(shareLinks[platform], "_blank", "width=600,height=400");
-    setIsOpen(false);
+  const handleShare = async (platform: keyof typeof shareLinks | "instagram") => {
+    if (platform === "instagram") {
+      // Instagram doesn't have a web share URL, so we copy the link to clipboard
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => {
+          setCopied(false);
+          setIsOpen(false);
+        }, 2000);
+      } catch (err) {
+        console.error("Failed to copy link:", err);
+        // Fallback for older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = shareUrl;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand("copy");
+          setCopied(true);
+          setTimeout(() => {
+            setCopied(false);
+            setIsOpen(false);
+          }, 2000);
+        } catch (error) {
+          console.error("Fallback copy failed:", error);
+        }
+        document.body.removeChild(textArea);
+      }
+    } else {
+      window.open(shareLinks[platform as keyof typeof shareLinks], "_blank", "width=600,height=400");
+      setIsOpen(false);
+    }
   };
 
   if (variant === "icon-only") {
@@ -109,6 +141,17 @@ export function ShareButton({ url, title, description = "", variant = "full" }: 
                 >
                   <Linkedin size={18} className="text-blue-700" />
                   <span className="text-sm text-neutral-700">LinkedIn</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleShare("instagram");
+                  }}
+                  className="w-full flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-neutral-50 transition-colors text-left"
+                >
+                  <Instagram size={18} className="text-pink-600" />
+                  <span className="text-sm text-neutral-700">Instagram</span>
                 </button>
                 <button
                   onClick={(e) => {
@@ -216,6 +259,17 @@ export function ShareButton({ url, title, description = "", variant = "full" }: 
               >
                 <Linkedin size={18} className="text-blue-700" />
                 <span className="text-sm text-neutral-700">LinkedIn</span>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleShare("instagram");
+                }}
+                className="w-full flex items-center space-x-3 px-3 py-2 rounded-md hover:bg-neutral-50 transition-colors text-left"
+              >
+                <Instagram size={18} className="text-pink-600" />
+                <span className="text-sm text-neutral-700">Instagram</span>
               </button>
               <button
                 onClick={(e) => {

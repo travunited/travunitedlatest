@@ -8,13 +8,18 @@
 // Default allowed image MIME types (PNG and JPG/JPEG only)
 export const DEFAULT_ALLOWED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg'] as const;
 
-// Maximum allowed file size: 5 MB
-export const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+// Maximum allowed file size: 10 MB
+export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 
 // Get allowed image types from config or use defaults
 export function getAllowedImageTypes(): string[] {
   // Check if custom types are configured via environment variable
-  const customTypes = process.env.ALLOWED_IMAGE_TYPES;
+  // Use NEXT_PUBLIC_ prefix for client-side access, fallback to server-side env var
+  const customTypes = 
+    (typeof window !== 'undefined' 
+      ? (process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || '')
+      : (process.env.ALLOWED_IMAGE_TYPES || process.env.NEXT_PUBLIC_ALLOWED_IMAGE_TYPES || '')
+    );
   if (customTypes) {
     return customTypes.split(',').map(type => type.trim()).filter(Boolean);
   }
@@ -46,6 +51,6 @@ export function isValidImageSize(fileSize: number): boolean {
 
 // Get human-readable max size
 export function getMaxImageSizeDisplay(): string {
-  return '5 MB';
+  return '10 MB';
 }
 

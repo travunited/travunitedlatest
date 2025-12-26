@@ -25,6 +25,15 @@ function LoginPageContent() {
     }
   }, [searchParams, router]);
 
+  // Show message if password was just changed
+  useEffect(() => {
+    if (searchParams.get("passwordChanged") === "true") {
+      setSuccess("Your password has been changed successfully. Please log in with your new password.");
+      // Clear the passwordChanged param from URL
+      router.replace("/login", { scroll: false });
+    }
+  }, [searchParams, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");

@@ -6,6 +6,7 @@ import {
   Facebook,
   MessageCircle,
   Linkedin,
+  Instagram,
   Link as LinkIcon,
   Check,
 } from "lucide-react";
@@ -83,6 +84,42 @@ export function ShareButton({
           "width=600,height=400"
         );
         setIsOpen(false);
+      },
+    },
+    {
+      name: "Instagram",
+      icon: Instagram,
+      color: "bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] hover:from-[#6B2A94] hover:via-[#D91A1A] hover:to-[#D4933C]",
+      onClick: async () => {
+        // Instagram doesn't have a web share URL, so we copy the link to clipboard
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          setCopied(true);
+          setTimeout(() => {
+            setCopied(false);
+            setIsOpen(false);
+          }, 2000);
+        } catch (error) {
+          console.error("Failed to copy link:", error);
+          // Fallback for older browsers
+          const textArea = document.createElement("textarea");
+          textArea.value = shareUrl;
+          textArea.style.position = "fixed";
+          textArea.style.opacity = "0";
+          document.body.appendChild(textArea);
+          textArea.select();
+          try {
+            document.execCommand("copy");
+            setCopied(true);
+            setTimeout(() => {
+              setCopied(false);
+              setIsOpen(false);
+            }, 2000);
+          } catch (err) {
+            console.error("Fallback copy failed:", err);
+          }
+          document.body.removeChild(textArea);
+        }
       },
     },
   ];

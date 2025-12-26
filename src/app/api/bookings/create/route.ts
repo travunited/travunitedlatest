@@ -581,7 +581,7 @@ export async function POST(req: Request) {
 
       // Handle promo code usage if provided
       if (data.promoCodeId) {
-        await (tx as any).promoCodeUsage.create({
+        await tx.promoCodeUsage.create({
           data: {
             id: crypto.randomUUID(),
             promoCodeId: data.promoCodeId,

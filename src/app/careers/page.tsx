@@ -90,7 +90,11 @@ export default function CareersPage() {
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       ];
-      if (!allowedTypes.includes(formData.resume.type)) {
+      const fileExtension = formData.resume.name.split(".").pop()?.toLowerCase() || "";
+      const allowedExtensions = ["pdf", "doc", "docx"];
+      
+      // Check both MIME type and file extension (some browsers don't set MIME type correctly)
+      if (!allowedTypes.includes(formData.resume.type) && !allowedExtensions.includes(fileExtension)) {
         newErrors.resume = "Resume must be PDF, DOC, or DOCX";
       }
       if (formData.resume.size > 5 * 1024 * 1024) {

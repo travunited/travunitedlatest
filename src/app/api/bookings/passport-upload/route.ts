@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { uploadVisaDocument } from "@/lib/minio";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300; // 5 minutes for large file uploads
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_TYPES = ["application/pdf", "image/jpeg", "image/png"];

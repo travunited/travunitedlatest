@@ -2,7 +2,7 @@
 
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Image from "@tiptap/extension-image";
+import { ImageWithDelete } from "@/lib/tiptap-extensions/ImageWithDelete";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
 import UnderlineExtension from "@tiptap/extension-underline";
@@ -26,11 +26,12 @@ import { useCallback, useState } from "react";
 import { Loader2 } from "lucide-react";
 import {
   getAllowedImageTypes,
+  getAllowedImageFormats,
   isValidImageType,
   isValidImageSize,
   getMaxImageSizeDisplay,
 } from "@/lib/image-upload-config";
-import { getMediaProxyUrl } from "@/lib/media";
+import { getMediaProxyUrl, buildMediaProxyUrlFromKey } from "@/lib/media";
 
 interface RichTextEditorProps {
   content: string;
@@ -55,7 +56,7 @@ export function RichTextEditor({
         },
       }),
       UnderlineExtension,
-      Image.configure({
+      ImageWithDelete.configure({
         inline: true,
         allowBase64: false,
         HTMLAttributes: {
@@ -97,7 +98,8 @@ export function RichTextEditor({
 
       // Validate file type
       if (!isValidImageType(file.type)) {
-        alert(`Invalid file type. Only PNG and JPG images are allowed.`);
+        const allowedFormats = getAllowedImageFormats();
+        alert(`Invalid file type. Only ${allowedFormats.join(', ')} images are allowed.`);
         return;
       }
 
@@ -125,10 +127,23 @@ export function RichTextEditor({
         }
 
         const data = await response.json();
-        const imageUrl = data.proxyUrl || getMediaProxyUrl(data.url);
+        
+        // Handle different response formats
+        let imageUrl: string | null = null;
+        if (data.proxyUrl) {
+          imageUrl = data.proxyUrl;
+        } else if (data.key) {
+          // If key is returned, construct proxy URL from key
+          imageUrl = buildMediaProxyUrlFromKey(data.key);
+        } else if (data.url) {
+          imageUrl = getMediaProxyUrl(data.url);
+        }
 
         if (imageUrl && editor) {
           editor.chain().focus().setImage({ src: imageUrl, alt: "" }).run();
+        } else {
+          console.error("Upload response missing URL:", data);
+          throw new Error("No image URL returned from upload");
         }
       } catch (error: any) {
         console.error("Image upload failed:", error);

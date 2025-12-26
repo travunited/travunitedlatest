@@ -5,6 +5,7 @@ import { sendEmail, sendCareerApplicationStatusEmail } from "@/lib/email";
 import { getSupportAdminEmail } from "@/lib/admin-contacts";
 import crypto from "crypto";
 export const dynamic = "force-dynamic";
+export const maxDuration = 300; // 5 minutes for large file uploads
 
 const ALLOWED_FILE_TYPES = [
   "application/pdf",
@@ -46,8 +47,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // Validate file
-    if (!ALLOWED_FILE_TYPES.includes(resumeFile.type)) {
+    // Validate file type - check MIME type and file extension
+    const fileExtension = resumeFile.name.split(".").pop()?.toLowerCase() || "";
+    const allowedExtensions = ["pdf", "doc", "docx"];
+    
+    if (!ALLOWED_FILE_TYPES.includes(resumeFile.type) && !allowedExtensions.includes(fileExtension)) {
       return NextResponse.json(
         { error: "Resume must be a PDF, DOC, or DOCX file" },
         { status: 400 }
@@ -61,10 +65,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Generate unique file name
+    // Generate unique file name (reuse fileExtension from validation above)
     const timestamp = Date.now();
     const randomString = crypto.randomBytes(8).toString("hex");
-    const fileExtension = resumeFile.name.split(".").pop() || "pdf";
     const sanitizedPosition = positionTitle.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase();
     const fileName = `careers/${sanitizedPosition}/${timestamp}-${randomString}.${fileExtension}`;
 
@@ -207,8 +210,19 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("Error submitting career application:", error);
+    
+    // Provide more specific error messages
+    let errorMessage = "Failed to submit application. Please try again.";
+    if (error instanceof Error) {
+      if (error.message.includes("file") || error.message.includes("upload")) {
+        errorMessage = "Failed to upload resume. Please ensure the file is a valid PDF, DOC, or DOCX file and try again.";
+      } else {
+        errorMessage = error.message || errorMessage;
+      }
+    }
+    
     return NextResponse.json(
-      { error: "Failed to submit application. Please try again." },
+      { error: errorMessage },
       { status: 500 }
     );
   }
