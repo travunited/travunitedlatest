@@ -191,41 +191,27 @@ export async function GET(req: Request) {
       }
 
       // Determine source (if created by admin, there might be a flag - for now assume all are from website)
-      const source = "WEBSITE"; // TODO: Add source field to Booking model if needed
+      const source = booking.source || "WEBSITE";
+
+      // Serialize dates immediately
+      const serializeDate = (date: Date | null | undefined): string | null => {
+        if (!date) return null;
+        return date instanceof Date ? date.toISOString() : (typeof date === 'string' ? date : new Date(date).toISOString());
+      };
 
       return {
         id: booking.id,
-        tourId: booking.tourId,
         tourName: booking.tourName,
         status: booking.status,
         totalAmount: booking.totalAmount,
         currency: booking.currency,
-        travelDate: booking.travelDate,
-        voucherUrl: booking.voucherUrl,
-        notes: booking.notes,
-        createdAt: booking.createdAt,
-        updatedAt: booking.updatedAt,
-        foodPreference: booking.foodPreference,
-        foodPreferenceNotes: booking.foodPreferenceNotes,
-        languagePreference: booking.languagePreference,
-        languagePreferenceOther: booking.languagePreferenceOther,
-        driverPreference: booking.driverPreference,
-        specialRequests: booking.specialRequests,
-        policyAccepted: booking.policyAccepted,
-        policyAcceptedAt: booking.policyAcceptedAt,
-        policyAcceptedByUserId: booking.policyAcceptedByUserId,
-        cancellationReason: booking.cancellationReason,
-        policyVersion: booking.policyVersion,
-        policyAcceptedIp: booking.policyAcceptedIp,
-        policyAcceptedUserAgent: booking.policyAcceptedUserAgent,
-        documents: booking.documents,
-        source: booking.source,
-        invoiceUrl: booking.invoiceUrl,
-        invoiceUploadedAt: booking.invoiceUploadedAt,
-        invoiceUploadedByAdminId: booking.invoiceUploadedByAdminId,
+        travelDate: serializeDate(booking.travelDate),
+        createdAt: serializeDate(booking.createdAt),
+        updatedAt: serializeDate(booking.updatedAt),
         amountPaid,
         pendingBalance: pendingBalance > 0 ? pendingBalance : 0,
         paymentStatus,
+        source,
         travellersCount: booking.BookingTraveller.length,
         user: booking.User_Booking_userIdToUser,
         processedBy: booking.User_Booking_processedByIdToUser,
@@ -239,7 +225,7 @@ export async function GET(req: Request) {
       filteredBookings = bookingsWithPayment.filter((b) => b.paymentStatus === paymentStatus);
     }
 
-    // Transform bookings and ensure proper serialization, filter out invalid entries
+    // Filter out invalid entries and ensure user data is properly formatted
     const transformedBookings = filteredBookings
       .filter((booking) => booking && booking.id && booking.user && booking.user.email)
       .map((booking) => ({
@@ -248,9 +234,9 @@ export async function GET(req: Request) {
         status: booking.status,
         totalAmount: booking.totalAmount,
         currency: booking.currency,
-        travelDate: booking.travelDate ? (booking.travelDate instanceof Date ? booking.travelDate.toISOString() : booking.travelDate) : null,
-        createdAt: booking.createdAt instanceof Date ? booking.createdAt.toISOString() : (typeof booking.createdAt === 'string' ? booking.createdAt : new Date(booking.createdAt).toISOString()),
-        updatedAt: booking.updatedAt instanceof Date ? booking.updatedAt.toISOString() : (typeof booking.updatedAt === 'string' ? booking.updatedAt : new Date(booking.updatedAt).toISOString()),
+        travelDate: booking.travelDate,
+        createdAt: booking.createdAt,
+        updatedAt: booking.updatedAt,
         user: {
           name: booking.user?.name || "Unknown",
           email: booking.user?.email || "",
