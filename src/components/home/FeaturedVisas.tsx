@@ -113,7 +113,8 @@ export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
                       fill
                       className="object-cover group-hover:scale-110 transition-transform duration-500"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                      unoptimized={shouldUseUnoptimizedImage(visa.image) || true}
+                      priority={index < 4}
+                      unoptimized={shouldUseUnoptimizedImage(visa.image)}
                       onError={(e) => {
                         // Fallback to placeholder if image fails to load
                         const target = e.target as HTMLImageElement;

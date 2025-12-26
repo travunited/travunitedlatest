@@ -634,7 +634,7 @@ export default function AdminVisasPage() {
                         </h2>
                       </div>
                       <p className="text-sm text-neutral-500">
-                        {visa.country.name} &middot; {visa.category}
+                        {visa.country?.name || 'Unknown'} &middot; {visa.category}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">

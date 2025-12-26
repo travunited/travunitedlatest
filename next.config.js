@@ -4,6 +4,16 @@ const nextConfig = {
     // This completely skips ESLint in `next build`
     ignoreDuringBuilds: true,
   },
+  // Enable React strict mode for better development experience
+  reactStrictMode: true,
+  // Compress responses
+  compress: true,
+  // Optimize production builds
+  swcMinify: true,
+  // Enable experimental features for better performance
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'framer-motion'],
+  },
   images: {
     // Allow images from any domain - simplified configuration
     remotePatterns: [

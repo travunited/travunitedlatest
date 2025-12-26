@@ -99,7 +99,13 @@ export async function GET(req: Request) {
           : {}),
       },
       include: {
-        Country: true,
+        Country: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+          },
+        },
         VisaSubType: {
           orderBy: { sortOrder: "asc" },
         },
@@ -116,7 +122,17 @@ export async function GET(req: Request) {
       ],
     });
 
-    return NextResponse.json(visas);
+    // Transform Country to country for frontend compatibility
+    const transformedVisas = visas.map((visa: any) => ({
+      ...visa,
+      country: visa.Country ? {
+        id: visa.Country.id,
+        name: visa.Country.name,
+        code: visa.Country.code,
+      } : null,
+    }));
+
+    return NextResponse.json(transformedVisas);
   } catch (error) {
     console.error("Error fetching visas:", error);
     return NextResponse.json(

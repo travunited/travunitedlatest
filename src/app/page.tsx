@@ -8,25 +8,37 @@ import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
 import { Prisma } from "@prisma/client";
 
-export const dynamic = "force-dynamic";
+// Enable ISR (Incremental Static Regeneration) for better performance
 export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function Home() {
-  // Fetch featured visas (max 6) with error handling
-  let featuredVisas: any[] = [];
-  try {
-    featuredVisas = await prisma.visa.findMany({
+  // Parallelize all database queries for better performance
+  const [featuredVisasResult, featuredToursResult, featuredBlogsResult] = await Promise.allSettled([
+    // Fetch featured visas (max 6)
+    prisma.visa.findMany({
       where: {
         isActive: true,
         isFeatured: true,
       },
-      include: {
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        subtitle: true,
+        priceInInr: true,
+        processingTime: true,
+        entryType: true,
+        entryTypeLegacy: true,
+        stayType: true,
+        visaSubTypeLabel: true,
+        visaMode: true,
+        category: true,
+        heroImageUrl: true,
         Country: {
           select: {
             id: true,
             name: true,
             code: true,
-            flagUrl: true,
           },
         },
       },
@@ -34,22 +46,29 @@ export default async function Home() {
         updatedAt: "desc",
       },
       take: 6,
-    });
-  } catch (error) {
-    console.error("Error fetching featured visas:", error);
-    // Continue with empty array
-  }
-
-  // Fetch featured tours (max 8) with error handling
-  let featuredTours: any[] = [];
-  try {
-    featuredTours = await prisma.tour.findMany({
+    }),
+    // Fetch featured tours (max 8)
+    prisma.tour.findMany({
       where: {
         isActive: true,
         isFeatured: true,
         status: "active",
       },
-      include: {
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        subtitle: true,
+        destinationCountry: true,
+        destination: true,
+        durationDays: true,
+        duration: true,
+        durationNights: true,
+        price: true,
+        basePriceInInr: true,
+        heroImageUrl: true,
+        featuredImage: true,
+        imageUrl: true,
         Country: {
           select: {
             id: true,
@@ -62,38 +81,56 @@ export default async function Home() {
         updatedAt: "desc",
       },
       take: 8,
-    });
-  } catch (error) {
-    console.error("Error fetching featured tours:", error);
-    // Continue with empty array
+    }),
+    // Publish scheduled posts and fetch featured blogs (max 3)
+    (async () => {
+      // Publish scheduled posts in background (don't block on errors)
+      try {
+        const { publishReadyPosts } = await import("@/lib/blog/publishReady");
+        publishReadyPosts().catch((err) => {
+          console.error("Error auto-publishing scheduled blog posts:", err);
+        });
+      } catch (publishError) {
+        // Continue even if import fails
+      }
+
+      // Fetch only published posts
+      return prisma.blogPost.findMany({
+        where: {
+          isPublished: true,
+        },
+        select: {
+          slug: true,
+          title: true,
+          excerpt: true,
+          coverImage: true,
+          publishedAt: true,
+          createdAt: true,
+          category: true,
+        },
+        orderBy: [
+          { isFeatured: "desc" },
+          { publishedAt: "desc" },
+        ],
+        take: 3,
+      });
+    })(),
+  ]);
+
+  // Extract results with error handling
+  const featuredVisas = featuredVisasResult.status === "fulfilled" ? featuredVisasResult.value : [];
+  const featuredTours = featuredToursResult.status === "fulfilled" ? featuredToursResult.value : [];
+  const featuredBlogs = featuredBlogsResult.status === "fulfilled" ? featuredBlogsResult.value : [];
+
+  // Log errors if any
+  if (featuredVisasResult.status === "rejected") {
+    console.error("Error fetching featured visas:", featuredVisasResult.reason);
   }
-
-  // Fetch featured blogs (prefer featured, fallback to latest) with error handling
-  let featuredBlogs: Prisma.BlogPostGetPayload<{}>[] = [];
-  try {
-    // First, publish any scheduled posts that are ready (runs before fetching)
-    try {
-      const { publishReadyPosts } = await import("@/lib/blog/publishReady");
-      await publishReadyPosts();
-    } catch (publishError) {
-      console.error("Error auto-publishing scheduled blog posts:", publishError);
-      // Continue even if publish fails - don't block page rendering
-    }
-
-    // Fetch only published posts (scheduled posts are now promoted)
-    featuredBlogs = await prisma.blogPost.findMany({
-      where: {
-        isPublished: true,
-      },
-      orderBy: [
-        { isFeatured: "desc" }, // Featured first
-        { publishedAt: "desc" }, // Then by publish date
-      ],
-      take: 3,
-    });
-  } catch (error) {
-    console.error("Error fetching featured blogs:", error);
-    // Continue with empty array
+  if (featuredToursResult.status === "rejected") {
+    console.error("Error fetching featured tours:", featuredToursResult.reason);
+  }
+  if (featuredBlogsResult.status === "rejected") {
+    console.error("Error fetching featured blogs:", featuredBlogsResult.reason);
   }
 
   // Transform visas data for component
