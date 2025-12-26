@@ -125,6 +125,7 @@ export default async function Home() {
       entryTypeLegacy: visa.entryTypeLegacy ? String(visa.entryTypeLegacy) : null,
       stayType: visa.stayType ? String(visa.stayType) : null,
       visaSubTypeLabel: visa.visaSubTypeLabel ? String(visa.visaSubTypeLabel) : null,
+      visaMode: visa.visaMode ? String(visa.visaMode) : null,
       category, // Include category as string or null
       // Use hero image for cards; do not fall back to sample to avoid thumbnailing
       image: getMediaProxyUrl(visa.heroImageUrl) || null,

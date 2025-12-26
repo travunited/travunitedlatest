@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, MapPin, Clock } from "lucide-react";
+import { ArrowRight, Clock } from "lucide-react";
 import Image from "next/image";
 import { getMediaProxyUrl } from "@/lib/media";
 import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
@@ -20,9 +20,37 @@ type FeaturedVisa = {
   entryTypeLegacy?: string | null;
   stayType?: string | null;
   visaSubTypeLabel?: string | null;
+  visaMode?: string | null;
   image?: string | null;
 };
 
+const visaModeLabels: Record<string, string> = {
+  EVISA: "eVisa",
+  STICKER: "Sticker",
+  VOA: "Visa on Arrival",
+  VFS: "VFS Appointment",
+  ETA: "ETA",
+  PRE_ENROLLMENT: "Pre Enrollment",
+  ARRIVAL_CARD: "Arrival Card",
+  VISA_FREE_ENTRY: "Visa Free Entry",
+  SCHENGEN_VISA: "Schengen Visa",
+  APPOINTMENTS: "Appointments",
+  OTHER: "Other",
+};
+
+const entryTypeLabels: Record<string, string> = {
+  SINGLE: "Single Entry",
+  DOUBLE: "Double Entry",
+  MULTIPLE: "Multiple Entry",
+};
+
+const formatEnumLabel = (
+  value: string | null | undefined,
+  labels: Record<string, string>
+) => {
+  if (!value) return null;
+  return labels[value] || value.replace(/_/g, " ").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+};
 
 export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
   if (!visas || visas.length === 0) {
@@ -96,17 +124,18 @@ export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
                   </div>
                   <div className="p-6 flex-1 flex flex-col">
                     <h3 className="text-xl font-bold text-neutral-900 mb-2 line-clamp-2">
-                      {visa.name}
+                      {visa.country}
                     </h3>
-                    {visa.subtitle && (
-                      <p className="text-neutral-600 text-sm mb-2 line-clamp-1">
-                        {visa.subtitle}
-                      </p>
-                    )}
-                    <div className="flex items-center text-neutral-600 text-sm mb-3">
-                      <MapPin size={16} className="mr-1" />
-                      <span className="line-clamp-1">{visa.country}</span>
-                    </div>
+                    {(() => {
+                      const visaModeLabel = visa.visaMode ? formatEnumLabel(visa.visaMode, visaModeLabels) : null;
+                      const entryTypeLabel = visa.entryType ? formatEnumLabel(visa.entryType, entryTypeLabels) : null;
+                      const visaTypeText = [visaModeLabel, entryTypeLabel].filter(Boolean).join(" ");
+                      return visaTypeText ? (
+                        <p className="text-neutral-600 text-sm mb-2 line-clamp-1">
+                          {visaTypeText}
+                        </p>
+                      ) : null;
+                    })()}
                     <div className="flex items-center text-neutral-600 text-sm mb-4">
                       <Clock size={16} className="mr-1" />
                       <span>{visa.processingTime}</span>
