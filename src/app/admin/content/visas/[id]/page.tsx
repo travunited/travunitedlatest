@@ -72,13 +72,6 @@ interface FaqState {
   sortOrder: number;
 }
 
-interface SubTypeState {
-  uid: string;
-  label: string;
-  code: string;
-  sortOrder: number;
-}
-
 interface CountryOption {
   id: string;
   name: string;
@@ -199,7 +192,6 @@ export default function AdminVisaEditorPage() {
   });
   const [requirements, setRequirements] = useState<RequirementState[]>([]);
   const [faqs, setFaqs] = useState<FaqState[]>([]);
-  const [subTypes, setSubTypes] = useState<SubTypeState[]>([]);
   const [heroImageMode, setHeroImageMode] = useState<"url" | "upload">("url");
   const [sampleVisaImageMode, setSampleVisaImageMode] = useState<"url" | "upload">("url");
   const [heroImageUploading, setHeroImageUploading] = useState(false);
@@ -221,11 +213,10 @@ export default function AdminVisaEditorPage() {
     formData,
     requirements,
     faqs,
-    subTypes,
     activeTab,
     heroImageMode,
     sampleVisaImageMode,
-  }), [formData, requirements, faqs, subTypes, activeTab, heroImageMode, sampleVisaImageMode]);
+  }), [formData, requirements, faqs, activeTab, heroImageMode, sampleVisaImageMode]);
 
   // Track if form has unsaved changes (compare against initial state after restore/server load)
   useEffect(() => {
@@ -406,9 +397,6 @@ export default function AdminVisaEditorPage() {
         if (cleanState.faqs && Array.isArray(cleanState.faqs)) {
           setFaqs(cleanState.faqs);
         }
-        if (cleanState.subTypes && Array.isArray(cleanState.subTypes)) {
-          setSubTypes(cleanState.subTypes);
-        }
         if (cleanState.activeTab) {
           setActiveTab(cleanState.activeTab);
         }
@@ -467,7 +455,6 @@ export default function AdminVisaEditorPage() {
       { id: "content", label: "Content" },
       { id: "documents", label: "Documents & Process" },
       { id: "faqs", label: "FAQs" },
-      { id: "subtypes", label: "Subtypes" },
       { id: "media", label: "Media & SEO" },
     ],
     []
@@ -592,19 +579,6 @@ export default function AdminVisaEditorPage() {
       );
     }
     
-    if (shouldUseDraft && draftData?.subTypes && Array.isArray(draftData.subTypes)) {
-      console.log("Using draft subTypes");
-      setSubTypes(draftData.subTypes);
-    } else {
-      setSubTypes(
-        (data.subTypes || []).map((subtype: any, index: number) => ({
-          uid: uid(),
-          label: subtype.label || "",
-          code: subtype.code || "",
-          sortOrder: subtype.sortOrder ?? index,
-        }))
-      );
-    }
     
     // Restore UI state from draft if available
     if (shouldUseDraft) {
@@ -721,31 +695,6 @@ export default function AdminVisaEditorPage() {
     setFaqs((prev) => prev.filter((faq) => faq.uid !== uidValue));
   };
 
-  const handleSubTypeChange = useCallback((
-    uidValue: string,
-    field: keyof SubTypeState,
-    value: string | number
-  ) => {
-    setSubTypes((prev) =>
-      prev.map((st) => (st.uid === uidValue ? { ...st, [field]: value } : st))
-    );
-  }, []);
-
-  const addSubType = () => {
-    setSubTypes((prev) => [
-      ...prev,
-      {
-        uid: uid(),
-        label: "",
-        code: "",
-        sortOrder: prev.length,
-      },
-    ]);
-  };
-
-  const removeSubType = (uidValue: string) => {
-    setSubTypes((prev) => prev.filter((st) => st.uid !== uidValue));
-  };
 
   const autoGenerateSlug = useCallback(() => {
     if (!formData.name) return;
@@ -816,11 +765,6 @@ export default function AdminVisaEditorPage() {
           category: (faq.category && faq.category.trim() !== "") ? faq.category.trim() : null,
           question: faq.question.trim(),
           answer: faq.answer.trim(),
-          sortOrder: index,
-        })),
-        subTypes: subTypes.filter(subtype => subtype && subtype.label && subtype.label.trim() !== "").map((subtype, index) => ({
-          label: subtype.label.trim(),
-          code: (subtype.code && subtype.code.trim() !== "") ? subtype.code.trim() : null,
           sortOrder: index,
         })),
       };
@@ -1145,29 +1089,13 @@ export default function AdminVisaEditorPage() {
                     <label className="text-sm font-medium text-neutral-700">
                       Subtype Label
                     </label>
-                    {subTypes.length > 0 ? (
-                      <SelectInput
-                        value={formData.visaSubTypeLabel}
-                        onChange={(value) => updateFormField("visaSubTypeLabel", value)}
-                      >
-                        <option value="">Select a subtype label (optional)</option>
-                        {subTypes.map((subtype) => (
-                          <option key={subtype.uid} value={subtype.label}>
-                            {subtype.label || `Subtype ${subtype.uid.slice(0, 8)}`}
-                          </option>
-                        ))}
-                      </SelectInput>
-                    ) : (
-                      <TextInput
-                        value={formData.visaSubTypeLabel}
-                        onChange={(value) => updateFormField("visaSubTypeLabel", value)}
-                        placeholder="Single Entry eVisa – Short Stay (add subtypes to enable dropdown)"
-                      />
-                    )}
+                    <TextInput
+                      value={formData.visaSubTypeLabel}
+                      onChange={(value) => updateFormField("visaSubTypeLabel", value)}
+                      placeholder="Single Entry eVisa – Short Stay"
+                    />
                     <p className="text-xs text-neutral-500 mt-1">
-                      {subTypes.length > 0 
-                        ? "Select a subtype label from the subtypes you've added below, or leave empty."
-                        : "Add subtypes in the 'Subtypes' tab to enable dropdown selection."}
+                      Optional: Enter a custom subtype label (e.g., "Single Entry eVisa – Short Stay")
                     </p>
                   </div>
                 </div>
@@ -1502,95 +1430,6 @@ export default function AdminVisaEditorPage() {
                         onChange={(value) => handleFaqChange(faq.uid, "answer", value)}
                         placeholder="Answer"
                         className="border border-neutral-300 rounded-lg"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {activeTab === "subtypes" && (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-neutral-900">Visa Subtypes</h3>
-                    <p className="text-sm text-neutral-500">
-                      Add multiple subtypes for this visa (e.g., Single Entry, Multiple Entry, etc.)
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={addSubType}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-lg font-medium"
-                  >
-                    <Plus size={16} /> Add Subtype
-                  </button>
-                </div>
-                <div className="space-y-4">
-                  {subTypes.length === 0 && (
-                    <div className="border border-dashed border-neutral-200 rounded-xl p-6 text-center text-neutral-500">
-                      No subtypes yet. Add subtypes to help users understand different visa options.
-                    </div>
-                  )}
-                  {subTypes.map((subtype, index) => (
-                    <div
-                      key={subtype.uid}
-                      className="border border-neutral-200 rounded-xl p-4 space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-neutral-500">
-                          Subtype #{index + 1}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeSubType(subtype.uid)}
-                          className="text-red-500 hover:text-red-600"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                      <div className="grid md:grid-cols-3 gap-3">
-                        <div className="md:col-span-2">
-                          <div className="space-y-2">
-                            <SelectInput
-                              value={subtype.label}
-                              onChange={(value) => handleSubTypeChange(subtype.uid, "label", value)}
-                              className="w-full border border-neutral-300 rounded-lg"
-                            >
-                              <option value="">Select or type custom label</option>
-                              {COMMON_SUBTYPE_LABELS.map((commonLabel) => (
-                                <option key={commonLabel} value={commonLabel}>
-                                  {commonLabel}
-                                </option>
-                              ))}
-                            </SelectInput>
-                            {!COMMON_SUBTYPE_LABELS.includes(subtype.label) && subtype.label && (
-                              <TextInput
-                                value={subtype.label}
-                                onChange={(value) => handleSubTypeChange(subtype.uid, "label", value)}
-                                placeholder="Or type a custom subtype label"
-                                className="w-full border border-neutral-300 rounded-lg mt-2"
-                              />
-                            )}
-                            <p className="text-xs text-neutral-500">
-                              Select from common options or type a custom label
-                            </p>
-                          </div>
-                        </div>
-                        <div>
-                          <TextInput
-                            value={subtype.code}
-                            onChange={(value) => handleSubTypeChange(subtype.uid, "code", value)}
-                            placeholder="Code (Optional)"
-                            className="w-full border border-neutral-300 rounded-lg"
-                          />
-                        </div>
-                      </div>
-                      <NumberInput
-                        value={subtype.sortOrder}
-                        onChange={(value) => handleSubTypeChange(subtype.uid, "sortOrder", value ?? 0)}
-                        className="w-full border border-neutral-300 rounded-lg"
-                        placeholder="Sort order"
                       />
                     </div>
                   ))}
