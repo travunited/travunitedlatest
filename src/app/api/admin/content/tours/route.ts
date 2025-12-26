@@ -214,6 +214,7 @@ function buildTourData(body: any, resolvedSlug: string) {
     imageUrl: normalizeMediaInput(body.imageUrl),
     heroImageUrl: normalizeMediaInput(body.heroImageUrl || body.imageUrl),
     featuredImage: normalizeMediaInput(body.featuredImage),
+    mapLogisticsImageUrl: normalizeMediaInput(body.mapLogisticsImageUrl),
     galleryImageUrls: processGalleryImages(body.galleryImageUrls, body.images),
     images: stringifyJson(body.images || body.galleryImageUrls),
     ogImage: normalizeMediaInput(body.ogImage),

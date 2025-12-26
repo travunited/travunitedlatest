@@ -307,6 +307,20 @@ export default async function TourDetailPage({
                 </Section>
               )}
 
+              {/* Map & Logistics */}
+              {tour.mapLogisticsImageUrl && (
+                <Section title="Map & Logistics">
+                  <div className="w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getMediaProxyUrl(tour.mapLogisticsImageUrl) || tour.mapLogisticsImageUrl}
+                      alt="Map & Logistics"
+                      className="w-full h-auto rounded-lg border border-neutral-200"
+                    />
+                  </div>
+                </Section>
+              )}
+
               {/* Cities Covered Timeline */}
               {citiesCovered.length > 0 && (
                 <Section title="Cities Covered">

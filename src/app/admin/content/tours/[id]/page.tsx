@@ -406,6 +406,7 @@ type FormState = {
   images: string; // JSON array string
   ogImage: string;
   twitterImage: string;
+  mapLogisticsImageUrl: string;
 
   // SEO & Social
   metaTitle: string;
@@ -493,6 +494,7 @@ const defaultForm: FormState = {
   images: "[]",
   ogImage: "",
   twitterImage: "",
+  mapLogisticsImageUrl: "",
 
   // SEO & Social
   metaTitle: "",
@@ -679,6 +681,7 @@ export default function AdminTourEditorPage() {
       images: parseJsonField(data.images),
       ogImage: data.ogImage ?? "",
       twitterImage: data.twitterImage ?? "",
+      mapLogisticsImageUrl: data.mapLogisticsImageUrl ?? "",
 
       // SEO & Social
       metaTitle: data.metaTitle ?? "",
@@ -948,10 +951,12 @@ export default function AdminTourEditorPage() {
         imageUrl: formData.imageUrl || null,
         heroImageUrl: formData.heroImageUrl || null,
         featuredImage: formData.featuredImage || null,
+        mapLogisticsImageUrl: formData.mapLogisticsImageUrl || null,
         galleryImageUrls: galleryUrls,
         images: galleryUrls,
         ogImage: formData.ogImage || null,
         twitterImage: formData.twitterImage || null,
+        mapLogisticsImageUrl: formData.mapLogisticsImageUrl || null,
 
         // SEO & Social
         metaTitle: formData.metaTitle || null,
@@ -1143,6 +1148,36 @@ export default function AdminTourEditorPage() {
     }
   };
 
+  const handleMapLogisticsImageUpload = async (file: File | null) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image (JPG, PNG, WEBP).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image too large. Maximum 5 MB allowed.");
+      return;
+    }
+
+    setMapLogisticsUploading(true);
+    setMapLogisticsUploadError(null);
+    try {
+      const url = await uploadCmsImage(file, "tours", "map-logistics");
+      if (!url) {
+        throw new Error("No URL returned from upload");
+      }
+      updateForm("mapLogisticsImageUrl", url);
+      setMapLogisticsImageMode("upload");
+    } catch (error: any) {
+      console.error("Map & Logistics image upload failed", error);
+      const errorMessage = error.message || "Failed to upload map & logistics image";
+      setMapLogisticsUploadError(errorMessage);
+      alert(`Map & Logistics image upload failed: ${errorMessage}`);
+    } finally {
+      setMapLogisticsUploading(false);
+    }
+  };
+
   const handleGalleryUpload = async (files: FileList | null) => {
     if (!files?.length) return;
     setGalleryUploading(true);
@@ -1261,7 +1296,22 @@ export default function AdminTourEditorPage() {
             {activeTab === "addons" && <AddOnsTab addOns={addOns} updateAddOn={updateAddOn} removeAddOn={removeAddOn} addAddOnRow={addAddOnRow} />}
             {activeTab === "availability" && <AvailabilityTab formData={formData} updateForm={updateForm} />}
             {activeTab === "content" && <ContentTab formData={formData} updateForm={updateForm} />}
-            {activeTab === "itinerary" && <ItineraryTab days={days} addDay={addDay} updateDay={updateDay} removeDay={removeDay} onImportCSV={handleImportCSV} />}
+            {activeTab === "itinerary" && (
+              <ItineraryTab
+                days={days}
+                addDay={addDay}
+                updateDay={updateDay}
+                removeDay={removeDay}
+                onImportCSV={handleImportCSV}
+                formData={formData}
+                updateForm={updateForm}
+                mapLogisticsImageMode={mapLogisticsImageMode}
+                setMapLogisticsImageMode={setMapLogisticsImageMode}
+                handleMapLogisticsImageUpload={handleMapLogisticsImageUpload}
+                mapLogisticsUploading={mapLogisticsUploading}
+                mapLogisticsUploadError={mapLogisticsUploadError}
+              />
+            )}
             {activeTab === "media" && <MediaTab
               formData={formData}
               updateForm={updateForm}
@@ -2087,12 +2137,32 @@ const ContentTab = memo(({ formData, updateForm }: {
 });
 ContentTab.displayName = "ContentTab";
 
-const ItineraryTab = memo(({ days, addDay, updateDay, removeDay, onImportCSV }: {
+const ItineraryTab = memo(({
+  days,
+  addDay,
+  updateDay,
+  removeDay,
+  onImportCSV,
+  formData,
+  updateForm,
+  mapLogisticsImageMode,
+  setMapLogisticsImageMode,
+  handleMapLogisticsImageUpload,
+  mapLogisticsUploading,
+  mapLogisticsUploadError,
+}: {
   days: DayState[];
   addDay: () => void;
   updateDay: (uid: string, key: keyof DayState, value: any) => void;
   removeDay: (uid: string) => void;
   onImportCSV: (newDays: DayState[], replace: boolean) => void;
+  formData: FormState;
+  updateForm: (key: keyof FormState, value: any) => void;
+  mapLogisticsImageMode: "url" | "upload";
+  setMapLogisticsImageMode: (mode: "url" | "upload") => void;
+  handleMapLogisticsImageUpload: (file: File | null) => void;
+  mapLogisticsUploading: boolean;
+  mapLogisticsUploadError: string | null;
 }) => {
   const [importing, setImporting] = useState(false);
   const [showPasteMode, setShowPasteMode] = useState(false);
@@ -2648,6 +2718,78 @@ Day Number,Title,Description,Activities,Meals,Accommodation
             </button>
           </div>
         ))}
+      </div>
+
+      {/* Map & Logistics Image Section */}
+      <div className="mt-8 pt-8 border-t border-neutral-200">
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold text-neutral-900 mb-1">Map & Logistics</h3>
+            <p className="text-sm text-neutral-500">
+              Upload an image showing the route, location, or logistical details for this tour.
+            </p>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-neutral-700">
+              Map & Logistics Image
+            </span>
+            <div className="inline-flex rounded-lg border border-neutral-200 overflow-hidden text-xs font-medium">
+              <button
+                type="button"
+                onClick={() => setMapLogisticsImageMode("url")}
+                className={`px-3 py-1.5 ${mapLogisticsImageMode === "url" ? "bg-primary-600 text-white" : "text-neutral-600"
+                  }`}
+              >
+                Use URL
+              </button>
+              <button
+                type="button"
+                onClick={() => setMapLogisticsImageMode("upload")}
+                className={`px-3 py-1.5 ${mapLogisticsImageMode === "upload" ? "bg-primary-600 text-white" : "text-neutral-600"
+                  }`}
+              >
+                Upload
+              </button>
+            </div>
+          </div>
+          {mapLogisticsImageMode === "url" ? (
+            <TextInput
+              type="url"
+              value={formData.mapLogisticsImageUrl}
+              onChange={(value) => updateForm("mapLogisticsImageUrl", value)}
+              placeholder="https://..."
+            />
+          ) : (
+            <div className="space-y-2">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleMapLogisticsImageUpload(e.target.files?.[0] || null)}
+                className="w-full px-4 py-3 border border-dashed border-neutral-300 rounded-lg text-sm text-neutral-600 hover:border-primary-400 cursor-pointer"
+              />
+              <p className="text-xs text-neutral-500">JPG, PNG or WEBP up to 5 MB.</p>
+              {mapLogisticsUploading && (
+                <div className="flex items-center gap-2 text-sm text-neutral-600">
+                  <Loader2 size={16} className="animate-spin" />
+                  Uploading map & logistics image...
+                </div>
+              )}
+              {mapLogisticsUploadError && (
+                <p className="text-sm text-red-600">{mapLogisticsUploadError}</p>
+              )}
+            </div>
+          )}
+          {formData.mapLogisticsImageUrl && (
+            <div className="mt-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={getMediaProxyUrl(formData.mapLogisticsImageUrl)}
+                alt="Map & Logistics preview"
+                className="w-full max-h-96 object-contain rounded-lg border border-neutral-200"
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

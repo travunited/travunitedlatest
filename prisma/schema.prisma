@@ -497,6 +497,7 @@ model Tour {
   requiredDocuments    Json?
   amenities            String?
   showAmenities        Boolean     @default(false)
+  mapLogisticsImageUrl String?
   Booking              Booking[]
   Country              Country?    @relation(fields: [countryId], references: [id])
   TourAddOn            TourAddOn[]
