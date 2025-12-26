@@ -18,6 +18,7 @@ import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 import { ShareButton } from "@/components/sharing/ShareButton";
 import { VisaDetailClient } from "./VisaDetailClient";
 import { BackToVisasButton } from "./BackToVisasButton";
+import { InformationOnlyCTAs } from "./InformationOnlyCTAs";
 
 const visaModeLabels: Record<string, string> = {
   EVISA: "eVisa",
@@ -201,6 +202,9 @@ export default async function VisaDetailPage({
     ? `${visa.validityDays} days from issue`
     : visa.validity || "Not specified";
 
+  // Check if this is an information-only visa (VOA or Visa-Free Entry)
+  const isInformationOnly = visa.visaMode === "VOA" || visa.visaMode === "VISA_FREE_ENTRY";
+
   return (
     <VisaDetailClient searchParams={searchParams}>
       <div className="min-h-screen bg-white">
@@ -286,7 +290,7 @@ export default async function VisaDetailPage({
                 </div>
               </section>
 
-              <section className="space-y-4">
+              <section id="requirements-section" className="space-y-4">
                 <h2 className="text-2xl font-bold text-neutral-900">Documents Required</h2>
                 {perTravellerDocs.length > 0 && (
                   <div>
@@ -344,6 +348,29 @@ export default async function VisaDetailPage({
                 </section>
               )}
 
+              {(visa.importantNotes || isInformationOnly) && (
+                <section id="important-notes" className="space-y-4">
+                  <h2 className="text-2xl font-bold text-neutral-900">Important Notes</h2>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    {visa.importantNotes && (
+                      <p className="text-neutral-700 whitespace-pre-line">
+                        {visa.importantNotes}
+                      </p>
+                    )}
+                    {isInformationOnly && (
+                      <div className={`p-3 bg-white rounded border border-amber-300 ${visa.importantNotes ? 'mt-4' : ''}`}>
+                        <p className="text-sm text-neutral-700">
+                          <strong>Important:</strong> This visa is issued after arrival in the destination country. 
+                          Immigration officers have discretion in issuing visas upon arrival. 
+                          Ensure you have all required documents and meet entry conditions. 
+                          Charges, if any, are payable directly at the immigration counter.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
+
               {visa.rejectionReasons && (
                 <section className="space-y-4">
                   <h2 className="text-2xl font-bold text-neutral-900">Rejection Reasons</h2>
@@ -379,6 +406,21 @@ export default async function VisaDetailPage({
 
             <aside className="lg:col-span-1">
               <div className="sticky top-24 bg-white rounded-2xl shadow-large p-6 border border-neutral-200 z-10">
+                {/* Information-only notice for VOA and Visa-Free Entry */}
+                {isInformationOnly && (
+                  <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Info size={20} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h3 className="font-semibold text-amber-900 mb-1">Information Only</h3>
+                        <p className="text-sm text-amber-800">
+                          This visa is issued after arrival in the destination country. No online application or payment is required or accepted on this platform.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-6">
                   {visa.govtFee !== null && visa.serviceFee !== null ? (
                     <>
@@ -387,15 +429,27 @@ export default async function VisaDetailPage({
                           {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
                           {(visa.govtFee + visa.serviceFee).toLocaleString()}
                         </div>
-                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-md whitespace-nowrap">
-                          All taxes included
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-md whitespace-nowrap ${
+                          isInformationOnly 
+                            ? "bg-neutral-100 text-neutral-700" 
+                            : "bg-green-100 text-green-700"
+                        }`}>
+                          {isInformationOnly 
+                            ? "Payable at destination" 
+                            : "All taxes included"}
                         </span>
                       </div>
-                      <div className="text-xs text-neutral-500 mb-2">
-                        Govt: {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
-                        {visa.govtFee.toLocaleString()} + Service: {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
-                        {visa.serviceFee.toLocaleString()}
-                      </div>
+                      {isInformationOnly ? (
+                        <div className="text-sm text-neutral-500 mb-2">
+                          Indicative charges (if applicable) - Payable at immigration counter
+                        </div>
+                      ) : (
+                        <div className="text-xs text-neutral-500 mb-2">
+                          Govt: {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                          {visa.govtFee.toLocaleString()} + Service: {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
+                          {visa.serviceFee.toLocaleString()}
+                        </div>
+                      )}
                       <div className="text-sm text-neutral-500">Per traveller</div>
                     </>
                   ) : (
@@ -405,21 +459,38 @@ export default async function VisaDetailPage({
                           {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
                           {visa.priceInInr.toLocaleString()}
                         </div>
-                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-md whitespace-nowrap">
-                          All taxes included
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-md whitespace-nowrap ${
+                          isInformationOnly 
+                            ? "bg-neutral-100 text-neutral-700" 
+                            : "bg-green-100 text-green-700"
+                        }`}>
+                          {isInformationOnly 
+                            ? "Payable at destination" 
+                            : "All taxes included"}
                         </span>
                       </div>
+                      {isInformationOnly ? (
+                        <div className="text-sm text-neutral-500 mb-2">
+                          Indicative charges (if applicable) - Payable at immigration counter
+                        </div>
+                      ) : null}
                       <div className="text-sm text-neutral-500">Per traveller</div>
                     </>
                   )}
                 </div>
-                <Link
-                  href={`/apply/visa/${params.country}/${visa.slug}`}
-                  className="w-full bg-primary-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2 mb-4"
-                >
-                  <span>Apply for this Visa</span>
-                  <ArrowRight size={20} />
-                </Link>
+
+                {/* Conditional CTA based on visa type */}
+                {isInformationOnly ? (
+                  <InformationOnlyCTAs />
+                ) : (
+                  <Link
+                    href={`/apply/visa/${params.country}/${visa.slug}`}
+                    className="w-full bg-primary-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2 mb-4"
+                  >
+                    <span>Apply for this Visa</span>
+                    <ArrowRight size={20} />
+                  </Link>
+                )}
 
                 {/* Share Button */}
                 <div className="mb-4">

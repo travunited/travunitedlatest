@@ -36,6 +36,7 @@ interface VisaDetailsResponse {
   stayDuration: string;
   validity: string;
   entryType: string;
+  visaMode: string | null;
   overview: string;
   visaSubTypeLabel?: string | null;
   country: {
@@ -223,6 +224,13 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         }
         const data: VisaDetailsResponse = await response.json();
         if (!isMounted) return;
+        
+        // Block VOA and Visa-Free Entry visas from application flow
+        if (data.visaMode === "VOA" || data.visaMode === "VISA_FREE_ENTRY") {
+          router.push(`/visas/${params.country}/${params.type}`);
+          return;
+        }
+        
         setVisaInfo(data);
         setFormData((prev) => ({
           ...prev,
