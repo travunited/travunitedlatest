@@ -44,10 +44,20 @@ export default function AdminCustomersPage() {
       const response = await fetch(`/api/admin/customers?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setCustomers(data);
+        // Ensure data is an array and filter out invalid entries
+        if (Array.isArray(data)) {
+          setCustomers(data.filter((c: any) => c && c.id && c.email));
+        } else {
+          setCustomers([]);
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Failed to fetch customers:", errorData);
+        setCustomers([]);
       }
     } catch (error) {
       console.error("Error fetching customers:", error);
+      setCustomers([]);
     } finally {
       setLoading(false);
       setInitialLoad(false);
@@ -180,7 +190,9 @@ export default function AdminCustomersPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-neutral-200">
-                  {customers.map((customer) => (
+                  {customers
+                    .filter((customer) => customer && customer.id && customer.email)
+                    .map((customer) => (
                     <tr key={customer.id} className="hover:bg-neutral-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -195,7 +207,7 @@ export default function AdminCustomersPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-neutral-900">{customer.email}</div>
+                        <div className="text-sm text-neutral-900">{customer.email || "N/A"}</div>
                         {customer.phone && (
                           <div className="text-sm text-neutral-500">{customer.phone}</div>
                         )}

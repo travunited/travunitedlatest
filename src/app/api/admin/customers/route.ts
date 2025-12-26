@@ -69,17 +69,19 @@ export async function GET(req: Request) {
       },
     });
 
-    // Transform to include counts
-    const customersWithCounts = customers.map((customer) => ({
-      id: customer.id,
-      name: customer.name,
-      email: customer.email,
-      phone: customer.phone,
-      isActive: customer.isActive,
-      createdAt: customer.createdAt,
-      applicationsCount: customer._count.Application_Application_userIdToUser,
-      bookingsCount: customer._count.Booking_Booking_userIdToUser,
-    }));
+    // Transform to include counts and filter out invalid entries
+    const customersWithCounts = customers
+      .filter((customer) => customer && customer.id && customer.email)
+      .map((customer) => ({
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        isActive: customer.isActive,
+        createdAt: customer.createdAt.toISOString(),
+        applicationsCount: customer._count.Application_Application_userIdToUser,
+        bookingsCount: customer._count.Booking_Booking_userIdToUser,
+      }));
 
     return NextResponse.json(customersWithCounts);
   } catch (error) {

@@ -58,11 +58,21 @@ export default function CustomerReportPage() {
       if (response.ok) {
         const data = await response.json();
         setSummary(data.summary);
-        setCustomers(data.rows || []);
+        // Ensure rows is an array and filter out invalid entries
+        if (Array.isArray(data.rows)) {
+          setCustomers(data.rows.filter((c: any) => c && c.id && c.email));
+        } else {
+          setCustomers([]);
+        }
         setTotalPages(data.pagination?.totalPages || 1);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Failed to fetch customer report:", errorData);
+        setCustomers([]);
       }
     } catch (error) {
       console.error("Error fetching report:", error);
+      setCustomers([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -191,10 +201,12 @@ export default function CustomerReportPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-neutral-200">
-                  {customers.map((customer) => (
+                  {customers
+                    .filter((customer) => customer && customer.id && customer.email)
+                    .map((customer) => (
                     <tr key={customer.id} className="hover:bg-neutral-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{customer.name || "N/A"}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{customer.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{customer.email || "N/A"}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{customer.phone || "N/A"}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{customer.visaApplications}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{customer.tourBookings}</td>
