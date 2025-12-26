@@ -168,7 +168,7 @@ export default async function CountryVisasPage({
                               {(visa.govtFee + visa.serviceFee).toLocaleString()}
                             </div>
                             <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded whitespace-nowrap">
-                              All taxes included
+                              Taxes & charges included
                             </span>
                           </div>
                           <div className="text-xs text-neutral-500 mt-1">
@@ -186,7 +186,7 @@ export default async function CountryVisasPage({
                               {visa.priceInInr.toLocaleString()}
                             </div>
                             <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded whitespace-nowrap">
-                              All taxes included
+                              Taxes & charges included
                             </span>
                           </div>
                           <div className="text-sm text-neutral-500">Per traveller</div>

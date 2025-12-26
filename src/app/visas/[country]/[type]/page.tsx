@@ -426,7 +426,7 @@ export default async function VisaDetailPage({
                         }`}>
                           {isInformationOnly 
                             ? "Payable at destination" 
-                            : "All taxes included"}
+                            : "Taxes & charges included"}
                         </span>
                       </div>
                       {isInformationOnly ? (
@@ -456,7 +456,7 @@ export default async function VisaDetailPage({
                         }`}>
                           {isInformationOnly 
                             ? "Payable at destination" 
-                            : "All taxes included"}
+                            : "Taxes & charges included"}
                         </span>
                       </div>
                       {isInformationOnly ? (

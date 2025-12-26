@@ -147,7 +147,7 @@ export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
                           ₹{typeof visa.price === 'number' ? visa.price.toLocaleString() : '0'}
                         </div>
                         <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] font-semibold rounded whitespace-nowrap">
-                          All taxes included
+                          Taxes & charges included
                         </span>
                       </div>
                       <div className="flex items-center text-primary-600 font-medium group-hover:translate-x-1 transition-transform">

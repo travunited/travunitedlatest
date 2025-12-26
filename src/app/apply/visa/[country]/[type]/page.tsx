@@ -1318,7 +1318,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                   {visaLoading ? "—" : `₹${visaPrice.toLocaleString()}`}
                 </div>
                 <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded whitespace-nowrap">
-                  All taxes included
+                  Taxes & charges included
                 </span>
               </div>
             </div>
@@ -1824,7 +1824,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                       ₹{totalAmount.toLocaleString()}
                     </span>
                     <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded whitespace-nowrap">
-                      All taxes included
+                      Taxes & charges included
                     </span>
                   </div>
                 </div>

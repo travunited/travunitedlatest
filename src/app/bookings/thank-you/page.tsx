@@ -139,7 +139,7 @@ function BookingThankYouContent() {
                       ₹{booking.totalAmount?.toLocaleString()}
                     </span>
                   </div>
-                  <p className="text-xs text-neutral-500 text-right">Tax included</p>
+                  <p className="text-xs text-neutral-500 text-right">Taxes & charges included</p>
                 </div>
               </div>
 
