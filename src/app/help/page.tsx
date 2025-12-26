@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { HelpCircle, Mail, Phone, MessageCircle, ChevronDown, ChevronUp, CheckCircle, AlertCircle } from "lucide-react";
 
@@ -76,12 +77,45 @@ const faqCategories = {
 };
 
 export default function HelpPage() {
+  const searchParams = useSearchParams();
   const [activeCategory, setActiveCategory] = useState<keyof typeof faqCategories>("visas");
   const [openFaqs, setOpenFaqs] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
+
+  // Pre-fill form from query parameters
+  useEffect(() => {
+    if (formRef.current && searchParams) {
+      const subject = searchParams.get("subject");
+      const message = searchParams.get("message");
+      
+      if (subject) {
+        const subjectInput = formRef.current.querySelector<HTMLInputElement>('input[name="subject"]');
+        if (subjectInput) {
+          subjectInput.value = subject;
+        }
+      }
+      
+      if (message) {
+        const messageInput = formRef.current.querySelector<HTMLTextAreaElement>('textarea[name="message"]');
+        if (messageInput) {
+          messageInput.value = message;
+        }
+      }
+
+      // Scroll to contact form if query params are present
+      if (subject || message) {
+        const contactSection = document.getElementById("contact-form-section");
+        if (contactSection) {
+          setTimeout(() => {
+            contactSection.scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 100);
+        }
+      }
+    }
+  }, [searchParams]);
 
   const toggleFaq = (category: string, index: number) => {
     const key = `${category}-${index}`;
@@ -220,6 +254,7 @@ export default function HelpPage() {
                 Can&rsquo;t find what you&rsquo;re looking for? Send us a message and we&rsquo;ll get back to you as soon as possible.
               </p>
               <form
+                id="contact-form-section"
                 ref={formRef}
                 className="space-y-4"
                 onSubmit={async (e) => {

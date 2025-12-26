@@ -107,6 +107,7 @@ export async function POST(req: Request) {
           // Get the original amount before discount
           const originalAmount = p.amount + (p.discountAmount || 0);
 
+          // Idempotency is handled in recordPromoCodeUsage function
           await recordPromoCodeUsage({
             promoCodeId: p.promoCodeId,
             userId: p.userId,

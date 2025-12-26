@@ -11,6 +11,7 @@ import {
   HelpCircle,
   ArrowRight,
   Info,
+  MessageCircle,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
@@ -477,6 +478,26 @@ export default async function VisaDetailPage({
                       <div className="text-sm text-neutral-500">Per traveller</div>
                     </>
                   )}
+                </div>
+
+                {/* Need Help Section */}
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <MessageCircle size={20} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-blue-900 mb-1">Need Help?</h3>
+                      <p className="text-sm text-blue-800 mb-3">
+                        Have questions about this visa? Our experts are here to assist you.
+                      </p>
+                      <Link
+                        href={`/help?subject=${encodeURIComponent(`Visa Inquiry: ${visa.name} (${params.country.toUpperCase()})`)}&message=${encodeURIComponent(`I have questions about the ${visa.name} visa for ${params.country.toUpperCase()}. Please provide more information.\n\nVisa Details:\n- Visa Type: ${visa.name}\n- Country: ${params.country.toUpperCase()}`)}`}
+                        className="inline-flex items-center text-sm font-medium text-blue-700 hover:text-blue-900 underline"
+                      >
+                        <span>Get Expert Assistance</span>
+                        <ArrowRight size={16} className="ml-1" />
+                      </Link>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Conditional CTA based on visa type */}

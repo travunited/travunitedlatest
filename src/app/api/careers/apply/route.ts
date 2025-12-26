@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { uploadVisaDocument } from "@/lib/minio";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, sendCareerApplicationStatusEmail } from "@/lib/email";
 import { getSupportAdminEmail } from "@/lib/admin-contacts";
 import crypto from "crypto";
 export const dynamic = "force-dynamic";
@@ -185,6 +185,20 @@ export async function POST(req: Request) {
         html: emailHtml,
         category: "general",
       });
+    }
+
+    // Send confirmation email to candidate (NEW status)
+    try {
+      await sendCareerApplicationStatusEmail(
+        application.email,
+        application.name,
+        application.positionTitle,
+        "NEW",
+        application.id
+      );
+    } catch (emailError) {
+      console.error("Error sending career application confirmation email to candidate:", emailError);
+      // Don't fail the request if email fails
     }
 
     return NextResponse.json({

@@ -25,7 +25,11 @@ export async function GET(req: Request) {
       });
 
       if (country) {
+        // Only return visas for the found country
         where.countryId = country.id;
+      } else {
+        // If country not found, return empty array instead of all visas
+        return NextResponse.json([]);
       }
     }
 

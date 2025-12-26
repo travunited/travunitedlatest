@@ -106,13 +106,33 @@ export async function POST(req: Request) {
       });
 
       // Record promo code usage for free payments if promo code was applied
+      // Note: For free payments, we need to get the original amount from the application/booking
       if (promoCodeId && discountAmount && discountAmount > 0) {
         try {
+          let originalAmount = discountAmount; // Default fallback
+          
+          // Get the original amount from application or booking
+          if (applicationId) {
+            const app = await prisma.application.findUnique({
+              where: { id: applicationId },
+              select: { totalAmount: true },
+            });
+            // Original amount = final amount (0) + discount amount
+            originalAmount = (app?.totalAmount || 0) + discountAmount;
+          } else if (bookingId) {
+            const booking = await prisma.booking.findUnique({
+              where: { id: bookingId },
+              select: { totalAmount: true },
+            });
+            // Original amount = final amount (0) + discount amount
+            originalAmount = (booking?.totalAmount || 0) + discountAmount;
+          }
+
           const { recordPromoCodeUsage } = await import("@/lib/promo-codes");
           await recordPromoCodeUsage({
             promoCodeId,
             userId: session.user.id,
-            originalAmount: discountAmount, // Original amount was the discount amount for free items
+            originalAmount: originalAmount,
             discountAmount: discountAmount,
             finalAmount: 0,
             applicationId: applicationId || undefined,

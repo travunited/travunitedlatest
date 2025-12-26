@@ -477,33 +477,34 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   }, [session?.user?.id, params.country, params.type]);
 
   const handleStartFreshApplication = async () => {
-    if (!visaInfo?.id) {
-      resetFormToInitialState();
-      return;
-    }
     if (
       !confirm(
-        "Start a fresh application? Any saved draft data for this visa will be cleared."
+        "Start a fresh application? This will redirect you to the visa selection page to choose a new visa. Any saved draft data will be cleared."
       )
     ) {
       return;
     }
-    try {
-      const res = await fetch("/api/applications/start-fresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ visaId: visaInfo.id }),
-      });
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({}));
-        alert(error.error || "Failed to start a fresh application");
-        return;
+    
+    // If user is logged in and has a visa ID, clear draft data
+    if (session?.user?.id && visaInfo?.id) {
+      try {
+        const res = await fetch("/api/applications/start-fresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ visaId: visaInfo.id }),
+        });
+        // Continue with redirect even if API call fails (non-blocking)
+        if (!res.ok) {
+          console.error("Failed to clear draft data, but continuing with redirect");
+        }
+      } catch (error) {
+        console.error("Failed to start fresh application", error);
+        // Continue with redirect anyway
       }
-      resetFormToInitialState();
-    } catch (error) {
-      console.error("Failed to start fresh application", error);
-      alert("Failed to start a fresh application. Please try again.");
     }
+    
+    // Redirect to visa selection page (visa listing page)
+    router.push("/visas");
   };
 
   // Helper function to validate dates

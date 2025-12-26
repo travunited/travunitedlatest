@@ -269,6 +269,21 @@ export async function recordPromoCodeUsage(params: {
   try {
     // Use transaction to ensure atomicity
     const result = await prisma.$transaction(async (tx) => {
+      // Check for duplicate usage (idempotency) - check by application/booking and promo code
+      if (params.applicationId || params.bookingId) {
+        const existing = await tx.promoCodeUsage.findFirst({
+          where: {
+            promoCodeId: params.promoCodeId,
+            userId: params.userId,
+            ...(params.applicationId ? { applicationId: params.applicationId } : {}),
+            ...(params.bookingId ? { bookingId: params.bookingId } : {}),
+          },
+        });
+        if (existing) {
+          return existing; // Return existing record if already recorded
+        }
+      }
+
       // Create usage record
       const usage = await tx.promoCodeUsage.create({
         data: {

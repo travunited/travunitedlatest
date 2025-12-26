@@ -63,23 +63,29 @@ export function Hero() {
     if (selectedCountry && mode === "visa") {
       const fetchVisaTypes = async () => {
         try {
-          // selectedCountry is the country ID, find the country to get code/name
-          const country = countries.find((c) => c.id === selectedCountry);
-          const countryParam = country?.code || country?.name || selectedCountry;
-          const response = await fetch(`/api/search/visa-types?country=${encodeURIComponent(countryParam)}`);
+          // selectedCountry is the country ID, use it directly to ensure exact match
+          const response = await fetch(`/api/search/visa-types?country=${encodeURIComponent(selectedCountry)}`);
           if (response.ok) {
             const data = await response.json();
-            setVisaTypes(data);
+            // Additional validation: filter visas to ensure they match the selected country by ID
+            const filteredData = data.filter((visa: VisaType) => 
+              visa.country.id === selectedCountry
+            );
+            setVisaTypes(filteredData);
+          } else {
+            setVisaTypes([]);
           }
         } catch (error) {
           console.error("Error fetching visa types:", error);
+          setVisaTypes([]);
         }
       };
       fetchVisaTypes();
     } else {
       setVisaTypes([]);
+      setSelectedVisaType(""); // Also reset visa type selection
     }
-  }, [selectedCountry, mode, countries]);
+  }, [selectedCountry, mode]);
 
   // Fetch destination suggestions for autocomplete
   const fetchDestinationSuggestions = useCallback(async (query: string) => {

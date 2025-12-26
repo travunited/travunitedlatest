@@ -261,19 +261,8 @@ export async function POST(req: Request) {
     });
 
     // Handle promo code usage if provided
-    if (data.promoCodeId) {
-      await prisma.promoCodeUsage.create({
-        data: {
-          id: crypto.randomUUID(),
-          promoCodeId: data.promoCodeId,
-          userId,
-          applicationId: application.id,
-          originalAmount: (data.totalAmount ?? 0) + (data.discountAmount ?? 0),
-          discountAmount: data.discountAmount ?? 0,
-          finalAmount: data.totalAmount ?? 0,
-        },
-      });
-    }
+    // Note: Promo code usage is recorded when payment is successful
+    // We don't record it here because the application might not proceed to payment
 
     // Create travellers
     const travellerMappings: { inputIndex: number; travellerId: string }[] = [];

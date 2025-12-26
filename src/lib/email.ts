@@ -1457,15 +1457,20 @@ export async function sendCareerApplicationStatusEmail(
     
     // Status-specific messages
     const statusMessages: Record<string, { subject: string; message: string; color: string }> = {
-      SHORTLISTED: {
-        subject: `Congratulations! You've been shortlisted for ${positionTitle}`,
-        message: `Great news! We're pleased to inform you that your application for the position of <strong>${positionTitle}</strong> has been shortlisted. Our team will be in touch with you soon regarding the next steps in the hiring process.`,
-        color: "#10b981", // green
+      NEW: {
+        subject: `Application Received: ${positionTitle}`,
+        message: `Thank you for applying to the position of <strong>${positionTitle}</strong> at Travunited. We have successfully received your application and resume. Our team will review your application and get back to you soon.`,
+        color: "#3b82f6", // blue
       },
       REVIEWED: {
         subject: `Application Update: ${positionTitle}`,
         message: `Your application for the position of <strong>${positionTitle}</strong> has been reviewed. We'll keep you updated on the status of your application.`,
         color: "#3b82f6", // blue
+      },
+      SHORTLISTED: {
+        subject: `Congratulations! You've been shortlisted for ${positionTitle}`,
+        message: `Great news! We're pleased to inform you that your application for the position of <strong>${positionTitle}</strong> has been shortlisted. Our team will be in touch with you soon regarding the next steps in the hiring process.`,
+        color: "#10b981", // green
       },
       REJECTED: {
         subject: `Application Update: ${positionTitle}`,
