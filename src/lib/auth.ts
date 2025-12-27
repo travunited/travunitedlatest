@@ -18,7 +18,13 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          const { phone, otp } = credentials;
+          let { phone, otp } = credentials;
+
+          // Strict normalization
+          phone = phone.replace(/\D/g, "");
+          if (phone.length === 10) {
+            phone = `91${phone}`;
+          }
 
           // Verify OTP via MSG91
           const { verifyOtp } = await import("./sms");
@@ -29,10 +35,9 @@ export const authOptions: NextAuthOptions = {
           }
 
           // Find user by phone
-          // Use a flexible check for the last 10 digits to handle country code variations
           const user = await prisma.user.findFirst({
             where: {
-              phone: { contains: phone.slice(-10) },
+              phone: phone, // Strict match after normalization
               isActive: true,
             },
           });

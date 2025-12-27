@@ -63,7 +63,6 @@ function LoginPageContent() {
   useEffect(() => {
     if (searchParams?.get("verified") === "true") {
       setSuccess("Email verified successfully! Please login with your password.");
-      // Clear the verified param from URL
       router.replace("/login", { scroll: false });
     }
   }, [searchParams, router]);
@@ -72,14 +71,13 @@ function LoginPageContent() {
   useEffect(() => {
     if (searchParams?.get("passwordChanged") === "true") {
       setSuccess("Your password has been changed successfully. Please log in with your new password.");
-      // Clear the passwordChanged param from URL
       router.replace("/login", { scroll: false });
     }
   }, [searchParams, router]);
 
   const handleSendOtp = async () => {
-    if (!phone || phone.length < 10) {
-      setError("Please enter a valid mobile number");
+    if (!phone || phone.length !== 10) {
+      setError("Please enter a valid 10-digit mobile number");
       return;
     }
 
@@ -87,10 +85,11 @@ function LoginPageContent() {
     setError("");
 
     try {
+      const normalizedPhone = `91${phone}`;
       const res = await fetch("/api/auth/mobile/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, type: "login" }),
+        body: JSON.stringify({ phone: normalizedPhone, type: "login" }),
       });
 
       const data = await res.json();
@@ -118,8 +117,9 @@ function LoginPageContent() {
     setError("");
 
     try {
+      const normalizedPhone = `91${phone}`;
       const result = await signIn("mobile-otp", {
-        phone,
+        phone: normalizedPhone,
         otp,
         redirect: false,
       });
@@ -179,7 +179,6 @@ function LoginPageContent() {
             <p className="text-neutral-600">Sign in to your Travunited account</p>
           </div>
 
-          {/* Login Method Tabs */}
           <div className="flex p-1 bg-neutral-100 rounded-xl mb-8">
             <button
               type="button"
@@ -189,8 +188,8 @@ function LoginPageContent() {
                 setSuccess("");
               }}
               className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-medium rounded-lg transition-all ${loginMethod === "email"
-                  ? "bg-white text-primary-600 shadow-sm"
-                  : "text-neutral-500 hover:text-neutral-700"
+                ? "bg-white text-primary-600 shadow-sm"
+                : "text-neutral-500 hover:text-neutral-700"
                 }`}
             >
               <Mail size={18} />
@@ -204,8 +203,8 @@ function LoginPageContent() {
                 setSuccess("");
               }}
               className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-medium rounded-lg transition-all ${loginMethod === "mobile"
-                  ? "bg-white text-primary-600 shadow-sm"
-                  : "text-neutral-500 hover:text-neutral-700"
+                ? "bg-white text-primary-600 shadow-sm"
+                : "text-neutral-500 hover:text-neutral-700"
                 }`}
             >
               <Smartphone size={18} />
@@ -234,30 +233,6 @@ function LoginPageContent() {
                       >
                         Verify Email Now →
                       </Link>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            setError("");
-                            const res = await fetch("/api/auth/resend-otp", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ email }),
-                            });
-                            if (res.ok) {
-                              setSuccess("Verification code resent! Please check your email.");
-                            } else {
-                              const data = await res.json();
-                              setError(data.error || "Failed to resend code. Please try verifying your email.");
-                            }
-                          } catch (err) {
-                            setError("Failed to resend code. Please try verifying your email.");
-                          }
-                        }}
-                        className="text-sm text-primary-600 hover:text-primary-700 underline block"
-                      >
-                        Resend Verification Code
-                      </button>
                     </div>
                   )}
                 </div>
@@ -277,8 +252,7 @@ function LoginPageContent() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      disabled={loading}
-                      className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+                      className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       placeholder="your.email@example.com"
                     />
                   </div>
@@ -295,8 +269,7 @@ function LoginPageContent() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      disabled={loading}
-                      className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+                      className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       placeholder="Enter your password"
                     />
                   </div>
@@ -315,7 +288,7 @@ function LoginPageContent() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
                 >
                   <span>{loading ? "Signing in..." : "Sign In"}</span>
                   {!loading && <ArrowRight size={20} />}
@@ -327,15 +300,18 @@ function LoginPageContent() {
                   <label className="block text-sm font-medium text-neutral-700 mb-2">
                     Mobile Number
                   </label>
-                  <div className="relative">
-                    <Smartphone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                  <div className="relative flex items-center">
+                    <Smartphone className="absolute left-3 text-neutral-400" size={20} />
+                    <div className="absolute left-10 text-neutral-500 font-medium">
+                      +91
+                    </div>
                     <input
                       type="tel"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
                       disabled={otpSent || otpLoading || loading}
-                      className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
-                      placeholder="9876543210 (with country code)"
+                      className="w-full pl-20 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="9876543210"
                     />
                   </div>
                 </div>
@@ -359,7 +335,7 @@ function LoginPageContent() {
                     <button
                       type="submit"
                       disabled={loading || otp.length !== 6}
-                      className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 flex items-center justify-center space-x-2 disabled:opacity-50"
                     >
                       <span>{loading ? "Verifying..." : "Verify & Sign In"}</span>
                       {!loading && <ArrowRight size={20} />}
@@ -375,8 +351,8 @@ function LoginPageContent() {
                 ) : (
                   <button
                     onClick={handleSendOtp}
-                    disabled={otpLoading || !phone}
-                    className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={otpLoading || phone.length !== 10}
+                    className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 flex items-center justify-center space-x-2 disabled:opacity-50"
                   >
                     <span>{otpLoading ? "Sending OTP..." : "Get OTP"}</span>
                     {!otpLoading && <ArrowRight size={20} />}
@@ -385,7 +361,6 @@ function LoginPageContent() {
               </div>
             )}
           </div>
-
 
           <div className="mt-6 text-center">
             <p className="text-neutral-600">
@@ -426,4 +401,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-

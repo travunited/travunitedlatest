@@ -138,10 +138,9 @@ function VerifyMobileContent() {
                         <h1 className="text-2xl font-bold text-neutral-900 mb-2">
                             Verify Your Mobile
                         </h1>
-                        <p className="text-neutral-600">
-                            We've sent a 6-digit verification code to
+                        <p className="text-neutral-900 font-medium mt-1">
+                            {phone.startsWith("91") && phone.length === 12 ? `+${phone}` : phone}
                         </p>
-                        <p className="text-neutral-900 font-medium mt-1">{phone}</p>
                     </div>
 
                     <form onSubmit={handleVerifyOtp} className="space-y-4">

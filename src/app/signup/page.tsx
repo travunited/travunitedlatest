@@ -33,7 +33,7 @@ function SignupPageContent() {
     setError("");
     setLoading(true);
 
-    if (password !== confirmPassword) {
+    if (verifyMethod === "email" && password !== confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
       return;
@@ -41,8 +41,13 @@ function SignupPageContent() {
 
     try {
       // Normalize phone if mobile verification chosen
-      let normalizedPhone = phone;
-      if (verifyMethod === "mobile" && phone.length === 10) {
+      let normalizedPhone = undefined;
+      if (verifyMethod === "mobile") {
+        if (!phone || phone.length !== 10) {
+          setError("Please enter a valid 10-digit mobile number");
+          setLoading(false);
+          return;
+        }
         normalizedPhone = `91${phone}`;
       }
 
@@ -297,6 +302,38 @@ function SignupPageContent() {
             <p className="text-neutral-600">Join Travunited to start your travel journey</p>
           </div>
 
+          {/* Signup Method Tabs */}
+          <div className="flex p-1 bg-neutral-100 rounded-xl mb-8">
+            <button
+              type="button"
+              onClick={() => {
+                setVerifyMethod("mobile");
+                setError("");
+              }}
+              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-medium rounded-lg transition-all ${verifyMethod === "mobile"
+                ? "bg-white text-primary-600 shadow-sm"
+                : "text-neutral-500 hover:text-neutral-700"
+                }`}
+            >
+              <Smartphone size={18} />
+              <span>Phone</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setVerifyMethod("email");
+                setError("");
+              }}
+              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-medium rounded-lg transition-all ${verifyMethod === "email"
+                ? "bg-white text-primary-600 shadow-sm"
+                : "text-neutral-500 hover:text-neutral-700"
+                }`}
+            >
+              <Mail size={18} />
+              <span>Email</span>
+            </button>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 text-red-700">
@@ -322,104 +359,81 @@ function SignupPageContent() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="your.email@example.com"
-                />
-              </div>
-            </div>
+            {verifyMethod === "email" ? (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="your.email@example.com"
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Mobile Number
-              </label>
-              <div className="relative">
-                <Smartphone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="9876543210 (with country code)"
-                />
-              </div>
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={8}
+                      className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="At least 8 characters"
+                    />
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-neutral-700">
-                Verification Method
-              </label>
-              <div className="flex space-x-4">
-                <label className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="verifyMethod"
-                    value="email"
-                    checked={verifyMethod === "email"}
-                    onChange={() => setVerifyMethod("email")}
-                    className="text-primary-600 focus:ring-primary-500"
-                  />
-                  <span className="text-sm text-neutral-600">Email</span>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                    <input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="Confirm your password"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  Mobile Number
                 </label>
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <div className="relative flex items-center">
+                  <Smartphone className="absolute left-3 text-neutral-400" size={20} />
+                  <div className="absolute left-10 text-neutral-500 font-medium">
+                    +91
+                  </div>
                   <input
-                    type="radio"
-                    name="verifyMethod"
-                    value="mobile"
-                    checked={verifyMethod === "mobile"}
-                    onChange={() => setVerifyMethod("mobile")}
-                    className="text-primary-600 focus:ring-primary-500"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    required
+                    className="w-full pl-20 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="9876543210"
                   />
-                  <span className="text-sm text-neutral-600">Mobile SMS</span>
-                </label>
+                </div>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="At least 8 characters"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="Confirm your password"
-                />
-              </div>
-            </div>
+            )}
 
             <div className="flex items-start">
               <input

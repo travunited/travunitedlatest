@@ -14,9 +14,19 @@ export async function POST(req: Request) {
         const validatedData = sendOtpSchema.parse(body);
         let { phone, type } = validatedData;
 
-        // Normalize phone (ensure it has country code, default to 91 for India if 10 digits)
+        // Strict 10-digit normalization for Indian numbers (+91 by default)
+        // Remove any non-digits first
+        phone = phone.replace(/\D/g, "");
+
         if (phone.length === 10) {
             phone = `91${phone}`;
+        } else if (phone.length === 12 && phone.startsWith("91")) {
+            // Already has 91, keep it
+        } else {
+            return NextResponse.json(
+                { error: "Please enter a valid 10-digit mobile number" },
+                { status: 400 }
+            );
         }
 
         // If type is login, check if user exists
