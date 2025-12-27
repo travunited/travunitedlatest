@@ -62,10 +62,10 @@ export async function POST(req: Request) {
     // Validate Razorpay maximum limit (99,99,999 paise = ₹9,99,999.99)
     const RAZORPAY_MAX_AMOUNT_PAISE = 9999999; // ₹9,99,999.99
     const amountInPaise = Math.round(normalizedAmount * 100);
-    
+
     if (amountInPaise > RAZORPAY_MAX_AMOUNT_PAISE) {
       return NextResponse.json(
-        { 
+        {
           error: `Payment amount (₹${normalizedAmount.toLocaleString()}) exceeds the maximum allowed limit of ₹9,99,999.99. Please contact support for large payments.`,
           code: "AMOUNT_EXCEEDS_LIMIT"
         },
@@ -144,7 +144,7 @@ export async function POST(req: Request) {
       if (promoCodeId && discountAmount && discountAmount > 0) {
         try {
           let originalAmount = discountAmount; // Default fallback
-          
+
           // Get the original amount from application or booking
           if (applicationId) {
             const app = await prisma.application.findUnique({
@@ -243,16 +243,48 @@ export async function POST(req: Request) {
       );
     }
 
-    // Ensure entities belong to current user
+    // Ensure entities belong to current user and check for existing completed payments
     if (applicationId) {
       const application = await prisma.application.findUnique({
         where: { id: applicationId },
-        select: { userId: true },
+        select: { userId: true, status: true },
       });
       if (!application || application.userId !== session.user.id) {
         return NextResponse.json(
           { error: "Application not found" },
           { status: 404 }
+        );
+      }
+
+      // Check for existing completed payment - prevent duplicate payments
+      const existingPayment = await prisma.payment.findFirst({
+        where: {
+          applicationId,
+          status: "COMPLETED",
+        },
+        select: { id: true },
+      });
+
+      if (existingPayment) {
+        return NextResponse.json(
+          {
+            error: "Payment already completed for this application",
+            alreadyPaid: true,
+            redirectUrl: `/applications/thank-you?applicationId=${applicationId}`,
+          },
+          { status: 409 }
+        );
+      }
+
+      // Also check if application is already submitted/processed
+      if (application.status && ["SUBMITTED", "PROCESSING", "APPROVED", "REJECTED", "COMPLETED"].includes(application.status)) {
+        return NextResponse.json(
+          {
+            error: "This application has already been submitted",
+            alreadyPaid: true,
+            redirectUrl: `/applications/thank-you?applicationId=${applicationId}`,
+          },
+          { status: 409 }
         );
       }
     }
@@ -345,13 +377,13 @@ export async function POST(req: Request) {
       entityId: payment.id,
       action: AuditAction.CREATE,
       description: `Payment initiated for ${applicationId ? "application" : "booking"} ${applicationId || bookingId}`,
-        metadata: {
-          applicationId,
-          bookingId,
-          amount: normalizedAmount,
-          currency: "INR",
-          razorpayOrderId: order.id,
-        },
+      metadata: {
+        applicationId,
+        bookingId,
+        amount: normalizedAmount,
+        currency: "INR",
+        razorpayOrderId: order.id,
+      },
     });
 
     return NextResponse.json({
@@ -394,7 +426,7 @@ export async function POST(req: Request) {
       if (errorInfo.isSchemaMismatch || errorInfo.message?.includes('promoCodeId') || errorInfo.message?.includes('discountAmount')) {
         console.error("Schema mismatch detected. Migration may not be applied.");
         return NextResponse.json(
-          { 
+          {
             error: errorInfo.userFriendlyMessage,
             code: "SCHEMA_MISMATCH"
           },
@@ -413,8 +445,8 @@ export async function POST(req: Request) {
     if (razorpayError?.error?.description || razorpayError?.error?.reason) {
       console.error("Razorpay error in payment create-order:", razorpayError.error);
       return NextResponse.json(
-        { 
-          error: razorpayError.error.description || razorpayError.error.reason || "Payment gateway error" 
+        {
+          error: razorpayError.error.description || razorpayError.error.reason || "Payment gateway error"
         },
         { status: 500 }
       );
@@ -423,7 +455,7 @@ export async function POST(req: Request) {
     // Generic error handling
     const errorMessage = error instanceof Error ? error.message : "Internal server error";
     const errorStack = error instanceof Error ? error.stack : undefined;
-    
+
     console.error("Error creating payment order:", {
       message: errorMessage,
       stack: errorStack,
@@ -431,10 +463,10 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      { 
-        error: process.env.NODE_ENV === "development" 
-          ? errorMessage 
-          : "An error occurred while processing your payment. Please try again or contact support." 
+      {
+        error: process.env.NODE_ENV === "development"
+          ? errorMessage
+          : "An error occurred while processing your payment. Please try again or contact support."
       },
       { status: 500 }
     );

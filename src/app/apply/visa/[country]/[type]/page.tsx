@@ -86,6 +86,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     discountAmount: number;
     message?: string;
   } | null>(null);
+  const [paymentCompleted, setPaymentCompleted] = useState(false);
 
   type FormDataTraveller = {
     id: string;
@@ -389,6 +390,11 @@ export default function VisaApplicationPage({ params }: { params: { country: str
               }));
 
               setCreatedTravellerIds(travellersWithIds.map(t => t.id));
+            }
+
+            // Check if payment was already completed for this application
+            if (data.status && ["SUBMITTED", "PROCESSING", "APPROVED", "REJECTED", "COMPLETED"].includes(data.status)) {
+              setPaymentCompleted(true);
             }
           }
         })
@@ -1230,6 +1236,13 @@ export default function VisaApplicationPage({ params }: { params: { country: str
 
       if (!response.ok) {
         const error = await response.json();
+        // Handle already paid case - redirect to thank you page
+        if (error.alreadyPaid && error.redirectUrl) {
+          setLoading(false);
+          setPaymentCompleted(true);
+          router.push(error.redirectUrl);
+          return;
+        }
         throw new Error(error.error || "Unable to initiate payment.");
       }
 
@@ -2031,17 +2044,33 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                       Secure payment via Razorpay. All major cards, UPI, and net banking accepted.
                     </p>
                   )}
-                  <button
-                    onClick={handleVisaPayment}
-                    disabled={loading}
-                    className="w-full bg-primary-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loading
-                      ? "Processing..."
-                      : isFreeVisa
-                        ? "Submit Application"
-                        : "Proceed to Payment"}
-                  </button>
+                  {paymentCompleted ? (
+                    <div className="space-y-4">
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <p className="text-green-700 font-medium">
+                          ✓ Payment has already been completed for this application.
+                        </p>
+                      </div>
+                      <Link
+                        href={`/applications/thank-you?applicationId=${draftId}`}
+                        className="block w-full text-center bg-primary-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+                      >
+                        View Application Status
+                      </Link>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleVisaPayment}
+                      disabled={loading}
+                      className="w-full bg-primary-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading
+                        ? "Processing..."
+                        : isFreeVisa
+                          ? "Submit Application"
+                          : "Proceed to Payment"}
+                    </button>
+                  )}
                 </div>
               </div>
             )}
