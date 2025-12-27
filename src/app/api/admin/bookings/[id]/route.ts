@@ -8,9 +8,12 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
+    // Handle both sync and async params (Next.js 15+ uses async params)
+    const resolvedParams = await Promise.resolve(params);
+    
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
@@ -29,7 +32,7 @@ export async function GET(
     }
 
     const booking = await prisma.booking.findUnique({
-      where: { id: params.id },
+      where: { id: resolvedParams.id },
       include: {
         User_Booking_userIdToUser: {
           select: {
@@ -105,7 +108,7 @@ export async function GET(
     const activities = await prisma.auditLog.findMany({
       where: {
         entityType: "BOOKING",
-        entityId: params.id,
+        entityId: resolvedParams.id,
       },
       include: {
         User: {
@@ -154,22 +157,69 @@ export async function GET(
       }
     }
 
-    // Format response with additional computed fields
+    // Helper to serialize dates
+    const serializeDate = (date: Date | null | undefined): string | null => {
+      if (!date) return null;
+      return date instanceof Date ? date.toISOString() : (typeof date === 'string' ? date : new Date(date).toISOString());
+    };
+
+    // Format response with additional computed fields, ensuring proper serialization
     const response = {
-      ...booking,
-      user: booking.User_Booking_userIdToUser,
-      travellers: booking.BookingTraveller,
-      payments: booking.Payment,
-      processedBy: booking.User_Booking_processedByIdToUser,
+      id: booking.id,
+      tourId: booking.tourId,
+      tourName: booking.tourName,
+      status: booking.status,
+      totalAmount: booking.totalAmount,
+      currency: booking.currency,
+      travelDate: serializeDate(booking.travelDate),
+      voucherUrl: booking.voucherUrl,
+      invoiceUrl: booking.invoiceUrl,
+      invoiceUploadedAt: serializeDate(booking.invoiceUploadedAt),
+      invoiceUploadedByAdminId: booking.invoiceUploadedByAdminId,
+      notes: booking.notes,
+      createdAt: serializeDate(booking.createdAt),
+      updatedAt: serializeDate(booking.updatedAt),
+      foodPreference: booking.foodPreference,
+      foodPreferenceNotes: booking.foodPreferenceNotes,
+      languagePreference: booking.languagePreference,
+      languagePreferenceOther: booking.languagePreferenceOther,
+      driverPreference: booking.driverPreference,
+      specialRequests: booking.specialRequests,
+      policyAccepted: booking.policyAccepted,
+      policyAcceptedAt: serializeDate(booking.policyAcceptedAt),
+      policyAcceptedByUserId: booking.policyAcceptedByUserId,
+      cancellationReason: booking.cancellationReason,
+      policyVersion: booking.policyVersion,
+      policyAcceptedIp: booking.policyAcceptedIp,
+      policyAcceptedUserAgent: booking.policyAcceptedUserAgent,
+      documents: booking.documents,
+      source: booking.source,
+      user: booking.User_Booking_userIdToUser ? {
+        id: booking.User_Booking_userIdToUser.id,
+        name: booking.User_Booking_userIdToUser.name || "Unknown",
+        email: booking.User_Booking_userIdToUser.email || "",
+        phone: booking.User_Booking_userIdToUser.phone || null,
+      } : null,
+      travellers: booking.BookingTraveller || [],
+      payments: (booking.Payment || []).map((payment: any) => ({
+        ...payment,
+        createdAt: serializeDate(payment.createdAt),
+        updatedAt: serializeDate(payment.updatedAt),
+      })),
+      processedBy: booking.User_Booking_processedByIdToUser ? {
+        id: booking.User_Booking_processedByIdToUser.id,
+        name: booking.User_Booking_processedByIdToUser.name || "Unknown",
+        email: booking.User_Booking_processedByIdToUser.email || "",
+      } : null,
       tour: booking.Tour,
-      addOns: booking.BookingAddOn,
+      addOns: booking.BookingAddOn || [],
       referenceNumber,
       amountPaid,
       pendingBalance: pendingBalance > 0 ? pendingBalance : 0,
       customisedPackage,
       timeline: activities.map((activity) => ({
         id: activity.id,
-        time: activity.timestamp,
+        time: serializeDate(activity.timestamp),
         event: activity.description,
         adminName: activity.User?.name || activity.User?.email || "System",
       })),

@@ -318,14 +318,14 @@ export async function POST(req: Request) {
       metaTitle: metaTitle || null,
       metaDescription: metaDescription || null,
       // New fields - accept as string or number, try to parse number
-      stayDurationDays: stayDurationDays !== undefined && stayDurationDays !== null && stayDurationDays !== "" 
-        ? (typeof stayDurationDays === 'string' ? (parseInt(stayDurationDays) || null) : Number(stayDurationDays)) 
+      stayDurationDays: stayDurationDays !== undefined && stayDurationDays !== null && stayDurationDays !== ""
+        ? (typeof stayDurationDays === 'string' ? (parseInt(stayDurationDays) || null) : Number(stayDurationDays))
         : null,
-      validityDays: validityDays !== undefined && validityDays !== null && validityDays !== "" 
-        ? (typeof validityDays === 'string' ? (parseInt(validityDays) || null) : Number(validityDays)) 
+      validityDays: validityDays !== undefined && validityDays !== null && validityDays !== ""
+        ? (typeof validityDays === 'string' ? (parseInt(validityDays) || null) : Number(validityDays))
         : null,
       currency: currency || "INR",
-      requirements: (() => {
+      VisaDocumentRequirement: (() => {
         const validRequirements = requirements
           ? requirements.filter((req: any) => req && req.name && typeof req.name === "string" && req.name.trim() !== "")
           : [];
@@ -356,7 +356,7 @@ export async function POST(req: Request) {
           }
           : undefined;
       })(),
-      faqs: (() => {
+      VisaFaq: (() => {
         const validFaqs = faqs
           ? faqs.filter((faq: any) =>
             faq &&
@@ -390,7 +390,7 @@ export async function POST(req: Request) {
           }
           : undefined;
       })(),
-      subTypes: (() => {
+      VisaSubType: (() => {
         const validSubTypes = subTypes
           ? subTypes.filter((subtype: any) => subtype && subtype.label && typeof subtype.label === "string" && subtype.label.trim() !== "")
           : [];
@@ -424,9 +424,9 @@ export async function POST(req: Request) {
     if (process.env.NODE_ENV === 'development') {
       console.log("Visa data to create:", {
         ...visaData,
-        requirements: visaData.requirements ? `${visaData.requirements.create?.length || 0} items` : 'none',
-        faqs: visaData.faqs ? `${visaData.faqs.create?.length || 0} items` : 'none',
-        subTypes: visaData.subTypes ? `${visaData.subTypes.create?.length || 0} items` : 'none',
+        VisaDocumentRequirement: visaData.VisaDocumentRequirement ? `${visaData.VisaDocumentRequirement.create?.length || 0} items` : 'none',
+        VisaFaq: visaData.VisaFaq ? `${visaData.VisaFaq.create?.length || 0} items` : 'none',
+        VisaSubType: visaData.VisaSubType ? `${visaData.VisaSubType.create?.length || 0} items` : 'none',
       });
     }
 
