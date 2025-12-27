@@ -15,6 +15,7 @@ export async function POST(req: Request) {
         let { phone, otp } = validatedData;
 
         // Normalize phone
+        phone = phone.replace(/\D/g, "");
         if (phone.length === 10) {
             phone = `91${phone}`;
         }
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
         if (success) {
             // Find the user to return user info if needed by client (though mostly handled by NextAuth)
             const user = await prisma.user.findFirst({
-                where: { phone: { contains: phone.slice(-10) } },
+                where: { phone: phone },
                 select: {
                     id: true,
                     email: true,

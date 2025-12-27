@@ -9,8 +9,14 @@ const signupSchema = z.object({
     (val) => (val === "" || val === null || val === undefined ? undefined : val),
     z.string().min(2).optional()
   ),
-  email: z.string().email().optional(),
-  password: z.string().min(8).optional(),
+  email: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    z.string().email().optional()
+  ),
+  password: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    z.string().min(8).optional()
+  ),
   phone: z.preprocess(
     (val) => (val === "" || val === null || val === undefined ? undefined : val),
     z.string().optional()
@@ -66,7 +72,7 @@ export async function POST(req: Request) {
       where: {
         OR: [
           { email: targetEmail },
-          normalizedPhone ? { phone: normalizedPhone } : {},
+          ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
         ],
       },
     });
