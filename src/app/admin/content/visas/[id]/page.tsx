@@ -48,8 +48,8 @@ interface FormState {
   metaTitle: string;
   metaDescription: string;
   // New fields matching CSV template
-  stayDurationDays: number | null;
-  validityDays: number | null;
+  stayDurationDays: string;
+  validityDays: string;
   sampleVisaImageUrl: string;
   currency: string;
 }
@@ -185,8 +185,8 @@ export default function AdminVisaEditorPage() {
     metaTitle: "",
     metaDescription: "",
     // New fields
-    stayDurationDays: null,
-    validityDays: null,
+    stayDurationDays: "",
+    validityDays: "",
     sampleVisaImageUrl: "",
     currency: "INR",
   });
@@ -532,8 +532,8 @@ export default function AdminVisaEditorPage() {
       heroImageUrl: data.heroImageUrl || "",
       metaTitle: data.metaTitle || "",
       metaDescription: data.metaDescription || "",
-      stayDurationDays: data.stayDurationDays ?? null,
-      validityDays: data.validityDays ?? null,
+      stayDurationDays: data.stayDurationDays ? String(data.stayDurationDays) : "",
+      validityDays: data.validityDays ? String(data.validityDays) : "",
       sampleVisaImageUrl: data.sampleVisaImageUrl || "",
       currency: data.currency || "INR",
     };
@@ -708,18 +708,18 @@ export default function AdminVisaEditorPage() {
 
   // Memoized handlers for specific fields to prevent inline function creation
   const updateProcessingTime = useCallback((value: string) => updateFormField("processingTime", value), [updateFormField]);
-  const updateStayDurationDays = useCallback((value: number | null) => {
+  const updateStayDurationDays = useCallback((value: string) => {
     setFormData((prev) => ({
       ...prev,
       stayDurationDays: value,
-      stayDuration: value ? `${value} days` : prev.stayDuration
+      stayDuration: value || prev.stayDuration
     }));
   }, []);
-  const updateValidityDays = useCallback((value: number | null) => {
+  const updateValidityDays = useCallback((value: string) => {
     setFormData((prev) => ({
       ...prev,
       validityDays: value,
-      validity: value ? `${value} days from issue` : prev.validity
+      validity: value || prev.validity
     }));
   }, []);
 
@@ -1197,27 +1197,25 @@ export default function AdminVisaEditorPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-neutral-700">
-                        Stay Duration (Days)
+                        Stay Duration
                       </label>
-                      <NumberInput
-                        min={1}
+                      <TextInput
                         value={formData.stayDurationDays}
                         onChange={updateStayDurationDays}
-                        placeholder="30"
+                        placeholder="1825 days"
                       />
-                      <p className="text-xs text-neutral-500 mt-1">Number of days allowed to stay</p>
+                      <p className="text-xs text-neutral-500 mt-1">Duration allowed to stay (e.g., "1825 days", "5 years")</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-neutral-700">
-                        Validity (Days from Issue)
+                        Validity (from Issue)
                       </label>
-                      <NumberInput
-                        min={1}
+                      <TextInput
                         value={formData.validityDays}
                         onChange={updateValidityDays}
-                        placeholder="60"
+                        placeholder="1825 days from issue"
                       />
-                      <p className="text-xs text-neutral-500 mt-1">Number of days visa is valid from date of issue</p>
+                      <p className="text-xs text-neutral-500 mt-1">Validity period from date of issue (e.g., "1825 days from issue", "5 years")</p>
                     </div>
                   </div>
                   <div className="mt-4 grid md:grid-cols-2 gap-4">

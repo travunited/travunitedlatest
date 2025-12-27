@@ -317,9 +317,13 @@ export async function POST(req: Request) {
       sampleVisaImageUrl: sampleVisaImageUrl || null,
       metaTitle: metaTitle || null,
       metaDescription: metaDescription || null,
-      // New fields
-      stayDurationDays: stayDurationDays !== undefined && stayDurationDays !== null ? Number(stayDurationDays) : null,
-      validityDays: validityDays !== undefined && validityDays !== null ? Number(validityDays) : null,
+      // New fields - accept as string or number, try to parse number
+      stayDurationDays: stayDurationDays !== undefined && stayDurationDays !== null && stayDurationDays !== "" 
+        ? (typeof stayDurationDays === 'string' ? (parseInt(stayDurationDays) || null) : Number(stayDurationDays)) 
+        : null,
+      validityDays: validityDays !== undefined && validityDays !== null && validityDays !== "" 
+        ? (typeof validityDays === 'string' ? (parseInt(validityDays) || null) : Number(validityDays)) 
+        : null,
       currency: currency || "INR",
       requirements: (() => {
         const validRequirements = requirements

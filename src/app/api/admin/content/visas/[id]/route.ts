@@ -205,12 +205,30 @@ export async function PUT(
     const processingTime = (body.processingTime !== undefined && body.processingTime !== null && body.processingTime !== "")
       ? body.processingTime
       : existingVisa.processingTime;
-    const stayDuration = (body.stayDuration !== undefined && body.stayDuration !== null && body.stayDuration !== "")
-      ? body.stayDuration
-      : existingVisa.stayDuration;
-    const validity = (body.validity !== undefined && body.validity !== null && body.validity !== "")
-      ? body.validity
-      : existingVisa.validity;
+    // Handle stayDurationDays and validityDays as strings (text fields)
+    // If provided, use them to update stayDuration and validity
+    const stayDurationDaysText = body.stayDurationDays !== undefined && body.stayDurationDays !== null && body.stayDurationDays !== "" 
+      ? String(body.stayDurationDays).trim() 
+      : null;
+    const validityDaysText = body.validityDays !== undefined && body.validityDays !== null && body.validityDays !== "" 
+      ? String(body.validityDays).trim() 
+      : null;
+    
+    // Update stayDuration and validity - prefer text from stayDurationDays/validityDays, otherwise use body or existing
+    const stayDuration = stayDurationDaysText 
+      ? stayDurationDaysText 
+      : ((body.stayDuration !== undefined && body.stayDuration !== null && body.stayDuration !== "")
+        ? body.stayDuration
+        : existingVisa.stayDuration);
+    const validity = validityDaysText 
+      ? validityDaysText 
+      : ((body.validity !== undefined && body.validity !== null && body.validity !== "")
+        ? body.validity
+        : existingVisa.validity);
+    
+    // Try to parse numbers from text (for backward compatibility with database Int fields)
+    const stayDurationDays = stayDurationDaysText ? (parseInt(stayDurationDaysText) || null) : (body.stayDurationDays !== undefined ? body.stayDurationDays : existingVisa.stayDurationDays);
+    const validityDays = validityDaysText ? (parseInt(validityDaysText) || null) : (body.validityDays !== undefined ? body.validityDays : existingVisa.validityDays);
     // Handle entryTypeLegacy separately - it's a free-form text field
     const entryTypeLegacy = (body.entryTypeLegacy !== undefined && body.entryTypeLegacy !== null && typeof body.entryTypeLegacy === "string" && body.entryTypeLegacy.trim() !== "")
       ? body.entryTypeLegacy
@@ -229,8 +247,6 @@ export async function PUT(
     const sampleVisaImageUrl = body.sampleVisaImageUrl !== undefined ? body.sampleVisaImageUrl : existingVisa.sampleVisaImageUrl;
     const metaTitle = body.metaTitle !== undefined ? body.metaTitle : existingVisa.metaTitle;
     const metaDescription = body.metaDescription !== undefined ? body.metaDescription : existingVisa.metaDescription;
-    const stayDurationDays = body.stayDurationDays !== undefined ? body.stayDurationDays : existingVisa.stayDurationDays;
-    const validityDays = body.validityDays !== undefined ? body.validityDays : existingVisa.validityDays;
     const currency = body.currency !== undefined ? body.currency : existingVisa.currency;
     // Handle visaMode: if explicitly provided in body, use it (even if empty string to set to null), otherwise use existing value
     const visaMode = body.visaMode !== undefined
