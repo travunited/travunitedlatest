@@ -486,13 +486,13 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   const handleStartFreshApplication = async () => {
     if (
       !confirm(
-        "Start a fresh application? This will redirect you to the visa selection page to choose a new visa. Any saved draft data will be cleared."
+        "Start a fresh application? This will clear all entered data and reset the form to step 1."
       )
     ) {
       return;
     }
 
-    // If user is logged in and has a visa ID, clear draft data
+    // If user is logged in and has a visa ID, clear draft data on server
     if (session?.user?.id && visaInfo?.id) {
       try {
         const res = await fetch("/api/applications/start-fresh", {
@@ -500,18 +500,35 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ visaId: visaInfo.id }),
         });
-        // Continue with redirect even if API call fails (non-blocking)
+        // Continue even if API call fails (non-blocking)
         if (!res.ok) {
-          console.error("Failed to clear draft data, but continuing with redirect");
+          console.error("Failed to clear draft data on server");
         }
       } catch (error) {
         console.error("Failed to start fresh application", error);
-        // Continue with redirect anyway
       }
     }
 
-    // Redirect to visa selection page (visa listing page)
-    router.push("/visas");
+    // Clear guest application data if exists
+    if (guestApplicationId) {
+      try {
+        await fetch(`/api/guest-applications/${guestApplicationId}`, {
+          method: "DELETE",
+        });
+      } catch (error) {
+        console.error("Failed to clear guest application", error);
+      }
+      setGuestApplicationId(null);
+    }
+
+    // Clear local storage draft
+    clearDraftFromLocalStorage();
+
+    // Reset form to initial state and go to step 1
+    resetFormToInitialState();
+    setCurrentStep(1);
+    setTermsAccepted(false);
+    setAppliedPromoCode(null);
   };
 
   // Helper function to validate dates

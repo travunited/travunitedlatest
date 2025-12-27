@@ -208,11 +208,16 @@ function buildTourData(body: any, resolvedSlug: string) {
     customizationOptions: stringifyJson(body.customizationOptions),
     bookingPolicies: body.bookingPolicies || null,
     cancellationTerms: body.cancellationTerms || null,
+    amenities: stringifyJson(body.amenities),
+    showAmenities: body.showAmenities ?? false,
+    optionalActivities: stringifyJson(body.optionalActivities),
+    showOptionalActivities: body.showOptionalActivities ?? false,
 
     // Images & Media
     imageUrl: normalizeMediaInput(body.imageUrl),
     heroImageUrl: normalizeMediaInput(body.heroImageUrl || body.imageUrl),
     featuredImage: normalizeMediaInput(body.featuredImage),
+    mapLogisticsImageUrl: normalizeMediaInput(body.mapLogisticsImageUrl),
     galleryImageUrls: processGalleryImages(body.galleryImageUrls, body.images),
     images: stringifyJson(body.images || body.galleryImageUrls),
     ogImage: normalizeMediaInput(body.ogImage),
