@@ -214,13 +214,13 @@ export default function AdminApplicationDetailPage() {
 
   const handleStatusChange = async () => {
     if (!application) return;
-    
+
     if (selectedStatus === "APPROVED" || selectedStatus === "REJECTED") {
       if (!confirm(`Are you sure you want to change the status to ${selectedStatus}?`)) {
         return;
       }
     }
-    
+
     setUpdating(true);
     try {
       const body: { status: string; rejectionReason?: string } = { status: selectedStatus };
@@ -249,7 +249,7 @@ export default function AdminApplicationDetailPage() {
 
   const handleDeleteApplication = async () => {
     if (!application) return;
-    
+
     if (!confirm("Are you absolutely sure you want to delete this application? This action cannot be undone and will permanently delete all related data (documents, travellers, payments).")) {
       return;
     }
@@ -311,7 +311,7 @@ export default function AdminApplicationDetailPage() {
     try {
       // Map VERIFIED to APPROVED for backend
       const backendStatus = status === "VERIFIED" ? "APPROVED" : status;
-      
+
       const response = await fetch(`/api/admin/applications/${params.id}/documents/${docId}/review`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -351,7 +351,7 @@ export default function AdminApplicationDetailPage() {
     try {
       // Append to existing notes
       const updatedNotes = notes ? `${notes}\n\n[${new Date().toLocaleString()}] ${newNote}` : `[${new Date().toLocaleString()}] ${newNote}`;
-      
+
       const response = await fetch(`/api/admin/applications/${params.id}/notes`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -410,7 +410,7 @@ export default function AdminApplicationDetailPage() {
   // Parse notes into list (if formatted with timestamps)
   const parseNotes = (notesText: string | null): Array<{ timestamp: string; message: string }> => {
     if (!notesText) return [];
-    
+
     // Try to parse notes that are formatted as [timestamp] message
     const lines = notesText.split('\n\n');
     return lines.map(line => {
@@ -468,7 +468,7 @@ export default function AdminApplicationDetailPage() {
             <ArrowLeft size={16} />
             Back to Applications
           </Link>
-          
+
           {deleteError && (
             <div className="bg-red-100 border border-red-200 text-red-700 p-4 rounded-lg mb-4 flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -480,7 +480,7 @@ export default function AdminApplicationDetailPage() {
               </button>
             </div>
           )}
-          
+
           <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* Left: Reference & Country Info */}
@@ -515,16 +515,15 @@ export default function AdminApplicationDetailPage() {
 
               {/* Right: Status Badge & Actions */}
               <div className="flex items-center gap-3 flex-wrap">
-                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                  application.status === "APPROVED" ? "bg-green-100 text-green-700" :
-                  application.status === "REJECTED" ? "bg-red-100 text-red-700" :
-                  application.status === "IN_PROCESS" ? "bg-primary-100 text-primary-700" :
-                  application.status === "SUBMITTED" ? "bg-blue-100 text-blue-700" :
-                  "bg-neutral-100 text-neutral-700"
-                }`}>
+                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${application.status === "APPROVED" ? "bg-green-100 text-green-700" :
+                    application.status === "REJECTED" ? "bg-red-100 text-red-700" :
+                      application.status === "IN_PROCESS" ? "bg-primary-100 text-primary-700" :
+                        application.status === "SUBMITTED" ? "bg-blue-100 text-blue-700" :
+                          "bg-neutral-100 text-neutral-700"
+                  }`}>
                   {application.status.replace(/_/g, " ")}
                 </span>
-                
+
                 {/* Assign Admin Dropdown */}
                 <div className="relative">
                   <button
@@ -532,7 +531,7 @@ export default function AdminApplicationDetailPage() {
                     className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50"
                   >
                     <UserPlus size={16} />
-                    {application.processedBy ? application.processedBy.name || application.processedBy.email : "Assign Admin"}
+                    {application.processedBy ? application.processedBy?.name || application.processedBy?.email : "Assign Admin"}
                     <ChevronDown size={16} />
                   </button>
                   {showAssignDropdown && (
@@ -544,9 +543,8 @@ export default function AdminApplicationDetailPage() {
                               key={admin.id}
                               onClick={() => handleAssignAdmin(admin.id)}
                               disabled={assigningAdmin}
-                              className={`w-full text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded ${
-                                application.processedBy?.id === admin.id ? "bg-primary-50 text-primary-700" : ""
-                              }`}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded ${application.processedBy?.id === admin.id ? "bg-primary-50 text-primary-700" : ""
+                                }`}
                             >
                               <div className="font-medium">{admin.name}</div>
                               <div className="text-xs text-neutral-500">{admin.email}</div>
@@ -559,7 +557,7 @@ export default function AdminApplicationDetailPage() {
                     </div>
                   )}
                 </div>
-                
+
                 {/* Delete Button */}
                 <button
                   onClick={handleDeleteApplication}
@@ -569,7 +567,7 @@ export default function AdminApplicationDetailPage() {
                   <Trash2 size={16} />
                   {deletingApplication ? "Deleting..." : "Delete"}
                 </button>
-                
+
                 {completedPayment && (
                   <button
                     onClick={async () => {
@@ -580,7 +578,7 @@ export default function AdminApplicationDetailPage() {
                             "Accept": "application/pdf",
                           },
                         });
-                        
+
                         if (!response.ok) {
                           let errorMessage = "Failed to download invoice";
                           try {
@@ -591,12 +589,12 @@ export default function AdminApplicationDetailPage() {
                           }
                           throw new Error(errorMessage);
                         }
-                        
+
                         const blob = await response.blob();
                         if (!blob || blob.size === 0) {
                           throw new Error("Received empty file");
                         }
-                        
+
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url;
@@ -607,8 +605,8 @@ export default function AdminApplicationDetailPage() {
                         document.body.removeChild(a);
                       } catch (error) {
                         console.error("Error downloading invoice:", error);
-                        const errorMessage = error instanceof Error 
-                          ? error.message 
+                        const errorMessage = error instanceof Error
+                          ? error.message
                           : "Network error. Please check your connection and try again.";
                         alert(`Failed to download invoice: ${errorMessage}`);
                       }
@@ -785,12 +783,11 @@ export default function AdminApplicationDetailPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-neutral-600">Payment Status:</span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      completedPayment.status === "COMPLETED" ? "bg-green-100 text-green-700" :
-                      completedPayment.status === "PENDING" ? "bg-yellow-100 text-yellow-700" :
-                      completedPayment.status === "FAILED" ? "bg-red-100 text-red-700" :
-                      "bg-neutral-100 text-neutral-700"
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${completedPayment.status === "COMPLETED" ? "bg-green-100 text-green-700" :
+                        completedPayment.status === "PENDING" ? "bg-yellow-100 text-yellow-700" :
+                          completedPayment.status === "FAILED" ? "bg-red-100 text-red-700" :
+                            "bg-neutral-100 text-neutral-700"
+                      }`}>
                       {completedPayment.status}
                     </span>
                   </div>
@@ -849,7 +846,7 @@ export default function AdminApplicationDetailPage() {
             {/* Documents - Tabs by Traveller */}
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
               <h2 className="text-xl font-bold text-neutral-900 mb-4">Documents</h2>
-              
+
               {/* Traveller Tabs */}
               {(documentsGrouped.travellers.length > 0 || documentsGrouped.application.length > 0) && (
                 <div className="mb-4 border-b border-neutral-200">
@@ -858,11 +855,10 @@ export default function AdminApplicationDetailPage() {
                       <button
                         key={group.traveller.id}
                         onClick={() => setActiveTravellerTab(group.traveller.id)}
-                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                          activeTravellerTab === group.traveller.id
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTravellerTab === group.traveller.id
                             ? "border-primary-600 text-primary-600"
                             : "border-transparent text-neutral-600 hover:text-neutral-900"
-                        }`}
+                          }`}
                       >
                         {group.traveller.firstName} {group.traveller.lastName}
                       </button>
@@ -870,11 +866,10 @@ export default function AdminApplicationDetailPage() {
                     {documentsGrouped.application.length > 0 && (
                       <button
                         onClick={() => setActiveTravellerTab("application")}
-                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                          activeTravellerTab === "application"
+                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTravellerTab === "application"
                             ? "border-primary-600 text-primary-600"
                             : "border-transparent text-neutral-600 hover:text-neutral-900"
-                        }`}
+                          }`}
                       >
                         Application
                       </button>
@@ -1112,147 +1107,147 @@ export default function AdminApplicationDetailPage() {
 
             {/* Invoice Management - Only show when status is APPROVED or REJECTED */}
             {(application.status === "APPROVED" || application.status === "REJECTED") && (
-            <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-              <h3 className="font-semibold text-neutral-900 mb-4">Invoice</h3>
-              {application.invoiceUrl ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <FileText size={20} className="text-green-600" />
-                      <div>
-                        <div className="text-sm font-medium text-green-900">Invoice Available</div>
-                        {application.invoiceUploadedAt && (
-                          <div className="text-xs text-green-700">
-                            Uploaded {formatDate(application.invoiceUploadedAt)}
-                          </div>
-                        )}
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <h3 className="font-semibold text-neutral-900 mb-4">Invoice</h3>
+                {application.invoiceUrl ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <FileText size={20} className="text-green-600" />
+                        <div>
+                          <div className="text-sm font-medium text-green-900">Invoice Available</div>
+                          {application.invoiceUploadedAt && (
+                            <div className="text-xs text-green-700">
+                              Uploaded {formatDate(application.invoiceUploadedAt)}
+                            </div>
+                          )}
+                        </div>
                       </div>
+                      <a
+                        href={`/api/invoices/download/application/${params.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                      >
+                        Download
+                      </a>
                     </div>
-                    <a
-                      href={`/api/invoices/download/application/${params.id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary-600 hover:text-primary-700 text-sm font-medium"
-                    >
-                      Download
-                    </a>
-                  </div>
-                  <div className="flex space-x-2">
-                    <label className="flex-1 cursor-pointer">
-                      <input
-                        type="file"
-                        accept="application/pdf"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          
-                          setUploadingInvoice(true);
+                    <div className="flex space-x-2">
+                      <label className="flex-1 cursor-pointer">
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+
+                            setUploadingInvoice(true);
+                            try {
+                              const formData = new FormData();
+                              formData.append("file", file);
+
+                              const response = await fetch(`/api/admin/applications/${params.id}/invoice`, {
+                                method: "POST",
+                                body: formData,
+                              });
+
+                              if (response.ok) {
+                                await fetchApplication();
+                              } else {
+                                const error = await response.json().catch(() => ({}));
+                                alert(error.error || "Failed to upload invoice (PDF only, max 10MB)");
+                              }
+                            } catch (error) {
+                              console.error("Error uploading invoice:", error);
+                              alert("An error occurred while uploading invoice (check network or try a smaller PDF under 10MB)");
+                            } finally {
+                              setUploadingInvoice(false);
+                              if (e.target) e.target.value = "";
+                            }
+                          }}
+                          disabled={uploadingInvoice}
+                        />
+                        <div className="w-full bg-neutral-100 text-neutral-700 px-4 py-2 rounded-lg font-medium hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed text-center text-sm">
+                          {uploadingInvoice ? "Uploading..." : "Replace Invoice"}
+                        </div>
+                      </label>
+                      <button
+                        onClick={async () => {
+                          if (!confirm("Are you sure you want to remove this invoice?")) return;
+
+                          setRemovingInvoice(true);
                           try {
-                            const formData = new FormData();
-                            formData.append("file", file);
-                            
                             const response = await fetch(`/api/admin/applications/${params.id}/invoice`, {
-                              method: "POST",
-                              body: formData,
+                              method: "DELETE",
                             });
-                            
+
                             if (response.ok) {
                               await fetchApplication();
                             } else {
-                                const error = await response.json().catch(() => ({}));
-                                alert(error.error || "Failed to upload invoice (PDF only, max 10MB)");
+                              alert("Failed to remove invoice");
                             }
                           } catch (error) {
-                            console.error("Error uploading invoice:", error);
-                            alert("An error occurred while uploading invoice (check network or try a smaller PDF under 10MB)");
+                            alert("An error occurred");
                           } finally {
-                            setUploadingInvoice(false);
-                            if (e.target) e.target.value = "";
+                            setRemovingInvoice(false);
                           }
                         }}
-                        disabled={uploadingInvoice}
-                      />
-                      <div className="w-full bg-neutral-100 text-neutral-700 px-4 py-2 rounded-lg font-medium hover:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed text-center text-sm">
-                        {uploadingInvoice ? "Uploading..." : "Replace Invoice"}
-                      </div>
-                    </label>
-                    <button
-                      onClick={async () => {
-                        if (!confirm("Are you sure you want to remove this invoice?")) return;
-                        
-                        setRemovingInvoice(true);
-                        try {
-                          const response = await fetch(`/api/admin/applications/${params.id}/invoice`, {
-                            method: "DELETE",
-                          });
-                          
-                          if (response.ok) {
-                            await fetchApplication();
-                          } else {
-                            alert("Failed to remove invoice");
-                          }
-                        } catch (error) {
-                          alert("An error occurred");
-                        } finally {
-                          setRemovingInvoice(false);
-                        }
-                      }}
-                      disabled={removingInvoice}
-                      className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                    >
-                      {removingInvoice ? "Removing..." : "Remove"}
-                    </button>
+                        disabled={removingInvoice}
+                        className="px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                      >
+                        {removingInvoice ? "Removing..." : "Remove"}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg text-center">
-                    <FileText size={24} className="text-neutral-400 mx-auto mb-2" />
-                    <p className="text-sm text-neutral-600 mb-4">No invoice uploaded</p>
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        accept="application/pdf"
-                        className="hidden"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          
-                          setUploadingInvoice(true);
-                          try {
-                            const formData = new FormData();
-                            formData.append("file", file);
-                            
-                            const response = await fetch(`/api/admin/applications/${params.id}/invoice`, {
-                              method: "POST",
-                              body: formData,
-                            });
-                            
-                            if (response.ok) {
-                              await fetchApplication();
-                            } else {
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-neutral-50 border border-neutral-200 rounded-lg text-center">
+                      <FileText size={24} className="text-neutral-400 mx-auto mb-2" />
+                      <p className="text-sm text-neutral-600 mb-4">No invoice uploaded</p>
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="application/pdf"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+
+                            setUploadingInvoice(true);
+                            try {
+                              const formData = new FormData();
+                              formData.append("file", file);
+
+                              const response = await fetch(`/api/admin/applications/${params.id}/invoice`, {
+                                method: "POST",
+                                body: formData,
+                              });
+
+                              if (response.ok) {
+                                await fetchApplication();
+                              } else {
                                 const error = await response.json().catch(() => ({}));
                                 alert(error.error || "Failed to upload invoice (PDF only, max 10MB)");
+                              }
+                            } catch (error) {
+                              console.error("Error uploading invoice:", error);
+                              alert("An error occurred while uploading invoice (check network or try a smaller PDF under 10MB)");
+                            } finally {
+                              setUploadingInvoice(false);
+                              if (e.target) e.target.value = "";
                             }
-                          } catch (error) {
-                            console.error("Error uploading invoice:", error);
-                            alert("An error occurred while uploading invoice (check network or try a smaller PDF under 10MB)");
-                          } finally {
-                            setUploadingInvoice(false);
-                            if (e.target) e.target.value = "";
-                          }
-                        }}
-                        disabled={uploadingInvoice}
-                      />
-                      <div className="w-full bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-center text-sm">
-                        {uploadingInvoice ? "Uploading..." : "Upload Invoice (PDF)"}
-                      </div>
-                    </label>
+                          }}
+                          disabled={uploadingInvoice}
+                        />
+                        <div className="w-full bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed text-center text-sm">
+                          {uploadingInvoice ? "Uploading..." : "Upload Invoice (PDF)"}
+                        </div>
+                      </label>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
             )}
 
             {/* Internal Notes */}
@@ -1273,7 +1268,7 @@ export default function AdminApplicationDetailPage() {
                 >
                   {addingNote ? "Adding..." : "Add Note"}
                 </button>
-                
+
                 {notesList.length > 0 && (
                   <div className="pt-4 border-t border-neutral-200">
                     <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -1330,11 +1325,10 @@ function DocumentCard({
 
   return (
     <div
-      className={`border rounded-lg p-4 ${
-        doc.status === "REJECTED" ? "border-red-200 bg-red-50" :
-        doc.status === "APPROVED" ? "border-green-200 bg-green-50" :
-        "border-neutral-200 bg-white"
-      }`}
+      className={`border rounded-lg p-4 ${doc.status === "REJECTED" ? "border-red-200 bg-red-50" :
+          doc.status === "APPROVED" ? "border-green-200 bg-green-50" :
+            "border-neutral-200 bg-white"
+        }`}
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex-1">
@@ -1345,21 +1339,20 @@ function DocumentCard({
             <div className="text-xs text-neutral-500 mt-1">{doc.requirement.description}</div>
           )}
         </div>
-        <span className={`px-2 py-1 rounded text-xs font-medium ${
-          doc.status === "APPROVED" ? "bg-green-100 text-green-700" :
-          doc.status === "REJECTED" ? "bg-red-100 text-red-700" :
-          "bg-yellow-100 text-yellow-700"
-        }`}>
+        <span className={`px-2 py-1 rounded text-xs font-medium ${doc.status === "APPROVED" ? "bg-green-100 text-green-700" :
+            doc.status === "REJECTED" ? "bg-red-100 text-red-700" :
+              "bg-yellow-100 text-yellow-700"
+          }`}>
           {doc.status === "APPROVED" ? "VERIFIED" : doc.status}
         </span>
       </div>
-      
+
       {doc.rejectionReason && (
         <div className="text-sm text-red-700 mb-2 p-2 bg-red-50 rounded">
           <strong>Rejection Reason:</strong> {doc.rejectionReason}
         </div>
       )}
-      
+
       <div className="flex items-center gap-3 flex-wrap mb-3">
         <a
           href={getDocumentUrl(doc.filePath)}
@@ -1384,7 +1377,7 @@ function DocumentCard({
           </span>
         )}
       </div>
-      
+
       {/* Document Status & Comment Controls */}
       <div className="pt-3 border-t border-neutral-200">
         <div className="space-y-3">
@@ -1410,7 +1403,7 @@ function DocumentCard({
               <option value="REJECTED">Rejected</option>
             </select>
           </div>
-          
+
           <div>
             <label className="block text-xs font-medium text-neutral-700 mb-1">
               Admin Comment {currentStatus === "REJECTED" && <span className="text-red-600">*</span>}
@@ -1435,7 +1428,7 @@ function DocumentCard({
               rows={2}
             />
           </div>
-          
+
           {hasChanges && (
             <div className="flex gap-2">
               <button

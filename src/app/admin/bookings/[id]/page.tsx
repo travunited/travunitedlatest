@@ -218,13 +218,13 @@ export default function AdminBookingDetailPage() {
 
   const handleStatusChange = async () => {
     if (!booking) return;
-    
+
     if (selectedStatus === "CANCELLED") {
       if (!confirm("Are you sure you want to cancel this booking?")) {
         return;
       }
     }
-    
+
     setUpdating(true);
     try {
       const response = await fetch(`/api/admin/bookings/${params.id}/status`, {
@@ -328,7 +328,7 @@ export default function AdminBookingDetailPage() {
     try {
       // Append to existing notes
       const updatedNotes = notes ? `${notes}\n\n[${new Date().toLocaleString()}] ${newNote}` : `[${new Date().toLocaleString()}] ${newNote}`;
-      
+
       const response = await fetch(`/api/admin/bookings/${params.id}/notes`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -420,7 +420,7 @@ export default function AdminBookingDetailPage() {
       const response = await fetch(`/api/admin/bookings/${params.id}/cancel`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           reason: cancelReason,
           status: "CANCELLED"
         }),
@@ -511,7 +511,7 @@ export default function AdminBookingDetailPage() {
   // Parse notes into list (if formatted with timestamps)
   const parseNotes = (notesText: string | null): Array<{ timestamp: string; message: string }> => {
     if (!notesText) return [];
-    
+
     // Try to parse notes that are formatted as [timestamp] message
     const lines = notesText.split('\n\n');
     return lines.map(line => {
@@ -563,11 +563,10 @@ export default function AdminBookingDetailPage() {
         {/* Action Messages */}
         {actionMessage && (
           <div
-            className={`mb-6 rounded-lg p-4 flex items-center space-x-2 ${
-              actionMessage.type === "success"
-                ? "bg-green-50 border border-green-200 text-green-700"
-                : "bg-red-50 border border-red-200 text-red-700"
-            }`}
+            className={`mb-6 rounded-lg p-4 flex items-center space-x-2 ${actionMessage.type === "success"
+              ? "bg-green-50 border border-green-200 text-green-700"
+              : "bg-red-50 border border-red-200 text-red-700"
+              }`}
           >
             {actionMessage.type === "success" ? (
               <CheckCircle size={20} className="flex-shrink-0" />
@@ -593,7 +592,7 @@ export default function AdminBookingDetailPage() {
             <ArrowLeft size={16} />
             Back to Bookings
           </Link>
-          
+
           <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               {/* Left: Reference & Tour Info */}
@@ -623,18 +622,17 @@ export default function AdminBookingDetailPage() {
 
               {/* Right: Status Badge & Actions */}
               <div className="flex items-center gap-3 flex-wrap">
-                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                  booking.status === "CONFIRMED" ? "bg-green-100 text-green-700" :
+                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${booking.status === "CONFIRMED" ? "bg-green-100 text-green-700" :
                   booking.status === "COMPLETED" ? "bg-neutral-100 text-neutral-700" :
-                  booking.status === "CANCELLED" ? "bg-red-100 text-red-700" :
-                  booking.status === "BOOKED" ? "bg-blue-100 text-blue-700" :
-                  booking.status === "REQUEST_RECEIVED" ? "bg-purple-100 text-purple-700" :
-                  booking.status === "PAYMENT_PENDING" ? "bg-yellow-100 text-yellow-700" :
-                  "bg-neutral-100 text-neutral-700"
-                }`}>
+                    booking.status === "CANCELLED" ? "bg-red-100 text-red-700" :
+                      booking.status === "BOOKED" ? "bg-blue-100 text-blue-700" :
+                        booking.status === "REQUEST_RECEIVED" ? "bg-purple-100 text-purple-700" :
+                          booking.status === "PAYMENT_PENDING" ? "bg-yellow-100 text-yellow-700" :
+                            "bg-neutral-100 text-neutral-700"
+                  }`}>
                   {booking.status.replace(/_/g, " ")}
                 </span>
-                
+
                 {/* Assign Admin Dropdown */}
                 <div className="relative">
                   <button
@@ -642,7 +640,7 @@ export default function AdminBookingDetailPage() {
                     className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50"
                   >
                     <UserPlus size={16} />
-                    {booking.processedBy ? booking.processedBy.name || booking.processedBy.email : "Assign Admin"}
+                    {booking.processedBy ? booking.processedBy?.name || booking.processedBy?.email : "Assign Admin"}
                     <ChevronDown size={16} />
                   </button>
                   {showAssignDropdown && (
@@ -654,9 +652,8 @@ export default function AdminBookingDetailPage() {
                               key={admin.id}
                               onClick={() => handleAssignAdmin(admin.id)}
                               disabled={assigningAdmin}
-                              className={`w-full text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded ${
-                                booking.processedBy?.id === admin.id ? "bg-primary-50 text-primary-700" : ""
-                              }`}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-neutral-50 rounded ${booking.processedBy?.id === admin.id ? "bg-primary-50 text-primary-700" : ""
+                                }`}
                             >
                               <div className="font-medium">{admin.name}</div>
                               <div className="text-xs text-neutral-500">{admin.email}</div>
@@ -747,7 +744,7 @@ export default function AdminBookingDetailPage() {
                 </div>
                 <div>
                   <div className="text-sm text-neutral-600 mb-1">Email</div>
-                  <div className="font-medium text-neutral-900">{booking.user.email}</div>
+                  <div className="font-medium text-neutral-900">{booking.user?.email || "N/A"}</div>
                 </div>
                 {booking.user.phone && (
                   <div>
@@ -779,7 +776,7 @@ export default function AdminBookingDetailPage() {
                   </>
                 )}
                 <a
-                  href={`mailto:${booking.user.email}`}
+                  href={`mailto:${booking.user?.email}`}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
                 >
                   <Mail size={16} />
@@ -812,48 +809,48 @@ export default function AdminBookingDetailPage() {
               booking.languagePreferenceOther ||
               booking.driverPreference ||
               booking.specialRequests) && (
-              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-                <h2 className="text-xl font-bold text-neutral-900 mb-4">Guest Preferences</h2>
-                <div className="grid md:grid-cols-2 gap-4 text-sm text-neutral-700">
-                  {booking.foodPreference && (
-                    <div>
-                      <span className="text-neutral-500 block mb-1">Food Preference</span>
-                      <span className="font-medium text-neutral-900">{booking.foodPreference}</span>
-                    </div>
-                  )}
-                  {booking.foodPreferenceNotes && (
-                    <div>
-                      <span className="text-neutral-500 block mb-1">Food Notes</span>
-                      <span className="font-medium text-neutral-900">{booking.foodPreferenceNotes}</span>
-                    </div>
-                  )}
-                  {booking.languagePreference && (
-                    <div>
-                      <span className="text-neutral-500 block mb-1">Language Preference</span>
-                      <span className="font-medium text-neutral-900">
-                        {booking.languagePreference === "other"
-                          ? booking.languagePreferenceOther || "Other"
-                          : booking.languagePreference}
-                      </span>
-                    </div>
-                  )}
-                  {booking.driverPreference && (
-                    <div>
-                      <span className="text-neutral-500 block mb-1">Driver Preference</span>
-                      <span className="font-medium text-neutral-900">{booking.driverPreference}</span>
-                    </div>
-                  )}
-                  {booking.specialRequests && (
-                    <div className="md:col-span-2">
-                      <span className="text-neutral-500 block mb-1">Special Requests</span>
-                      <span className="font-medium text-neutral-900 whitespace-pre-line">
-                        {booking.specialRequests}
-                      </span>
-                    </div>
-                  )}
+                <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                  <h2 className="text-xl font-bold text-neutral-900 mb-4">Guest Preferences</h2>
+                  <div className="grid md:grid-cols-2 gap-4 text-sm text-neutral-700">
+                    {booking.foodPreference && (
+                      <div>
+                        <span className="text-neutral-500 block mb-1">Food Preference</span>
+                        <span className="font-medium text-neutral-900">{booking.foodPreference}</span>
+                      </div>
+                    )}
+                    {booking.foodPreferenceNotes && (
+                      <div>
+                        <span className="text-neutral-500 block mb-1">Food Notes</span>
+                        <span className="font-medium text-neutral-900">{booking.foodPreferenceNotes}</span>
+                      </div>
+                    )}
+                    {booking.languagePreference && (
+                      <div>
+                        <span className="text-neutral-500 block mb-1">Language Preference</span>
+                        <span className="font-medium text-neutral-900">
+                          {booking.languagePreference === "other"
+                            ? booking.languagePreferenceOther || "Other"
+                            : booking.languagePreference}
+                        </span>
+                      </div>
+                    )}
+                    {booking.driverPreference && (
+                      <div>
+                        <span className="text-neutral-500 block mb-1">Driver Preference</span>
+                        <span className="font-medium text-neutral-900">{booking.driverPreference}</span>
+                      </div>
+                    )}
+                    {booking.specialRequests && (
+                      <div className="md:col-span-2">
+                        <span className="text-neutral-500 block mb-1">Special Requests</span>
+                        <span className="font-medium text-neutral-900 whitespace-pre-line">
+                          {booking.specialRequests}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Travellers List */}
             {booking.travellers.length > 0 && (
@@ -1104,23 +1101,21 @@ export default function AdminBookingDetailPage() {
                   {allPayments.length > 0 ? (
                     <div className="space-y-3">
                       {allPayments.map((payment, index) => (
-                        <div key={payment.id} className={`flex items-center justify-between p-3 rounded-lg ${
-                          payment.status === "COMPLETED" ? "bg-green-50 border border-green-200" :
+                        <div key={payment.id} className={`flex items-center justify-between p-3 rounded-lg ${payment.status === "COMPLETED" ? "bg-green-50 border border-green-200" :
                           payment.status === "FAILED" ? "bg-red-50 border border-red-200" :
-                          payment.status === "REFUNDED" ? "bg-purple-50 border border-purple-200" :
-                          "bg-neutral-50 border border-neutral-200"
-                        }`}>
+                            payment.status === "REFUNDED" ? "bg-purple-50 border border-purple-200" :
+                              "bg-neutral-50 border border-neutral-200"
+                          }`}>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <div className="text-sm font-medium text-neutral-900">
                                 Payment {index + 1} - {payment.amount < booking.totalAmount ? "Advance" : "Full Payment"}
                               </div>
-                              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                                payment.status === "COMPLETED" ? "bg-green-100 text-green-700" :
+                              <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${payment.status === "COMPLETED" ? "bg-green-100 text-green-700" :
                                 payment.status === "FAILED" ? "bg-red-100 text-red-700" :
-                                payment.status === "REFUNDED" ? "bg-purple-100 text-purple-700" :
-                                "bg-yellow-100 text-yellow-700"
-                              }`}>
+                                  payment.status === "REFUNDED" ? "bg-purple-100 text-purple-700" :
+                                    "bg-yellow-100 text-yellow-700"
+                                }`}>
                                 {payment.status}
                               </span>
                             </div>
@@ -1138,11 +1133,10 @@ export default function AdminBookingDetailPage() {
                               </div>
                             )}
                           </div>
-                          <div className={`text-lg font-bold ${
-                            payment.status === "COMPLETED" ? "text-green-700" :
+                          <div className={`text-lg font-bold ${payment.status === "COMPLETED" ? "text-green-700" :
                             payment.status === "REFUNDED" ? "text-purple-700" :
-                            "text-neutral-700"
-                          }`}>
+                              "text-neutral-700"
+                            }`}>
                             ₹{payment.amount.toLocaleString()}
                           </div>
                         </div>
@@ -1509,17 +1503,17 @@ export default function AdminBookingDetailPage() {
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          
+
                           setUploadingInvoice(true);
                           try {
                             const formData = new FormData();
                             formData.append("file", file);
-                            
+
                             const response = await fetch(`/api/admin/bookings/${params.id}/invoice`, {
                               method: "POST",
                               body: formData,
                             });
-                            
+
                             if (response.ok) {
                               await fetchBooking();
                               setActionMessage({ type: "success", text: "Invoice uploaded successfully" });
@@ -1546,13 +1540,13 @@ export default function AdminBookingDetailPage() {
                     <button
                       onClick={async () => {
                         if (!confirm("Are you sure you want to remove this invoice?")) return;
-                        
+
                         setRemovingInvoice(true);
                         try {
                           const response = await fetch(`/api/admin/bookings/${params.id}/invoice`, {
                             method: "DELETE",
                           });
-                          
+
                           if (response.ok) {
                             await fetchBooking();
                             setActionMessage({ type: "success", text: "Invoice removed successfully" });
@@ -1589,17 +1583,17 @@ export default function AdminBookingDetailPage() {
                         onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (!file) return;
-                          
+
                           setUploadingInvoice(true);
                           try {
                             const formData = new FormData();
                             formData.append("file", file);
-                            
+
                             const response = await fetch(`/api/admin/bookings/${params.id}/invoice`, {
                               method: "POST",
                               body: formData,
                             });
-                            
+
                             if (response.ok) {
                               await fetchBooking();
                               setActionMessage({ type: "success", text: "Invoice uploaded successfully" });
@@ -1646,7 +1640,7 @@ export default function AdminBookingDetailPage() {
                 >
                   {addingNote ? "Adding..." : "Add Note"}
                 </button>
-                
+
                 {notesList.length > 0 && (
                   <div className="pt-4 border-t border-neutral-200">
                     <div className="space-y-3 max-h-64 overflow-y-auto">

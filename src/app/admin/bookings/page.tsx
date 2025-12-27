@@ -675,9 +675,9 @@ function AdminBookingsPageContent() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-neutral-900">{booking.user.name || "N/A"}</div>
-                        <div className="text-sm text-neutral-500">{booking.user.email}</div>
-                        {booking.user.phone && (
+                        <div className="text-sm text-neutral-900">{booking.user?.name || "N/A"}</div>
+                        <div className="text-sm text-neutral-500">{booking.user?.email}</div>
+                        {booking.user?.phone && (
                           <div className="text-xs text-neutral-500">{booking.user.phone}</div>
                         )}
                       </td>
@@ -717,7 +717,7 @@ function AdminBookingsPageContent() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         {booking.processedBy ? (
-                          <div className="text-sm text-neutral-900">{booking.processedBy.name || booking.processedBy.email}</div>
+                          <div className="text-sm text-neutral-900">{booking.processedBy?.name || booking.processedBy?.email}</div>
                         ) : (
                           <button
                             onClick={() => handleClaim(booking.id)}

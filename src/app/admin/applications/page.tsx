@@ -804,8 +804,8 @@ function AdminApplicationsPageContent() {
                         <div className="text-sm text-neutral-500">{app.visaType || "N/A"}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-neutral-900">{app.user.name || "N/A"}</div>
-                        <div className="text-sm text-neutral-500">{app.user.email}</div>
+                        <div className="text-sm text-neutral-900">{app.user?.name || "N/A"}</div>
+                        <div className="text-sm text-neutral-500">{app.user?.email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(app.status)}`}>
@@ -817,7 +817,7 @@ function AdminApplicationsPageContent() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         {app.processedBy ? (
-                          <div className="text-sm text-neutral-900">{app.processedBy.name || app.processedBy.email}</div>
+                          <div className="text-sm text-neutral-900">{app.processedBy?.name || app.processedBy?.email}</div>
                         ) : (
                           <button
                             onClick={() => handleClaim(app.id)}
