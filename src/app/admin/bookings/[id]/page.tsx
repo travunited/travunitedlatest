@@ -59,9 +59,9 @@ interface Booking {
     name: string;
     email: string;
     phone: string | null;
-  };
+  } | null;
   travellers: Array<{
-    traveller: Traveller;
+    traveller?: Traveller | null;
     firstName?: string | null;
     lastName?: string | null;
     dateOfBirth?: string | null;
@@ -740,13 +740,13 @@ export default function AdminBookingDetailPage() {
               <div className="grid md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <div className="text-sm text-neutral-600 mb-1">Full Name</div>
-                  <div className="font-medium text-neutral-900">{booking.user.name || "N/A"}</div>
+                  <div className="font-medium text-neutral-900">{booking.user?.name || "N/A"}</div>
                 </div>
                 <div>
                   <div className="text-sm text-neutral-600 mb-1">Email</div>
                   <div className="font-medium text-neutral-900">{booking.user?.email || "N/A"}</div>
                 </div>
-                {booking.user.phone && (
+                {booking.user?.phone && (
                   <div>
                     <div className="text-sm text-neutral-600 mb-1">Phone</div>
                     <div className="font-medium text-neutral-900">{booking.user.phone}</div>
@@ -755,7 +755,7 @@ export default function AdminBookingDetailPage() {
               </div>
               {/* Quick Action Buttons */}
               <div className="flex flex-wrap gap-2 pt-4 border-t border-neutral-200">
-                {booking.user.phone && (
+                {booking.user?.phone && (
                   <>
                     <a
                       href={`tel:${booking.user.phone}`}
@@ -775,13 +775,15 @@ export default function AdminBookingDetailPage() {
                     </a>
                   </>
                 )}
-                <a
-                  href={`mailto:${booking.user?.email}`}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
-                >
-                  <Mail size={16} />
-                  Email
-                </a>
+                {booking.user?.email && (
+                  <a
+                    href={`mailto:${booking.user.email}`}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"
+                  >
+                    <Mail size={16} />
+                    Email
+                  </a>
+                )}
               </div>
             </div>
 
@@ -858,13 +860,14 @@ export default function AdminBookingDetailPage() {
                 <h2 className="text-xl font-bold text-neutral-900 mb-4">Travellers</h2>
                 <div className="space-y-4">
                   {booking.travellers.map((t, index) => {
-                    const profile = t.traveller;
-                    const displayFirstName = t.firstName || profile.firstName;
-                    const displayLastName = t.lastName || profile.lastName;
+                    const profile = t.traveller || {} as Traveller;
+                    if (!t.traveller && !t.firstName && !t.lastName) return null; // Skip invalid traveller entries
+                    const displayFirstName = t.firstName || profile.firstName || 'Unknown';
+                    const displayLastName = t.lastName || profile.lastName || '';
                     const passportNumber = t.passportNumber || null;
                     const passportExpiry = t.passportExpiry || null;
                     return (
-                      <div key={profile.id} className="border border-neutral-200 rounded-lg p-4">
+                      <div key={profile.id || `traveller-${index}`} className="border border-neutral-200 rounded-lg p-4">
                         <h3 className="font-semibold mb-3">
                           {index === 0 ? "Primary Traveller" : `Traveller ${index + 1}`}
                         </h3>
@@ -992,12 +995,13 @@ export default function AdminBookingDetailPage() {
               <div className="space-y-4">
                 {booking.travellers.map((t, index) => {
                   if (!t.passportFileKey) return null;
+                  const profile = t.traveller || {} as Traveller;
                   return (
                     <div key={index} className="border border-neutral-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
                         <div>
                           <div className="font-medium text-neutral-900">
-                            {t.firstName || t.traveller.firstName} {t.lastName || t.traveller.lastName} - Passport
+                            {t.firstName || profile.firstName || 'Unknown'} {t.lastName || profile.lastName || ''} - Passport
                           </div>
                           <div className="text-sm text-neutral-500 mt-1">
                             {t.passportFileName || "passport.pdf"}
