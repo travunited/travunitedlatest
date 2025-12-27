@@ -200,8 +200,9 @@ export default async function VisaDetailPage({
     ? `${visa.validityDays} days from issue`
     : visa.validity || "Not specified";
 
-  // Check if this is an information-only visa (VOA or Visa-Free Entry)
-  const isInformationOnly = visa.visaMode === "VOA" || visa.visaMode === "VISA_FREE_ENTRY";
+  // Check if this is an information-only visa (VOA only - VISA_FREE_ENTRY can have applications)
+  const isInformationOnly = visa.visaMode === "VOA";
+  const isVisaFreeEntry = visa.visaMode === "VISA_FREE_ENTRY";
 
   return (
     <VisaDetailClient searchParams={searchParams}>
@@ -350,9 +351,9 @@ export default async function VisaDetailPage({
                     {isInformationOnly && (
                       <div className={`p-3 bg-white rounded border border-amber-300 ${visa.importantNotes ? 'mt-4' : ''}`}>
                         <p className="text-sm text-neutral-700">
-                          <strong>Important:</strong> This visa is issued after arrival in the destination country. 
-                          Immigration officers have discretion in issuing visas upon arrival. 
-                          Ensure you have all required documents and meet entry conditions. 
+                          <strong>Important:</strong> This visa is issued after arrival in the destination country.
+                          Immigration officers have discretion in issuing visas upon arrival.
+                          Ensure you have all required documents and meet entry conditions.
                           Charges, if any, are payable directly at the immigration counter.
                         </p>
                       </div>
@@ -419,13 +420,12 @@ export default async function VisaDetailPage({
                           {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
                           {(visa.govtFee + visa.serviceFee).toLocaleString()}
                         </div>
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-md whitespace-nowrap ${
-                          isInformationOnly 
-                            ? "bg-neutral-100 text-neutral-700" 
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-md whitespace-nowrap ${isInformationOnly
+                            ? "bg-neutral-100 text-neutral-700"
                             : "bg-green-100 text-green-700"
-                        }`}>
-                          {isInformationOnly 
-                            ? "Payable at destination" 
+                          }`}>
+                          {isInformationOnly
+                            ? "Payable at destination"
                             : "Taxes & charges included"}
                         </span>
                       </div>
@@ -449,13 +449,12 @@ export default async function VisaDetailPage({
                           {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
                           {visa.priceInInr.toLocaleString()}
                         </div>
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-md whitespace-nowrap ${
-                          isInformationOnly 
-                            ? "bg-neutral-100 text-neutral-700" 
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-md whitespace-nowrap ${isInformationOnly
+                            ? "bg-neutral-100 text-neutral-700"
                             : "bg-green-100 text-green-700"
-                        }`}>
-                          {isInformationOnly 
-                            ? "Payable at destination" 
+                          }`}>
+                          {isInformationOnly
+                            ? "Payable at destination"
                             : "Taxes & charges included"}
                         </span>
                       </div>

@@ -228,8 +228,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         const data: VisaDetailsResponse = await response.json();
         if (!isMounted) return;
 
-        // Block VOA and Visa-Free Entry visas from application flow
-        if (data.visaMode === "VOA" || data.visaMode === "VISA_FREE_ENTRY") {
+        // Block VOA visas from application flow (VISA_FREE_ENTRY is allowed without payment)
+        if (data.visaMode === "VOA") {
           redirecting = true;
           // Use replace instead of push to avoid breaking back navigation
           router.replace(`/visas/${params.country}/${params.type}`);
@@ -1945,7 +1945,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         const baseVisaTotalAmount = visaPrice * Math.max(formData.travellers?.length ?? 1, 1);
         const visaDiscountAmount = appliedPromoCode ? appliedPromoCode.discountAmount / 100 : 0; // Convert from paise to rupees
         const visaTotalAmount = Math.max(0, baseVisaTotalAmount - visaDiscountAmount);
-        const isFreeVisa = visaTotalAmount <= 0;
+        const isVisaFreeEntry = visaInfo?.visaMode === "VISA_FREE_ENTRY";
+        const isFreeVisa = visaTotalAmount <= 0 || isVisaFreeEntry;
 
         return (
           <div className="space-y-6">
@@ -2002,7 +2003,10 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                   {isFreeVisa ? (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
                       <p className="text-green-700 font-medium">
-                        This visa application is free — no payment required. Click Submit Application to complete your submission.
+                        {isVisaFreeEntry
+                          ? "This is a Visa-Free Entry destination — no payment required. Submit your application for record-keeping and travel preparation assistance."
+                          : "This visa application is free — no payment required. Click Submit Application to complete your submission."
+                        }
                       </p>
                     </div>
                   ) : (
