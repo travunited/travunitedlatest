@@ -92,6 +92,7 @@ interface VisaRecord {
   priceInInr: number;
   processingTime: string;
   stayDuration: string;
+  validity: string;
   entryType?: string | null;
   entryTypeLegacy?: string | null;
   visaMode?: string | null;
