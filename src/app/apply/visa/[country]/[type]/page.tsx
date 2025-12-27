@@ -12,6 +12,7 @@ import { useSearchParams } from "next/navigation";
 import { formatDate } from "@/lib/dateFormat";
 import { AccountGate } from "@/components/visa/AccountGate";
 import { PromoCodeInput } from "@/components/promo-code/PromoCodeInput";
+import { CountrySelect } from "@/components/ui/CountrySelect";
 
 type DocScope = "PER_TRAVELLER" | "PER_APPLICATION";
 
@@ -1613,13 +1614,11 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                       <label className="block text-sm font-medium text-neutral-700 mb-2">
                         Nationality *
                       </label>
-                      <input
-                        type="text"
-                        required
+                      <CountrySelect
                         value={traveller.nationality || ""}
-                        onChange={(e) => updateTravellerField(traveller.id, "nationality", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                        placeholder="Enter nationality (e.g., Indian, American)"
+                        onChange={(value) => updateTravellerField(traveller.id, "nationality", value)}
+                        placeholder="Select nationality"
+                        required
                       />
                     </div>
                     <div>

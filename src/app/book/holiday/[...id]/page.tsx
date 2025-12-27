@@ -25,6 +25,7 @@ import { loadRazorpayScript } from "@/lib/razorpay-client";
 import { formatDate } from "@/lib/dateFormat";
 import TermsAndPolicy from "@/components/ui/TermsAndPolicy";
 import { PromoCodeInput } from "@/components/promo-code/PromoCodeInput";
+import { CountrySelect } from "@/components/ui/CountrySelect";
 
 const steps = [
   { id: 1, name: "Select Tour & Date", icon: Calendar },
@@ -1180,10 +1181,10 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                             disabled={isDisabled}
                             onClick={() => !isDisabled && setFormData({ ...formData, travelDate: dateStr })}
                             className={`p-3 border rounded-lg text-sm text-left transition-colors ${isSelected
-                                ? "bg-primary-600 text-white border-primary-600"
-                                : isDisabled
-                                  ? "bg-neutral-100 text-neutral-400 border-neutral-200 cursor-not-allowed"
-                                  : "bg-white text-neutral-700 border-neutral-300 hover:border-primary-500"
+                              ? "bg-primary-600 text-white border-primary-600"
+                              : isDisabled
+                                ? "bg-neutral-100 text-neutral-400 border-neutral-200 cursor-not-allowed"
+                                : "bg-white text-neutral-700 border-neutral-300 hover:border-primary-500"
                               }`}
                           >
                             <div className="font-medium">
@@ -1335,8 +1336,8 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                         type="button"
                         onClick={() => setSelectedHotelCategory(category)}
                         className={`px-4 py-2 border rounded-lg text-sm transition-colors ${selectedHotelCategory === category
-                            ? "bg-primary-600 text-white border-primary-600"
-                            : "bg-white text-neutral-700 border-neutral-300 hover:border-primary-500"
+                          ? "bg-primary-600 text-white border-primary-600"
+                          : "bg-white text-neutral-700 border-neutral-300 hover:border-primary-500"
                           }`}
                       >
                         {category}
@@ -1729,12 +1730,11 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                         <label className="block text-sm font-medium text-neutral-700 mb-2">
                           Nationality *
                         </label>
-                        <input
-                          type="text"
+                        <CountrySelect
                           value={traveller.nationality}
-                          onChange={(e) => updateTraveller(index, "nationality", e.target.value)}
-                          className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                          placeholder="Indian"
+                          onChange={(value) => updateTraveller(index, "nationality", value)}
+                          placeholder="Select nationality"
+                          required
                         />
                       </div>
                     </div>
@@ -2297,10 +2297,10 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
                   <div className="flex flex-col items-center flex-1">
                     <div
                       className={`w-10 h-10 rounded-full flex items-center justify-center ${isCompleted
-                          ? "bg-green-500 text-white"
-                          : isActive
-                            ? "bg-primary-600 text-white"
-                            : "bg-neutral-200 text-neutral-600"
+                        ? "bg-green-500 text-white"
+                        : isActive
+                          ? "bg-primary-600 text-white"
+                          : "bg-neutral-200 text-neutral-600"
                         }`}
                     >
                       {isCompleted ? <CheckCircle size={20} /> : <Icon size={20} />}
