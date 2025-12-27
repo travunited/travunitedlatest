@@ -88,7 +88,7 @@ export default async function CountryVisasPage({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Link
               href="/visas"
-              className="inline-flex items-center text-white/80 hover:text-white mb-4 text-sm"
+              className="inline-flex items-center bg-white text-primary-600 px-4 py-2 rounded-lg font-medium hover:bg-white/90 transition-colors mb-4 text-sm"
             >
               ← Back to All Visas
             </Link>
