@@ -5,7 +5,7 @@ import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, User, ArrowRight, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, AlertCircle, CheckCircle, RefreshCw, Smartphone } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -17,6 +17,7 @@ function SignupPageContent() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
+  const [verifyMethod, setVerifyMethod] = useState<"email" | "mobile">("email");
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -39,10 +40,22 @@ function SignupPageContent() {
     }
 
     try {
+      // Normalize phone if mobile verification chosen
+      let normalizedPhone = phone;
+      if (verifyMethod === "mobile" && phone.length === 10) {
+        normalizedPhone = `91${phone}`;
+      }
+
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, phone }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          phone: normalizedPhone,
+          verifyMethod
+        }),
       });
 
       const data = await response.json();
@@ -54,8 +67,14 @@ function SignupPageContent() {
         if (data.requiresVerification) {
           // Get redirect URL from search params
           const redirectUrl = searchParams?.get("redirect") || "/dashboard";
-          // Redirect to email verification page
-          router.push(`/verify-email?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(redirectUrl)}`);
+
+          if (verifyMethod === "mobile") {
+            // Use mobile verification page/tab
+            router.push(`/verify-mobile?phone=${encodeURIComponent(normalizedPhone)}&email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(redirectUrl)}`);
+          } else {
+            // Redirect to email verification page
+            router.push(`/verify-email?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(redirectUrl)}`);
+          }
         } else {
           // Auto login after signup (fallback for old flow)
           const result = await signIn("credentials", {
@@ -317,6 +336,53 @@ function SignupPageContent() {
                   className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   placeholder="your.email@example.com"
                 />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Mobile Number
+              </label>
+              <div className="relative">
+                <Smartphone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="9876543210 (with country code)"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-neutral-700">
+                Verification Method
+              </label>
+              <div className="flex space-x-4">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="verifyMethod"
+                    value="email"
+                    checked={verifyMethod === "email"}
+                    onChange={() => setVerifyMethod("email")}
+                    className="text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="text-sm text-neutral-600">Email</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="verifyMethod"
+                    value="mobile"
+                    checked={verifyMethod === "mobile"}
+                    onChange={() => setVerifyMethod("mobile")}
+                    className="text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="text-sm text-neutral-600">Mobile SMS</span>
+                </label>
               </div>
             </div>
 

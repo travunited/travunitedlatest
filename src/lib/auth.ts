@@ -6,6 +6,57 @@ import bcrypt from "bcryptjs";
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
+      id: "mobile-otp",
+      name: "Mobile OTP",
+      credentials: {
+        phone: { label: "Phone", type: "text" },
+        otp: { label: "OTP", type: "text" },
+      },
+      async authorize(credentials) {
+        try {
+          if (!credentials?.phone || !credentials?.otp) {
+            return null;
+          }
+
+          const { phone, otp } = credentials;
+
+          // Verify OTP via MSG91
+          const { verifyOtp } = await import("./sms");
+          const isVerified = await verifyOtp(phone, otp);
+
+          if (!isVerified) {
+            throw new Error("INVALID_OTP");
+          }
+
+          // Find user by phone
+          // Use a flexible check for the last 10 digits to handle country code variations
+          const user = await prisma.user.findFirst({
+            where: {
+              phone: { contains: phone.slice(-10) },
+              isActive: true,
+            },
+          });
+
+          if (!user) {
+            throw new Error("USER_NOT_FOUND");
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          };
+        } catch (error: any) {
+          if (error?.message === "INVALID_OTP" || error?.message === "USER_NOT_FOUND") {
+            throw error;
+          }
+          console.error("[Auth] Mobile OTP unexpected error:", error);
+          return null;
+        }
+      },
+    }),
+    CredentialsProvider({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },

@@ -16,6 +16,7 @@ const signupSchema = z.object({
     (val) => (val === "" || val === null || val === undefined ? undefined : val),
     z.string().optional()
   ),
+  verifyMethod: z.enum(["email", "mobile"]).optional().default("email"),
 });
 
 export async function POST(req: Request) {
@@ -47,11 +48,16 @@ export async function POST(req: Request) {
       throw validationError;
     }
 
-    const { name, email, password, phone } = validatedData;
+    const { name, email, password, phone, verifyMethod } = validatedData;
 
     // Normalize optional fields (convert empty strings to undefined)
     const normalizedName = name && name.trim() ? name.trim() : undefined;
-    const normalizedPhone = phone && phone.trim() ? phone.trim() : undefined;
+    let normalizedPhone = phone && phone.trim() ? phone.trim() : undefined;
+
+    // Ensure phone has country code if provided and verifyMethod is mobile
+    if (normalizedPhone && normalizedPhone.length === 10) {
+      normalizedPhone = `91${normalizedPhone}`;
+    }
 
     // Check if user already exists
     let existingUser;
@@ -70,22 +76,22 @@ export async function POST(req: Request) {
         cause: dbError?.cause,
       };
       console.error("[Signup] ❌ Database error checking existing user:", JSON.stringify(errorDetails, null, 2));
-      
+
       // Check for common database connection errors
-      const isConnectionError = 
+      const isConnectionError =
         dbError?.code === 'P1001' || // Can't reach database server
         dbError?.code === 'P1002' || // Database server doesn't exist
         dbError?.code === 'P1003' || // Database does not exist
         dbError?.message?.includes('connection') ||
         dbError?.message?.includes('timeout') ||
         dbError?.message?.includes('ECONNREFUSED');
-      
+
       const errorMessage = isConnectionError
         ? "Unable to connect to database. Please try again later."
-        : process.env.NODE_ENV === "development" 
+        : process.env.NODE_ENV === "development"
           ? `Database error: ${dbError?.message || String(dbError)} (Code: ${dbError?.code || 'N/A'})`
           : "Database error. Please try again.";
-      
+
       return NextResponse.json(
         { error: errorMessage },
         { status: 500 }
@@ -130,9 +136,9 @@ export async function POST(req: Request) {
     // Create user with OTP
     let user;
     try {
-      console.log("[Signup] Creating user:", { 
-        email, 
-        hasName: !!normalizedName, 
+      console.log("[Signup] Creating user:", {
+        email,
+        hasName: !!normalizedName,
         hasPhone: !!normalizedPhone,
         hasPasswordHash: !!passwordHash,
         otp: otp.substring(0, 2) + "****",
@@ -153,6 +159,7 @@ export async function POST(req: Request) {
           email: true,
           name: true,
           role: true,
+          phone: true,
         },
       });
       console.log("[Signup] ✅ User created successfully:", { id: user.id, email: user.email });
@@ -166,7 +173,7 @@ export async function POST(req: Request) {
         stack: createError?.stack,
       };
       console.error("[Signup] ❌ User creation error:", JSON.stringify(errorDetails, null, 2));
-      
+
       // Handle unique constraint violation
       if (createError?.code === "P2002") {
         return NextResponse.json(
@@ -174,32 +181,42 @@ export async function POST(req: Request) {
           { status: 400 }
         );
       }
-      
+
       // Return more specific error in development
       const errorMessage = process.env.NODE_ENV === "development"
         ? `Failed to create user: ${createError?.message || String(createError)} (Code: ${createError?.code || 'N/A'})`
         : "Failed to create user account. Please try again.";
-      
+
       return NextResponse.json(
         { error: errorMessage },
         { status: 500 }
       );
     }
 
-    // Send OTP email (non-blocking)
-    try {
-      const { sendRegistrationOTPEmail } = await import("@/lib/email");
-      await sendRegistrationOTPEmail(user.email, otp, user.name || undefined, user.role);
-    } catch (error) {
-      // Non-blocking - don't fail signup if email fails
-      console.error("[Signup] Failed to send OTP email (non-blocking):", error);
+    // Send OTP based on method
+    if (verifyMethod === "mobile" && normalizedPhone) {
+      try {
+        const { sendOtp } = await import("@/lib/sms");
+        await sendOtp(normalizedPhone);
+      } catch (error) {
+        console.error("[Signup] Failed to send mobile OTP:", error);
+      }
+    } else {
+      // Send OTP email (non-blocking)
+      try {
+        const { sendRegistrationOTPEmail } = await import("@/lib/email");
+        await sendRegistrationOTPEmail(user.email, otp, user.name || undefined, user.role);
+      } catch (error) {
+        // Non-blocking - don't fail signup if email fails
+        console.error("[Signup] Failed to send OTP email (non-blocking):", error);
+      }
     }
 
     return NextResponse.json(
-      { 
-        message: "User created successfully. Please verify your email with the OTP sent to your email.", 
+      {
+        message: `User created successfully. Please verify your ${verifyMethod === 'mobile' ? 'mobile number' : 'email'} with the OTP sent.`,
         user,
-        requiresVerification: true 
+        requiresVerification: true
       },
       { status: 201 }
     );
@@ -211,36 +228,36 @@ export async function POST(req: Request) {
       code: (error as any)?.code,
       meta: (error as any)?.meta,
     };
-    
+
     console.error("[Signup] ❌ Unexpected error in outer catch:", JSON.stringify(errorDetails, null, 2));
-    
+
     // Check if it's a database error that wasn't caught
     if ((error as any)?.code?.startsWith('P')) {
-      const isConnectionError = 
+      const isConnectionError =
         (error as any)?.code === 'P1001' || // Can't reach database server
         (error as any)?.code === 'P1002' || // Database server doesn't exist
         (error as any)?.code === 'P1003' || // Database does not exist
         (error as any)?.message?.includes('connection') ||
         (error as any)?.message?.includes('timeout') ||
         (error as any)?.message?.includes('ECONNREFUSED');
-      
+
       const errorMessage = isConnectionError
         ? "Unable to connect to database. Please try again later."
         : process.env.NODE_ENV === "development"
           ? `Database error: ${(error as any)?.message || String(error)} (Code: ${(error as any)?.code || 'N/A'})`
           : "Database error. Please try again.";
-      
+
       return NextResponse.json(
         { error: errorMessage },
         { status: 500 }
       );
     }
-    
+
     // Return more specific error in development
     const errorMessage = process.env.NODE_ENV === "development"
       ? `Unexpected error: ${error instanceof Error ? error.message : String(error)}`
       : "An unexpected error occurred. Please try again.";
-    
+
     return NextResponse.json(
       { error: errorMessage },
       { status: 500 }
