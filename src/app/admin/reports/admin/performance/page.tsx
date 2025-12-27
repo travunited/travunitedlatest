@@ -243,11 +243,11 @@ export default function AdminPerformancePage() {
                 <tbody className="bg-white divide-y divide-neutral-200">
                   {admins.map((admin) => (
                     <tr key={admin.id} className="hover:bg-neutral-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{admin.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{admin.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{admin.name || "N/A"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{admin.email || "N/A"}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{admin.applicationsAssigned}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-medium">{admin.applicationsProcessed}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{admin.avgProcessingTimeHours.toFixed(1)} hrs</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{(admin.avgProcessingTimeHours || 0).toFixed(1)} hrs</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {admin.pendingOver7Days > 0 ? (
                           <span className="text-red-700 font-medium">{admin.pendingOver7Days}</span>

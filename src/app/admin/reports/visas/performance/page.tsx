@@ -272,14 +272,14 @@ export default function VisaTypePerformancePage() {
                 <tbody className="bg-white divide-y divide-neutral-200">
                   {visaTypes.map((visa) => (
                     <tr key={visa.visaId} className="hover:bg-neutral-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{visa.visaName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.countryName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.totalApplications}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.paidApplications}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">₹{visa.totalRevenue.toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.avgTravellers.toFixed(1)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.approvalRate.toFixed(1)}%</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.refundRate.toFixed(1)}%</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{visa.visaName || "N/A"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.countryName || "N/A"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.totalApplications || 0}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{visa.paidApplications || 0}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">₹{(visa.totalRevenue || 0).toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{(visa.avgTravellers || 0).toFixed(1)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{(visa.approvalRate || 0).toFixed(1)}%</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{(visa.refundRate || 0).toFixed(1)}%</td>
                     </tr>
                   ))}
                 </tbody>

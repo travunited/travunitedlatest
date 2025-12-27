@@ -228,9 +228,9 @@ export default function PromoCodeAnalyticsPage() {
                       <span className="text-neutral-400 font-medium">#{index + 1}</span>
                       <div>
                         <div className="text-sm font-medium text-neutral-900">
-                          {user.name || user.email}
+                          {user.name || user.email || "Unknown User"}
                         </div>
-                        {user.name && (
+                        {user.name && user.email && (
                           <div className="text-xs text-neutral-500">{user.email}</div>
                         )}
                       </div>
@@ -282,8 +282,8 @@ export default function PromoCodeAnalyticsPage() {
                         {formatDate(usage.usedAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-neutral-900">{usage.userName || usage.userEmail}</div>
-                        {usage.userName && (
+                        <div className="text-sm text-neutral-900">{usage.userName || usage.userEmail || "Unknown"}</div>
+                        {usage.userName && usage.userEmail && (
                           <div className="text-xs text-neutral-500">{usage.userEmail}</div>
                         )}
                       </td>

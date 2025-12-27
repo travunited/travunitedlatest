@@ -272,13 +272,13 @@ export default function TourPerformancePage() {
                 <tbody className="bg-white divide-y divide-neutral-200">
                   {tours.map((tour) => (
                     <tr key={tour.tourId} className="hover:bg-neutral-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{tour.tourName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{tour.countryName}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{tour.totalBookings}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{tour.paidBookings}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">₹{tour.totalRevenue.toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{tour.avgTravellers.toFixed(1)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{tour.cancellationRate.toFixed(1)}%</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{tour.tourName || "N/A"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{tour.countryName || "N/A"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{tour.totalBookings || 0}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{tour.paidBookings || 0}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-700">₹{(tour.totalRevenue || 0).toLocaleString()}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{(tour.avgTravellers || 0).toFixed(1)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{(tour.cancellationRate || 0).toFixed(1)}%</td>
                     </tr>
                   ))}
                 </tbody>
