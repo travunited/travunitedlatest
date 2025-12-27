@@ -75,10 +75,10 @@ function SignupPageContent() {
 
           if (verifyMethod === "mobile") {
             // Use mobile verification page/tab
-            router.push(`/verify-mobile?phone=${encodeURIComponent(normalizedPhone)}&email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(redirectUrl)}`);
+            router.push(`/verify-mobile?phone=${encodeURIComponent(normalizedPhone || "")}&email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirectUrl)}`);
           } else {
             // Redirect to email verification page
-            router.push(`/verify-email?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent(redirectUrl)}`);
+            router.push(`/verify-email?email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirectUrl)}`);
           }
         } else {
           // Auto login after signup (fallback for old flow)
