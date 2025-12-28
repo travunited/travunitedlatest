@@ -17,9 +17,9 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // Allow guest uploads - documents will be associated with user upon booking completion
+    // Use session user ID if available, otherwise use a guest identifier
+    const userIdentifier = session?.user?.id || `guest-${Date.now()}`;
 
     const formData = await req.formData();
     const file = formData.get("file");
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
     const travellerName = formData.get("travellerName")?.toString().trim() || "traveller";
     const safeName = sanitizeFileName(`${travellerName}-${file.name || "passport"}`);
-    const key = `tour-documents/passports/${session.user.id}/${Date.now()}-${safeName}`;
+    const key = `tour-documents/passports/${userIdentifier}/${Date.now()}-${safeName}`;
 
     const buffer = Buffer.from(await file.arrayBuffer());
     await uploadVisaDocument(key, buffer, contentType);
