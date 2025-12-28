@@ -861,7 +861,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
 
     if (!session) {
       setShowAuthModal(true);
-      return;
+      return null;
     }
 
     if (!formData.policyAccepted) {
