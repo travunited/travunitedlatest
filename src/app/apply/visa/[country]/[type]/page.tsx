@@ -2085,26 +2085,44 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   return (
     <div className="min-h-screen bg-neutral-50">
       <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              // Use router.back() to go back in browser history
-              // This ensures proper back navigation without breaking browser history
-              router.back();
-            }}
-            className="text-primary-600 hover:text-primary-700 text-sm text-left"
-            type="button"
-          >
-            ← Back to Visa Details
-          </button>
-          <button
-            type="button"
-            onClick={handleStartFreshApplication}
-            className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 shadow-sm hover:bg-neutral-50"
-          >
-            Start fresh application
-          </button>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          {/* Breadcrumb Navigation */}
+          <nav className="flex items-center space-x-2 text-sm mb-3">
+            <Link href="/" className="text-neutral-500 hover:text-primary-600 transition-colors">
+              Home
+            </Link>
+            <span className="text-neutral-300">/</span>
+            <Link href="/visas" className="text-neutral-500 hover:text-primary-600 transition-colors">
+              Visas
+            </Link>
+            <span className="text-neutral-300">/</span>
+            <Link href={`/visas/${params.country}`} className="text-neutral-500 hover:text-primary-600 transition-colors">
+              {visaInfo?.country?.name || params.country.toUpperCase()}
+            </Link>
+            <span className="text-neutral-300">/</span>
+            <span className="text-neutral-900 font-medium truncate max-w-[200px]">
+              {visaName}
+            </span>
+          </nav>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                router.back();
+              }}
+              className="text-primary-600 hover:text-primary-700 text-sm text-left"
+              type="button"
+            >
+              ← Back to Visa Details
+            </button>
+            <button
+              type="button"
+              onClick={handleStartFreshApplication}
+              className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 shadow-sm hover:bg-neutral-50"
+            >
+              Start fresh application
+            </button>
+          </div>
         </div>
       </div>
 

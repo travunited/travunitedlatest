@@ -116,7 +116,18 @@ export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectU
         await mergeGuestApplication();
         onContinue();
       } else {
-        setError(result?.error || "Invalid email or password");
+        // Handle specific error codes
+        const errorMsg = result?.error || "";
+        if (errorMsg.includes("EMAIL_NOT_VERIFIED") || errorMsg === "EMAIL_NOT_VERIFIED") {
+          // Redirect to email verification page
+          const currentUrl = typeof window !== "undefined" ? window.location.pathname : redirectUrl || "/dashboard";
+          router.push(`/verify-email?email=${encodeURIComponent(formData.email)}&redirect=${encodeURIComponent(currentUrl)}`);
+          return;
+        } else if (errorMsg.includes("CredentialsSignin") || errorMsg === "CredentialsSignin") {
+          setError("Invalid email or password. Please check your credentials and try again.");
+        } else {
+          setError(errorMsg || "Login failed. Please try again.");
+        }
       }
     } catch (error) {
       setError("An error occurred. Please try again.");
@@ -158,10 +169,10 @@ export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectU
       if (result?.ok) {
         // Merge guest application
         const mergeResult = await mergeGuestApplication();
-        
+
         // Close modal
         onClose();
-        
+
         // Redirect to continue application if we have guest data
         if (mergeResult && mergeResult.formData) {
           // Reload page to restore merged data - onContinue will handle this
@@ -230,7 +241,7 @@ export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectU
               <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                   <p className="text-sm text-blue-800">
-                    We've sent a 6-digit verification code to <strong>{formData.email}</strong>. 
+                    We've sent a 6-digit verification code to <strong>{formData.email}</strong>.
                     Please enter it below to verify your email.
                   </p>
                 </div>
@@ -312,11 +323,10 @@ export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectU
                       setMode("signup");
                       setError("");
                     }}
-                    className={`flex-1 py-2 text-sm font-medium ${
-                      mode === "signup"
+                    className={`flex-1 py-2 text-sm font-medium ${mode === "signup"
                         ? "text-primary-600 border-b-2 border-primary-600"
                         : "text-neutral-600 hover:text-neutral-900"
-                    }`}
+                      }`}
                   >
                     Sign Up
                   </button>
@@ -325,11 +335,10 @@ export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectU
                       setMode("login");
                       setError("");
                     }}
-                    className={`flex-1 py-2 text-sm font-medium ${
-                      mode === "login"
+                    className={`flex-1 py-2 text-sm font-medium ${mode === "login"
                         ? "text-primary-600 border-b-2 border-primary-600"
                         : "text-neutral-600 hover:text-neutral-900"
-                    }`}
+                      }`}
                   >
                     Login
                   </button>
