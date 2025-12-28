@@ -10,7 +10,7 @@ import { saveDraftToLocalStorage, getDraftFromLocalStorage, clearDraftFromLocalS
 import { loadRazorpayScript } from "@/lib/razorpay-client";
 import { useSearchParams } from "next/navigation";
 import { formatDate } from "@/lib/dateFormat";
-import { AccountGate } from "@/components/visa/AccountGate";
+import { UnifiedAuthModal } from "@/components/auth/UnifiedAuthModal";
 import { PromoCodeInput } from "@/components/promo-code/PromoCodeInput";
 import { CountrySelect } from "@/components/ui/CountrySelect";
 
@@ -2319,10 +2319,10 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       </AnimatePresence>
 
       {/* Account Gate Modal */}
-      <AccountGate
+      <UnifiedAuthModal
         isOpen={showAccountGate}
         onClose={() => setShowAccountGate(false)}
-        onContinue={async () => {
+        onSuccess={async () => {
           setShowAccountGate(false);
           setIsGuestMode(false);
 
@@ -2364,8 +2364,10 @@ export default function VisaApplicationPage({ params }: { params: { country: str
             setCurrentStep(currentStep + 1);
           }
         }}
-        email={formData.primaryContact?.email}
+        defaultEmail={formData.primaryContact?.email}
         redirectUrl={`/apply/visa/${params.country}/${params.type}`}
+        title="Continue Your Application"
+        subtitle="Login or create an account to save your visa application"
       />
     </div>
   );

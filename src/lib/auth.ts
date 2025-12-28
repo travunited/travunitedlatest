@@ -86,6 +86,7 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         try {
           if (!credentials?.email || !credentials?.password) {
+            console.log("[Auth] Missing email or password");
             return null;
           }
 
@@ -99,12 +100,19 @@ export const authOptions: NextAuthOptions = {
             throw new Error("DATABASE_ERROR");
           }
 
-          if (!user || !user.isActive) {
+          if (!user) {
+            console.log("[Auth] User not found:", credentials.email);
+            return null;
+          }
+
+          if (!user.isActive) {
+            console.log("[Auth] User is inactive:", credentials.email);
             return null;
           }
 
           // Check if email is verified (required for login)
           if (!user.emailVerified) {
+            console.log("[Auth] Email not verified:", credentials.email);
             throw new Error("EMAIL_NOT_VERIFIED");
           }
 
@@ -114,9 +122,11 @@ export const authOptions: NextAuthOptions = {
           );
 
           if (!isValid) {
+            console.log("[Auth] Invalid password for:", credentials.email);
             return null;
           }
 
+          console.log("[Auth] Login successful:", credentials.email);
           return {
             id: user.id,
             email: user.email,

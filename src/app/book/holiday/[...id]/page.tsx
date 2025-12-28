@@ -26,6 +26,7 @@ import { formatDate } from "@/lib/dateFormat";
 import TermsAndPolicy from "@/components/ui/TermsAndPolicy";
 import { PromoCodeInput } from "@/components/promo-code/PromoCodeInput";
 import { CountrySelect } from "@/components/ui/CountrySelect";
+import { UnifiedAuthModal } from "@/components/auth/UnifiedAuthModal";
 
 const steps = [
   { id: 1, name: "Select Tour & Date", icon: Calendar },
@@ -127,6 +128,7 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
     discountAmount: number;
     message?: string;
   } | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const [formData, setFormData] = useState({
     travelDate: "",
@@ -858,12 +860,8 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
     }
 
     if (!session) {
-      const slug = Array.isArray(params.id) ? params.id.join('/') : params.id;
-      const encodedSlug = encodeURIComponent(slug);
-      router.push(
-        `/signup?email=${encodeURIComponent(formData.primaryContact.email || "")}&redirect=/book/holiday/${encodedSlug}`
-      );
-      return null;
+      setShowAuthModal(true);
+      return;
     }
 
     if (!formData.policyAccepted) {
@@ -2339,6 +2337,18 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
           )}
         </div>
       </div>
+
+      <UnifiedAuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => {
+          setShowAuthModal(false);
+          router.refresh();
+        }}
+        defaultEmail={formData.primaryContact?.email}
+        title="Login to Continue"
+        subtitle="Please login to your account to proceed with the booking"
+      />
     </div>
   );
 }
