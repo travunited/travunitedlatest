@@ -26,54 +26,65 @@ export default function Msg91OtpWidget({
     className,
 }: Msg91OtpWidgetProps) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const scriptLoaded = useRef(false);
+    const initialized = useRef(false);
 
     useEffect(() => {
-        if (scriptLoaded.current) return;
+        // Function to initialize or re-initialize the widget
+        const initWidget = () => {
+            if (typeof window.initSendOTP === "function") {
+                console.log("[MSG91] Initializing widget with identifier:", identifier);
 
-        window.configuration = {
-            widgetId: WIDGET_ID,
-            tokenAuth: TOKEN_AUTH,
-            identifier: identifier || "",
-            exposeMethods: true,
-            success: (data: any) => {
-                console.log("MSG91 Widget Success:", data);
-                onSuccess(data);
-            },
-            failure: (error: any) => {
-                console.log("MSG91 Widget Failure:", error);
-                if (onFailure) onFailure(error);
-            },
+                // Clear container before initialization to prevent duplicates
+                if (containerRef.current) {
+                    containerRef.current.innerHTML = "";
+                }
+
+                window.configuration = {
+                    widgetId: WIDGET_ID,
+                    tokenAuth: TOKEN_AUTH,
+                    identifier: identifier || "",
+                    exposeMethods: true,
+                    success: (data: any) => {
+                        console.log("[MSG91] Widget Success:", data);
+                        onSuccess(data);
+                    },
+                    failure: (error: any) => {
+                        console.error("[MSG91] Widget Failure:", error);
+                        if (onFailure) onFailure(error);
+                    },
+                };
+
+                window.initSendOTP(window.configuration);
+                initialized.current = true;
+            }
         };
 
-        const loadScript = (urls: string[]) => {
-            let i = 0;
-            const attempt = () => {
-                if (i >= urls.length) return;
-                const s = document.createElement("script");
-                s.src = urls[i];
-                s.async = true;
-                s.onload = () => {
-                    if (typeof window.initSendOTP === "function") {
-                        window.initSendOTP(window.configuration);
-                    }
-                };
-                s.onerror = () => {
-                    i++;
-                    attempt();
-                };
-                document.head.appendChild(s);
-            };
-            attempt();
+        // If script is already loaded and function is available
+        if (typeof window.initSendOTP === "function") {
+            initWidget();
+            return;
+        }
+
+        // Otherwise load script
+        const s = document.createElement("script");
+        s.src = "https://control.msg91.com/app/assets/otp-provider/otp-provider.js";
+        s.async = true;
+        s.onload = initWidget;
+        s.onerror = (e) => {
+            console.error("[MSG91] Script load error:", e);
+            if (onFailure) onFailure(new Error("Failed to load OTP widget"));
         };
+        document.head.appendChild(s);
 
-        loadScript([
-            "https://verify.msg91.com/otp-provider.js",
-            "https://verify.phone91.com/otp-provider.js",
-        ]);
-
-        scriptLoaded.current = true;
+        return () => {
+            // Cleanup: remove global configuration if needed, though usually fine to keep
+            // initialized.current = false;
+        };
     }, [onSuccess, onFailure, identifier]);
 
-    return <div id="msg91-otp-widget" ref={containerRef} className={className} />;
+    return (
+        <div key={identifier} className={className}>
+            <div id="msg91-otp-widget" ref={containerRef} />
+        </div>
+    );
 }

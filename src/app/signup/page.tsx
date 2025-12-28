@@ -267,11 +267,32 @@ function SignupPageContent() {
               </>
             ) : (
               <div className="space-y-6 animate-fade-in">
-                <Msg91OtpWidget
-                  onSuccess={handleMobileSignupSuccess}
-                  onFailure={(err) => setError(err.message || "OTP verification failed")}
-                  className="w-full overflow-hidden rounded-lg shadow-sm"
-                />
+                <div>
+                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
+                    Mobile Number
+                  </label>
+                  <div className="relative group">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 font-bold border-r border-neutral-300 pr-2">+91</span>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      className="w-full pl-16 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none font-bold tracking-wider"
+                      placeholder="9876543210"
+                    />
+                  </div>
+                </div>
+
+                {phone.length === 10 && (
+                  <div className="animate-slide-up">
+                    <Msg91OtpWidget
+                      identifier={`91${phone}`}
+                      onSuccess={handleMobileSignupSuccess}
+                      onFailure={(err) => setError(err.message || "OTP verification failed")}
+                      className="w-full overflow-hidden rounded-lg shadow-sm"
+                    />
+                  </div>
+                )}
               </div>
             )}
 
