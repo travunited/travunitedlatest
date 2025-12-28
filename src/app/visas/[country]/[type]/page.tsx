@@ -421,8 +421,8 @@ export default async function VisaDetailPage({
                           {(visa.govtFee + visa.serviceFee).toLocaleString()}
                         </div>
                         <span className={`px-2 py-1 text-xs font-semibold rounded-md whitespace-nowrap ${isInformationOnly
-                            ? "bg-neutral-100 text-neutral-700"
-                            : "bg-green-100 text-green-700"
+                          ? "bg-neutral-100 text-neutral-700"
+                          : "bg-green-100 text-green-700"
                           }`}>
                           {isInformationOnly
                             ? "Payable at destination"
@@ -450,8 +450,8 @@ export default async function VisaDetailPage({
                           {visa.priceInInr.toLocaleString()}
                         </div>
                         <span className={`px-2 py-1 text-xs font-semibold rounded-md whitespace-nowrap ${isInformationOnly
-                            ? "bg-neutral-100 text-neutral-700"
-                            : "bg-green-100 text-green-700"
+                          ? "bg-neutral-100 text-neutral-700"
+                          : "bg-green-100 text-green-700"
                           }`}>
                           {isInformationOnly
                             ? "Payable at destination"
@@ -507,6 +507,7 @@ export default async function VisaDetailPage({
                     url=""
                     title={visa.name}
                     description={visa.subtitle || visa.overview?.substring(0, 160)}
+                    image={heroImageUrl || undefined}
                     className="w-full"
                   />
                 </div>

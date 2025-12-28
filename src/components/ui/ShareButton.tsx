@@ -9,10 +9,11 @@ interface ShareButtonProps {
   url: string;
   title: string;
   description?: string;
+  image?: string;
   variant?: "full" | "icon-only";
 }
 
-export function ShareButton({ url, title, description = "", variant = "full" }: ShareButtonProps) {
+export function ShareButton({ url, title, description = "", image, variant = "full" }: ShareButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -38,8 +39,53 @@ export function ShareButton({ url, title, description = "", variant = "full" }: 
   };
 
   const handleShare = async (platform: keyof typeof shareLinks | "instagram") => {
+    // Try to use Web Share API for supported platforms if image is available and it's a mobile/capable device
+    // This allows sharing the actual image file
+    if (image && typeof navigator !== "undefined" && typeof navigator.canShare === "function") {
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      // For general share (if we were to add a generic 'Share' button) or if the platform is implicit
+      // Here we intercept specific platform clicks if we want to force native share, but typically
+      // native share is triggered by a specific generic share button. 
+      // However, the user request is specifically about sharing the image.
+      // If the user clicks a specific platform button like 'WhatsApp' in our custom UI, 
+      // we usually just open the link. 
+      // But let's try to be smart: if they click a platform and we have an image, 
+      // and we are on mobile, maybe we can try to use the native share which supports images?
+      // Actually, standard behavior for custom UI buttons is to just open the web intent.
+      // Web Share API usually shares to a system picker, not a specific app directly (on web).
+
+      // So, let's keep the specific platform buttons as they are (web intents), 
+      // BUT for Instagram which doesn't have a web intent, we might want to try 
+      // native share if available, otherwise copy link.
+    }
+
     if (platform === "instagram") {
-      // Instagram doesn't have a web share URL, so we copy the link to clipboard
+      // Try Web Share API Level 2 for files if available (mostly mobile)
+      if (image && typeof navigator !== "undefined" && navigator.share) {
+        try {
+          // We need to fetch the image and convert to File
+          const response = await fetch(image);
+          const blob = await response.blob();
+          const file = new File([blob], "share-image.jpg", { type: blob.type });
+
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: title,
+              text: shareText,
+              url: shareUrl,
+            });
+            setIsOpen(false);
+            return;
+          }
+        } catch (error) {
+          console.error("Error sharing file:", error);
+          // Fallback to copy link below
+        }
+      }
+
+      // Fallback: Copy link
       try {
         await navigator.clipboard.writeText(shareUrl);
         setCopied(true);

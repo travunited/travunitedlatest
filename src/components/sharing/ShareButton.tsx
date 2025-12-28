@@ -18,6 +18,7 @@ interface ShareButtonProps {
   title: string;
   description?: string;
   className?: string;
+  image?: string;
 }
 
 export function ShareButton({
@@ -25,6 +26,7 @@ export function ShareButton({
   title,
   description,
   className = "",
+  image,
 }: ShareButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -33,6 +35,25 @@ export function ShareButton({
   const shareUrl = typeof window !== "undefined" ? window.location.href : url;
   const shareTitle = title;
   const shareDescription = description || title;
+
+  const handleNativeShare = async () => {
+    if (image && typeof navigator !== "undefined" && typeof navigator.canShare === "function") {
+      try {
+        const response = await fetch(image);
+        const blob = await response.blob();
+        const file = new File([blob], "share-image.jpg", { type: blob.type });
+        const canShareData = { files: [file], title: shareTitle, text: shareDescription, url: shareUrl };
+
+        if (navigator.canShare(canShareData)) {
+          await navigator.share(canShareData);
+          return true;
+        }
+      } catch (error) {
+        console.error("Error with native share:", error);
+      }
+    }
+    return false;
+  };
 
   const shareOptions = [
     {
@@ -91,6 +112,13 @@ export function ShareButton({
       icon: Instagram,
       color: "bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#FCAF45] hover:from-[#6B2A94] hover:via-[#D91A1A] hover:to-[#D4933C]",
       onClick: async () => {
+        // Try native share with image first
+        const shared = await handleNativeShare();
+        if (shared) {
+          setIsOpen(false);
+          return;
+        }
+
         // Instagram doesn't have a web share URL, so we copy the link to clipboard
         try {
           await navigator.clipboard.writeText(shareUrl);

@@ -32,7 +32,7 @@ export async function generateMetadata({
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://travunited.com";
   const pageUrl = `${siteUrl}/blog/${post.slug}`;
-  
+
   // Get OG image - use cover image, fallback to default
   let ogImage: string | undefined;
   if (post.coverImage) {
@@ -41,7 +41,7 @@ export async function generateMetadata({
       ogImage = getAbsoluteImageUrl(imageUrl, siteUrl);
     }
   }
-  
+
   // If no image, use a default OG image
   if (!ogImage) {
     ogImage = `${siteUrl}/og-default.jpg`; // You can create this default image
@@ -168,6 +168,7 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
                 url={`/blog/${post.slug}`}
                 title={post.title}
                 description={post.excerpt || ""}
+                image={post.coverImage ? getMediaProxyUrl(post.coverImage) : undefined}
                 variant="full"
               />
             </div>
@@ -185,6 +186,7 @@ export default async function BlogPostPage({ params }: { params: { id: string } 
             url={`/blog/${post.slug}`}
             title={post.title}
             description={post.excerpt || ""}
+            image={post.coverImage ? getMediaProxyUrl(post.coverImage) : undefined}
             variant="full"
           />
         </div>

@@ -672,6 +672,7 @@ function Hero({
               url=""
               title={tour.name}
               description={tour.shortDescription || tour.description?.substring(0, 160)}
+              image={heroImage && !heroImage.includes("unsplash") ? heroImage : undefined}
               className="hidden md:block"
             />
           </div>
