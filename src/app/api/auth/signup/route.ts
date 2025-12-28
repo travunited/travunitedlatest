@@ -158,10 +158,13 @@ export async function POST(req: Request) {
       },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("[Signup] ❌ Unexpected error:", error);
     return NextResponse.json(
-      { error: "An unexpected error occurred. Please try again." },
+      {
+        error: "An unexpected error occurred. Please try again.",
+        devError: error.message || "Unknown error"
+      },
       { status: 500 }
     );
   }

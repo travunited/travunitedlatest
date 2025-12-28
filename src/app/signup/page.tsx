@@ -100,32 +100,31 @@ function SignupPageContent() {
         setError(data.error || "Signup failed");
       } else {
         // Show OTP verification step
-        if (data.requiresVerification && verifyMethod === "email") {
-          // Get redirect URL from search params
+        if (data.requiresVerification) {
           const redirectUrl = searchParams?.get("redirect") || "/dashboard";
-          // Redirect to email verification page
-          router.push(`/verify-email?email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirectUrl)}`);
-        } else {
-          // Auto login after signup (fallback for old flow or direct login after email signup)
-          const result = await signIn("credentials", {
-            email,
-            password,
-            redirect: false,
-          });
-
-          if (result?.ok) {
-            // Merge guest application after login
-            try {
-              await fetch("/api/guest-applications/merge", {
-                method: "POST",
-              });
-            } catch (error) {
-              console.error("Error merging guest application:", error);
-            }
-            const redirectUrl = searchParams?.get("redirect") || "/dashboard";
-            router.push(redirectUrl);
+          if (verifyMethod === "email") {
+            router.push(`/verify-email?email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirectUrl)}`);
           } else {
-            router.push("/login");
+            router.push(`/verify-mobile?phone=${encodeURIComponent(normalizedPhone || "")}&redirect=${encodeURIComponent(redirectUrl)}`);
+          }
+        } else {
+          // If already verified (e.g. verification-first flow or verification skipped)
+          if (verifyMethod === "email") {
+            const result = await signIn("credentials", {
+              email,
+              password,
+              redirect: false,
+            });
+
+            if (result?.ok) {
+              const redirectUrl = searchParams?.get("redirect") || "/dashboard";
+              router.push(redirectUrl);
+            } else {
+              router.push("/login?email=" + encodeURIComponent(email));
+            }
+          } else {
+            // For mobile, redirect to login with verified flag
+            router.push(`/login?email=${encodeURIComponent(normalizedPhone || "")}&verified=true`);
           }
         }
       }
