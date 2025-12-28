@@ -135,15 +135,23 @@ function LoginPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-large p-8">
+    <div className="min-h-screen relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Background Image with Overlay */}
+      <div
+        className="absolute inset-0 z-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/login-bg.png')" }}
+      >
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"></div>
+      </div>
+
+      <div className="max-w-md w-full relative z-10 animate-fade-in">
+        <div className="glass rounded-2xl shadow-2xl p-8 border border-white/20">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-neutral-900 mb-2">Welcome Back</h1>
-            <p className="text-neutral-600">Sign in to your Travunited account</p>
+            <h1 className="text-4xl font-extrabold text-neutral-900 mb-2 tracking-tight">Welcome Back</h1>
+            <p className="text-neutral-700 font-medium">Sign in to your Travunited account</p>
           </div>
 
-          <div className="flex p-1 bg-neutral-100 rounded-xl mb-8">
+          <div className="flex p-1 bg-neutral-200/50 rounded-xl mb-8 backdrop-blur-sm">
             <button
               type="button"
               onClick={() => {
@@ -151,9 +159,9 @@ function LoginPageContent() {
                 setError("");
                 setSuccess("");
               }}
-              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-medium rounded-lg transition-all ${loginMethod === "email"
-                ? "bg-white text-primary-600 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-700"
+              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${loginMethod === "email"
+                ? "bg-white text-primary-600 shadow-md transform scale-[1.02]"
+                : "text-neutral-600 hover:text-neutral-900"
                 }`}
             >
               <Mail size={18} />
@@ -166,9 +174,9 @@ function LoginPageContent() {
                 setError("");
                 setSuccess("");
               }}
-              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-medium rounded-lg transition-all ${loginMethod === "mobile"
-                ? "bg-white text-primary-600 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-700"
+              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${loginMethod === "mobile"
+                ? "bg-white text-primary-600 shadow-md transform scale-[1.02]"
+                : "text-neutral-600 hover:text-neutral-900"
                 }`}
             >
               <Smartphone size={18} />
@@ -178,22 +186,22 @@ function LoginPageContent() {
 
           <div className="space-y-6">
             {success && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-2 text-green-700">
+              <div className="bg-green-50/90 border border-green-200 rounded-lg p-4 flex items-start space-x-2 text-green-700 backdrop-blur-sm">
                 <CheckCircle size={20} className="mt-0.5 flex-shrink-0" />
-                <p className="text-sm">{success}</p>
+                <p className="text-sm font-medium">{success}</p>
               </div>
             )}
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-2 text-red-700">
+              <div className="bg-red-50/90 border border-red-200 rounded-lg p-4 flex items-start space-x-2 text-red-700 backdrop-blur-sm">
                 <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <span className="text-sm block">{error}</span>
+                  <span className="text-sm font-medium block">{error}</span>
                   {loginMethod === "email" && error.includes("verify your email") && email && (
                     <div className="mt-2 space-y-2">
                       <Link
                         href={`/verify-email?email=${encodeURIComponent(email)}&redirect=/dashboard`}
-                        className="text-sm text-primary-600 hover:text-primary-700 underline block"
+                        className="text-sm text-primary-600 hover:text-primary-700 font-semibold underline block"
                       >
                         Verify Email Now →
                       </Link>
@@ -206,45 +214,45 @@ function LoginPageContent() {
             {loginMethod === "email" ? (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
                     Email Address
                   </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                  <div className="relative group">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
                       placeholder="your.email@example.com"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
                     Password
                   </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                  <div className="relative group">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
-                      className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
                       placeholder="Enter your password"
                     />
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center">
-                    <input type="checkbox" className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500" />
-                    <span className="ml-2 text-sm text-neutral-600">Remember me</span>
+                  <label className="flex items-center group cursor-pointer">
+                    <input type="checkbox" className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500 transition-colors" />
+                    <span className="ml-2 text-sm text-neutral-700 group-hover:text-black transition-colors font-medium">Remember me</span>
                   </label>
-                  <Link href="/forgot-password" className="text-sm text-primary-600 hover:text-primary-700">
+                  <Link href="/forgot-password" className="text-sm text-primary-600 hover:text-primary-700 font-semibold transition-colors">
                     Forgot password?
                   </Link>
                 </div>
@@ -252,27 +260,27 @@ function LoginPageContent() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
+                  className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none"
                 >
-                  <span>{loading ? "Signing in..." : "Sign In"}</span>
-                  {!loading && <ArrowRight size={20} />}
+                  <span className="text-lg">{loading ? "Signing in..." : "Sign In"}</span>
+                  {!loading && <ArrowRight size={22} />}
                 </button>
               </form>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-6 animate-fade-in">
                 <Msg91OtpWidget
                   onSuccess={handleMobileLoginSuccess}
                   onFailure={(err) => setError(err.message || "OTP verification failed")}
-                  className="w-full"
+                  className="w-full overflow-hidden rounded-lg shadow-sm"
                 />
               </div>
             )}
           </div>
 
-          <div className="mt-6 text-center">
-            <p className="text-neutral-600">
+          <div className="mt-8 pt-6 border-t border-neutral-200/50 text-center">
+            <p className="text-neutral-700 font-medium">
               Don&rsquo;t have an account?{" "}
-              <Link href="/signup" className="text-primary-600 hover:text-primary-700 font-medium">
+              <Link href="/signup" className="text-primary-600 hover:text-primary-700 font-bold transition-colors">
                 Sign up
               </Link>
             </p>

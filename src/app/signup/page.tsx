@@ -137,168 +137,174 @@ function SignupPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        <div className="bg-white rounded-2xl shadow-large p-8">
+    <div className="min-h-screen relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Background Image with Overlay */}
+      <div
+        className="absolute inset-0 z-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/login-bg.png')" }}
+      >
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"></div>
+      </div>
+
+      <div className="max-w-md w-full relative z-10 animate-fade-in">
+        <div className="glass rounded-2xl shadow-2xl p-8 border border-white/20">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-neutral-900 mb-2">Create Account</h1>
-            <p className="text-neutral-600">Join Travunited to start your travel journey</p>
+            <h1 className="text-4xl font-extrabold text-neutral-900 mb-2 tracking-tight">Join Travunited</h1>
+            <p className="text-neutral-700 font-medium">Start your journey with us today</p>
           </div>
 
-          {/* Signup Method Tabs */}
-          <div className="flex p-1 bg-neutral-100 rounded-xl mb-8">
-            <button
-              type="button"
-              onClick={() => {
-                setVerifyMethod("mobile");
-                setError("");
-              }}
-              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-medium rounded-lg transition-all ${verifyMethod === "mobile"
-                ? "bg-white text-primary-600 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-700"
-                }`}
-            >
-              <Smartphone size={18} />
-              <span>Phone</span>
-            </button>
+          <div className="flex p-1 bg-neutral-200/50 rounded-xl mb-8 backdrop-blur-sm">
             <button
               type="button"
               onClick={() => {
                 setVerifyMethod("email");
                 setError("");
               }}
-              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-medium rounded-lg transition-all ${verifyMethod === "email"
-                ? "bg-white text-primary-600 shadow-sm"
-                : "text-neutral-500 hover:text-neutral-700"
+              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${verifyMethod === "email"
+                ? "bg-white text-primary-600 shadow-md transform scale-[1.02]"
+                : "text-neutral-600 hover:text-neutral-900"
                 }`}
             >
               <Mail size={18} />
               <span>Email</span>
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setVerifyMethod("mobile");
+                setError("");
+              }}
+              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${verifyMethod === "mobile"
+                ? "bg-white text-primary-600 shadow-md transform scale-[1.02]"
+                : "text-neutral-600 hover:text-neutral-900"
+                }`}
+            >
+              <Smartphone size={18} />
+              <span>Phone</span>
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-2 text-red-700">
-                <AlertCircle size={20} />
-                <span className="text-sm">{error}</span>
+              <div className="bg-red-50/90 border border-red-200 rounded-lg p-4 flex items-start space-x-2 text-red-700 backdrop-blur-sm animate-fade-in">
+                <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
+                <span className="text-sm font-medium">{error}</span>
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Full Name
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder="John Doe"
-                />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-neutral-800 mb-2">
+                  Full Name
+                </label>
+                <div className="relative group">
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
+                    placeholder="John Doe"
+                  />
+                </div>
               </div>
             </div>
 
             {verifyMethod === "email" ? (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
                     Email Address
                   </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                  <div className="relative group">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
                       placeholder="your.email@example.com"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
                     Password
                   </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                  <div className="relative group">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
                     <input
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       minLength={8}
-                      className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
                       placeholder="At least 8 characters"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
                     Confirm Password
                   </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" size={20} />
+                  <div className="relative group">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
                     <input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
-                      className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
                       placeholder="Confirm your password"
                     />
                   </div>
                 </div>
               </>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-6 animate-fade-in">
                 <Msg91OtpWidget
                   onSuccess={handleMobileSignupSuccess}
                   onFailure={(err) => setError(err.message || "OTP verification failed")}
-                  className="w-full"
+                  className="w-full overflow-hidden rounded-lg shadow-sm"
                 />
               </div>
             )}
 
-            <div className="flex items-start">
+            <div className="flex items-start group cursor-pointer">
               <input
                 type="checkbox"
                 required
-                className="mt-1 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                className="mt-1 rounded border-neutral-300 text-primary-600 focus:ring-primary-500 transition-colors"
+                id="terms"
               />
-              <label className="ml-2 text-sm text-neutral-600">
+              <label htmlFor="terms" className="ml-2 text-sm text-neutral-700 group-hover:text-black transition-colors font-medium">
                 I agree to the{" "}
-                <Link href="/terms" className="text-primary-600 hover:text-primary-700">
-                  Terms & Conditions
-                </Link>{" "}
-                and{" "}
-                <Link href="/privacy" className="text-primary-600 hover:text-primary-700">
-                  Privacy Policy
-                </Link>
+                <Link href="/terms" className="text-primary-600 hover:text-primary-700 font-bold">Terms & Conditions</Link>
+                {" "}and{" "}
+                <Link href="/privacy" className="text-primary-600 hover:text-primary-700 font-bold">Privacy Policy</Link>
               </label>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none"
             >
-              <span>{loading ? "Creating account..." : "Create Account"}</span>
-              {!loading && <ArrowRight size={20} />}
+              <span className="text-lg">{loading ? "Creating account..." : "Create Account"}</span>
+              {!loading && <ArrowRight size={22} />}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-neutral-600">
+          <div className="mt-8 pt-6 border-t border-neutral-200/50 text-center">
+            <p className="text-neutral-700 font-medium">
               Already have an account?{" "}
-              <Link href="/login" className="text-primary-600 hover:text-primary-700 font-medium">
-                Sign in
+              <Link href="/login" className="text-primary-600 hover:text-primary-700 font-bold transition-colors">
+                Log in
               </Link>
             </p>
           </div>

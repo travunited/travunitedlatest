@@ -99,23 +99,34 @@ function VerifyMobileContent() {
 
     if (verified) {
         return (
-            <div className="min-h-screen bg-neutral-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="max-w-md w-full text-center"
+            <div className="min-h-screen relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+                {/* Background Image with Overlay */}
+                <div
+                    className="absolute inset-0 z-0 bg-cover bg-center"
+                    style={{ backgroundImage: "url('/images/login-bg.png')" }}
                 >
-                    <div className="bg-white rounded-2xl shadow-large p-8">
-                        <div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-6">
-                            <CheckCircle size={40} className="text-green-600" />
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"></div>
+                </div>
+
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="max-w-md w-full relative z-10"
+                >
+                    <div className="glass rounded-2xl shadow-2xl p-8 border border-white/20 text-center">
+                        <div className="inline-flex items-center justify-center w-24 h-24 bg-green-100/80 rounded-full mb-6 backdrop-blur-sm">
+                            <CheckCircle size={48} className="text-green-600" />
                         </div>
-                        <h1 className="text-2xl font-bold text-neutral-900 mb-4">
-                            Mobile Verified Successfully!
+                        <h1 className="text-3xl font-extrabold text-neutral-900 mb-4 tracking-tight">
+                            Verified!
                         </h1>
-                        <p className="text-neutral-600 mb-6">
-                            Redirecting you...
+                        <p className="text-neutral-700 font-medium text-lg mb-6">
+                            Securely verified your mobile. Redirecting...
                         </p>
+                        <div className="flex justify-center">
+                            <RefreshCw className="animate-spin text-primary-600" size={32} />
+                        </div>
                     </div>
                 </motion.div>
             </div>
@@ -123,30 +134,38 @@ function VerifyMobileContent() {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+            {/* Background Image with Overlay */}
+            <div
+                className="absolute inset-0 z-0 bg-cover bg-center"
+                style={{ backgroundImage: "url('/images/login-bg.png')" }}
+            >
+                <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"></div>
+            </div>
+
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="max-w-md w-full"
+                className="max-w-md w-full relative z-10"
             >
-                <div className="bg-white rounded-2xl shadow-large p-8">
-                    <div className="text-center mb-6">
-                        <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                            <Smartphone size={32} className="text-blue-600" />
+                <div className="glass rounded-2xl shadow-2xl p-8 border border-white/20">
+                    <div className="text-center mb-8">
+                        <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-100/80 rounded-full mb-6 backdrop-blur-sm">
+                            <Smartphone size={40} className="text-primary-600" />
                         </div>
-                        <h1 className="text-2xl font-bold text-neutral-900 mb-2">
-                            Verify Your Mobile
+                        <h1 className="text-3xl font-extrabold text-neutral-900 mb-2 tracking-tight">
+                            Verify Mobile
                         </h1>
-                        <p className="text-neutral-900 font-medium mt-1">
+                        <p className="text-neutral-700 font-semibold text-lg">
                             {phone.startsWith("91") && phone.length === 12 ? `+${phone}` : phone}
                         </p>
                     </div>
 
-                    <form onSubmit={handleVerifyOtp} className="space-y-4">
+                    <form onSubmit={handleVerifyOtp} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                Verification Code
+                            <label className="block text-sm font-semibold text-neutral-800 mb-2 text-center">
+                                Enter the 6-digit code sent to you
                             </label>
                             <input
                                 type="text"
@@ -156,50 +175,50 @@ function VerifyMobileContent() {
                                 value={otp}
                                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                                 required
-                                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-center text-2xl tracking-widest"
+                                className="w-full px-4 py-4 bg-white/70 border border-neutral-300 rounded-xl focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 text-center text-4xl font-bold tracking-[0.5em] transition-all outline-none"
                                 placeholder="000000"
                             />
                         </div>
 
                         {otpError && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start space-x-2">
-                                <AlertCircle size={20} className="text-red-600 mt-0.5 flex-shrink-0" />
-                                <p className="text-sm text-red-800">{otpError}</p>
+                            <div className="bg-red-50/90 border border-red-200 rounded-lg p-4 flex items-start space-x-2 text-red-700 backdrop-blur-sm animate-fade-in">
+                                <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
+                                <p className="text-sm font-medium">{otpError}</p>
                             </div>
                         )}
 
                         {resendSuccess && (
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-start space-x-2">
-                                <CheckCircle size={20} className="text-green-600 mt-0.5 flex-shrink-0" />
-                                <p className="text-sm text-green-800">Verification code resent successfully!</p>
+                            <div className="bg-green-50/90 border border-green-200 rounded-lg p-4 flex items-start space-x-2 text-green-700 backdrop-blur-sm animate-fade-in">
+                                <CheckCircle size={20} className="mt-0.5 flex-shrink-0" />
+                                <p className="text-sm font-medium">New code sent successfully!</p>
                             </div>
                         )}
 
                         <button
                             type="submit"
                             disabled={otpLoading || otp.length !== 6}
-                            className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                            className="w-full bg-primary-600 text-white px-6 py-4 rounded-xl font-bold hover:bg-primary-700 shadow-xl hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none"
                         >
-                            <span>{otpLoading ? "Verifying..." : "Verify Mobile"}</span>
-                            {!otpLoading && <ArrowRight size={20} />}
+                            <span className="text-lg">{otpLoading ? "Verifying..." : "Verify Mobile"}</span>
+                            {!otpLoading && <ArrowRight size={22} />}
                         </button>
 
-                        <div className="text-center">
+                        <div className="text-center pt-2">
                             <button
                                 type="button"
                                 onClick={handleResendOtp}
                                 disabled={resendLoading}
-                                className="text-sm text-primary-600 hover:text-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 mx-auto"
+                                className="text-sm font-bold text-primary-600 hover:text-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 mx-auto transition-colors"
                             >
                                 {resendLoading ? (
                                     <>
-                                        <RefreshCw size={16} className="animate-spin" />
+                                        <RefreshCw size={18} className="animate-spin" />
                                         <span>Sending...</span>
                                     </>
                                 ) : (
                                     <>
-                                        <RefreshCw size={16} />
-                                        <span>Resend Code</span>
+                                        <RefreshCw size={18} />
+                                        <span>Resend Verification Code</span>
                                     </>
                                 )}
                             </button>
