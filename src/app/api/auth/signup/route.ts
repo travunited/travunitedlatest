@@ -22,6 +22,8 @@ const signupSchema = z.object({
     z.string().optional()
   ),
   verifyMethod: z.enum(["email", "mobile"]).optional().default("email"),
+  isVerified: z.boolean().optional().default(false),
+  accessToken: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -40,7 +42,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input", details: validationError }, { status: 400 });
     }
 
-    const { name, email, password, phone, verifyMethod } = validatedData;
+    const { name, email, password, phone, verifyMethod, isVerified, accessToken } = validatedData;
     const normalizedName = name && name.trim() ? name.trim() : "User";
     let normalizedPhone = phone ? phone.replace(/\D/g, "") : undefined;
 
@@ -51,8 +53,25 @@ export async function POST(req: Request) {
     if (verifyMethod === "email" && (!email || !password)) {
       return NextResponse.json({ error: "Email and password are required for email signup" }, { status: 400 });
     }
-    if (verifyMethod === "mobile" && !normalizedPhone) {
-      return NextResponse.json({ error: "Mobile number is required for phone signup" }, { status: 400 });
+    if (verifyMethod === "mobile" && !normalizedPhone && !accessToken) {
+      return NextResponse.json({ error: "Mobile number or verification token is required for phone signup" }, { status: 400 });
+    }
+
+    // Security: Verify the token server-side if provided
+    let finalPhone = normalizedPhone;
+    if (verifyMethod === "mobile" && isVerified && accessToken) {
+      const { verifyMsg91Token } = await import("@/lib/sms");
+      const verification = await verifyMsg91Token(accessToken);
+
+      if (!verification.success) {
+        return NextResponse.json({ error: "Mobile verification failed or token expired. Please try again." }, { status: 401 });
+      }
+
+      // Trust the phone from the token if available
+      if (verification.phone) {
+        finalPhone = verification.phone.replace(/\D/g, "");
+        if (finalPhone.length === 10) finalPhone = `91${finalPhone}`;
+      }
     }
 
     let targetEmail = email;
@@ -68,11 +87,12 @@ export async function POST(req: Request) {
       }
     }
 
+    // Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
-          { email: targetEmail },
-          ...(normalizedPhone ? [{ phone: normalizedPhone }] : []),
+          ...(targetEmail ? [{ email: targetEmail }] : []),
+          ...(finalPhone ? [{ phone: finalPhone }] : []),
         ],
       },
     });
@@ -96,11 +116,12 @@ export async function POST(req: Request) {
         name: normalizedName,
         email: targetEmail!,
         passwordHash,
-        phone: normalizedPhone,
+        phone: finalPhone,
         role: "CUSTOMER",
-        emailVerified: false,
-        registrationOtp: otp,
-        registrationOtpExpires: otpExpires,
+        emailVerified: isVerified ? true : false,
+        phoneVerified: isVerified ? true : false,
+        registrationOtp: isVerified ? undefined : otp,
+        registrationOtpExpires: isVerified ? undefined : otpExpires,
       },
       select: {
         id: true,
@@ -111,27 +132,29 @@ export async function POST(req: Request) {
       },
     });
 
-    if (verifyMethod === "mobile" && normalizedPhone) {
-      try {
-        const { sendOtp } = await import("@/lib/sms");
-        await sendOtp(normalizedPhone);
-      } catch (error) {
-        console.error("[Signup] Failed to send mobile OTP:", error);
-      }
-    } else {
-      try {
-        const { sendRegistrationOTPEmail } = await import("@/lib/email");
-        await sendRegistrationOTPEmail(user.email, otp, user.name || undefined, user.role);
-      } catch (error) {
-        console.error("[Signup] Failed to send OTP email:", error);
+    if (!isVerified) {
+      if (verifyMethod === "mobile" && normalizedPhone) {
+        try {
+          const { sendOtp } = await import("@/lib/sms");
+          await sendOtp(normalizedPhone);
+        } catch (error) {
+          console.error("[Signup] Failed to send mobile OTP:", error);
+        }
+      } else {
+        try {
+          const { sendRegistrationOTPEmail } = await import("@/lib/email");
+          await sendRegistrationOTPEmail(user.email, otp, user.name || undefined, user.role);
+        } catch (error) {
+          console.error("[Signup] Failed to send OTP email:", error);
+        }
       }
     }
 
     return NextResponse.json(
       {
-        message: `User created successfully. Please verify your ${verifyMethod === 'mobile' ? 'mobile number' : 'email'} with the OTP sent.`,
+        message: isVerified ? "User created successfully." : `User created successfully. Please verify your ${verifyMethod === 'mobile' ? 'mobile number' : 'email'} with the OTP sent.`,
         user,
-        requiresVerification: true
+        requiresVerification: !isVerified
       },
       { status: 201 }
     );

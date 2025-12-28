@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, ArrowRight, AlertCircle, CheckCircle, Smartphone } from "lucide-react";
+import Msg91OtpWidget from "@/components/auth/Msg91OtpWidget";
 
 function LoginPageContent() {
   const searchParams = useSearchParams();
@@ -18,9 +19,6 @@ function LoginPageContent() {
 
   const [loginMethod, setLoginMethod] = useState<"email" | "mobile">("email");
   const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpLoading, setOtpLoading] = useState(false);
 
   const handlePostLogin = () => {
     // Wait a moment for session to update, then check for guest applications and redirect
@@ -75,60 +73,26 @@ function LoginPageContent() {
     }
   }, [searchParams, router]);
 
-  const handleSendOtp = async () => {
-    if (!phone || phone.length !== 10) {
-      setError("Please enter a valid 10-digit mobile number");
-      return;
-    }
 
-    setOtpLoading(true);
-    setError("");
-
-    try {
-      const normalizedPhone = `91${phone}`;
-      const res = await fetch("/api/auth/mobile/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: normalizedPhone, type: "login" }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setOtpSent(true);
-        setSuccess("OTP sent successfully!");
-      } else {
-        setError(data.error || "Failed to send OTP");
-      }
-    } catch (err) {
-      setError("An error occurred. Please try again.");
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const handleMobileLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otp || otp.length !== 6) {
-      setError("Please enter a valid 6-digit OTP");
-      return;
-    }
-
+  const handleMobileLoginSuccess = async (data: any) => {
     setLoading(true);
     setError("");
 
     try {
-      const normalizedPhone = `91${phone}`;
+      // MSG91 Widget success provides data with verified identification
+      // We might need to handle the structure of 'data' based on actual widget response
+      // Usually, it includes the verified mobile number and a token
+      const verifiedPhone = data.mobileNumber || data.identifier;
+
       const result = await signIn("mobile-otp", {
-        phone: normalizedPhone,
-        otp,
+        phone: verifiedPhone,
+        otp: data.access_token || data.token || "WIDGET_VERIFIED",
         redirect: false,
       });
 
       if (result?.error) {
         if (result.error === "USER_NOT_FOUND") {
           setError("Account not found. Please sign up first.");
-        } else if (result.error === "INVALID_OTP") {
-          setError("Invalid OTP. Please try again.");
         } else {
           setError("Authentication failed. Please try again.");
         }
@@ -296,68 +260,11 @@ function LoginPageContent() {
               </form>
             ) : (
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Mobile Number
-                  </label>
-                  <div className="relative flex items-center">
-                    <Smartphone className="absolute left-3 text-neutral-400" size={20} />
-                    <div className="absolute left-10 text-neutral-500 font-medium">
-                      +91
-                    </div>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                      disabled={otpSent || otpLoading || loading}
-                      className="w-full pl-20 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      placeholder="9876543210"
-                    />
-                  </div>
-                </div>
-
-                {otpSent ? (
-                  <form onSubmit={handleMobileLogin} className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Enter OTP
-                      </label>
-                      <input
-                        type="text"
-                        value={otp}
-                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                        required
-                        className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-center text-2xl font-mono tracking-widest"
-                        placeholder="000000"
-                        autoFocus
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={loading || otp.length !== 6}
-                      className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 flex items-center justify-center space-x-2 disabled:opacity-50"
-                    >
-                      <span>{loading ? "Verifying..." : "Verify & Sign In"}</span>
-                      {!loading && <ArrowRight size={20} />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOtpSent(false)}
-                      className="w-full text-sm text-primary-600 hover:text-primary-700 font-medium"
-                    >
-                      Change Phone Number
-                    </button>
-                  </form>
-                ) : (
-                  <button
-                    onClick={handleSendOtp}
-                    disabled={otpLoading || phone.length !== 10}
-                    className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 flex items-center justify-center space-x-2 disabled:opacity-50"
-                  >
-                    <span>{otpLoading ? "Sending OTP..." : "Get OTP"}</span>
-                    {!otpLoading && <ArrowRight size={20} />}
-                  </button>
-                )}
+                <Msg91OtpWidget
+                  onSuccess={handleMobileLoginSuccess}
+                  onFailure={(err) => setError(err.message || "OTP verification failed")}
+                  className="w-full"
+                />
               </div>
             )}
           </div>

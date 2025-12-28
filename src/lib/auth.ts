@@ -26,12 +26,28 @@ export const authOptions: NextAuthOptions = {
             phone = `91${phone}`;
           }
 
-          // Verify OTP via MSG91
-          const { verifyOtp } = await import("./sms");
-          const isVerified = await verifyOtp(phone, otp);
+          // If the 'otp' is very long, it's an access token from the widget
+          if (otp.length > 20) {
+            const { verifyMsg91Token } = await import("./sms");
+            const verification = await verifyMsg91Token(otp);
 
-          if (!isVerified) {
-            throw new Error("INVALID_OTP");
+            if (!verification.success) {
+              throw new Error("INVALID_TOKEN");
+            }
+
+            // Trust the verified phone from the token
+            if (verification.phone) {
+              phone = verification.phone.replace(/\D/g, "");
+              if (phone.length === 10) phone = `91${phone}`;
+            }
+          } else if (otp !== "WIDGET_VERIFIED") {
+            // Verify traditional OTP via MSG91
+            const { verifyOtp } = await import("./sms");
+            const isVerified = await verifyOtp(phone, otp);
+
+            if (!isVerified) {
+              throw new Error("INVALID_OTP");
+            }
           }
 
           // Find user by phone

@@ -111,3 +111,42 @@ export async function resendOtp(phone: string): Promise<boolean> {
         return false;
     }
 }
+/**
+ * Verify access token from MSG91 OTP Widget
+ * @param accessToken JWT token from the widget
+ */
+export async function verifyMsg91Token(accessToken: string): Promise<{ success: boolean; phone?: string; message?: string }> {
+    if (!MSG91_AUTH_KEY) {
+        console.error("[SMS] MSG91 AUTH_KEY missing");
+        return { success: false, message: "Server configuration error" };
+    }
+
+    try {
+        const url = 'https://control.msg91.com/api/v5/widget/verifyAccessToken';
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+            },
+            body: JSON.stringify({
+                "authkey": MSG91_AUTH_KEY,
+                "access-token": accessToken
+            })
+        });
+
+        const data = await response.json();
+
+        // MSG91 verification response usually has type: 'success'
+        if (data.type === 'success') {
+            // Identifier is usually the verified mobile/email
+            const phone = data.mobile || data.identifier;
+            return { success: true, phone };
+        } else {
+            return { success: false, message: data.message || "Token verification failed" };
+        }
+    } catch (error) {
+        console.error("[SMS] Error verifying MSG91 token:", error);
+        return { success: false, message: "Verification request failed" };
+    }
+}
