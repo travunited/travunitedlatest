@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useCallback } from "react";
 
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -24,7 +24,7 @@ function SignupPageContent() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleMobileSignupSuccess = async (data: any) => {
+  const handleMobileSignupSuccess = useCallback(async (data: any) => {
     setLoading(true);
     setError("");
 
@@ -57,7 +57,11 @@ function SignupPageContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [name, router]);
+
+  const handleMobileSignupFailure = useCallback((err: any) => {
+    setError(err.message || "OTP verification failed");
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -287,7 +291,7 @@ function SignupPageContent() {
                     <Msg91OtpWidget
                       identifier={`91${phone}`}
                       onSuccess={handleMobileSignupSuccess}
-                      onFailure={(err) => setError(err.message || "OTP verification failed")}
+                      onFailure={handleMobileSignupFailure}
                       className="w-full overflow-hidden rounded-lg shadow-sm"
                     />
                   </div>
