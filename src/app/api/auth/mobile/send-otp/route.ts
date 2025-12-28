@@ -32,7 +32,7 @@ export async function POST(req: Request) {
         // If type is login, check if user exists
         if (type === "login") {
             const user = await prisma.user.findFirst({
-                where: { phone: { contains: phone.slice(-10) } }, // Relaxed check for 10-digit match
+                where: { phone: phone }, // Strict 12-digit match
             });
 
             if (!user) {
