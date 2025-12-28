@@ -102,7 +102,7 @@ export async function POST(req: Request) {
 
     console.error("Error saving guest application:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: `Internal server error: ${(error as Error).message || "Unknown error"}` },
       { status: 500 }
     );
   }
@@ -174,10 +174,10 @@ export async function GET(req: Request) {
       createdAt: guestApplication.createdAt,
       updatedAt: guestApplication.updatedAt,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching guest application:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: `Internal server error: ${error.message || "Unknown error"}` },
       { status: 500 }
     );
   }
