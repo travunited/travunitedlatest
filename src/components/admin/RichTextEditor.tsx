@@ -21,7 +21,45 @@ import {
   Image as ImageIcon,
   Undo,
   Redo,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
 } from "lucide-react";
+import TextAlign from "@tiptap/extension-text-align";
+import { TextStyle } from "@tiptap/extension-text-style";
+import { Extension } from "@tiptap/core";
+
+// Custom Font Size Extension
+const FontSize = Extension.create({
+  name: "fontSize",
+  addOptions() {
+    return {
+      types: ["textStyle"],
+    };
+  },
+  addGlobalAttributes() {
+    return [
+      {
+        types: this.options.types,
+        attributes: {
+          fontSize: {
+            default: null,
+            parseHTML: (element) => element.style.fontSize.replace(/['"]+/g, ""),
+            renderHTML: (attributes) => {
+              if (!attributes.fontSize) {
+                return {};
+              }
+              return {
+                style: `font-size: ${attributes.fontSize}`,
+              };
+            },
+          },
+        },
+      },
+    ];
+  },
+});
 import { useCallback, useState } from "react";
 import { Loader2 } from "lucide-react";
 import {
@@ -56,6 +94,11 @@ export function RichTextEditor({
         },
       }),
       UnderlineExtension,
+      TextStyle,
+      FontSize,
+      TextAlign.configure({
+        types: ["heading", "paragraph"],
+      }),
       ImageWithDelete.configure({
         inline: true,
         allowBase64: false,
@@ -127,7 +170,7 @@ export function RichTextEditor({
         }
 
         const data = await response.json();
-        
+
         // Handle different response formats
         let imageUrl: string | null = null;
         if (data.proxyUrl) {
@@ -186,9 +229,8 @@ export function RichTextEditor({
           type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
           disabled={!editor.can().chain().focus().toggleBold().run()}
-          className={`p-2 rounded hover:bg-neutral-200 ${
-            editor.isActive("bold") ? "bg-neutral-300" : ""
-          }`}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive("bold") ? "bg-neutral-300" : ""
+            }`}
           title="Bold"
         >
           <Bold size={18} />
@@ -197,9 +239,8 @@ export function RichTextEditor({
           type="button"
           onClick={() => editor.chain().focus().toggleItalic().run()}
           disabled={!editor.can().chain().focus().toggleItalic().run()}
-          className={`p-2 rounded hover:bg-neutral-200 ${
-            editor.isActive("italic") ? "bg-neutral-300" : ""
-          }`}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive("italic") ? "bg-neutral-300" : ""
+            }`}
           title="Italic"
         >
           <Italic size={18} />
@@ -208,9 +249,8 @@ export function RichTextEditor({
           type="button"
           onClick={() => editor.chain().focus().toggleStrike().run()}
           disabled={!editor.can().chain().focus().toggleStrike().run()}
-          className={`p-2 rounded hover:bg-neutral-200 ${
-            editor.isActive("strike") ? "bg-neutral-300" : ""
-          }`}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive("strike") ? "bg-neutral-300" : ""
+            }`}
           title="Strikethrough"
         >
           <Strikethrough size={18} />
@@ -219,9 +259,8 @@ export function RichTextEditor({
           type="button"
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           disabled={!editor.can().chain().focus().toggleUnderline().run()}
-          className={`p-2 rounded hover:bg-neutral-200 ${
-            editor.isActive("underline") ? "bg-neutral-300" : ""
-          }`}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive("underline") ? "bg-neutral-300" : ""
+            }`}
           title="Underline"
         >
           <UnderlineIcon size={18} />
@@ -233,9 +272,8 @@ export function RichTextEditor({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={`p-2 rounded hover:bg-neutral-200 ${
-            editor.isActive("heading", { level: 1 }) ? "bg-neutral-300" : ""
-          }`}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive("heading", { level: 1 }) ? "bg-neutral-300" : ""
+            }`}
           title="Heading 1"
         >
           <Heading1 size={18} />
@@ -243,9 +281,8 @@ export function RichTextEditor({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={`p-2 rounded hover:bg-neutral-200 ${
-            editor.isActive("heading", { level: 2 }) ? "bg-neutral-300" : ""
-          }`}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive("heading", { level: 2 }) ? "bg-neutral-300" : ""
+            }`}
           title="Heading 2"
         >
           <Heading2 size={18} />
@@ -253,9 +290,8 @@ export function RichTextEditor({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={`p-2 rounded hover:bg-neutral-200 ${
-            editor.isActive("heading", { level: 3 }) ? "bg-neutral-300" : ""
-          }`}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive("heading", { level: 3 }) ? "bg-neutral-300" : ""
+            }`}
           title="Heading 3"
         >
           <Heading3 size={18} />
@@ -267,9 +303,8 @@ export function RichTextEditor({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`p-2 rounded hover:bg-neutral-200 ${
-            editor.isActive("bulletList") ? "bg-neutral-300" : ""
-          }`}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive("bulletList") ? "bg-neutral-300" : ""
+            }`}
           title="Bullet List"
         >
           <List size={18} />
@@ -277,9 +312,8 @@ export function RichTextEditor({
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`p-2 rounded hover:bg-neutral-200 ${
-            editor.isActive("orderedList") ? "bg-neutral-300" : ""
-          }`}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive("orderedList") ? "bg-neutral-300" : ""
+            }`}
           title="Numbered List"
         >
           <ListOrdered size={18} />
@@ -287,13 +321,68 @@ export function RichTextEditor({
 
         <div className="w-px h-6 bg-neutral-300 mx-1" />
 
+        {/* Alignment */}
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setTextAlign("left").run()}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive({ textAlign: "left" }) ? "bg-neutral-300" : ""
+            }`}
+          title="Align Left"
+        >
+          <AlignLeft size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setTextAlign("center").run()}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive({ textAlign: "center" }) ? "bg-neutral-300" : ""
+            }`}
+          title="Align Center"
+        >
+          <AlignCenter size={18} />
+        </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setTextAlign("right").run()}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive({ textAlign: "right" }) ? "bg-neutral-300" : ""
+            }`}
+          title="Align Right"
+        >
+          <AlignRight size={18} />
+        </button>
+
+        <div className="w-px h-6 bg-neutral-300 mx-1" />
+
+        {/* Font Size */}
+        <select
+          onChange={(e) => {
+            const value = e.target.value;
+            if (value) {
+              editor.chain().focus().setMark("textStyle", { fontSize: value }).run();
+            } else {
+              editor.chain().focus().unsetMark("textStyle").run();
+            }
+          }}
+          className="h-9 px-2 border border-neutral-300 rounded text-sm bg-transparent hover:bg-neutral-100 focus:ring-0 focus:border-neutral-400"
+          title="Font Size"
+        >
+          <option value="">Size</option>
+          <option value="12px">12px</option>
+          <option value="14px">14px</option>
+          <option value="16px">16px</option>
+          <option value="18px">18px</option>
+          <option value="20px">20px</option>
+          <option value="24px">24px</option>
+          <option value="30px">30px</option>
+        </select>
+
+        <div className="w-px h-6 bg-neutral-300 mx-1" />
+
         {/* Blockquote */}
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={`p-2 rounded hover:bg-neutral-200 ${
-            editor.isActive("blockquote") ? "bg-neutral-300" : ""
-          }`}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive("blockquote") ? "bg-neutral-300" : ""
+            }`}
           title="Quote"
         >
           <Quote size={18} />
@@ -305,9 +394,8 @@ export function RichTextEditor({
         <button
           type="button"
           onClick={setLink}
-          className={`p-2 rounded hover:bg-neutral-200 ${
-            editor.isActive("link") ? "bg-neutral-300" : ""
-          }`}
+          className={`p-2 rounded hover:bg-neutral-200 ${editor.isActive("link") ? "bg-neutral-300" : ""
+            }`}
           title="Add Link"
         >
           <LinkIcon size={18} />

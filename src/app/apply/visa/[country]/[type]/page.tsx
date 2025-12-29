@@ -1251,7 +1251,9 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       // Handle free applications (amount <= 0)
       if (responseData.isFree || totalAmount <= 0) {
         setLoading(false);
-        router.push(`/applications/thank-you?applicationId=${draftId}`);
+        // Move to documents step instead of thank you page
+        setPaymentCompleted(true);
+        setCurrentStep(7);
         return;
       }
 
@@ -1293,1082 +1295,1354 @@ export default function VisaApplicationPage({ params }: { params: { country: str
               }),
             });
 
-            if (verifyResponse.ok) {
-              setLoading(false);
-              router.push(`/applications/thank-you?applicationId=${draftId}`);
-            } else {
-              const errorData = await verifyResponse.json();
-              throw new Error(errorData.error || "Payment verification failed");
-            }
-          } catch (error: any) {
-            console.error("Payment verification error:", error);
-            setLoading(false);
-            alert(`Payment verification failed: ${error.message || "Please contact support"}`);
+            const errorData = await verifyResponse.json();
+            throw new Error(errorData.error || "Payment verification failed");
           }
-        },
+          } catch(error: any) {
+          console.error("Payment verification error:", error);
+          setLoading(false);
+          alert(`Payment verification failed: ${error.message || "Please contact support"}`);
+        }
+      },
         modal: {
           ondismiss: () => {
             setLoading(false);
           },
         },
-      };
+    };
 
-      const razorpay = new window.Razorpay(options);
+    const razorpay = new window.Razorpay(options);
 
-      razorpay.on("payment.failed", (response: any) => {
-        console.error("Payment failed:", response);
-        setLoading(false);
-        const errorMessage = response.error?.description || response.error?.reason || "Payment failed. Please try again.";
-        alert(errorMessage);
-      });
-
-      razorpay.open();
-    } catch (error) {
-      console.error(error);
+    razorpay.on("payment.failed", (response: any) => {
+      console.error("Payment failed:", response);
       setLoading(false);
-      alert("Unable to process payment. Please try again.");
-    }
-  };
+      const errorMessage = response.error?.description || response.error?.reason || "Payment failed. Please try again.";
+      alert(errorMessage);
+    });
 
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">Visa Selection</h2>
-            <div className="bg-neutral-50 rounded-lg p-6">
-              <h3 className="font-semibold text-lg mb-2">{visaName}</h3>
-              <p className="text-neutral-600 mb-2">
-                Country: {visaInfo?.country.code || params.country.toUpperCase()}
-              </p>
-              <p className="text-neutral-600 mb-4">
-                Processing: {visaLoading ? "Fetching..." : visaProcessing}
-              </p>
-              <div className="flex items-center gap-2">
-                <div className="text-2xl font-bold text-primary-600">
-                  {visaLoading ? "—" : `₹${visaPrice.toLocaleString()}`}
-                </div>
-                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded whitespace-nowrap">
-                  Taxes & charges included
-                </span>
+    razorpay.open();
+  } catch (error) {
+    console.error(error);
+    setLoading(false);
+    alert("Unable to process payment. Please try again.");
+  }
+};
+
+const handleFinishApplication = async () => {
+  // Validate that required documents are uploaded
+  const missingDocs: string[] = [];
+
+  // Check application level requirements
+  perApplicationRequirements.forEach((req) => {
+    if (req.isRequired) {
+      const key = getDocumentKey(req.id);
+      if (!formData.documents?.[key]) {
+        missingDocs.push(`${req.name} (Application)`);
+      }
+    }
+  });
+
+  // Check traveller level requirements
+  if (formData.travellers) {
+    formData.travellers.forEach((traveller) => {
+      perTravellerRequirements.forEach((req) => {
+        if (req.isRequired) {
+          const key = getDocumentKey(req.id, traveller.id);
+          if (!formData.documents?.[key]) {
+            missingDocs.push(`${req.name} for ${traveller.firstName} ${traveller.lastName}`);
+          }
+        }
+      });
+    });
+  }
+
+  if (missingDocs.length > 0) {
+    alert(`Please upload the following required documents:\n\n${missingDocs.slice(0, 5).join("\n")}${missingDocs.length > 5 ? "\n...and more" : ""}`);
+    return;
+  }
+
+  setLoading(true);
+  try {
+    if (formData.documents && formData.applicationId) {
+      await uploadDocuments(formData.applicationId, formData.travellerIds);
+    }
+
+    // Clear draft locally
+    clearDraftFromLocalStorage();
+
+    // Redirect to thank you page
+    router.push(`/applications/thank-you?applicationId=${formData.applicationId}`);
+  } catch (error) {
+    console.error("Error finishing application:", error);
+    alert("An error occurred while saving documents. Please try again.");
+    setLoading(false);
+  }
+};
+
+const renderStepContent = () => {
+  switch (currentStep) {
+    case 1:
+      return (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-neutral-900 mb-4">Visa Selection</h2>
+          <div className="bg-neutral-50 rounded-lg p-6">
+            <h3 className="font-semibold text-lg mb-2">{visaName}</h3>
+            <p className="text-neutral-600 mb-2">
+              Country: {visaInfo?.country.code || params.country.toUpperCase()}
+            </p>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <p className="text-xs text-neutral-500 mb-1">Processing Time</p>
+                <p className="font-medium text-sm sm:text-base">{visaLoading ? "Fetching..." : visaProcessing}</p>
+              </div>
+              <div>
+                <p className="text-xs text-neutral-500 mb-1">Validity</p>
+                <p className="font-medium text-sm sm:text-base">{visaLoading ? "..." : visaInfo?.validity || "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-neutral-500 mb-1">Max Stay</p>
+                <p className="font-medium text-sm sm:text-base">{visaLoading ? "..." : visaInfo?.stayDuration || "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs text-neutral-500 mb-1">Entry Type</p>
+                <p className="font-medium text-sm sm:text-base">{visaLoading ? "..." : visaInfo?.entryType || "—"}</p>
               </div>
             </div>
-            <div className="space-y-4">
-              {visaInfo?.subTypes && visaInfo.subTypes.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    Visa Subtype {visaInfo.visaSubTypeLabel ? `(${visaInfo.visaSubTypeLabel})` : ""} *
-                  </label>
-                  <select
-                    value={formData.selectedSubTypeId || ""}
-                    onChange={(e) => setFormData({ ...formData, selectedSubTypeId: e.target.value || undefined })}
-                    required
-                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  >
-                    <option value="">Select a subtype</option>
-                    {visaInfo.subTypes.map((subtype) => (
-                      <option key={subtype.id} value={subtype.id}>
-                        {subtype.label}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-neutral-500 mt-1">
-                    Please select the visa subtype that best matches your travel requirements.
-                  </p>
-                </div>
-              )}
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Travel Date (Optional)
-                </label>
-                <input
-                  type="date"
-                  value={formData.travelDate || ""}
-                  onChange={(e) => {
-                    setFormData({ ...formData, travelDate: e.target.value });
-                    // Clear error when user updates
-                    setDateErrors(prev => {
-                      const newErrors = { ...prev };
-                      delete newErrors.travelDate;
-                      return newErrors;
-                    });
-                  }}
-                  min={new Date().toISOString().split("T")[0]}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 ${dateErrors.travelDate ? "border-red-500" : "border-neutral-300"
-                    }`}
-                />
-                {dateErrors.travelDate && (
-                  <p className="text-sm text-red-600 mt-1">{dateErrors.travelDate}</p>
-                )}
+
+            <div className="flex items-center gap-2 pt-2 border-t border-neutral-100">
+              <div className="text-2xl font-bold text-primary-600">
+                {visaLoading ? "—" : `₹${visaPrice.toLocaleString()}`}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Trip Type (Optional)
-                </label>
-                <select
-                  value={formData.tripType || ""}
-                  onChange={(e) => setFormData({ ...formData, tripType: e.target.value })}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                >
-                  <option value="">Select trip type</option>
-                  <option value="tourism">Tourism</option>
-                  <option value="business">Business</option>
-                  <option value="family">Family Visit</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
+              <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded whitespace-nowrap">
+                Taxes & charges included
+              </span>
             </div>
           </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">Primary Contact Information</h2>
-            <p className="text-neutral-600 mb-6">
-              This person will be the main contact for this visa application.
-            </p>
-            <div className="space-y-4">
+          <div className="space-y-4">
+            {visaInfo?.subTypes && visaInfo.subTypes.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Full Name *
+                  Visa Subtype {visaInfo.visaSubTypeLabel ? `(${visaInfo.visaSubTypeLabel})` : ""} *
                 </label>
-                <input
-                  type="text"
+                <select
+                  value={formData.selectedSubTypeId || ""}
+                  onChange={(e) => setFormData({ ...formData, selectedSubTypeId: e.target.value || undefined })}
                   required
-                  value={formData.primaryContact?.name || ""}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      primaryContact: { ...formData.primaryContact!, name: e.target.value },
-                    })
-                  }
                   className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  placeholder="John Doe"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={formData.primaryContact?.email || ""}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      primaryContact: { ...formData.primaryContact!, email: e.target.value },
-                    })
-                  }
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  placeholder="john@example.com"
-                />
+                >
+                  <option value="">Select a subtype</option>
+                  {visaInfo.subTypes.map((subtype) => (
+                    <option key={subtype.id} value={subtype.id}>
+                      {subtype.label}
+                    </option>
+                  ))}
+                </select>
                 <p className="text-xs text-neutral-500 mt-1">
-                  This email may be used to create your account
+                  Please select the visa subtype that best matches your travel requirements.
                 </p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Mobile Number (Optional)
-                </label>
-                <input
-                  type="tel"
-                  inputMode="numeric"
-                  pattern="[0-9\\+\\s-]*"
-                  maxLength={15}
-                  value={formData.primaryContact?.phone || ""}
-                  onChange={(e) => {
-                    const sanitized = sanitizePhoneInput(e.target.value);
-                    setFormData({
-                      ...formData,
-                      primaryContact: { ...formData.primaryContact!, phone: sanitized },
+            )}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Travel Date (Optional)
+              </label>
+              <input
+                type="date"
+                value={formData.travelDate || ""}
+                onChange={(e) => {
+                  setFormData({ ...formData, travelDate: e.target.value });
+                  // Clear error when user updates
+                  setDateErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.travelDate;
+                    return newErrors;
+                  });
+                }}
+                min={new Date().toISOString().split("T")[0]}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 ${dateErrors.travelDate ? "border-red-500" : "border-neutral-300"
+                  }`}
+              />
+              {dateErrors.travelDate && (
+                <p className="text-sm text-red-600 mt-1">{dateErrors.travelDate}</p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Trip Type (Optional)
+              </label>
+              <select
+                value={formData.tripType || ""}
+                onChange={(e) => setFormData({ ...formData, tripType: e.target.value })}
+                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="">Select trip type</option>
+                <option value="tourism">Tourism</option>
+                <option value="business">Business</option>
+                <option value="family">Family Visit</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 2:
+      return (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-neutral-900 mb-4">Primary Contact Information</h2>
+          <p className="text-neutral-600 mb-6">
+            This person will be the main contact for this visa application.
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Full Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.primaryContact?.name || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    primaryContact: { ...formData.primaryContact!, name: e.target.value },
+                  })
+                }
+                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                placeholder="John Doe"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Email Address *
+              </label>
+              <input
+                type="email"
+                required
+                value={formData.primaryContact?.email || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    primaryContact: { ...formData.primaryContact!, email: e.target.value },
+                  })
+                }
+                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                placeholder="john@example.com"
+              />
+              <p className="text-xs text-neutral-500 mt-1">
+                This email may be used to create your account
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Mobile Number (Optional)
+              </label>
+              <input
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9\\+\\s-]*"
+                maxLength={15}
+                value={formData.primaryContact?.phone || ""}
+                onChange={(e) => {
+                  const sanitized = sanitizePhoneInput(e.target.value);
+                  setFormData({
+                    ...formData,
+                    primaryContact: { ...formData.primaryContact!, phone: sanitized },
+                  });
+                  // Clear error when user starts typing
+                  if (phoneErrors.primaryContact) {
+                    setPhoneErrors((prev) => {
+                      const newErrors = { ...prev };
+                      delete newErrors.primaryContact;
+                      return newErrors;
                     });
-                    // Clear error when user starts typing
-                    if (phoneErrors.primaryContact) {
+                  }
+                }}
+                onBlur={(e) => {
+                  // Validate on blur
+                  if (e.target.value) {
+                    const error = validatePhoneNumber(e.target.value);
+                    if (error) {
+                      setPhoneErrors((prev) => ({ ...prev, primaryContact: error }));
+                    } else {
                       setPhoneErrors((prev) => {
                         const newErrors = { ...prev };
                         delete newErrors.primaryContact;
                         return newErrors;
                       });
                     }
-                  }}
-                  onBlur={(e) => {
-                    // Validate on blur
-                    if (e.target.value) {
-                      const error = validatePhoneNumber(e.target.value);
-                      if (error) {
-                        setPhoneErrors((prev) => ({ ...prev, primaryContact: error }));
-                      } else {
-                        setPhoneErrors((prev) => {
-                          const newErrors = { ...prev };
-                          delete newErrors.primaryContact;
-                          return newErrors;
-                        });
-                      }
-                    }
-                  }}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 ${phoneErrors.primaryContact
-                    ? "border-red-500 focus:border-red-500"
-                    : "border-neutral-300"
-                    }`}
-                  placeholder="10 digits (e.g., 9876543210) or +91 9876543210"
-                />
-                {phoneErrors.primaryContact && (
-                  <p className="text-sm text-red-600 mt-1">{phoneErrors.primaryContact}</p>
-                )}
-                {!phoneErrors.primaryContact && formData.primaryContact?.phone && (
-                  <p className="text-xs text-neutral-500 mt-1">
-                    {formData.primaryContact.phone.replace(/\D/g, "").length === 10
-                      ? "✓ Valid phone number"
-                      : "Enter 10 digits for Indian mobile or use international format"}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Address (Optional)
-                </label>
-                <textarea
-                  value={formData.primaryContact?.address || ""}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      primaryContact: { ...formData.primaryContact!, address: e.target.value },
-                    })
                   }
-                  rows={3}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                  placeholder="Your address"
-                />
-              </div>
-            </div>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">Traveller Information</h2>
-            <p className="text-neutral-600 mb-6">
-              Add details for all travellers in this application. Information must match passport exactly.
-            </p>
-            <div className="space-y-6">
-              {(formData.travellers || []).map((traveller, index) => (
-                <div key={traveller.id} className="border border-neutral-200 rounded-lg p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-semibold text-lg">Traveller {index + 1}</h3>
-                    {(formData.travellers || []).length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeTraveller(traveller.id)}
-                        className="text-red-600 hover:text-red-700 text-sm"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        First Name (as per passport) *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={traveller.firstName}
-                        onChange={(e) => updateTravellerField(traveller.id, "firstName", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Last Name (as per passport) *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={traveller.lastName}
-                        onChange={(e) => updateTravellerField(traveller.id, "lastName", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Date of Birth *
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        value={traveller.dateOfBirth}
-                        onChange={(e) => updateTravellerField(traveller.id, "dateOfBirth", e.target.value)}
-                        max={new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]} // At least 1 year ago
-                        className={`w-full px-4 py-2 border rounded-lg ${dateErrors[`traveller-${index}-dateOfBirth`] ? "border-red-500" : "border-neutral-300"
-                          }`}
-                      />
-                      {dateErrors[`traveller-${index}-dateOfBirth`] && (
-                        <p className="text-sm text-red-600 mt-1">{dateErrors[`traveller-${index}-dateOfBirth`]}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Gender *
-                      </label>
-                      <select
-                        required
-                        value={traveller.gender}
-                        onChange={(e) => updateTravellerField(traveller.id, "gender", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                      >
-                        <option value="">Select</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Passport Number *
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={traveller.passportNumber}
-                        onChange={(e) => updateTravellerField(traveller.id, "passportNumber", e.target.value.toUpperCase())}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg uppercase"
-                        maxLength={20}
-                        placeholder="Enter passport number"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Nationality *
-                      </label>
-                      <CountrySelect
-                        value={traveller.nationality || ""}
-                        onChange={(value) => updateTravellerField(traveller.id, "nationality", value)}
-                        placeholder="Select nationality"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Passport Issue Date *
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        value={traveller.passportIssueDate}
-                        onChange={(e) => updateTravellerField(traveller.id, "passportIssueDate", e.target.value)}
-                        max={new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split("T")[0]} // Yesterday (must be in past)
-                        className={`w-full px-4 py-2 border rounded-lg ${dateErrors[`traveller-${index}-passportIssueDate`] ? "border-red-500" : "border-neutral-300"
-                          }`}
-                      />
-                      {dateErrors[`traveller-${index}-passportIssueDate`] && (
-                        <p className="text-sm text-red-600 mt-1">{dateErrors[`traveller-${index}-passportIssueDate`]}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Passport Expiry Date *
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        value={traveller.passportExpiryDate}
-                        onChange={(e) => updateTravellerField(traveller.id, "passportExpiryDate", e.target.value)}
-                        min={traveller.passportIssueDate ? new Date(new Date(traveller.passportIssueDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]} // Must be after issue date, or today if no issue date
-                        className={`w-full px-4 py-2 border rounded-lg ${dateErrors[`traveller-${index}-passportExpiryDate`] ? "border-red-500" : "border-neutral-300"
-                          }`}
-                      />
-                      {dateErrors[`traveller-${index}-passportExpiryDate`] && (
-                        <p className="text-sm text-red-600 mt-1">{dateErrors[`traveller-${index}-passportExpiryDate`]}</p>
-                      )}
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Current City (Optional)
-                      </label>
-                      <input
-                        type="text"
-                        value={traveller.currentCity || ""}
-                        onChange={(e) => updateTravellerField(traveller.id, "currentCity", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
-                        placeholder="Mumbai"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addTraveller}
-                className="w-full border-2 border-dashed border-neutral-300 rounded-lg py-4 text-neutral-600 hover:border-primary-600 hover:text-primary-600 transition-colors"
-              >
-                + Add Another Traveller
-              </button>
-            </div>
-          </div>
-        );
-
-      case 4:
-        const baseTotalAmount =
-          visaPrice * ((formData.travellers || []).length || 1);
-        const discountAmount = appliedPromoCode ? appliedPromoCode.discountAmount / 100 : 0; // Convert from paise to rupees
-        const totalAmount = Math.max(0, baseTotalAmount - discountAmount);
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">Review & Confirm</h2>
-            <p className="text-neutral-600 mb-6">
-              Please review all information carefully. You can go back to edit any section.
-            </p>
-
-            <div className="space-y-4">
-              {/* Visa Details */}
-              <div className="bg-neutral-50 rounded-lg p-4">
-                <h3 className="font-semibold mb-2">Visa Details</h3>
-                <p>{visaName}</p>
-                <p className="text-sm text-neutral-600">{params.country.toUpperCase()}</p>
-                {formData.selectedSubTypeId && visaInfo?.subTypes && (
-                  <p className="text-sm text-neutral-600">
-                    Subtype: {visaInfo.subTypes.find(st => st.id === formData.selectedSubTypeId)?.label || "N/A"}
-                  </p>
-                )}
-                {formData.travelDate && (
-                  <p className="text-sm text-neutral-600">Travel Date: {formatDate(formData.travelDate)}</p>
-                )}
-              </div>
-
-              {/* Primary Contact */}
-              <div className="bg-neutral-50 rounded-lg p-4">
-                <h3 className="font-semibold mb-2">Primary Contact</h3>
-                <p>{formData.primaryContact?.name}</p>
-                <p className="text-sm text-neutral-600">{formData.primaryContact?.email}</p>
-                {formData.primaryContact?.phone && (
-                  <p className="text-sm text-neutral-600">{formData.primaryContact.phone}</p>
-                )}
-              </div>
-
-              {/* Travellers */}
-              <div className="bg-neutral-50 rounded-lg p-4">
-                <h3 className="font-semibold mb-2">Travellers</h3>
-                <p className="text-sm text-neutral-600 mb-2">
-                  {(formData.travellers || []).length} traveller(s)
-                </p>
-                {(formData.travellers || []).map((t, i) => (
-                  <p key={t.id} className="text-sm">
-                    {i + 1}. {t.firstName} {t.lastName}
-                  </p>
-                ))}
-              </div>
-
-              {/* Documents */}
-              <div className="bg-neutral-50 rounded-lg p-4">
-                <h3 className="font-semibold mb-2">Documents</h3>
-                {documentSummary.length > 0 ? (
-                  <div className="space-y-2">
-                    {documentSummary.map((doc) => (
-                      <div
-                        key={doc.key}
-                        className="bg-white border border-neutral-200 rounded-lg px-3 py-2"
-                      >
-                        <div className="font-medium text-sm">
-                          {doc.requirement?.name || doc.fileName}
-                        </div>
-                        <div className="text-xs text-neutral-500">
-                          {doc.category || "Supporting document"}
-                          {doc.travellerLabel ? ` • ${doc.travellerLabel}` : ""}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-neutral-600">
-                    Upload requirement documents in Step 4 to speed up verification.
-                  </p>
-                )}
-              </div>
-
-              {/* Promo Code */}
-              {session && (
-                <div className="bg-white rounded-lg p-4 border border-neutral-200">
-                  <PromoCodeInput
-                    onApply={async (code) => {
-                      const baseAmount = visaPrice * ((formData.travellers || []).length || 1);
-                      // Convert to paise for API (multiply by 100)
-                      const baseAmountInPaise = Math.round(baseAmount * 100);
-                      const response = await fetch("/api/promo-codes/validate", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          code,
-                          amount: baseAmountInPaise,
-                          type: "visa",
-                          visaId: visaInfo?.id,
-                          countryId: visaInfo?.country?.id,
-                        }),
-                      });
-
-                      const result = await response.json();
-
-                      if (result.valid && result.promoCode) {
-                        setAppliedPromoCode({
-                          id: result.promoCode.id,
-                          code: result.promoCode.code,
-                          discountAmount: result.discountAmount || 0, // Already in paise
-                          message: result.message,
-                        });
-                      }
-
-                      return result;
-                    }}
-                    appliedCode={appliedPromoCode ? {
-                      code: appliedPromoCode.code,
-                      discountAmount: appliedPromoCode.discountAmount / 100, // Convert to rupees for display
-                      message: appliedPromoCode.message,
-                    } : null}
-                    onRemove={() => setAppliedPromoCode(null)}
-                  />
-                </div>
+                }}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 ${phoneErrors.primaryContact
+                  ? "border-red-500 focus:border-red-500"
+                  : "border-neutral-300"
+                  }`}
+                placeholder="10 digits (e.g., 9876543210) or +91 9876543210"
+              />
+              {phoneErrors.primaryContact && (
+                <p className="text-sm text-red-600 mt-1">{phoneErrors.primaryContact}</p>
               )}
-
-              {/* Price */}
-              <div className="bg-primary-50 rounded-lg p-4 border border-primary-200">
-                {discountAmount > 0 && (
-                  <div className="mb-3 pb-3 border-b border-primary-200">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-neutral-700">Subtotal</span>
-                      <span className="text-neutral-900">₹{baseTotalAmount.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm mt-2">
-                      <span className="text-green-700">Discount ({appliedPromoCode?.code})</span>
-                      <span className="text-green-700 font-medium">-₹{discountAmount.toLocaleString()}</span>
-                    </div>
-                  </div>
-                )}
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold text-neutral-900">Total Amount</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-primary-600">
-                      ₹{totalAmount.toLocaleString()}
-                    </span>
-                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded whitespace-nowrap">
-                      Taxes & charges included
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">
-              Terms & Conditions
-            </h2>
-
-            <div className="bg-neutral-50 rounded-lg p-6 max-h-96 overflow-y-auto border border-neutral-200">
-              <div className="prose prose-sm max-w-none">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-neutral-900">Application Terms & Conditions</h3>
-                  <Link
-                    href="/terms"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary-600 hover:text-primary-700 underline"
-                  >
-                    View Full Terms
-                  </Link>
-                </div>
-
-                <div className="space-y-4 text-neutral-700">
-                  <div>
-                    <h4 className="font-semibold mb-2">1. Application Process</h4>
-                    <p className="text-sm">
-                      By submitting this visa application, you acknowledge that all information provided is accurate and complete.
-                      Any false or misleading information may result in visa rejection or legal consequences.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">2. Document Requirements</h4>
-                    <p className="text-sm">
-                      You are responsible for providing all required documents as per the visa requirements.
-                      Incomplete or incorrect documents may delay processing or result in application rejection.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">3. Processing Time</h4>
-                    <p className="text-sm">
-                      Processing times are estimates and may vary based on embassy/consulate workload,
-                      completeness of documents, and other factors beyond our control.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">4. Fees & Refunds</h4>
-                    <p className="text-sm">
-                      Application fees are non-refundable once the application is submitted to the embassy/consulate.
-                      Service fees may be refundable in certain circumstances as per our refund policy.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">5. Visa Decision</h4>
-                    <p className="text-sm">
-                      The final visa decision rests solely with the embassy/consulate. We cannot guarantee visa approval
-                      and are not responsible for visa rejections.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">6. Data Privacy</h4>
-                    <p className="text-sm">
-                      Your personal information will be used solely for visa processing purposes and shared with
-                      relevant authorities as required. We maintain strict data protection measures.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-2">7. Travel Responsibility</h4>
-                    <p className="text-sm">
-                      You are responsible for ensuring your passport is valid, meeting entry requirements,
-                      and complying with all immigration laws of the destination country.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <label className="flex items-start space-x-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={termsAccepted}
-                  onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-1 h-5 w-5 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-                />
-                <div className="flex-1">
-                  <span className="text-sm font-medium text-neutral-900">
-                    I have read and agree to the Terms & Conditions
-                  </span>
-                  <p className="text-xs text-neutral-600 mt-1">
-                    You must accept the terms and conditions to proceed with your visa application.
-                  </p>
-                </div>
-              </label>
-            </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-800">
-                <strong>Important:</strong> Please read all terms carefully. By proceeding, you acknowledge that you understand
-                and agree to be bound by these terms and conditions.
-              </p>
-            </div>
-          </div>
-        );
-
-      case 6:
-        const baseVisaTotalAmount = visaPrice * Math.max(formData.travellers?.length ?? 1, 1);
-        const visaDiscountAmount = appliedPromoCode ? appliedPromoCode.discountAmount / 100 : 0; // Convert from paise to rupees
-        const visaTotalAmount = Math.max(0, baseVisaTotalAmount - visaDiscountAmount);
-        const isVisaFreeEntry = visaInfo?.visaMode === "VISA_FREE_ENTRY";
-        const isFreeVisa = visaTotalAmount <= 0 || isVisaFreeEntry;
-
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">
-              {isFreeVisa ? "Signup/Login & Submit Application" : "Signup/Login & Payment"}
-            </h2>
-
-            {!session ? (
-              <div className="bg-neutral-50 rounded-lg p-6 space-y-4">
-                <p className="text-neutral-700">
-                  Please create an account or login to {isFreeVisa ? "submit your application" : "complete your payment"}.
+              {!phoneErrors.primaryContact && formData.primaryContact?.phone && (
+                <p className="text-xs text-neutral-500 mt-1">
+                  {formData.primaryContact.phone.replace(/\D/g, "").length === 10
+                    ? "✓ Valid phone number"
+                    : "Enter 10 digits for Indian mobile or use international format"}
                 </p>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <Link
-                    href={`/signup?email=${encodeURIComponent(formData.primaryContact?.email || "")}`}
-                    className="bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors text-center"
-                  >
-                    Create Account
-                  </Link>
-                  <button
-                    onClick={() => signIn()}
-                    className="border border-primary-600 text-primary-600 px-6 py-3 rounded-lg font-medium hover:bg-primary-50 transition-colors"
-                  >
-                    Login
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-green-700">
-                    Logged in as: {session.user?.email}
-                  </p>
-                </div>
-                <div className="bg-neutral-50 rounded-lg p-6">
-                  {visaDiscountAmount > 0 && (
-                    <div className="mb-4 pb-4 border-b border-neutral-200">
-                      <div className="flex justify-between items-center text-sm mb-2">
-                        <span className="text-neutral-700">Subtotal</span>
-                        <span className="text-neutral-900">₹{baseVisaTotalAmount.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-green-700">Discount ({appliedPromoCode?.code})</span>
-                        <span className="text-green-700 font-medium">-₹{visaDiscountAmount.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-lg font-semibold">Total Amount</span>
-                    <span className="text-2xl font-bold text-primary-600">
-                      {isFreeVisa ? "₹0" : `₹${visaTotalAmount.toLocaleString()}`}
-                    </span>
-                  </div>
-                  {isFreeVisa ? (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                      <p className="text-green-700 font-medium">
-                        {isVisaFreeEntry
-                          ? "This is a Visa-Free Entry destination — no payment required. Submit your application for record-keeping and travel preparation assistance."
-                          : "This visa application is free — no payment required. Click Submit Application to complete your submission."
-                        }
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-neutral-600 mb-6">
-                      Secure payment via Razorpay. All major cards, UPI, and net banking accepted.
-                    </p>
-                  )}
-                  {paymentCompleted ? (
-                    <div className="space-y-4">
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <p className="text-green-700 font-medium">
-                          ✓ Payment has already been completed for this application.
-                        </p>
-                      </div>
-                      <Link
-                        href={`/applications/thank-you?applicationId=${draftId}`}
-                        className="block w-full text-center bg-primary-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-primary-700 transition-colors"
-                      >
-                        View Application Status
-                      </Link>
-                    </div>
-                  ) : (
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Address (Optional)
+              </label>
+              <textarea
+                value={formData.primaryContact?.address || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    primaryContact: { ...formData.primaryContact!, address: e.target.value },
+                  })
+                }
+                rows={3}
+                className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                placeholder="Your address"
+              />
+            </div>
+          </div>
+        </div>
+      );
+
+    case 3:
+      return (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-neutral-900 mb-4">Traveller Information</h2>
+          <p className="text-neutral-600 mb-6">
+            Add details for all travellers in this application. Information must match passport exactly.
+          </p>
+          <div className="space-y-6">
+            {(formData.travellers || []).map((traveller, index) => (
+              <div key={traveller.id} className="border border-neutral-200 rounded-lg p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="font-semibold text-lg">Traveller {index + 1}</h3>
+                  {(formData.travellers || []).length > 1 && (
                     <button
-                      onClick={handleVisaPayment}
-                      disabled={loading}
-                      className="w-full bg-primary-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      type="button"
+                      onClick={() => removeTraveller(traveller.id)}
+                      className="text-red-600 hover:text-red-700 text-sm"
                     >
-                      {loading
-                        ? "Processing..."
-                        : isFreeVisa
-                          ? "Submit Application"
-                          : "Proceed to Payment"}
+                      Remove
                     </button>
                   )}
                 </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      First Name (as per passport) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={traveller.firstName}
+                      onChange={(e) => updateTravellerField(traveller.id, "firstName", e.target.value)}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Last Name (as per passport) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={traveller.lastName}
+                      onChange={(e) => updateTravellerField(traveller.id, "lastName", e.target.value)}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Date of Birth *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={traveller.dateOfBirth}
+                      onChange={(e) => updateTravellerField(traveller.id, "dateOfBirth", e.target.value)}
+                      max={new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]} // At least 1 year ago
+                      className={`w-full px-4 py-2 border rounded-lg ${dateErrors[`traveller-${index}-dateOfBirth`] ? "border-red-500" : "border-neutral-300"
+                        }`}
+                    />
+                    {dateErrors[`traveller-${index}-dateOfBirth`] && (
+                      <p className="text-sm text-red-600 mt-1">{dateErrors[`traveller-${index}-dateOfBirth`]}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Gender *
+                    </label>
+                    <select
+                      required
+                      value={traveller.gender}
+                      onChange={(e) => updateTravellerField(traveller.id, "gender", e.target.value)}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                    >
+                      <option value="">Select</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Passport Number *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={traveller.passportNumber}
+                      onChange={(e) => updateTravellerField(traveller.id, "passportNumber", e.target.value.toUpperCase())}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg uppercase"
+                      maxLength={20}
+                      placeholder="Enter passport number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Nationality *
+                    </label>
+                    <CountrySelect
+                      value={traveller.nationality || ""}
+                      onChange={(value) => updateTravellerField(traveller.id, "nationality", value)}
+                      placeholder="Select nationality"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Passport Issue Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={traveller.passportIssueDate}
+                      onChange={(e) => updateTravellerField(traveller.id, "passportIssueDate", e.target.value)}
+                      max={new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split("T")[0]} // Yesterday (must be in past)
+                      className={`w-full px-4 py-2 border rounded-lg ${dateErrors[`traveller-${index}-passportIssueDate`] ? "border-red-500" : "border-neutral-300"
+                        }`}
+                    />
+                    {dateErrors[`traveller-${index}-passportIssueDate`] && (
+                      <p className="text-sm text-red-600 mt-1">{dateErrors[`traveller-${index}-passportIssueDate`]}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Passport Expiry Date *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={traveller.passportExpiryDate}
+                      onChange={(e) => updateTravellerField(traveller.id, "passportExpiryDate", e.target.value)}
+                      min={traveller.passportIssueDate ? new Date(new Date(traveller.passportIssueDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]} // Must be after issue date, or today if no issue date
+                      className={`w-full px-4 py-2 border rounded-lg ${dateErrors[`traveller-${index}-passportExpiryDate`] ? "border-red-500" : "border-neutral-300"
+                        }`}
+                    />
+                    {dateErrors[`traveller-${index}-passportExpiryDate`] && (
+                      <p className="text-sm text-red-600 mt-1">{dateErrors[`traveller-${index}-passportExpiryDate`]}</p>
+                    )}
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Current City (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={traveller.currentCity || ""}
+                      onChange={(e) => updateTravellerField(traveller.id, "currentCity", e.target.value)}
+                      className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                      placeholder="Mumbai"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addTraveller}
+              className="w-full border-2 border-dashed border-neutral-300 rounded-lg py-4 text-neutral-600 hover:border-primary-600 hover:text-primary-600 transition-colors"
+            >
+              + Add Another Traveller
+            </button>
+          </div>
+        </div>
+      );
+
+    case 4:
+      const baseTotalAmount =
+        visaPrice * ((formData.travellers || []).length || 1);
+      const discountAmount = appliedPromoCode ? appliedPromoCode.discountAmount / 100 : 0; // Convert from paise to rupees
+      const totalAmount = Math.max(0, baseTotalAmount - discountAmount);
+      return (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-neutral-900 mb-4">Review & Confirm</h2>
+          <p className="text-neutral-600 mb-6">
+            Please review all information carefully. You can go back to edit any section.
+          </p>
+
+          <div className="space-y-4">
+            {/* Visa Details */}
+            <div className="bg-neutral-50 rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Visa Details</h3>
+              <p>{visaName}</p>
+              <p className="text-sm text-neutral-600">{params.country.toUpperCase()}</p>
+              {formData.selectedSubTypeId && visaInfo?.subTypes && (
+                <p className="text-sm text-neutral-600">
+                  Subtype: {visaInfo.subTypes.find(st => st.id === formData.selectedSubTypeId)?.label || "N/A"}
+                </p>
+              )}
+              {formData.travelDate && (
+                <p className="text-sm text-neutral-600">Travel Date: {formatDate(formData.travelDate)}</p>
+              )}
+            </div>
+
+            {/* Primary Contact */}
+            <div className="bg-neutral-50 rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Primary Contact</h3>
+              <p>{formData.primaryContact?.name}</p>
+              <p className="text-sm text-neutral-600">{formData.primaryContact?.email}</p>
+              {formData.primaryContact?.phone && (
+                <p className="text-sm text-neutral-600">{formData.primaryContact.phone}</p>
+              )}
+            </div>
+
+            {/* Travellers */}
+            <div className="bg-neutral-50 rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Travellers</h3>
+              <p className="text-sm text-neutral-600 mb-2">
+                {(formData.travellers || []).length} traveller(s)
+              </p>
+              {(formData.travellers || []).map((t, i) => (
+                <p key={t.id} className="text-sm">
+                  {i + 1}. {t.firstName} {t.lastName}
+                </p>
+              ))}
+            </div>
+
+            {/* Documents */}
+            <div className="bg-neutral-50 rounded-lg p-4">
+              <h3 className="font-semibold mb-2">Documents</h3>
+              {documentSummary.length > 0 ? (
+                <div className="space-y-2">
+                  {documentSummary.map((doc) => (
+                    <div
+                      key={doc.key}
+                      className="bg-white border border-neutral-200 rounded-lg px-3 py-2"
+                    >
+                      <div className="font-medium text-sm">
+                        {doc.requirement?.name || doc.fileName}
+                      </div>
+                      <div className="text-xs text-neutral-500">
+                        {doc.category || "Supporting document"}
+                        {doc.travellerLabel ? ` • ${doc.travellerLabel}` : ""}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-neutral-600">
+                  Upload requirement documents in Step 4 to speed up verification.
+                </p>
+              )}
+            </div>
+
+            {/* Promo Code */}
+            {session && (
+              <div className="bg-white rounded-lg p-4 border border-neutral-200">
+                <PromoCodeInput
+                  onApply={async (code) => {
+                    const baseAmount = visaPrice * ((formData.travellers || []).length || 1);
+                    // Convert to paise for API (multiply by 100)
+                    const baseAmountInPaise = Math.round(baseAmount * 100);
+                    const response = await fetch("/api/promo-codes/validate", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        code,
+                        amount: baseAmountInPaise,
+                        type: "visa",
+                        visaId: visaInfo?.id,
+                        countryId: visaInfo?.country?.id,
+                      }),
+                    });
+
+                    const result = await response.json();
+
+                    if (result.valid && result.promoCode) {
+                      setAppliedPromoCode({
+                        id: result.promoCode.id,
+                        code: result.promoCode.code,
+                        discountAmount: result.discountAmount || 0, // Already in paise
+                        message: result.message,
+                      });
+                    }
+
+                    return result;
+                  }}
+                  appliedCode={appliedPromoCode ? {
+                    code: appliedPromoCode.code,
+                    discountAmount: appliedPromoCode.discountAmount / 100, // Convert to rupees for display
+                    message: appliedPromoCode.message,
+                  } : null}
+                  onRemove={() => setAppliedPromoCode(null)}
+                />
               </div>
             )}
-          </div>
-        );
 
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-neutral-50">
-      <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          {/* Breadcrumb Navigation */}
-          <nav className="flex items-center space-x-2 text-sm mb-3">
-            <Link href="/" className="text-neutral-500 hover:text-primary-600 transition-colors">
-              Home
-            </Link>
-            <span className="text-neutral-300">/</span>
-            <Link href="/visas" className="text-neutral-500 hover:text-primary-600 transition-colors">
-              Visas
-            </Link>
-            <span className="text-neutral-300">/</span>
-            <Link href={`/visas/${params.country}`} className="text-neutral-500 hover:text-primary-600 transition-colors">
-              {visaInfo?.country?.name || params.country.toUpperCase()}
-            </Link>
-            <span className="text-neutral-300">/</span>
-            <span className="text-neutral-900 font-medium truncate max-w-[200px]">
-              {visaName}
-            </span>
-          </nav>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                router.back();
-              }}
-              className="text-primary-600 hover:text-primary-700 text-sm text-left"
-              type="button"
-            >
-              ← Back to Visa Details
-            </button>
-            <button
-              type="button"
-              onClick={handleStartFreshApplication}
-              className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 shadow-sm hover:bg-neutral-50"
-            >
-              Start fresh application
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-4 sm:gap-0">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              const isActive = currentStep === step.id;
-              const isCompleted = currentStep > step.id;
-
-              return (
-                <div key={step.id} className="flex items-center flex-1 min-w-[160px]">
-                  <div className="flex flex-col items-center flex-1">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${isCompleted
-                        ? "bg-green-500 text-white"
-                        : isActive
-                          ? "bg-primary-600 text-white"
-                          : "bg-neutral-200 text-neutral-600"
-                        }`}
-                    >
-                      {isCompleted ? <CheckCircle size={20} /> : <Icon size={20} />}
-                    </div>
-                    <span
-                      className={`mt-2 text-xs font-medium text-center ${isActive ? "text-primary-600" : "text-neutral-600"
-                        }`}
-                    >
-                      {step.name}
-                    </span>
+            {/* Price */}
+            <div className="bg-primary-50 rounded-lg p-4 border border-primary-200">
+              {discountAmount > 0 && (
+                <div className="mb-3 pb-3 border-b border-primary-200">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-neutral-700">Subtotal</span>
+                    <span className="text-neutral-900">₹{baseTotalAmount.toLocaleString()}</span>
                   </div>
-                  {index < steps.length - 1 && (
-                    <div
-                      className={`h-1 flex-1 mx-2 ${isCompleted ? "bg-green-500" : "bg-neutral-200"
-                        } hidden sm:block`}
-                    />
-                  )}
+                  <div className="flex justify-between items-center text-sm mt-2">
+                    <span className="text-green-700">Discount ({appliedPromoCode?.code})</span>
+                    <span className="text-green-700 font-medium">-₹{discountAmount.toLocaleString()}</span>
+                  </div>
                 </div>
-              );
-            })}
+              )}
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-semibold text-neutral-900">Total Amount</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl font-bold text-primary-600">
+                    ₹{totalAmount.toLocaleString()}
+                  </span>
+                  <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded whitespace-nowrap">
+                    Taxes & charges included
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
+      );
 
-        {/* Step Content */}
-        <div className="bg-white rounded-2xl shadow-medium p-5 sm:p-8 mb-6">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              {renderStepContent()}
-            </motion.div>
-          </AnimatePresence>
-        </div>
+    case 5:
+      return (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-neutral-900 mb-4">
+            Terms & Conditions
+          </h2>
 
-        {/* Navigation */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
-          <button
-            onClick={prevStep}
-            disabled={currentStep === 1}
-            className="px-6 py-3 border border-neutral-300 rounded-lg font-medium hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-          >
-            <ArrowLeft size={20} />
-            <span>Previous</span>
-          </button>
-          {currentStep < 4 && (
-            <button
-              onClick={nextStep}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 flex items-center space-x-2"
-            >
-              <span>Next</span>
-              <ArrowRight size={20} />
-            </button>
-          )}
-          {currentStep === 4 && (
-            <button
-              onClick={handleConfirmAndPay}
-              disabled={loading}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-            >
-              <span>{loading ? "Saving..." : "Continue to Terms & Conditions"}</span>
-              <ArrowRight size={20} />
-            </button>
-          )}
-          {currentStep === 5 && (
-            <button
-              onClick={() => {
-                if (!termsAccepted) {
-                  alert("Please accept the Terms & Conditions to proceed");
-                  return;
-                }
-                setCurrentStep(6);
-              }}
-              disabled={!termsAccepted}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-            >
-              <span>Continue to Payment</span>
-              <ArrowRight size={20} />
-            </button>
-          )}
-          {currentStep === 6 && (
-            <button
-              onClick={handleVisaPayment}
-              disabled={loading}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-            >
-              <span>{loading ? "Processing..." : "Proceed to Payment"}</span>
-              <ArrowRight size={20} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Document Preview Modal */}
-      <AnimatePresence>
-        {previewModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
-            onClick={() => setPreviewModal(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-4 border-b border-neutral-200">
-                <h3 className="text-lg font-semibold text-neutral-900 truncate flex-1 mr-4">
-                  {previewModal.fileName}
-                </h3>
-                <button
-                  onClick={() => setPreviewModal(null)}
-                  className="p-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
-                  aria-label="Close preview"
+          <div className="bg-neutral-50 rounded-lg p-6 max-h-96 overflow-y-auto border border-neutral-200">
+            <div className="prose prose-sm max-w-none">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-neutral-900">Application Terms & Conditions</h3>
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary-600 hover:text-primary-700 underline"
                 >
-                  <X size={20} />
-                </button>
+                  View Full Terms
+                </Link>
               </div>
 
-              {/* Modal Content */}
-              <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-neutral-50">
-                {previewModal.url.startsWith("data:image") ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={previewModal.url}
-                    alt="Document preview"
-                    className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-md"
-                  />
-                ) : previewModal.url.startsWith("data:application/pdf") || previewModal.url.includes("pdf") ? (
-                  <object
-                    data={previewModal.url}
-                    type="application/pdf"
-                    className="w-full h-[70vh] rounded-lg shadow-md border border-neutral-200"
-                    aria-label="PDF preview"
-                  >
-                    <div className="text-center p-8 h-full flex flex-col items-center justify-center">
-                      <FileText size={48} className="text-neutral-400 mx-auto mb-4" />
-                      <p className="text-neutral-600 mb-4">PDF preview not available in this browser</p>
-                      <a
-                        href={previewModal.url}
-                        download={previewModal.fileName}
-                        className="text-primary-600 hover:text-primary-700 underline"
-                      >
-                        Download PDF
-                      </a>
+              <div className="space-y-4 text-neutral-700">
+                <div>
+                  <h4 className="font-semibold mb-2">1. Application Process</h4>
+                  <p className="text-sm">
+                    By submitting this visa application, you acknowledge that all information provided is accurate and complete.
+                    Any false or misleading information may result in visa rejection or legal consequences.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">2. Document Requirements</h4>
+                  <p className="text-sm">
+                    You are responsible for providing all required documents as per the visa requirements.
+                    Incomplete or incorrect documents may delay processing or result in application rejection.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">3. Processing Time</h4>
+                  <p className="text-sm">
+                    Processing times are estimates and may vary based on embassy/consulate workload,
+                    completeness of documents, and other factors beyond our control.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">4. Fees & Refunds</h4>
+                  <p className="text-sm">
+                    Application fees are non-refundable once the application is submitted to the embassy/consulate.
+                    Service fees may be refundable in certain circumstances as per our refund policy.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">5. Visa Decision</h4>
+                  <p className="text-sm">
+                    The final visa decision rests solely with the embassy/consulate. We cannot guarantee visa approval
+                    and are not responsible for visa rejections.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">6. Data Privacy</h4>
+                  <p className="text-sm">
+                    Your personal information will be used solely for visa processing purposes and shared with
+                    relevant authorities as required. We maintain strict data protection measures.
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">7. Travel Responsibility</h4>
+                  <p className="text-sm">
+                    You are responsible for ensuring your passport is valid, meeting entry requirements,
+                    and complying with all immigration laws of the destination country.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <label className="flex items-start space-x-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="mt-1 h-5 w-5 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+              />
+              <div className="flex-1">
+                <span className="text-sm font-medium text-neutral-900">
+                  I have read and agree to the Terms & Conditions
+                </span>
+                <p className="text-xs text-neutral-600 mt-1">
+                  You must accept the terms and conditions to proceed with your visa application.
+                </p>
+              </div>
+            </label>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-sm text-yellow-800">
+              <strong>Important:</strong> Please read all terms carefully. By proceeding, you acknowledge that you understand
+              and agree to be bound by these terms and conditions.
+            </p>
+          </div>
+        </div>
+      );
+
+    case 6:
+      const baseVisaTotalAmount = visaPrice * Math.max(formData.travellers?.length ?? 1, 1);
+      const visaDiscountAmount = appliedPromoCode ? appliedPromoCode.discountAmount / 100 : 0; // Convert from paise to rupees
+      const visaTotalAmount = Math.max(0, baseVisaTotalAmount - visaDiscountAmount);
+      const isVisaFreeEntry = visaInfo?.visaMode === "VISA_FREE_ENTRY";
+      const isFreeVisa = visaTotalAmount <= 0 || isVisaFreeEntry;
+
+      return (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-neutral-900 mb-4">
+            {isFreeVisa ? "Signup/Login & Submit Application" : "Signup/Login & Payment"}
+          </h2>
+
+          {!session ? (
+            <div className="bg-neutral-50 rounded-lg p-6 space-y-4">
+              <p className="text-neutral-700">
+                Please create an account or login to {isFreeVisa ? "submit your application" : "complete your payment"}.
+              </p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <Link
+                  href={`/signup?email=${encodeURIComponent(formData.primaryContact?.email || "")}`}
+                  className="bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors text-center"
+                >
+                  Create Account
+                </Link>
+                <button
+                  onClick={() => signIn()}
+                  className="border border-primary-600 text-primary-600 px-6 py-3 rounded-lg font-medium hover:bg-primary-50 transition-colors"
+                >
+                  Login
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-green-700">
+                  Logged in as: {session.user?.email}
+                </p>
+              </div>
+              <div className="bg-neutral-50 rounded-lg p-6">
+                {visaDiscountAmount > 0 && (
+                  <div className="mb-4 pb-4 border-b border-neutral-200">
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span className="text-neutral-700">Subtotal</span>
+                      <span className="text-neutral-900">₹{baseVisaTotalAmount.toLocaleString()}</span>
                     </div>
-                  </object>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-green-700">Discount ({appliedPromoCode?.code})</span>
+                      <span className="text-green-700 font-medium">-₹{visaDiscountAmount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-lg font-semibold">Total Amount</span>
+                  <span className="text-2xl font-bold text-primary-600">
+                    {isFreeVisa ? "₹0" : `₹${visaTotalAmount.toLocaleString()}`}
+                  </span>
+                </div>
+                {isFreeVisa ? (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                    <p className="text-green-700 font-medium">
+                      {isVisaFreeEntry
+                        ? "This is a Visa-Free Entry destination — no payment required. Submit your application for record-keeping and travel preparation assistance."
+                        : "This visa application is free — no payment required. Click Submit Application to complete your submission."
+                      }
+                    </p>
+                  </div>
                 ) : (
-                  <div className="text-center p-8">
+                  <p className="text-sm text-neutral-600 mb-6">
+                    Secure payment via Razorpay. All major cards, UPI, and net banking accepted.
+                  </p>
+                )}
+                {paymentCompleted ? (
+                  <div className="space-y-4">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <p className="text-green-700 font-medium">
+                        ✓ Payment has already been completed for this application.
+                      </p>
+                    </div>
+                    <Link
+                      href={`/applications/thank-you?applicationId=${draftId}`}
+                      className="block w-full text-center bg-primary-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+                    >
+                      View Application Status
+                    </Link>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleVisaPayment}
+                    disabled={loading}
+                    className="w-full bg-primary-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {loading
+                      ? "Processing..."
+                      : isFreeVisa
+                        ? "Submit & Continue to Documents"
+                        : "Proceed to Payment"}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+
+    case 7:
+      return (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-neutral-900 mb-4">Upload Documents</h2>
+          <p className="text-neutral-600 mb-6">
+            Please upload clear copies of the required documents below.
+          </p>
+
+          <div className="space-y-8">
+            {/* Application Level Requirements */}
+            {perApplicationRequirements.length > 0 && (
+              <div className="bg-neutral-50 rounded-lg p-6 border border-neutral-200">
+                <h3 className="font-semibold text-lg mb-4 text-neutral-900 flex items-center gap-2">
+                  <FileText size={20} className="text-primary-600" />
+                  Application Documents
+                </h3>
+                <div className="space-y-4">
+                  {perApplicationRequirements.map((req) => {
+                    const key = getDocumentKey(req.id);
+                    const currentDoc = formData.documents?.[key];
+
+                    return (
+                      <div key={req.id} className="bg-white p-4 rounded-lg border border-neutral-200">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{req.name}</span>
+                              {req.isRequired && (
+                                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-semibold rounded">
+                                  Required
+                                </span>
+                              )}
+                            </div>
+                            {req.description && (
+                              <p className="text-sm text-neutral-500 mt-1">{req.description}</p>
+                            )}
+                          </div>
+                          {currentDoc && (
+                            <button
+                              onClick={() => removeDocument(key)}
+                              className="text-red-600 hover:text-red-700 text-sm font-medium"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+
+                        {currentDoc ? (
+                          <div className="flex items-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <CheckCircle size={20} className="text-green-600 mr-3 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-green-900 truncate">
+                                {currentDoc.file?.name || "Document uploaded"}
+                              </p>
+                              <p className="text-xs text-green-700">
+                                {(currentDoc.file?.size ? (currentDoc.file.size / 1024 / 1024).toFixed(2) : "0")} MB
+                              </p>
+                            </div>
+                            <button
+                              onClick={() =>
+                                setPreviewModal({
+                                  url: currentDoc.preview,
+                                  fileName: currentDoc.file?.name || req.name,
+                                })
+                              }
+                              className="ml-3 p-2 text-green-700 hover:bg-green-100 rounded-full"
+                            >
+                              <Eye size={18} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <label className="block w-full cursor-pointer">
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept=".jpg,.jpeg,.png,.pdf"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleDocumentUpload(req, undefined, file);
+                                  e.target.value = ""; // Reset input
+                                }}
+                              />
+                              <div className="border-2 border-dashed border-neutral-300 rounded-lg p-6 flex flex-col items-center justify-center text-neutral-500 hover:border-primary-500 hover:text-primary-600 transition-colors">
+                                <Upload size={24} className="mb-2" />
+                                <span className="text-sm font-medium">Click to upload</span>
+                                <span className="text-xs text-neutral-400 mt-1">
+                                  JPG, PNG, PDF (Max 20MB)
+                                </span>
+                              </div>
+                            </label>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Traveller Level Requirements */}
+            {(formData.travellers || []).map((traveller, index) => (
+              <div key={traveller.id} className="bg-neutral-50 rounded-lg p-6 border border-neutral-200">
+                <h3 className="font-semibold text-lg mb-4 text-neutral-900 flex items-center gap-2">
+                  <User size={20} className="text-primary-600" />
+                  {traveller.firstName} {traveller.lastName}
+                </h3>
+
+                {perTravellerRequirements.length === 0 ? (
+                  <p className="text-neutral-500 text-sm italic">No specific documents required for travellers.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {perTravellerRequirements.map((req) => {
+                      const key = getDocumentKey(req.id, traveller.id);
+                      const currentDoc = formData.documents?.[key];
+
+                      return (
+                        <div key={`${traveller.id}-${req.id}`} className="bg-white p-4 rounded-lg border border-neutral-200">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{req.name}</span>
+                                {req.isRequired && (
+                                  <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-semibold rounded">
+                                    Required
+                                  </span>
+                                )}
+                              </div>
+                              {req.description && (
+                                <p className="text-sm text-neutral-500 mt-1">{req.description}</p>
+                              )}
+                            </div>
+                            {currentDoc && (
+                              <button
+                                onClick={() => removeDocument(key)}
+                                className="text-red-600 hover:text-red-700 text-sm font-medium"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+
+                          {currentDoc ? (
+                            <div className="flex items-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <CheckCircle size={20} className="text-green-600 mr-3 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-green-900 truncate">
+                                  {currentDoc.file?.name || "Document uploaded"}
+                                </p>
+                                <p className="text-xs text-green-700">
+                                  {(currentDoc.file?.size ? (currentDoc.file.size / 1024 / 1024).toFixed(2) : "0")} MB
+                                </p>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  setPreviewModal({
+                                    url: currentDoc.preview,
+                                    fileName: currentDoc.file?.name || req.name,
+                                  })
+                                }
+                                className="ml-3 p-2 text-green-700 hover:bg-green-100 rounded-full"
+                              >
+                                <Eye size={18} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div>
+                              <label className="block w-full cursor-pointer">
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  accept=".jpg,.jpeg,.png,.pdf"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) handleDocumentUpload(req, traveller.id, file);
+                                    e.target.value = ""; // Reset input
+                                  }}
+                                />
+                                <div className="border-2 border-dashed border-neutral-300 rounded-lg p-6 flex flex-col items-center justify-center text-neutral-500 hover:border-primary-500 hover:text-primary-600 transition-colors">
+                                  <Upload size={24} className="mb-2" />
+                                  <span className="text-sm font-medium">Click to upload</span>
+                                  <span className="text-xs text-neutral-400 mt-1">
+                                    JPG, PNG, PDF (Max 20MB)
+                                  </span>
+                                </div>
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+
+    default:
+      return null;
+  }
+};
+
+return (
+  <div className="min-h-screen bg-neutral-50">
+    <div className="bg-white border-b border-neutral-200">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        {/* Breadcrumb Navigation */}
+        <nav className="flex items-center space-x-2 text-sm mb-3">
+          <Link href="/" className="text-neutral-500 hover:text-primary-600 transition-colors">
+            Home
+          </Link>
+          <span className="text-neutral-300">/</span>
+          <Link href="/visas" className="text-neutral-500 hover:text-primary-600 transition-colors">
+            Visas
+          </Link>
+          <span className="text-neutral-300">/</span>
+          <Link href={`/visas/${params.country}`} className="text-neutral-500 hover:text-primary-600 transition-colors">
+            {visaInfo?.country?.name || params.country.toUpperCase()}
+          </Link>
+          <span className="text-neutral-300">/</span>
+          <span className="text-neutral-900 font-medium truncate max-w-[200px]">
+            {visaName}
+          </span>
+        </nav>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              router.back();
+            }}
+            className="text-primary-600 hover:text-primary-700 text-sm text-left"
+            type="button"
+          >
+            ← Back to Visa Details
+          </button>
+          <button
+            type="button"
+            onClick={handleStartFreshApplication}
+            className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 shadow-sm hover:bg-neutral-50"
+          >
+            Start fresh application
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Progress Steps */}
+      <div className="mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-4 sm:gap-0">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const isActive = currentStep === step.id;
+            const isCompleted = currentStep > step.id;
+
+            return (
+              <div key={step.id} className="flex items-center flex-1 min-w-[160px]">
+                <div className="flex flex-col items-center flex-1">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center ${isCompleted
+                      ? "bg-green-500 text-white"
+                      : isActive
+                        ? "bg-primary-600 text-white"
+                        : "bg-neutral-200 text-neutral-600"
+                      }`}
+                  >
+                    {isCompleted ? <CheckCircle size={20} /> : <Icon size={20} />}
+                  </div>
+                  <span
+                    className={`mt-2 text-xs font-medium text-center ${isActive ? "text-primary-600" : "text-neutral-600"
+                      }`}
+                  >
+                    {step.name}
+                  </span>
+                </div>
+                {index < steps.length - 1 && (
+                  <div
+                    className={`h-1 flex-1 mx-2 ${isCompleted ? "bg-green-500" : "bg-neutral-200"
+                      } hidden sm:block`}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Step Content */}
+      <div className="bg-white rounded-2xl shadow-medium p-5 sm:p-8 mb-6">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {renderStepContent()}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Navigation */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+        <button
+          onClick={prevStep}
+          disabled={currentStep === 1}
+          className="px-6 py-3 border border-neutral-300 rounded-lg font-medium hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+        >
+          <ArrowLeft size={20} />
+          <span>Previous</span>
+        </button>
+        {currentStep < 4 && (
+          <button
+            onClick={nextStep}
+            className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 flex items-center space-x-2"
+          >
+            <span>Next</span>
+            <ArrowRight size={20} />
+          </button>
+        )}
+        {currentStep === 4 && (
+          <button
+            onClick={handleConfirmAndPay}
+            disabled={loading}
+            className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+          >
+            <span>{loading ? "Saving..." : "Continue to Terms & Conditions"}</span>
+            <ArrowRight size={20} />
+          </button>
+        )}
+        {currentStep === 5 && (
+          <button
+            onClick={() => {
+              if (!termsAccepted) {
+                alert("Please accept the Terms & Conditions to proceed");
+                return;
+              }
+              setCurrentStep(6);
+            }}
+            disabled={!termsAccepted}
+            className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+          >
+            <span>Continue to Payment</span>
+            <ArrowRight size={20} />
+          </button>
+        )}
+        {currentStep === 6 && (
+          <button
+            onClick={handleVisaPayment}
+            disabled={loading}
+            className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+          >
+            <span>{loading ? "Processing..." : paymentCompleted ? "Next" : isFreeVisa ? "Submit Application" : "Proceed to Payment"}</span>
+            <ArrowRight size={20} />
+          </button>
+        )}
+        {currentStep === 7 && (
+          <button
+            onClick={handleFinishApplication}
+            disabled={loading}
+            className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+          >
+            <span>{loading ? "Completing..." : "Finish Application"}</span>
+            <ArrowRight size={20} />
+          </button>
+        )}
+      </div>
+    </div>
+
+    {/* Document Preview Modal */}
+    <AnimatePresence>
+      {previewModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+          onClick={() => setPreviewModal(null)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-neutral-200">
+              <h3 className="text-lg font-semibold text-neutral-900 truncate flex-1 mr-4">
+                {previewModal.fileName}
+              </h3>
+              <button
+                onClick={() => setPreviewModal(null)}
+                className="p-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
+                aria-label="Close preview"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-neutral-50">
+              {previewModal.url.startsWith("data:image") ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={previewModal.url}
+                  alt="Document preview"
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-md"
+                />
+              ) : previewModal.url.startsWith("data:application/pdf") || previewModal.url.includes("pdf") ? (
+                <object
+                  data={previewModal.url}
+                  type="application/pdf"
+                  className="w-full h-[70vh] rounded-lg shadow-md border border-neutral-200"
+                  aria-label="PDF preview"
+                >
+                  <div className="text-center p-8 h-full flex flex-col items-center justify-center">
                     <FileText size={48} className="text-neutral-400 mx-auto mb-4" />
-                    <p className="text-neutral-600 mb-4">Preview not available for this file type</p>
+                    <p className="text-neutral-600 mb-4">PDF preview not available in this browser</p>
                     <a
                       href={previewModal.url}
                       download={previewModal.fileName}
                       className="text-primary-600 hover:text-primary-700 underline"
                     >
-                      Download file
+                      Download PDF
                     </a>
                   </div>
-                )}
-              </div>
-            </motion.div>
+                </object>
+              ) : (
+                <div className="text-center p-8">
+                  <FileText size={48} className="text-neutral-400 mx-auto mb-4" />
+                  <p className="text-neutral-600 mb-4">Preview not available for this file type</p>
+                  <a
+                    href={previewModal.url}
+                    download={previewModal.fileName}
+                    className="text-primary-600 hover:text-primary-700 underline"
+                  >
+                    Download file
+                  </a>
+                </div>
+              )}
+            </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </motion.div>
+      )}
+    </AnimatePresence>
 
-      {/* Account Gate Modal */}
-      <UnifiedAuthModal
-        isOpen={showAccountGate}
-        onClose={() => setShowAccountGate(false)}
-        onSuccess={async () => {
-          setShowAccountGate(false);
-          setIsGuestMode(false);
+    {/* Account Gate Modal */}
+    <UnifiedAuthModal
+      isOpen={showAccountGate}
+      onClose={() => setShowAccountGate(false)}
+      onSuccess={async () => {
+        setShowAccountGate(false);
+        setIsGuestMode(false);
 
-          // Refresh session to get updated user data
-          router.refresh();
+        // Refresh session to get updated user data
+        router.refresh();
 
-          // Merge guest application after login
-          try {
-            const mergeResponse = await fetch("/api/guest-applications/merge", {
-              method: "POST",
-            });
-            if (mergeResponse.ok) {
-              const mergeData = await mergeResponse.json();
-              if (mergeData.formData) {
-                // Restore merged data
-                const restoredFormData = mergeData.formData;
-                setFormData(prev => ({
-                  ...prev,
-                  ...restoredFormData,
-                  // Ensure travellers have IDs
-                  travellers: restoredFormData.travellers?.map((t: any, idx: number) => ({
-                    ...t,
-                    id: t.id || `traveller-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
-                  })) || prev.travellers,
-                }));
+        // Merge guest application after login
+        try {
+          const mergeResponse = await fetch("/api/guest-applications/merge", {
+            method: "POST",
+          });
+          if (mergeResponse.ok) {
+            const mergeData = await mergeResponse.json();
+            if (mergeData.formData) {
+              // Restore merged data
+              const restoredFormData = mergeData.formData;
+              setFormData(prev => ({
+                ...prev,
+                ...restoredFormData,
+                // Ensure travellers have IDs
+                travellers: restoredFormData.travellers?.map((t: any, idx: number) => ({
+                  ...t,
+                  id: t.id || `traveller-${Date.now()}-${idx}-${Math.random().toString(36).substr(2, 9)}`,
+                })) || prev.travellers,
+              }));
 
-                // Navigate to last completed step or current step if it's ahead
-                if (mergeData.lastStepCompleted && mergeData.lastStepCompleted >= currentStep) {
-                  setCurrentStep(mergeData.lastStepCompleted);
-                }
+              // Navigate to last completed step or current step if it's ahead
+              if (mergeData.lastStepCompleted && mergeData.lastStepCompleted >= currentStep) {
+                setCurrentStep(mergeData.lastStepCompleted);
               }
             }
-          } catch (error) {
-            console.error("Error merging guest application:", error);
           }
+        } catch (error) {
+          console.error("Error merging guest application:", error);
+        }
 
-          // Continue to next step if we're at step 2
-          if (currentStep === 2 && currentStep < steps.length) {
-            setCurrentStep(currentStep + 1);
-          }
-        }}
-        defaultEmail={formData.primaryContact?.email}
-        redirectUrl={`/apply/visa/${params.country}/${params.type}`}
-        title="Continue Your Application"
-        subtitle="Login or create an account to save your visa application"
-      />
-    </div>
-  );
+        // Continue to next step if we're at step 2
+        if (currentStep === 2 && currentStep < steps.length) {
+          setCurrentStep(currentStep + 1);
+        }
+      }}
+      defaultEmail={formData.primaryContact?.email}
+      redirectUrl={`/apply/visa/${params.country}/${params.type}`}
+      title="Continue Your Application"
+      subtitle="Login or create an account to save your visa application"
+    />
+  </div>
+);
 }

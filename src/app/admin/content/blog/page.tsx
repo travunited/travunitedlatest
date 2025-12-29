@@ -19,6 +19,8 @@ import {
   X,
   Calendar,
   Star,
+  Download,
+  Copy,
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
@@ -123,6 +125,61 @@ export default function AdminBlogPage() {
       }
     } catch (error) {
       console.error("Error fetching blog posts:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExportCSV = () => {
+    if (filteredPosts.length === 0) {
+      alert("No posts to export.");
+      return;
+    }
+
+    const headers = ["Title", "Slug", "Status", "Category", "Created At", "Published At"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredPosts.map((post) =>
+        [
+          `"${(post.title || "").replace(/"/g, '""')}"`,
+          `"${(post.slug || "").replace(/"/g, '""')}"`,
+          post.published ? "Published" : "Draft",
+          `"${(post.category || "").replace(/"/g, '""')}"`,
+          post.createdAt,
+          post.publishedAt || "",
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `blog_posts_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDuplicate = async (post: BlogPost) => {
+    if (!confirm(`Are you sure you want to duplicate "${post.title}"?`)) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/admin/content/blog/${post.id}/duplicate`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        await fetchPosts();
+        alert("Blog post duplicated successfully.");
+      } else {
+        const error = await response.json().catch(() => ({}));
+        alert(error.error || "Failed to duplicate blog post");
+      }
+    } catch (error) {
+      console.error("Error duplicating blog post:", error);
+      alert("An error occurred while duplicating");
     } finally {
       setLoading(false);
     }
@@ -407,6 +464,13 @@ export default function AdminBlogPage() {
           </div>
           <div className="flex items-center space-x-3">
             <button
+              onClick={handleExportCSV}
+              className="inline-flex items-center space-x-2 px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium hover:bg-neutral-50"
+            >
+              <Download size={18} />
+              <span>Export CSV</span>
+            </button>
+            <button
               onClick={handlePublishReady}
               disabled={publishingReady}
               className="inline-flex items-center space-x-2 px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium hover:bg-neutral-50 disabled:opacity-50"
@@ -588,8 +652,8 @@ export default function AdminBlogPage() {
                       <td className="px-4 py-3">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-medium ${post.published
-                              ? "bg-green-100 text-green-700"
-                              : "bg-neutral-100 text-neutral-700"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-neutral-100 text-neutral-700"
                             }`}
                         >
                           {post.published ? "Published" : "Draft"}
@@ -599,8 +663,8 @@ export default function AdminBlogPage() {
                         <button
                           onClick={() => handleToggleFeatured(post)}
                           className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${post.isFeatured
-                              ? "text-amber-600 bg-amber-50 hover:bg-amber-100"
-                              : "text-neutral-500 bg-neutral-100 hover:bg-neutral-200"
+                            ? "text-amber-600 bg-amber-50 hover:bg-amber-100"
+                            : "text-neutral-500 bg-neutral-100 hover:bg-neutral-200"
                             }`}
                           title={post.isFeatured ? "Remove from homepage" : "Show on homepage"}
                         >
@@ -640,6 +704,14 @@ export default function AdminBlogPage() {
                           >
                             <Edit size={16} />
                           </Link>
+                          <button
+                            onClick={() => handleDuplicate(post)}
+                            disabled={loading}
+                            className="p-1.5 text-neutral-600 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-50"
+                            title="Duplicate"
+                          >
+                            <Copy size={16} />
+                          </button>
                           <button
                             onClick={() => handleDelete(post.id)}
                             disabled={deletingId === post.id}

@@ -7,8 +7,8 @@ export function ContentProtection() {
   const pathname = usePathname();
   const [showWarning, setShowWarning] = useState(false);
 
-  // Don't apply protection to dashboard or admin routes
-  const isProtectedRoute = !pathname?.startsWith("/dashboard") && !pathname?.startsWith("/admin");
+  // Don't apply protection to dashboard, admin, or apply routes
+  const isProtectedRoute = !pathname?.startsWith("/dashboard") && !pathname?.startsWith("/admin") && !pathname?.startsWith("/apply");
 
   useEffect(() => {
     if (!isProtectedRoute) return;
@@ -87,14 +87,14 @@ export function ContentProtection() {
       ) {
         return true;
       }
-      
+
       e.preventDefault();
       e.clipboardData?.setData("text/plain", "");
-      
+
       // Show warning message
       setShowWarning(true);
       setTimeout(() => setShowWarning(false), 2000);
-      
+
       return false;
     };
 
@@ -156,13 +156,13 @@ export function ContentProtection() {
         user-select: text !important;
       }
     `;
-    
+
     // Remove existing style if present
     const existingStyle = document.getElementById("content-protection-styles");
     if (existingStyle) {
       existingStyle.remove();
     }
-    
+
     document.head.appendChild(style);
 
     // Cleanup
@@ -173,7 +173,7 @@ export function ContentProtection() {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("copy", handleCopy);
       document.removeEventListener("cut", handleCut);
-      
+
       // Remove style element
       const styleElement = document.getElementById("content-protection-styles");
       if (styleElement) {
@@ -202,7 +202,7 @@ export function ContentProtection() {
         onContextMenu={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
       />
-      
+
       {/* Warning message when copy is attempted */}
       {showWarning && (
         <div

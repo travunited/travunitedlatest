@@ -70,7 +70,7 @@ export default function AdminBlogEditPage() {
   // Save draft to sessionStorage (debounced)
   const saveDraftDebounced = useCallback((data: Partial<BlogPost>) => {
     if (typeof window === "undefined") return;
-    
+
     const timeoutId = setTimeout(() => {
       try {
         sessionStorage.setItem(draftKey, JSON.stringify(data));
@@ -78,7 +78,7 @@ export default function AdminBlogEditPage() {
         console.error("Error saving draft to sessionStorage:", error);
       }
     }, 500); // Debounce 500ms
-    
+
     return () => clearTimeout(timeoutId);
   }, [draftKey]);
 
@@ -158,7 +158,7 @@ export default function AdminBlogEditPage() {
           updatedAt: data.updatedAt ? new Date(data.updatedAt).toISOString().split('T')[0] : null,
           createdAt: data.createdAt ? new Date(data.createdAt).toISOString().split('T')[0] : null,
         };
-        
+
         // Merge with draft if it exists (draft takes precedence)
         const draft = loadDraft();
         if (draft) {
@@ -166,7 +166,7 @@ export default function AdminBlogEditPage() {
         } else {
           setFormData(serverData);
         }
-        
+
         if (data.coverImage && !data.coverImage.startsWith("http")) {
           setCoverImageMode("upload");
         } else if (data.coverImage) {
@@ -219,14 +219,14 @@ export default function AdminBlogEditPage() {
 
   const handleCoverImageUpload = async (file: File | null) => {
     if (!file) return;
-    
+
     // Frontend validation: Check file type
     if (!isValidImageType(file.type)) {
       const allowedFormats = getAllowedImageFormats().join(", ");
       alert(`Invalid file type. Only ${allowedFormats} images are allowed.`);
       return;
     }
-    
+
     // Frontend validation: Check file size
     if (!isValidImageSize(file.size)) {
       alert(`Image too large. Maximum allowed size is ${getMaxImageSizeDisplay()}.`);
@@ -292,7 +292,7 @@ export default function AdminBlogEditPage() {
       // Prepare form data, ensuring all fields are properly formatted
       // Only include fields that have actual values (not empty strings)
       const submitData: any = {};
-      
+
       if (formData.title && formData.title.trim()) {
         submitData.title = formData.title.trim();
       }
@@ -376,10 +376,10 @@ export default function AdminBlogEditPage() {
           console.error("Failed to parse error response:", e);
           errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
         }
-        
+
         console.error("Blog save error (parsed):", errorData);
         console.error("Request payload that failed:", submitData);
-        
+
         // Show detailed validation errors if available
         if (errorData.details && Array.isArray(errorData.details)) {
           const errorMessages = errorData.details.map((d: any) => {
@@ -418,10 +418,10 @@ export default function AdminBlogEditPage() {
         <div className="mb-8">
           <Link
             href="/admin/content/blog"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 hover:border-neutral-400 transition-colors shadow-sm mb-4"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-neutral-100 text-neutral-800 rounded-lg text-sm font-medium hover:bg-neutral-200 transition-colors mb-6"
           >
-            <ArrowLeft size={16} />
-            Back to Blog
+            <ArrowLeft size={18} />
+            Back to Blog List
           </Link>
           <h1 className="text-3xl font-bold text-neutral-900">
             {isNew ? "Create New Blog Post" : "Edit Blog Post"}
@@ -470,20 +470,18 @@ export default function AdminBlogEditPage() {
                       <button
                         type="button"
                         onClick={() => setCoverImageMode("url")}
-                        className={`px-3 py-1.5 ${
-                          coverImageMode === "url" ? "bg-primary-600 text-white" : "text-neutral-600"
-                        }`}
+                        className={`px-3 py-1.5 ${coverImageMode === "url" ? "bg-primary-600 text-white" : "text-neutral-600"
+                          }`}
                       >
                         Use URL
                       </button>
                       <button
                         type="button"
                         onClick={() => setCoverImageMode("upload")}
-                        className={`px-3 py-1.5 ${
-                          coverImageMode === "upload"
+                        className={`px-3 py-1.5 ${coverImageMode === "upload"
                             ? "bg-primary-600 text-white"
                             : "text-neutral-600"
-                        }`}
+                          }`}
                       >
                         Upload
                       </button>
@@ -655,7 +653,7 @@ export default function AdminBlogEditPage() {
                     onChange={(e) => {
                       const newStatus = e.target.value;
                       let newPublishedAt = formData.publishedAt;
-                      
+
                       if (newStatus === "PUBLISHED" && !formData.publishedAt) {
                         // Set to now for immediate publish
                         newPublishedAt = new Date().toISOString().slice(0, 16);
@@ -666,9 +664,9 @@ export default function AdminBlogEditPage() {
                         tomorrow.setHours(9, 0, 0, 0);
                         newPublishedAt = tomorrow.toISOString().slice(0, 16);
                       }
-                      
-                      setFormData((prev) => ({ 
-                        ...prev, 
+
+                      setFormData((prev) => ({
+                        ...prev,
                         status: newStatus,
                         published: newStatus === "PUBLISHED",
                         publishedAt: newPublishedAt
@@ -695,9 +693,9 @@ export default function AdminBlogEditPage() {
                             const date = e.target.value;
                             const existingDateTime = formData.publishedAt ? new Date(formData.publishedAt) : new Date();
                             const time = existingDateTime.toTimeString().slice(0, 5); // HH:mm
-                            setFormData((prev) => ({ 
-                              ...prev, 
-                              publishedAt: date ? `${date}T${time}` : null 
+                            setFormData((prev) => ({
+                              ...prev,
+                              publishedAt: date ? `${date}T${time}` : null
                             }));
                           }}
                           className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
@@ -708,9 +706,9 @@ export default function AdminBlogEditPage() {
                           onChange={(e) => {
                             const time = e.target.value;
                             const existingDate = formData.publishedAt ? formData.publishedAt.split('T')[0] : new Date().toISOString().split('T')[0];
-                            setFormData((prev) => ({ 
-                              ...prev, 
-                              publishedAt: existingDate ? `${existingDate}T${time}` : null 
+                            setFormData((prev) => ({
+                              ...prev,
+                              publishedAt: existingDate ? `${existingDate}T${time}` : null
                             }));
                           }}
                           className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"

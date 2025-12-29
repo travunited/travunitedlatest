@@ -19,7 +19,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { getMediaProxyUrl } from "@/lib/media";
 import { parseCSV } from "@/lib/import-utils";
 
-// Stable component for JSON array textareas to prevent re-render focus loss
+// Stable component for JSON array textareas (now accepting raw text for better typing experience)
 const JsonArrayTextarea = memo(({ value, onChange, rows, placeholder, className }: {
   value: string;
   onChange: (value: string) => void;
@@ -27,26 +27,11 @@ const JsonArrayTextarea = memo(({ value, onChange, rows, placeholder, className 
   placeholder?: string;
   className?: string;
 }) => {
-  // Parse JSON value to display format once per value change
-  const displayValue = useMemo(() => {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed.join("\n") : value;
-    } catch {
-      return value.replace(/[\[\]"]/g, "").replace(/,/g, "\n");
-    }
-  }, [value]);
-
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const values = e.target.value.split("\n").map(v => v.trim()).filter(Boolean);
-    onChange(JSON.stringify(values));
-  }, [onChange]);
-
   return (
     <textarea
       rows={rows || 6}
-      value={displayValue}
-      onChange={handleChange}
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
       className={`mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500 ${className || ""}`}
       placeholder={placeholder}
     />
@@ -54,31 +39,17 @@ const JsonArrayTextarea = memo(({ value, onChange, rows, placeholder, className 
 });
 JsonArrayTextarea.displayName = "JsonArrayTextarea";
 
-// Stable component for comma-separated inputs
+// Stable component for comma-separated inputs (now accepting raw text)
 const CommaSeparatedInput = memo(({ value, onChange, placeholder }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
 }) => {
-  const displayValue = useMemo(() => {
-    try {
-      const parsed = JSON.parse(value);
-      return Array.isArray(parsed) ? parsed.join(", ") : value;
-    } catch {
-      return value.replace(/[\[\]"]/g, "").replace(/,/g, ", ");
-    }
-  }, [value]);
-
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const values = e.target.value.split(",").map(v => v.trim()).filter(Boolean);
-    onChange(JSON.stringify(values));
-  }, [onChange]);
-
   return (
     <input
       type="text"
-      value={displayValue}
-      onChange={handleChange}
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
       className="mt-1 w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500"
       placeholder={placeholder}
     />
@@ -588,18 +559,31 @@ export default function AdminTourEditorPage() {
   }, []);
 
   const hydrateTour = useCallback((data: any) => {
-    // Helper to parse JSON fields safely
-    const parseJsonField = (value: any, defaultValue: string = "[]") => {
-      if (!value) return defaultValue;
+    // Helper to format JSON fields to raw text
+    const formatNewlineList = (value: any) => {
+      if (!value) return "";
       if (typeof value === "string") {
         try {
-          JSON.parse(value);
-          return value;
+          const parsed = JSON.parse(value);
+          return Array.isArray(parsed) ? parsed.join("\n") : value;
         } catch {
-          return defaultValue;
+          return value;
         }
       }
-      return JSON.stringify(value);
+      return Array.isArray(value) ? value.join("\n") : "";
+    };
+
+    const formatCommaList = (value: any) => {
+      if (!value) return "";
+      if (typeof value === "string") {
+        try {
+          const parsed = JSON.parse(value);
+          return Array.isArray(parsed) ? parsed.join(", ") : value;
+        } catch {
+          return value;
+        }
+      }
+      return Array.isArray(value) ? value.join(", ") : "";
     };
 
     setFormData({
@@ -612,18 +596,18 @@ export default function AdminTourEditorPage() {
       description: data.description ?? "",
       tourType: data.tourType ?? "",
       tourSubType: data.tourSubType ?? "",
-      bestFor: parseJsonField(data.bestFor),
+      bestFor: formatNewlineList(data.bestFor),
 
       // Destination & Categorization
       destination: data.destination ?? "",
       primaryDestination: data.primaryDestination ?? "",
       destinationCountry: data.destinationCountry ?? "",
       destinationState: data.destinationState ?? "",
-      citiesCovered: parseJsonField(data.citiesCovered),
+      citiesCovered: formatCommaList(data.citiesCovered),
       region: data.region ?? "",
-      regionTags: parseJsonField(data.regionTags),
+      regionTags: formatCommaList(data.regionTags),
       categoryId: data.categoryId ?? "",
-      themes: parseJsonField(data.themes),
+      themes: formatCommaList(data.themes),
 
       // Duration & Group Size
       duration: data.duration ?? "",
@@ -641,10 +625,10 @@ export default function AdminTourEditorPage() {
       originalPrice: data.originalPrice ?? null,
       currency: data.currency ?? "INR",
       packageType: data.packageType ?? "",
-      seasonalPricing: parseJsonField(data.seasonalPricing, "{}"),
+      seasonalPricing: typeof data.seasonalPricing === 'string' ? data.seasonalPricing : JSON.stringify(data.seasonalPricing || {}),
 
       // Dates & Availability
-      availableDates: parseJsonField(data.availableDates),
+      availableDates: formatNewlineList(data.availableDates),
       bookingDeadline: data.bookingDeadline ? new Date(data.bookingDeadline).toISOString().split("T")[0] : "",
       status: data.status ?? (data.isActive ? "active" : "inactive"),
       isActive: data.isActive ?? true,
@@ -657,18 +641,18 @@ export default function AdminTourEditorPage() {
 
       // Content
       overview: data.overview ?? "",
-      highlights: parseJsonField(data.highlights),
-      inclusions: parseJsonField(data.inclusions),
-      exclusions: parseJsonField(data.exclusions),
-      itinerary: parseJsonField(data.itinerary),
+      highlights: formatNewlineList(data.highlights),
+      inclusions: formatNewlineList(data.inclusions),
+      exclusions: formatNewlineList(data.exclusions),
+      itinerary: formatNewlineList(data.itinerary),
       importantNotes: data.importantNotes ?? "",
-      hotelCategories: parseJsonField(data.hotelCategories),
-      customizationOptions: parseJsonField(data.customizationOptions, "{}"),
+      hotelCategories: formatCommaList(data.hotelCategories),
+      customizationOptions: typeof data.customizationOptions === 'string' ? data.customizationOptions : JSON.stringify(data.customizationOptions || {}),
       bookingPolicies: data.bookingPolicies ?? "",
       cancellationTerms: data.cancellationTerms ?? "",
-      amenities: parseJsonField(data.amenities),
+      amenities: formatNewlineList(data.amenities),
       showAmenities: data.showAmenities ?? false,
-      optionalActivities: parseJsonField(data.optionalActivities),
+      optionalActivities: typeof data.optionalActivities === 'string' ? data.optionalActivities : JSON.stringify(data.optionalActivities || []),
       showOptionalActivities: data.showOptionalActivities ?? false,
 
       // Images & Media
@@ -694,7 +678,7 @@ export default function AdminTourEditorPage() {
             }
           })()
           : "",
-      images: parseJsonField(data.images),
+      images: formatNewlineList(data.images),
       ogImage: data.ogImage ?? "",
       twitterImage: data.twitterImage ?? "",
       mapLogisticsImageUrl: data.mapLogisticsImageUrl ?? "",
@@ -721,7 +705,7 @@ export default function AdminTourEditorPage() {
         console.error("Error parsing itinerary JSON:", e);
       }
     }
-    
+
     if (itineraryDays.length > 0) {
       // Use itinerary JSON format (new format with activities, meals, accommodation)
       setDays(
@@ -884,7 +868,7 @@ export default function AdminTourEditorPage() {
     event.preventDefault();
     setSaving(true);
     try {
-      // Helper to parse JSON strings safely
+      // Helper to parse JSON strings safely (for actual JSON fields)
       const parseJsonString = (value: string, defaultValue: any = null) => {
         if (!value || value.trim() === "") return defaultValue;
         try {
@@ -894,8 +878,21 @@ export default function AdminTourEditorPage() {
         }
       };
 
+      // Helper to split newline-separated strings
+      const splitNewlineList = (value: string) => {
+        if (!value) return [];
+        return value.split("\n").map(s => s.trim()).filter(Boolean);
+      };
+
+      // Helper to split comma-separated strings
+      const splitCommaList = (value: string) => {
+        if (!value) return [];
+        return value.split(",").map(s => s.trim()).filter(Boolean);
+      };
+
       // Convert gallery URLs to JSON array
-      const galleryUrls = galleryArray.length > 0 ? galleryArray : parseJsonString(formData.images, []);
+      // formData.images is now a newline separated string from formatNewlineList in hydrateTour
+      const galleryUrls = galleryArray.length > 0 ? galleryArray : splitNewlineList(formData.images);
 
       const payload: any = {
         // Basic Info
@@ -907,18 +904,18 @@ export default function AdminTourEditorPage() {
         description: formData.description || null,
         tourType: formData.tourType || null,
         tourSubType: formData.tourSubType || null,
-        bestFor: parseJsonString(formData.bestFor, []),
+        bestFor: splitNewlineList(formData.bestFor),
 
         // Destination & Categorization
         destination: formData.destination,
         primaryDestination: formData.primaryDestination || null,
         destinationCountry: formData.destinationCountry || null,
         destinationState: formData.destinationState || null,
-        citiesCovered: parseJsonString(formData.citiesCovered, []),
+        citiesCovered: splitCommaList(formData.citiesCovered),
         region: formData.region || null,
-        regionTags: parseJsonString(formData.regionTags, []),
+        regionTags: splitCommaList(formData.regionTags),
         categoryId: formData.categoryId || null,
-        themes: parseJsonString(formData.themes, []),
+        themes: splitCommaList(formData.themes),
 
         // Duration & Group Size
         duration: formData.duration,
@@ -939,7 +936,7 @@ export default function AdminTourEditorPage() {
         seasonalPricing: parseJsonString(formData.seasonalPricing, {}),
 
         // Dates & Availability
-        availableDates: parseJsonString(formData.availableDates, []),
+        availableDates: splitNewlineList(formData.availableDates),
         bookingDeadline: formData.bookingDeadline ? new Date(formData.bookingDeadline).toISOString() : null,
         status: formData.status || (formData.isActive ? "active" : "inactive"),
         isActive: formData.isActive,
@@ -952,15 +949,15 @@ export default function AdminTourEditorPage() {
 
         // Content
         overview: formData.overview || null,
-        highlights: parseJsonString(formData.highlights, []),
-        inclusions: parseJsonString(formData.inclusions, []),
-        exclusions: parseJsonString(formData.exclusions, []),
+        highlights: splitNewlineList(formData.highlights),
+        inclusions: splitNewlineList(formData.inclusions),
+        exclusions: splitNewlineList(formData.exclusions),
         importantNotes: formData.importantNotes || null,
-        hotelCategories: parseJsonString(formData.hotelCategories, []),
+        hotelCategories: splitCommaList(formData.hotelCategories),
         customizationOptions: parseJsonString(formData.customizationOptions, {}),
         bookingPolicies: formData.bookingPolicies || null,
         cancellationTerms: formData.cancellationTerms || null,
-        amenities: parseJsonString(formData.amenities, []),
+        amenities: splitNewlineList(formData.amenities),
         showAmenities: formData.showAmenities,
         optionalActivities: parseJsonString(formData.optionalActivities, []),
         showOptionalActivities: formData.showOptionalActivities,
@@ -2366,7 +2363,7 @@ const ItineraryTab = memo(({
 
     const csv = [
       headers.join(","),
-      ...exampleRows.map(row => 
+      ...exampleRows.map(row =>
         headers.map(h => {
           const val = row[h as keyof typeof row] || "";
           if (val.includes(",") || val.includes('"') || val.includes("\n")) {
@@ -2395,7 +2392,7 @@ const ItineraryTab = memo(({
     const headers = ["Day Number", "Title", "Description", "Activities", "Meals", "Accommodation"];
     const csv = [
       headers.join(","),
-      ...days.map(day => 
+      ...days.map(day =>
         headers.map(h => {
           let val = "";
           if (h === "Day Number") val = String(day.dayIndex);
@@ -2456,17 +2453,17 @@ const ItineraryTab = memo(({
       // Parse activities (semicolon-separated)
       const activities: string[] = activitiesStr
         ? String(activitiesStr)
-            .split(";")
-            .map(a => a.trim())
-            .filter(a => a.length > 0)
+          .split(";")
+          .map(a => a.trim())
+          .filter(a => a.length > 0)
         : [];
 
       // Parse meals (semicolon-separated)
       const meals: string[] = mealsStr
         ? String(mealsStr)
-            .split(";")
-            .map(m => m.trim())
-            .filter(m => m.length > 0)
+          .split(";")
+          .map(m => m.trim())
+          .filter(m => m.length > 0)
         : [];
 
       importedDays.push({
@@ -2503,7 +2500,7 @@ const ItineraryTab = memo(({
     );
 
     onImportCSV(importedDays, replace);
-    
+
     alert(`Successfully imported ${importedDays.length} day(s).`);
   }, [days.length, onImportCSV]);
 
@@ -2519,7 +2516,7 @@ const ItineraryTab = memo(({
     setImporting(true);
     try {
       const rows = await parseCSV(file);
-      
+
       if (rows.length === 0) {
         alert("CSV file is empty or invalid.");
         setImporting(false);
@@ -2527,7 +2524,7 @@ const ItineraryTab = memo(({
       }
 
       await processCSVRows(rows);
-      
+
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -2562,18 +2559,18 @@ const ItineraryTab = memo(({
     setImporting(true);
     try {
       const trimmedContent = pastedCSV.trim();
-      
+
       // Check if content is JSON (starts with [ or {)
       const isJSON = trimmedContent.startsWith("[") || trimmedContent.startsWith("{");
-      
+
       if (isJSON) {
         try {
           // Try to parse as JSON
           const jsonData = JSON.parse(trimmedContent);
-          
+
           // Handle both array and single object
           const items = Array.isArray(jsonData) ? jsonData : [jsonData];
-          
+
           if (items.length === 0) {
             alert("JSON is empty. Please provide at least one itinerary day.");
             setImporting(false);
@@ -2590,7 +2587,7 @@ const ItineraryTab = memo(({
             meals: Array.isArray(item.meals) ? item.meals : [],
             accommodation: item.accommodation ?? "",
           }));
-          
+
           if (importedDays.length === 0) {
             alert("No valid itinerary days found in JSON.");
             setImporting(false);
@@ -2616,9 +2613,9 @@ const ItineraryTab = memo(({
           );
 
           onImportCSV(validDays, replace);
-          
+
           alert(`Successfully imported ${validDays.length} day(s) from JSON.`);
-          
+
           // Clear pasted content
           setPastedCSV("");
           setShowPasteMode(false);
@@ -2634,7 +2631,7 @@ const ItineraryTab = memo(({
       if (!isJSON) {
         // Parse CSV text using PapaParse
         const Papa = (await import("papaparse")).default;
-        
+
         const parsePromise = new Promise<any[]>((resolve, reject) => {
           Papa.parse(trimmedContent, {
             header: true,
@@ -2685,7 +2682,7 @@ const ItineraryTab = memo(({
         }
 
         await processCSVRows(validRows as any[]);
-        
+
         // Clear pasted content
         setPastedCSV("");
         setShowPasteMode(false);
@@ -2730,11 +2727,10 @@ const ItineraryTab = memo(({
           <button
             type="button"
             onClick={() => setShowPasteMode(!showPasteMode)}
-            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm ${
-              showPasteMode 
-                ? "bg-primary-600 text-white hover:bg-primary-700" 
-                : "bg-neutral-50 text-neutral-700 hover:bg-neutral-100"
-            }`}
+            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm ${showPasteMode
+              ? "bg-primary-600 text-white hover:bg-primary-700"
+              : "bg-neutral-50 text-neutral-700 hover:bg-neutral-100"
+              }`}
           >
             {showPasteMode ? <FileText size={16} /> : <Upload size={16} />}
             {showPasteMode ? "Upload File" : "Paste CSV"}
@@ -2763,7 +2759,7 @@ const ItineraryTab = memo(({
           </button>
         </div>
       </div>
-      
+
       {showPasteMode && (
         <div className="border border-primary-200 rounded-lg p-4 bg-primary-50/50 space-y-3">
           <div>
@@ -2786,9 +2782,9 @@ Day Number,Title,Description,Activities,Meals,Accommodation
               className="w-full border border-neutral-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent font-mono text-sm"
             />
             <p className="mt-1 text-xs text-neutral-500">
-              Paste your content here. Supports two formats:<br/>
-              1. <strong>JSON</strong> - Array of itinerary objects (automatically detected)<br/>
-              2. <strong>CSV</strong> - With header row: Day Number,Title,Description,Activities,Meals,Accommodation<br/>
+              Paste your content here. Supports two formats:<br />
+              1. <strong>JSON</strong> - Array of itinerary objects (automatically detected)<br />
+              2. <strong>CSV</strong> - With header row: Day Number,Title,Description,Activities,Meals,Accommodation<br />
               Activities and Meals in CSV should be semicolon-separated.
             </p>
           </div>
