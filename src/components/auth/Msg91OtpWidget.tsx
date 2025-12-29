@@ -51,7 +51,10 @@ export default function Msg91OtpWidget({
                     },
                     failure: (error: any) => {
                         console.error("[MSG91] Widget Failure:", error);
-                        if (isMounted && onFailure) onFailure(error);
+                        // Delay failure handling to allow widget to close properly
+                        setTimeout(() => {
+                            if (isMounted && onFailure) onFailure(error);
+                        }, 100);
                     },
                 };
 

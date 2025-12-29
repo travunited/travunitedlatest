@@ -253,8 +253,22 @@ export function UnifiedAuthModal({
         }
     }, [mode, formData.name, router, onSuccess, onClose]);
 
+    // Handle Phone OTP Failure
     const handlePhoneFailure = useCallback((err: any) => {
-        setError(err.message || "OTP verification failed");
+        // Log the error but don't show it immediately if it's a user cancellation
+        console.error("OTP verification failed:", err);
+
+        // If user cancelled, just reset the view so they can try again
+        if (err?.closeByUser || err?.message?.includes("cancelled")) {
+            setOtpRequested(false);
+            return;
+        }
+
+        setError(err?.message || "OTP verification failed");
+        // Don't unmount immediately to avoid widget issues
+        setTimeout(() => {
+            setOtpRequested(false);
+        }, 100);
     }, []);
 
     if (!isOpen) return null;
