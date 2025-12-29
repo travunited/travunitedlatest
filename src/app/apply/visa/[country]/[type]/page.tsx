@@ -88,6 +88,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   } | null>(null);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
 
+  const isFreeVisa = visaInfo?.priceInInr === 0;
+
   type FormDataTraveller = {
     id: string;
     firstName: string;
@@ -2208,7 +2210,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                               <button
                                 onClick={() =>
                                   setPreviewModal({
-                                    url: currentDoc.preview,
+                                    url: currentDoc.preview || "",
                                     fileName: currentDoc.file?.name || req.name,
                                   })
                                 }
@@ -2303,7 +2305,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                                 <button
                                   onClick={() =>
                                     setPreviewModal({
-                                      url: currentDoc.preview,
+                                      url: currentDoc.preview || "",
                                       fileName: currentDoc.file?.name || req.name,
                                     })
                                   }
