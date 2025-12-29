@@ -44,6 +44,7 @@ export function UnifiedAuthModal({
         confirmPassword: "",
         phone: "",
     });
+    const [otpRequested, setOtpRequested] = useState(false);
 
     // UI state
     const [error, setError] = useState("");
@@ -293,20 +294,20 @@ export function UnifiedAuthModal({
                         <div className="flex p-1 bg-neutral-100 rounded-xl mb-6">
                             <button
                                 type="button"
-                                onClick={() => { setMode("login"); setError(""); }}
+                                onClick={() => { setMode("login"); setError(""); setOtpRequested(false); }}
                                 className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === "login"
-                                        ? "bg-white text-primary-600 shadow-sm"
-                                        : "text-neutral-600 hover:text-neutral-900"
+                                    ? "bg-white text-primary-600 shadow-sm"
+                                    : "text-neutral-600 hover:text-neutral-900"
                                     }`}
                             >
                                 Login
                             </button>
                             <button
                                 type="button"
-                                onClick={() => { setMode("signup"); setError(""); }}
+                                onClick={() => { setMode("signup"); setError(""); setOtpRequested(false); }}
                                 className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === "signup"
-                                        ? "bg-white text-primary-600 shadow-sm"
-                                        : "text-neutral-600 hover:text-neutral-900"
+                                    ? "bg-white text-primary-600 shadow-sm"
+                                    : "text-neutral-600 hover:text-neutral-900"
                                     }`}
                             >
                                 Sign Up
@@ -317,10 +318,10 @@ export function UnifiedAuthModal({
                         <div className="flex p-1 bg-neutral-100 rounded-xl mb-6">
                             <button
                                 type="button"
-                                onClick={() => { setMethod("email"); setError(""); }}
+                                onClick={() => { setMethod("email"); setError(""); setOtpRequested(false); }}
                                 className={`flex-1 flex items-center justify-center space-x-2 py-2 text-sm font-medium rounded-lg transition-all ${method === "email"
-                                        ? "bg-white text-primary-600 shadow-sm"
-                                        : "text-neutral-600 hover:text-neutral-900"
+                                    ? "bg-white text-primary-600 shadow-sm"
+                                    : "text-neutral-600 hover:text-neutral-900"
                                     }`}
                             >
                                 <Mail size={16} />
@@ -328,10 +329,10 @@ export function UnifiedAuthModal({
                             </button>
                             <button
                                 type="button"
-                                onClick={() => { setMethod("phone"); setError(""); }}
+                                onClick={() => { setMethod("phone"); setError(""); setOtpRequested(false); }}
                                 className={`flex-1 flex items-center justify-center space-x-2 py-2 text-sm font-medium rounded-lg transition-all ${method === "phone"
-                                        ? "bg-white text-primary-600 shadow-sm"
-                                        : "text-neutral-600 hover:text-neutral-900"
+                                    ? "bg-white text-primary-600 shadow-sm"
+                                    : "text-neutral-600 hover:text-neutral-900"
                                     }`}
                             >
                                 <Smartphone size={16} />
@@ -473,16 +474,42 @@ export function UnifiedAuthModal({
                                         <input
                                             type="tel"
                                             value={formData.phone}
-                                            onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+                                            onChange={(e) => {
+                                                setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) });
+                                                setOtpRequested(false);
+                                            }}
                                             className="w-full pl-16 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 tracking-wider"
                                             placeholder="9876543210"
+                                            disabled={otpRequested}
                                         />
                                     </div>
-                                    <p className="mt-2 text-xs text-neutral-500">We&rsquo;ll send a secure OTP to this number</p>
+                                    {!otpRequested && (
+                                        <p className="mt-2 text-xs text-neutral-500">We&rsquo;ll send a secure OTP to this number</p>
+                                    )}
                                 </div>
 
-                                {formData.phone.length === 10 && (
-                                    <div className="animate-fade-in">
+                                {!otpRequested ? (
+                                    <button
+                                        type="button"
+                                        disabled={formData.phone.length < 10 || loading}
+                                        onClick={() => setOtpRequested(true)}
+                                        className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                                    >
+                                        <span>Request OTP</span>
+                                        <ArrowRight size={20} />
+                                    </button>
+                                ) : (
+                                    <div className="animate-fade-in space-y-3">
+                                        <div className="flex justify-between items-center text-sm">
+                                            <span className="text-neutral-600">Enter OTP sent to +91 {formData.phone}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setOtpRequested(false)}
+                                                className="text-primary-600 hover:text-primary-700 font-semibold"
+                                            >
+                                                Change
+                                            </button>
+                                        </div>
                                         <Msg91OtpWidget
                                             identifier={`91${formData.phone}`}
                                             onSuccess={handlePhoneSuccess}
