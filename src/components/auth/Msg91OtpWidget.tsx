@@ -44,8 +44,8 @@ export default function Msg91OtpWidget({
                 window.configuration = {
                     widgetId: WIDGET_ID,
                     tokenAuth: TOKEN_AUTH,
+                    tokenAuth: TOKEN_AUTH,
                     identifier: identifier || "",
-                    exposeMethods: true,
                     success: (data: any) => {
                         console.log("[MSG91] Widget Success:", data);
                         if (isMounted) onSuccess(data);
