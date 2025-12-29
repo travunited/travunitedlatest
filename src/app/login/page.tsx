@@ -19,6 +19,7 @@ function LoginPageContent() {
 
   const [loginMethod, setLoginMethod] = useState<"email" | "mobile">("email");
   const [phone, setPhone] = useState("");
+  const [otpRequested, setOtpRequested] = useState(false);
 
   const handlePostLogin = () => {
     // Wait a moment for session to update, then check for guest applications and redirect
@@ -162,6 +163,7 @@ function LoginPageContent() {
                 setLoginMethod("email");
                 setError("");
                 setSuccess("");
+                setOtpRequested(false);
               }}
               className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${loginMethod === "email"
                 ? "bg-white text-primary-600 shadow-md transform scale-[1.02]"
@@ -177,6 +179,7 @@ function LoginPageContent() {
                 setLoginMethod("mobile");
                 setError("");
                 setSuccess("");
+                setOtpRequested(false);
               }}
               className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${loginMethod === "mobile"
                 ? "bg-white text-primary-600 shadow-md transform scale-[1.02]"
@@ -281,16 +284,42 @@ function LoginPageContent() {
                     <input
                       type="tel"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      onChange={(e) => {
+                        setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                        setOtpRequested(false);
+                      }}
                       className="w-full pl-16 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none font-bold tracking-wider"
                       placeholder="9876543210"
+                      disabled={otpRequested}
                     />
                   </div>
-                  <p className="mt-2 text-xs text-neutral-600 font-medium">We&rsquo;ll send a secure OTP to this number</p>
+                  {!otpRequested && (
+                    <p className="mt-2 text-xs text-neutral-600 font-medium">We&rsquo;ll send a secure OTP to this number</p>
+                  )}
                 </div>
 
-                {phone.length === 10 && (
-                  <div className="animate-slide-up">
+                {!otpRequested ? (
+                  <button
+                    type="button"
+                    disabled={phone.length < 10 || loading}
+                    onClick={() => setOtpRequested(true)}
+                    className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none"
+                  >
+                    <span>Request OTP</span>
+                    <ArrowRight size={22} />
+                  </button>
+                ) : (
+                  <div className="animate-slide-up space-y-4">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-neutral-600">Enter OTP sent to +91 {phone}</span>
+                      <button
+                        type="button"
+                        onClick={() => setOtpRequested(false)}
+                        className="text-primary-600 hover:text-primary-700 font-semibold"
+                      >
+                        Change
+                      </button>
+                    </div>
                     <Msg91OtpWidget
                       identifier={`91${phone}`}
                       onSuccess={handleMobileLoginSuccess}
