@@ -283,7 +283,7 @@ export default function AdminVisaEditorPage() {
 
   // Custom save handler that shows feedback
   const handleAutoSave = useCallback(() => {
-    if (!isInitialized || isRestoringRef.current || typeof window === "undefined") {
+    if (!isInitialized || isRestoringRef.current || typeof window === "undefined" || isNew) {
       return;
     }
 
@@ -424,13 +424,11 @@ export default function AdminVisaEditorPage() {
       }
     };
 
-    // For new forms, restore immediately
+    // For new forms, no draft restoration
     if (isNew) {
-      const restored = restoreDraft();
-      // Mark as initialized after restore completes
       setTimeout(() => {
         setIsInitialized(true);
-      }, restored ? 300 : 100);
+      }, 100);
     }
     // For existing forms, restore will happen in hydrateFromVisa
   }, [isNew, formPersistenceKey, isInitialized]);
@@ -488,19 +486,22 @@ export default function AdminVisaEditorPage() {
     let draftData: any = null;
     let shouldUseDraft = false;
 
-    try {
-      const stored = localStorage.getItem(draftKey);
-      if (stored) {
-        draftData = JSON.parse(stored);
-        const draftSavedAt = draftData._savedAt;
-        // If draft exists and is recent (within 7 days), merge it with server data
-        if (draftSavedAt && Date.now() - draftSavedAt < 7 * 24 * 60 * 60 * 1000) {
-          shouldUseDraft = true;
-          console.log("Found draft to merge with server data for existing visa");
+    // Only check drafts for existing visas, not new ones
+    if (!isNew) {
+      try {
+        const stored = localStorage.getItem(draftKey);
+        if (stored) {
+          draftData = JSON.parse(stored);
+          const draftSavedAt = draftData._savedAt;
+          // If draft exists and is recent (within 7 days), merge it with server data
+          if (draftSavedAt && Date.now() - draftSavedAt < 7 * 24 * 60 * 60 * 1000) {
+            shouldUseDraft = true;
+            console.log("Found draft to merge with server data for existing visa");
+          }
         }
+      } catch (error) {
+        console.error("Error checking draft:", error);
       }
-    } catch (error) {
-      console.error("Error checking draft:", error);
     }
 
     isRestoringRef.current = true;
@@ -708,18 +709,29 @@ export default function AdminVisaEditorPage() {
 
   // Memoized handlers for specific fields to prevent inline function creation
   const updateProcessingTime = useCallback((value: string) => updateFormField("processingTime", value), [updateFormField]);
-  const updateStayDurationDays = useCallback((value: string) => {
+  const updateStayDurationDays = useCallback((value: number | null) => {
+    // Convert number to string for state
+    const strValue = value === null || value === undefined ? "" : String(value);
     setFormData((prev) => ({
       ...prev,
-      stayDurationDays: value,
-      stayDuration: value || prev.stayDuration
+      stayDurationDays: strValue,
+      // Auto-populate text field if it's empty or looks like a generated duration
+      stayDuration: (value && (!prev.stayDuration || prev.stayDuration.startsWith("Up to ")))
+        ? `Up to ${value} days`
+        : (value ? prev.stayDuration : "")
     }));
   }, []);
-  const updateValidityDays = useCallback((value: string) => {
+
+  const updateValidityDays = useCallback((value: number | null) => {
+    // Convert number to string for state
+    const strValue = value === null || value === undefined ? "" : String(value);
     setFormData((prev) => ({
       ...prev,
-      validityDays: value,
-      validity: value || prev.validity
+      validityDays: strValue,
+      // Auto-populate text field if it's empty or looks like a generated validity
+      validity: (value && (!prev.validity || prev.validity.includes("days from issue")))
+        ? `${value} days from issue`
+        : (value ? prev.validity : "")
     }));
   }, []);
 
@@ -1199,49 +1211,49 @@ export default function AdminVisaEditorPage() {
                       <label className="text-sm font-medium text-neutral-700">
                         Stay Duration
                       </label>
-                      <TextInput
-                        value={formData.stayDurationDays}
+                      <NumberInput
+                        min={0}
+                        value={formData.stayDurationDays ? parseInt(formData.stayDurationDays) : null}
                         onChange={updateStayDurationDays}
-                        placeholder="1825 days"
+                        placeholder="1825"
                       />
-                      <p className="text-xs text-neutral-500 mt-1">Duration allowed to stay (e.g., "1825 days", "5 years")</p>
+                      <p className="text-xs text-neutral-500 mt-1">Duration allowed to stay (in days)</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-neutral-700">
                         Validity (from Issue)
                       </label>
-                      <TextInput
-                        value={formData.validityDays}
+                      <NumberInput
+                        min={0}
+                        value={formData.validityDays ? parseInt(formData.validityDays) : null}
                         onChange={updateValidityDays}
-                        placeholder="1825 days from issue"
+                        placeholder="1825"
                       />
-                      <p className="text-xs text-neutral-500 mt-1">Validity period from date of issue (e.g., "1825 days from issue", "5 years")</p>
+                      <p className="text-xs text-neutral-500 mt-1">Validity period from date of issue (in days)</p>
                     </div>
                   </div>
                   <div className="mt-4 grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-neutral-700">
-                        Stay Duration (Legacy Text)
+                        Stay Duration (Displayed Text)
                       </label>
                       <TextInput
                         value={formData.stayDuration}
                         onChange={(value) => updateFormField("stayDuration", value)}
-                        className="bg-neutral-50"
                         placeholder="Up to 30 days"
-                        disabled
                       />
+                      <p className="text-xs text-neutral-500 mt-1">Override the text displayed to the user</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-neutral-700">
-                        Validity (Legacy Text)
+                        Validity (Displayed Text)
                       </label>
                       <TextInput
                         value={formData.validity}
                         onChange={(value) => updateFormField("validity", value)}
-                        className="bg-neutral-50"
                         placeholder="60 days from issue"
-                        disabled
                       />
+                      <p className="text-xs text-neutral-500 mt-1">Override the text displayed to the user</p>
                     </div>
                   </div>
                 </div>

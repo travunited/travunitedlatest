@@ -200,9 +200,9 @@ export default async function VisaDetailPage({
     ? `${visa.validityDays} days from issue`
     : visa.validity || "Not specified";
 
-  // Check if this is an information-only visa (VOA only - VISA_FREE_ENTRY can have applications)
-  const isInformationOnly = visa.visaMode === "VOA";
-  const isVisaFreeEntry = visa.visaMode === "VISA_FREE_ENTRY";
+  // Check if this is an information-only visa (VOA or Visa Free Entry)
+  const isInformationOnly = visa.visaMode === "VOA" || visa.visaMode === "VISA_FREE_ENTRY";
+  // const isVisaFreeEntry = visa.visaMode === "VISA_FREE_ENTRY"; // redundant now if we group them, but useful if text differs slightly
 
   return (
     <VisaDetailClient searchParams={searchParams}>
@@ -351,10 +351,9 @@ export default async function VisaDetailPage({
                     {isInformationOnly && (
                       <div className={`p-3 bg-white rounded border border-amber-300 ${visa.importantNotes ? 'mt-4' : ''}`}>
                         <p className="text-sm text-neutral-700">
-                          <strong>Important:</strong> This visa is issued after arrival in the destination country.
-                          Immigration officers have discretion in issuing visas upon arrival.
-                          Ensure you have all required documents and meet entry conditions.
-                          Charges, if any, are payable directly at the immigration counter.
+                          <strong>Important:</strong> This entry type is obtained on arrival or requires no prior visa.
+                          Immigration officers have discretion in granting entry.
+                          Ensure you have all required documents and meet regular entry conditions.
                         </p>
                       </div>
                     )}
@@ -405,7 +404,7 @@ export default async function VisaDetailPage({
                       <div>
                         <h3 className="font-semibold text-amber-900 mb-1">Information Only</h3>
                         <p className="text-sm text-amber-800">
-                          This visa is issued after arrival in the destination country. No online application or payment is required or accepted on this platform.
+                          This is an information-only page. No online application or payment is required or accepted on this platform for this entry type.
                         </p>
                       </div>
                     </div>
