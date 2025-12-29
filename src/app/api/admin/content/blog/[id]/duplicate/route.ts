@@ -44,6 +44,7 @@ export async function POST(
 
         const newPost = await prisma.blogPost.create({
             data: {
+                id: crypto.randomUUID(),
                 title: newTitle,
                 slug: newSlug,
                 content: sourcePost.content,
@@ -58,6 +59,7 @@ export async function POST(
                 metaDescription: sourcePost.metaDescription,
                 focusKeyword: sourcePost.focusKeyword,
                 author: sourcePost.author,
+                updatedAt: new Date(),
             },
         });
 
