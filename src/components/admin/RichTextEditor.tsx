@@ -70,6 +70,7 @@ import {
   getMaxImageSizeDisplay,
 } from "@/lib/image-upload-config";
 import { getMediaProxyUrl, buildMediaProxyUrlFromKey } from "@/lib/media";
+import { compressImage } from "@/lib/image-compression";
 
 interface RichTextEditorProps {
   content: string;
@@ -154,8 +155,11 @@ export function RichTextEditor({
 
       setUploadingImage(true);
       try {
+        // Compress image before upload to avoid server limits
+        const compressedFile = await compressImage(file, { maxSizeMB: 1 });
+
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", compressedFile);
         formData.append("folder", "blog");
         formData.append("scope", "content");
 

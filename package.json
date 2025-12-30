@@ -30,6 +30,7 @@
     "@types/pdfkit": "^0.17.3",
     "autoprefixer": "^10.4.19",
     "bcryptjs": "^2.4.3",
+    "browser-image-compression": "^2.0.2",
     "date-fns": "^3.6.0",
     "framer-motion": "^11.3.19",
     "lucide-react": "^0.427.0",

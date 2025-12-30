@@ -17,6 +17,7 @@ import {
   getAllowedImageFormats,
   getMaxImageSizeDisplay,
 } from "@/lib/image-upload-config";
+import { compressImage } from "@/lib/image-compression";
 
 interface BlogPost {
   id: string;
@@ -236,8 +237,11 @@ export default function AdminBlogEditPage() {
     setCoverUploading(true);
     setCoverUploadError(null);
     try {
+      // Compress image before upload to avoid server limits (e.g. 413 Payload Too Large)
+      const compressedFile = await compressImage(file, { maxSizeMB: 1 }); // Target 1MB to be safe
+
       const payload = new FormData();
-      payload.append("file", file);
+      payload.append("file", compressedFile);
       payload.append("folder", "blog");
       payload.append("scope", "cover");
 
@@ -479,8 +483,8 @@ export default function AdminBlogEditPage() {
                         type="button"
                         onClick={() => setCoverImageMode("upload")}
                         className={`px-3 py-1.5 ${coverImageMode === "upload"
-                            ? "bg-primary-600 text-white"
-                            : "text-neutral-600"
+                          ? "bg-primary-600 text-white"
+                          : "text-neutral-600"
                           }`}
                       >
                         Upload
