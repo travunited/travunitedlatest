@@ -153,7 +153,7 @@ export default async function CountryVisasPage({
                         </div>
                       </div>
 
-                      {visa.validityDays && (
+                      {visa.validityDays != null && visa.validityDays > 0 && (
                         <div className="flex items-center group/item">
                           <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mr-4 group-hover/item:bg-amber-100 transition-colors">
                             <Calendar size={20} className="text-amber-600" />
