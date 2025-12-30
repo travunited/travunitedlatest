@@ -193,12 +193,12 @@ export default async function VisaDetailPage({
     subTypes: (visa as any).VisaSubType,
   } as any);
   const stayTypeDisplay = formatEnumLabel(visa.stayType ?? null, stayTypeLabels);
-  const stayDurationDisplay = visa.stayDurationDays
+  const stayDurationDisplay = visa.stayDuration || (visa.stayDurationDays
     ? `Up to ${visa.stayDurationDays} days`
-    : visa.stayDuration || "Not specified";
-  const validityDisplay = visa.validityDays
+    : "Not specified");
+  const validityDisplay = visa.validity || (visa.validityDays
     ? `${visa.validityDays} days from issue`
-    : visa.validity || "Not specified";
+    : "Not specified");
 
   // Check if this is an information-only visa (VOA or Visa Free Entry)
   const isInformationOnly = visa.visaMode === "VOA" || visa.visaMode === "VISA_FREE_ENTRY";
