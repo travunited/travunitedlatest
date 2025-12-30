@@ -11,6 +11,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         phone: { label: "Phone", type: "text" },
         otp: { label: "OTP", type: "text" },
+        name: { label: "Dispay Name", type: "text" },
       },
       async authorize(credentials) {
         try {
@@ -18,7 +19,7 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          let { phone, otp } = credentials;
+          let { phone, otp, name } = credentials;
 
           // Strict normalization
           phone = phone.replace(/\D/g, "");
@@ -51,15 +52,39 @@ export const authOptions: NextAuthOptions = {
           }
 
           // Find user by phone
-          const user = await prisma.user.findFirst({
+          let user = await prisma.user.findFirst({
             where: {
               phone: phone, // Strict match after normalization
-              isActive: true,
             },
           });
 
+          // Implicit Signup if user not found but name is provided
+          if (!user && name) {
+            const crypto = await import("crypto");
+            const randomPassword = crypto.randomBytes(16).toString("hex");
+            const passwordHash = await bcrypt.hash(randomPassword, 10);
+            const email = `${phone}@mobile.travunited.local`;
+
+            user = await prisma.user.create({
+              data: {
+                name: name,
+                email: email,
+                phone: phone,
+                passwordHash: passwordHash,
+                role: "CUSTOMER",
+                emailVerified: true,
+                phoneVerified: true,
+                isActive: true,
+              }
+            });
+          }
+
           if (!user) {
             throw new Error("USER_NOT_FOUND");
+          }
+
+          if (!user.isActive) {
+            throw new Error("USER_INACTIVE");
           }
 
           return {

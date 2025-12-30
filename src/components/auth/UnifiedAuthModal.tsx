@@ -179,72 +179,24 @@ export function UnifiedAuthModal({
             const verifiedPhone = data.mobileNumber || data.identifier;
             const token = data.access_token || data.token || "WIDGET_VERIFIED";
 
-            if (mode === "login") {
-                // Login with OTP
-                const result = await signIn("mobile-otp", {
-                    phone: verifiedPhone,
-                    otp: token,
-                    redirect: false,
-                });
+            // Unified Phone Login/Signup
+            // We pass the name so the server can simple create the user if they don't exist (Implicit Signup)
+            const result = await signIn("mobile-otp", {
+                phone: verifiedPhone,
+                otp: token,
+                name: formData.name, // Pass name for implicit signup
+                redirect: false,
+            });
 
-                if (result?.error) {
-                    if (result.error === "USER_NOT_FOUND") {
-                        setError("Account not found. Please sign up first.");
-                        setMode("signup");
-                    } else {
-                        setError("Authentication failed. Please try again.");
-                    }
+            if (result?.error) {
+                if (result.error === "USER_INACTIVE") {
+                    setError("Account is inactive. Please contact support.");
                 } else {
-                    await handleAuthSuccess();
+                    // If it fails with USER_NOT_FOUND, it means name wasn't provided (unlikely with UI) or db error
+                    setError("Authentication failed. Please try again.");
                 }
             } else {
-                // Signup with phone
-                const response = await fetch("/api/auth/signup", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        name: formData.name || "User",
-                        phone: verifiedPhone,
-                        verifyMethod: "mobile",
-                        accessToken: token,
-                    }),
-                });
-
-                const signupData = await response.json();
-
-                if (!response.ok) {
-                    if (signupData.error?.includes("already exists")) {
-                        // User exists, try to login instead
-                        const loginResult = await signIn("mobile-otp", {
-                            phone: verifiedPhone,
-                            otp: token,
-                            redirect: false,
-                        });
-
-                        if (loginResult?.ok) {
-                            await handleAuthSuccess();
-                        } else {
-                            setError("Account exists. Please login instead.");
-                            setMode("login");
-                        }
-                    } else {
-                        setError(signupData.error || "Signup failed");
-                    }
-                    return;
-                }
-
-                // Auto login after signup
-                const loginResult = await signIn("mobile-otp", {
-                    phone: verifiedPhone,
-                    otp: token,
-                    redirect: false,
-                });
-
-                if (loginResult?.ok) {
-                    await handleAuthSuccess();
-                } else {
-                    setError("Account created but login failed. Please try again.");
-                }
+                await handleAuthSuccess();
             }
         } catch (err) {
             setError("An error occurred. Please try again.");
