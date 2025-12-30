@@ -461,23 +461,22 @@ export function UnifiedAuthModal({
                         {/* Phone Form */}
                         {method === "phone" && (
                             <div className="space-y-4">
-                                {mode === "signup" && (
-                                    <div>
-                                        <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                            Full Name (Optional)
-                                        </label>
-                                        <div className="relative">
-                                            <User size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
-                                            <input
-                                                type="text"
-                                                value={formData.name}
-                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                                placeholder="John Doe"
-                                            />
-                                        </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                        Full Name
+                                    </label>
+                                    <div className="relative">
+                                        <User size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
+                                        <input
+                                            type="text"
+                                            autoFocus
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                                            placeholder="John Doe"
+                                        />
                                     </div>
-                                )}
+                                </div>
 
                                 <div>
                                     <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -487,7 +486,6 @@ export function UnifiedAuthModal({
                                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 font-semibold border-r border-neutral-300 pr-2">+91</span>
                                         <input
                                             type="tel"
-                                            autoFocus
                                             value={formData.phone}
                                             onChange={(e) => {
                                                 setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) });
