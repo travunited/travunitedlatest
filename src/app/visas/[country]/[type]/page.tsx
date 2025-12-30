@@ -503,7 +503,7 @@ export default async function VisaDetailPage({
                 {/* Share Button */}
                 <div className="mb-4">
                   <ShareButton
-                    url=""
+                    url={`/visas/${params.country}/${visa.slug}`}
                     title={visa.name}
                     description={visa.subtitle || visa.overview?.substring(0, 160)}
                     image={heroImageUrl || undefined}

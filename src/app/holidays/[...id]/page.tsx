@@ -669,7 +669,7 @@ function Hero({
           <div className="flex items-center justify-between mb-4">
             <BackToHolidaysButton />
             <ShareButton
-              url=""
+              url={`/holidays/${tour.slug}`}
               title={tour.name}
               description={tour.shortDescription || tour.description?.substring(0, 160)}
               image={heroImage && !heroImage.includes("unsplash") ? heroImage : undefined}
