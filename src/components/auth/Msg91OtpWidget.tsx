@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Msg91OtpWidgetProps {
     onSuccess: (data: any) => void;
@@ -25,6 +25,7 @@ export default function Msg91OtpWidget({
     identifier,
     className,
 }: Msg91OtpWidgetProps) {
+    const [isLoading, setIsLoading] = useState(true);
     const containerRef = useRef<HTMLDivElement>(null);
     const initializing = useRef(false);
 
@@ -59,11 +60,17 @@ export default function Msg91OtpWidget({
                 };
 
                 window.initSendOTP(window.configuration);
+
+                // Hide loader after a short delay to allow widget to paint
+                setTimeout(() => {
+                    if (isMounted) setIsLoading(false);
+                }, 500);
             }
         };
 
-        // Reset initialization flag on identifier change
+        // Reset initialization flag and loading state on identifier change
         initializing.current = false;
+        setIsLoading(true);
 
         if (typeof window.initSendOTP === "function") {
             initWidget();
@@ -77,6 +84,7 @@ export default function Msg91OtpWidget({
                 s.onerror = (e) => {
                     console.error("[MSG91] Script load error:", e);
                     if (isMounted && onFailure) onFailure(new Error("Failed to load OTP widget"));
+                    if (isMounted) setIsLoading(false);
                 };
                 document.head.appendChild(s);
             } else {
@@ -100,7 +108,12 @@ export default function Msg91OtpWidget({
     }, [onSuccess, onFailure, identifier]);
 
     return (
-        <div key={identifier} className={className}>
+        <div key={identifier} className={`${className} min-h-[200px] relative`}>
+            {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white z-10 rounded-lg">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                </div>
+            )}
             <div id="msg91-otp-widget" ref={containerRef} />
         </div>
     );

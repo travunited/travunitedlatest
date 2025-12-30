@@ -487,6 +487,7 @@ export function UnifiedAuthModal({
                                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 font-semibold border-r border-neutral-300 pr-2">+91</span>
                                         <input
                                             type="tel"
+                                            autoFocus
                                             value={formData.phone}
                                             onChange={(e) => {
                                                 setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) });
@@ -503,17 +504,32 @@ export function UnifiedAuthModal({
                                 </div>
 
                                 {!otpRequested ? (
-                                    <button
-                                        type="button"
-                                        disabled={formData.phone.length < 10 || loading}
-                                        onClick={() => setOtpRequested(true)}
-                                        className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                                    <motion.div
+                                        key="phone-input"
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        transition={{ duration: 0.2 }}
                                     >
-                                        <span>Request OTP</span>
-                                        <ArrowRight size={20} />
-                                    </button>
+                                        <button
+                                            type="button"
+                                            disabled={formData.phone.length < 10 || loading}
+                                            onClick={() => setOtpRequested(true)}
+                                            className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                                        >
+                                            <span>{loading ? "Requesting OTP..." : "Request OTP"}</span>
+                                            {!loading && <ArrowRight size={20} />}
+                                        </button>
+                                    </motion.div>
                                 ) : (
-                                    <div className="animate-fade-in space-y-3">
+                                    <motion.div
+                                        key="otp-widget"
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: 20 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="space-y-3"
+                                    >
                                         <div className="flex justify-between items-center text-sm">
                                             <span className="text-neutral-600">Enter OTP sent to +91 {formData.phone}</span>
                                             <button
@@ -530,7 +546,7 @@ export function UnifiedAuthModal({
                                             onFailure={handlePhoneFailure}
                                             className="w-full overflow-hidden rounded-lg"
                                         />
-                                    </div>
+                                    </motion.div>
                                 )}
                             </div>
                         )}
