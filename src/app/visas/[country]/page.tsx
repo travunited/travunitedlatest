@@ -153,14 +153,18 @@ export default async function CountryVisasPage({
                         </div>
                       </div>
 
-                      {visa.validityDays != null && visa.validityDays > 0 && (
+                      {((visa.validityDays != null && visa.validityDays > 0) || visa.validity) && (
                         <div className="flex items-center group/item">
                           <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mr-4 group-hover/item:bg-amber-100 transition-colors">
                             <Calendar size={20} className="text-amber-600" />
                           </div>
                           <div>
                             <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Validity</p>
-                            <p className="font-semibold text-neutral-800">{visa.validityDays} days from issue</p>
+                            <p className="font-semibold text-neutral-800">
+                              {visa.validityDays != null && visa.validityDays > 0
+                                ? `${visa.validityDays} days from issue`
+                                : visa.validity || "Not specified"}
+                            </p>
                           </div>
                         </div>
                       )}
