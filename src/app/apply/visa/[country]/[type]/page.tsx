@@ -61,6 +61,24 @@ const steps = [
 ];
 
 export default function VisaApplicationPage({ params }: { params: { country: string; type: string } }) {
+  // Validate params early
+  if (!params?.country || !params?.type) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-large p-8 text-center">
+          <h1 className="text-2xl font-bold text-neutral-900 mb-2">Invalid Visa Application</h1>
+          <p className="text-neutral-600 mb-6">The visa application link is invalid. Please select a visa from the visa page.</p>
+          <Link
+            href="/visas"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
+          >
+            Go to Visas
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -108,8 +126,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   };
 
   const buildInitialFormData = (): FormData => ({
-    country: params.country,
-    visaType: params.type,
+    country: params?.country || "",
+    visaType: params?.type || "",
     visaId: undefined,
     selectedSubTypeId: undefined,
     primaryContact: {
@@ -131,17 +149,17 @@ export default function VisaApplicationPage({ params }: { params: { country: str
 
   const perTravellerRequirements = useMemo(
     () =>
-      visaInfo?.requirements.filter(
+      (visaInfo?.requirements || []).filter(
         (req) => req.scope === "PER_TRAVELLER"
-      ) ?? [],
+      ),
     [visaInfo]
   );
 
   const perApplicationRequirements = useMemo(
     () =>
-      visaInfo?.requirements.filter(
+      (visaInfo?.requirements || []).filter(
         (req) => req.scope === "PER_APPLICATION"
-      ) ?? [],
+      ),
     [visaInfo]
   );
 
@@ -150,13 +168,17 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       ? `${requirementId}:traveller-${travellerId}`
       : `${requirementId}:application`;
 
-  const visaName = visaInfo?.name || `${params.country.toUpperCase()} Visa`;
+  const visaName = visaInfo?.name || `${params?.country?.toUpperCase() || "Visa"} Visa`;
   const visaPrice = visaInfo?.priceInInr ?? 0;
   const visaProcessing = visaInfo?.processingTime || "Processing time shared after review";
 
   const requirementMap = useMemo(() => {
     const map = new Map<string, VisaRequirement>();
-    visaInfo?.requirements.forEach((req) => map.set(req.id, req));
+    (visaInfo?.requirements || []).forEach((req) => {
+      if (req?.id) {
+        map.set(req.id, req);
+      }
+    });
     return map;
   }, [visaInfo]);
 
@@ -220,21 +242,36 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     let redirecting = false;
 
     async function loadVisa() {
+      if (!params?.country || !params?.type) {
+        setVisaLoading(false);
+        return;
+      }
+
       setVisaLoading(true);
       try {
         const response = await fetch(
-          `/api/visas/${params.country}/${params.type}`
+          `/api/visas/${encodeURIComponent(params.country)}/${encodeURIComponent(params.type)}`
         );
+        
         if (!response.ok) {
-          throw new Error("Visa not found");
+          if (response.status === 404) {
+            throw new Error("Visa not found");
+          }
+          throw new Error(`Failed to load visa: ${response.statusText}`);
         }
+        
         const data: VisaDetailsResponse = await response.json();
+        
         if (!isMounted) return;
+
+        // Validate data structure
+        if (!data || !data.id) {
+          throw new Error("Invalid visa data received");
+        }
 
         // Block VOA visas from application flow (VISA_FREE_ENTRY is allowed without payment)
         if (data.visaMode === "VOA") {
           redirecting = true;
-          // Use replace instead of push to avoid breaking back navigation
           router.replace(`/visas/${params.country}/${params.type}`);
           return;
         }
@@ -242,12 +279,12 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         setVisaInfo(data);
         setFormData((prev) => ({
           ...prev,
-          country: data.country.code.toLowerCase(),
-          visaType: data.slug,
+          country: data.country?.code?.toLowerCase() || params.country.toLowerCase(),
+          visaType: data.slug || params.type,
           visaId: data.id,
         }));
       } catch (error) {
-        console.error("Failed to load visa", error);
+        console.error("Failed to load visa:", error);
         if (isMounted && !redirecting) {
           redirecting = true;
           // Use replace instead of push to avoid breaking back navigation
@@ -259,12 +296,14 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         }
       }
     }
+    
     loadVisa();
+    
     return () => {
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.country, params.type, router]);
+  }, [params?.country, params?.type, router]);
 
   // Check email verification status if logged in
   useEffect(() => {
