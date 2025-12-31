@@ -33,9 +33,22 @@ function SignupPageContent() {
     setLoading(true);
     setError("");
 
+    // Validate name before proceeding
+    if (!name || name.trim().length < 2) {
+      setError("Please enter your full name (at least 2 characters)");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const verifiedPhone = data.mobileNumber || data.identifier;
-      const token = data.access_token || data.token;
+      const verifiedPhone = data.mobileNumber || data.identifier || data.phone;
+      const token = data.access_token || data.token || data.accessToken;
+
+      if (!verifiedPhone) {
+        setError("Phone number verification failed. Please try again.");
+        setLoading(false);
+        return;
+      }
 
       // Store verification state
       setMobileVerified(true);
@@ -45,7 +58,7 @@ function SignupPageContent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
+          name: name.trim(),
           phone: verifiedPhone,
           verifyMethod: "mobile",
           isVerified: true,
@@ -56,16 +69,21 @@ function SignupPageContent() {
       const result = await response.json();
 
       if (!response.ok) {
-        setError(result.error || "Signup failed");
+        setError(result.error || "Signup failed. Please try again.");
         setLoading(false);
+        setMobileVerified(false);
+        setMobileVerificationToken(null);
       } else {
         // Since mobile is already verified by widget, we can auto-login or redirect to login
         // For security, if the API doesn't auto-login, we redirect to login with a success msg
         router.push(`/login?email=${encodeURIComponent(verifiedPhone)}&verified=true`);
       }
     } catch (err) {
+      console.error("Mobile signup error:", err);
       setError("An error occurred. Please try again.");
       setLoading(false);
+      setMobileVerified(false);
+      setMobileVerificationToken(null);
     }
   }, [name, router]);
 
@@ -77,6 +95,13 @@ function SignupPageContent() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    // Validate name first
+    if (!name || name.trim().length < 2) {
+      setError("Please enter your full name (at least 2 characters)");
+      setLoading(false);
+      return;
+    }
 
     // For mobile signup, require verification through widget
     if (verifyMethod === "mobile") {
@@ -92,10 +117,22 @@ function SignupPageContent() {
       }
     }
 
-    if (verifyMethod === "email" && password !== confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
+    if (verifyMethod === "email") {
+      if (!email || !email.includes("@")) {
+        setError("Please enter a valid email address");
+        setLoading(false);
+        return;
+      }
+      if (!password || password.length < 8) {
+        setError("Password must be at least 8 characters");
+        setLoading(false);
+        return;
+      }
+      if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        setLoading(false);
+        return;
+      }
     }
 
     try {

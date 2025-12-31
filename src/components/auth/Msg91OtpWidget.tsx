@@ -28,43 +28,85 @@ export default function Msg91OtpWidget({
     const [isLoading, setIsLoading] = useState(true);
     const containerRef = useRef<HTMLDivElement>(null);
     const initializing = useRef(false);
+    const widgetInstance = useRef<any>(null);
 
     useEffect(() => {
         let isMounted = true;
+
+        // Validate identifier before proceeding
+        if (!identifier || identifier.length < 10) {
+            console.warn("[MSG91] Invalid identifier:", identifier);
+            if (isMounted && onFailure) {
+                onFailure(new Error("Please enter a valid mobile number"));
+            }
+            if (isMounted) setIsLoading(false);
+            return;
+        }
+
+        // Normalize identifier - ensure it's a valid phone number
+        const normalizedIdentifier = identifier.replace(/\D/g, "");
+        if (normalizedIdentifier.length < 10 || normalizedIdentifier.length > 12) {
+            console.warn("[MSG91] Invalid identifier format:", identifier);
+            if (isMounted && onFailure) {
+                onFailure(new Error("Please enter a valid 10-digit mobile number"));
+            }
+            if (isMounted) setIsLoading(false);
+            return;
+        }
 
         const initWidget = () => {
             if (!isMounted || !containerRef.current || initializing.current) return;
 
             if (typeof window.initSendOTP === "function") {
-                console.log("[MSG91] Initializing widget with identifier:", identifier);
+                console.log("[MSG91] Initializing widget with identifier:", normalizedIdentifier);
                 initializing.current = true;
 
-                // Clear container before initialization
-                containerRef.current.innerHTML = "";
+                try {
+                    // Clear container before initialization
+                    if (containerRef.current) {
+                        containerRef.current.innerHTML = "";
+                    }
 
-                window.configuration = {
-                    widgetId: WIDGET_ID,
-                    tokenAuth: TOKEN_AUTH,
-                    identifier: identifier || "",
-                    success: (data: any) => {
-                        console.log("[MSG91] Widget Success:", data);
-                        if (isMounted) onSuccess(data);
-                    },
-                    failure: (error: any) => {
-                        console.error("[MSG91] Widget Failure:", error);
-                        // Delay failure handling to allow widget to close properly
-                        setTimeout(() => {
-                            if (isMounted && onFailure) onFailure(error);
-                        }, 100);
-                    },
-                };
+                    window.configuration = {
+                        widgetId: WIDGET_ID,
+                        tokenAuth: TOKEN_AUTH,
+                        identifier: normalizedIdentifier,
+                        success: (data: any) => {
+                            console.log("[MSG91] Widget Success:", data);
+                            if (isMounted) {
+                                setIsLoading(false);
+                                onSuccess(data);
+                            }
+                        },
+                        failure: (error: any) => {
+                            console.error("[MSG91] Widget Failure:", error);
+                            if (isMounted) {
+                                setIsLoading(false);
+                                // Delay failure handling to allow widget to close properly
+                                setTimeout(() => {
+                                    if (isMounted && onFailure) {
+                                        onFailure(error);
+                                    }
+                                }, 100);
+                            }
+                        },
+                    };
 
-                window.initSendOTP(window.configuration);
+                    widgetInstance.current = window.initSendOTP(window.configuration);
 
-                // Hide loader after a short delay to allow widget to paint
-                setTimeout(() => {
-                    if (isMounted) setIsLoading(false);
-                }, 500);
+                    // Hide loader after a short delay to allow widget to paint
+                    setTimeout(() => {
+                        if (isMounted) setIsLoading(false);
+                    }, 500);
+                } catch (error: any) {
+                    console.error("[MSG91] Widget initialization error:", error);
+                    if (isMounted) {
+                        setIsLoading(false);
+                        if (onFailure) {
+                            onFailure(error);
+                        }
+                    }
+                }
             }
         };
 
@@ -80,7 +122,14 @@ export default function Msg91OtpWidget({
                 const s = document.createElement("script");
                 s.src = "https://control.msg91.com/app/assets/otp-provider/otp-provider.js";
                 s.async = true;
-                s.onload = () => { if (isMounted) initWidget(); };
+                s.onload = () => { 
+                    if (isMounted) {
+                        // Wait a bit for the script to fully initialize
+                        setTimeout(() => {
+                            if (isMounted) initWidget();
+                        }, 100);
+                    }
+                };
                 s.onerror = (e) => {
                     console.error("[MSG91] Script load error:", e);
                     if (isMounted && onFailure) onFailure(new Error("Failed to load OTP widget"));
@@ -92,7 +141,11 @@ export default function Msg91OtpWidget({
                 const interval = setInterval(() => {
                     if (typeof window.initSendOTP === "function") {
                         clearInterval(interval);
-                        if (isMounted) initWidget();
+                        if (isMounted) {
+                            setTimeout(() => {
+                                if (isMounted) initWidget();
+                            }, 100);
+                        }
                     }
                 }, 100);
                 return () => {
@@ -104,6 +157,11 @@ export default function Msg91OtpWidget({
 
         return () => {
             isMounted = false;
+            initializing.current = false;
+            // Clean up widget instance if it exists
+            if (containerRef.current) {
+                containerRef.current.innerHTML = "";
+            }
         };
     }, [onSuccess, onFailure, identifier]);
 

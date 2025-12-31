@@ -43,7 +43,13 @@ export async function POST(req: Request) {
     }
 
     const { name, email, password, phone, verifyMethod, isVerified, accessToken } = validatedData;
-    const normalizedName = name && name.trim() ? name.trim() : "User";
+    
+    // Validate name - required for signup
+    if (!name || !name.trim() || name.trim().length < 2) {
+      return NextResponse.json({ error: "Name is required and must be at least 2 characters" }, { status: 400 });
+    }
+    
+    const normalizedName = name.trim();
     let normalizedPhone = phone ? phone.replace(/\D/g, "") : undefined;
 
     // Normalize phone: if it's 10 digits, add country code; if it's 12 digits and starts with 91, keep it; otherwise use as is
