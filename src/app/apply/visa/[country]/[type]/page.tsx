@@ -1193,12 +1193,19 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       uploadFormData.append("documentType", doc.requirementId);
 
       try {
-        await fetch(`/api/applications/${applicationId}/documents`, {
+        const response = await fetch(`/api/applications/${applicationId}/documents`, {
           method: "POST",
           body: uploadFormData,
         });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+          console.error("Error uploading document:", errorData.error || "Upload failed");
+          // Continue with other documents even if one fails
+        }
       } catch (error) {
         console.error("Error uploading document:", error);
+        // Continue with other documents even if one fails
       }
     }
   };
@@ -1368,20 +1375,34 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       return;
     }
 
+    // Get application ID from formData or draftId
+    const applicationId = formData.applicationId || draftId;
+    if (!applicationId) {
+      alert("Application ID not found. Please restart the application process.");
+      return;
+    }
+
     setLoading(true);
     try {
-      if (formData.documents && formData.applicationId) {
-        await uploadDocuments(formData.applicationId, formData.travellerIds);
+      // Upload documents if any exist
+      if (formData.documents && Object.keys(formData.documents).length > 0) {
+        try {
+          await uploadDocuments(applicationId, formData.travellerIds || createdTravellerIds);
+        } catch (uploadError) {
+          console.error("Error uploading documents:", uploadError);
+          // Continue even if document upload fails - don't block completion
+          alert("Some documents may not have been uploaded. Please check your application status.");
+        }
       }
 
       // Clear draft locally
       clearDraftFromLocalStorage();
 
       // Redirect to thank you page
-      router.push(`/applications/thank-you?applicationId=${formData.applicationId}`);
+      router.push(`/applications/thank-you?applicationId=${applicationId}`);
     } catch (error) {
       console.error("Error finishing application:", error);
-      alert("An error occurred while saving documents. Please try again.");
+      alert("An error occurred while completing your application. Please try again.");
       setLoading(false);
     }
   };
