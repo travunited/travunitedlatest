@@ -107,11 +107,11 @@ export default async function CountryVisasPage({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
               {(country as any).Visa.map((visa: any) => (
                 <div
                   key={visa.id}
-                  className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-4 md:p-5 border border-neutral-100 relative overflow-hidden flex flex-col h-full"
+                  className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-3 md:p-4 border border-neutral-100 relative overflow-hidden flex flex-col h-full"
                 >
                   <div className="mb-auto">
                     <div className="flex items-center justify-between mb-3">
@@ -125,42 +125,42 @@ export default async function CountryVisasPage({
                       )}
                     </div>
 
-                    <h2 className="text-xl md:text-2xl font-extrabold text-neutral-900 mb-1.5 leading-tight group-hover:text-primary-600 transition-colors">
+                    <h2 className="text-lg md:text-xl font-extrabold text-neutral-900 mb-1 leading-tight group-hover:text-primary-600 transition-colors">
                       {visa.name}
                     </h2>
                     {visa.subtitle && visa.subtitle !== visa.name && (
-                      <p className="text-neutral-500 font-medium mb-4 text-xs md:text-sm">{visa.subtitle}</p>
+                      <p className="text-neutral-500 font-medium mb-3 text-xs">{visa.subtitle}</p>
                     )}
 
-                    <div className="space-y-2.5 mb-5 text-xs md:text-sm text-neutral-600">
+                    <div className="space-y-2 mb-4 text-xs text-neutral-600">
                       <div className="flex items-center group/item">
-                        <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center mr-3 group-hover/item:bg-primary-100 transition-colors">
-                          <Clock size={16} className="text-primary-600" />
+                        <div className="w-7 h-7 rounded-lg bg-primary-50 flex items-center justify-center mr-2.5 group-hover/item:bg-primary-100 transition-colors">
+                          <Clock size={14} className="text-primary-600" />
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Processing Time</p>
-                          <p className="font-semibold text-neutral-800 text-xs">{visa.processingTime}</p>
+                          <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Processing Time</p>
+                          <p className="font-semibold text-neutral-800 text-[11px] leading-tight">{visa.processingTime}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center group/item">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center mr-3 group-hover/item:bg-blue-100 transition-colors">
-                          <ShieldCheck size={16} className="text-blue-600" />
+                        <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center mr-2.5 group-hover/item:bg-blue-100 transition-colors">
+                          <ShieldCheck size={14} className="text-blue-600" />
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Stay Duration</p>
-                          <p className="font-semibold text-neutral-800 text-xs">{visa.stayDurationDays ? `Up to ${visa.stayDurationDays} days` : visa.stayDuration}</p>
+                          <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Stay Duration</p>
+                          <p className="font-semibold text-neutral-800 text-[11px] leading-tight">{visa.stayDurationDays ? `Up to ${visa.stayDurationDays} days` : visa.stayDuration}</p>
                         </div>
                       </div>
 
                       {((visa.validityDays != null && visa.validityDays > 0) || visa.validity) && (
                         <div className="flex items-center group/item">
-                          <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center mr-3 group-hover/item:bg-amber-100 transition-colors">
-                            <Calendar size={16} className="text-amber-600" />
+                          <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center mr-2.5 group-hover/item:bg-amber-100 transition-colors">
+                            <Calendar size={14} className="text-amber-600" />
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Validity</p>
-                            <p className="font-semibold text-neutral-800 text-xs">
+                            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Validity</p>
+                            <p className="font-semibold text-neutral-800 text-[11px] leading-tight">
                               {visa.validity
                                 ? visa.validity
                                 : (visa.validityDays != null && visa.validityDays > 0
@@ -172,42 +172,42 @@ export default async function CountryVisasPage({
                       )}
 
                       <div className="flex items-center group/item">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center mr-3 group-hover/item:bg-emerald-100 transition-colors">
-                          <MapPin size={16} className="text-emerald-600" />
+                        <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center mr-2.5 group-hover/item:bg-emerald-100 transition-colors">
+                          <MapPin size={14} className="text-emerald-600" />
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Entry Type</p>
-                          <p className="font-semibold text-neutral-800 text-xs">{buildEntrySummary(visa)}</p>
+                          <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Entry Type</p>
+                          <p className="font-semibold text-neutral-800 text-[11px] leading-tight">{buildEntrySummary(visa)}</p>
                         </div>
                       </div>
 
                       {visa.visaMode && (
                         <div className="flex items-center group/item">
-                          <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center mr-3 group-hover/item:bg-purple-100 transition-colors">
-                            <Zap size={16} className="text-purple-600" />
+                          <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center mr-2.5 group-hover/item:bg-purple-100 transition-colors">
+                            <Zap size={14} className="text-purple-600" />
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Mode</p>
-                            <p className="font-semibold text-neutral-800 text-xs">{formatEnumLabel(visa.visaMode, visaModeLabels)}</p>
+                            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Mode</p>
+                            <p className="font-semibold text-neutral-800 text-[11px] leading-tight">{formatEnumLabel(visa.visaMode, visaModeLabels)}</p>
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-neutral-100 mt-auto">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                  <div className="pt-3 border-t border-neutral-100 mt-auto">
+                    <div className="flex flex-col gap-3">
                       <div className="space-y-0.5">
-                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Starting from</p>
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-2xl md:text-3xl font-black text-neutral-900 tracking-tight">
+                        <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Starting from</p>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-xl md:text-2xl font-black text-neutral-900 tracking-tight">
                             {visa.currency === "INR" ? "₹" : visa.currency || "₹"}
                             {(visa.govtFee && visa.serviceFee ? (visa.govtFee + visa.serviceFee) : visa.priceInInr).toLocaleString()}
                           </span>
-                          <span className="text-neutral-500 font-medium text-xs">/ pax</span>
+                          <span className="text-neutral-500 font-medium text-[10px]">/ pax</span>
                         </div>
-                        <div className="flex items-center mt-1.5">
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[9px] font-bold uppercase tracking-wider border border-emerald-100">
+                        <div className="flex items-center mt-1">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[8px] font-bold uppercase tracking-wider border border-emerald-100">
                             Taxes included
                           </span>
                         </div>
@@ -215,10 +215,10 @@ export default async function CountryVisasPage({
 
                       <Link
                         href={`/visas/${params.country}/${visa.slug}`}
-                        className="w-full md:w-auto inline-flex items-center justify-center bg-primary-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-primary-700 transition-all transform hover:-translate-y-0.5 active:scale-95 shadow-md shadow-primary-500/20 group/btn text-sm"
+                        className="w-full inline-flex items-center justify-center bg-primary-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-primary-700 transition-all transform hover:-translate-y-0.5 active:scale-95 shadow-md shadow-primary-500/20 group/btn text-xs"
                       >
                         <span>View Details</span>
-                        <ArrowRight size={16} className="ml-1.5 group-hover/btn:translate-x-1 transition-transform" />
+                        <ArrowRight size={14} className="ml-1.5 group-hover/btn:translate-x-1 transition-transform" />
                       </Link>
                     </div>
                   </div>

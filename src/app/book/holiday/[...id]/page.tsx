@@ -1012,7 +1012,19 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
       // Handle free bookings (amount <= 0)
       if (responseData.isFree || amount <= 0) {
         setLoading(false);
-        router.push(`/bookings/thank-you?bookingId=${ensuredBookingId}`);
+        const redirectUrl = `/bookings/thank-you?bookingId=${ensuredBookingId}`;
+        try {
+          router.push(redirectUrl);
+          // Fallback redirect
+          setTimeout(() => {
+            if (window.location.pathname !== redirectUrl.split('?')[0]) {
+              window.location.href = redirectUrl;
+            }
+          }, 500);
+        } catch (error) {
+          console.error("Redirect error:", error);
+          window.location.href = redirectUrl;
+        }
         return;
       }
 
@@ -1041,6 +1053,12 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
         },
         handler: async (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
           try {
+            console.log("Payment successful, verifying...", {
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              bookingId: ensuredBookingId,
+            });
+
             const verifyResponse = await fetch("/api/payments/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -1052,18 +1070,60 @@ export default function TourBookingPage({ params }: { params: { id: string[] } }
               }),
             });
 
+            const responseData = await verifyResponse.json();
+
             if (verifyResponse.ok) {
+              console.log("Payment verified successfully, redirecting...", responseData);
               setLoading(false);
-              router.push(`/bookings/thank-you?bookingId=${ensuredBookingId}`);
+              
+              // Use window.location for more reliable redirect
+              const redirectUrl = `/bookings/thank-you?bookingId=${ensuredBookingId}`;
+              try {
+                router.push(redirectUrl);
+                // Fallback: if router.push doesn't work, use window.location
+                setTimeout(() => {
+                  if (window.location.pathname !== redirectUrl.split('?')[0]) {
+                    window.location.href = redirectUrl;
+                  }
+                }, 500);
+              } catch (redirectError) {
+                console.error("Router redirect failed, using window.location:", redirectError);
+                window.location.href = redirectUrl;
+              }
             } else {
-              const errorData = await verifyResponse.json();
-              throw new Error(errorData.error || "Payment verification failed");
+              const errorMessage = responseData.error || "Payment verification failed";
+              console.error("Payment verification failed:", errorMessage);
+              
+              // Even if verification fails, redirect to thank you page if payment was successful
+              // The thank you page will show payment pending status
+              setLoading(false);
+              const redirectUrl = `/bookings/thank-you?bookingId=${ensuredBookingId}`;
+              router.push(redirectUrl);
+              
+              // Show warning but still redirect
+              setValidationError("Payment received but verification pending. Please check your booking status.");
+              setTimeout(() => setValidationError(null), 5000);
             }
           } catch (error: unknown) {
             console.error("Payment verification error:", error);
             setLoading(false);
-            setValidationError(error instanceof Error ? error.message : "Payment verification failed. Please contact support if payment was deducted.");
-            setTimeout(() => setValidationError(null), 5000);
+            
+            // Even on error, redirect to thank you page - payment was successful
+            // The page will show the booking status
+            const redirectUrl = `/bookings/thank-you?bookingId=${ensuredBookingId}`;
+            try {
+              router.push(redirectUrl);
+              setTimeout(() => {
+                if (window.location.pathname !== redirectUrl.split('?')[0]) {
+                  window.location.href = redirectUrl;
+                }
+              }, 500);
+            } catch (redirectError) {
+              window.location.href = redirectUrl;
+            }
+            
+            setValidationError("Payment received. Redirecting to confirmation page...");
+            setTimeout(() => setValidationError(null), 3000);
           }
         },
         modal: {
