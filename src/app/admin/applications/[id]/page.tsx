@@ -171,7 +171,7 @@ export default function AdminApplicationDetailPage() {
         }
         // Set first traveller as active tab by default
         // Set default tab: first traveller if available, otherwise application docs
-        if (data.travellers && data.travellers.length > 0) {
+        if (data.travellers && data.travellers.length > 0 && data.travellers[0]?.traveller?.id) {
           setActiveTravellerTab(data.travellers[0].traveller.id);
         } else if (data.documents?.some((doc: Document) => !doc.travellerId)) {
           setActiveTravellerTab("application");
@@ -385,10 +385,10 @@ export default function AdminApplicationDetailPage() {
     const travellerDocs: Record<string, { traveller: Traveller; documents: Document[] }> = {};
     const applicationDocs: Document[] = [];
 
-    application.documents.forEach((doc) => {
+    (application.documents || []).forEach((doc) => {
       const travellerId = doc.travellerId;
-      const traveller = travellerId
-        ? application.travellers.find((t) => t.traveller.id === travellerId)?.traveller
+      const traveller = travellerId && application.travellers
+        ? application.travellers.find((t) => t?.traveller?.id === travellerId)?.traveller
         : null;
 
       if (traveller && typeof travellerId === "string") {
@@ -402,7 +402,7 @@ export default function AdminApplicationDetailPage() {
     });
 
     return {
-      travellers: Object.values(travellerDocs),
+      travellers: Object.values(travellerDocs).filter(group => group?.traveller?.id),
       application: applicationDocs,
     };
   };
@@ -737,11 +737,11 @@ export default function AdminApplicationDetailPage() {
             )}
 
             {/* Other Travellers */}
-            {application.travellers.length > 1 && (
+            {application.travellers && application.travellers.length > 1 && (
               <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
                 <h2 className="text-xl font-bold text-neutral-900 mb-4">Other Travellers</h2>
                 <div className="space-y-4">
-                  {application.travellers.slice(1).map((t, index) => (
+                  {application.travellers.slice(1).filter(t => t?.traveller?.id).map((t, index) => (
                     <div key={t.traveller.id} className="border border-neutral-200 rounded-lg p-4">
                       <h3 className="font-semibold mb-3">{t.traveller.firstName} {t.traveller.lastName}</h3>
                       <div className="grid md:grid-cols-2 gap-3 text-sm">

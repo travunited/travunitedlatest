@@ -130,13 +130,24 @@ export async function GET(
     });
 
     // Format response with additional computed fields
+    // Filter out any ApplicationTraveller records that don't have a valid Traveller
+    const validTravellers = (application.ApplicationTraveller || []).filter(
+      (at: any) => at?.Traveller?.id
+    );
+
     const response = {
       ...application,
       user: application.User_Application_userIdToUser,
-      travellers: application.ApplicationTraveller,
-      documents: application.documents,
+      travellers: validTravellers.map((at: any) => ({
+        ...at,
+        traveller: at.Traveller,
+      })),
+      documents: (application.documents || []).map((doc: any) => ({
+        ...doc,
+        traveller: doc.Traveller,
+      })),
       processedBy: application.User_Application_processedByIdToUser,
-      visa: application.Visa,
+      visa: application.Visa ? { ...application.Visa, country: application.Visa.Country } : null,
       visaSubType: application.VisaSubType,
       referenceNumber,
       timeline: activities.map((activity) => ({
