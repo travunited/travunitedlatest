@@ -9,6 +9,7 @@ import { formatDate } from "@/lib/dateFormat";
 import { getMediaProxyUrl } from "@/lib/media";
 import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
 import { ShareButton } from "@/components/ui/ShareButton";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export type BlogClientPost = {
   id: string;
@@ -36,6 +37,8 @@ const fallbackPosts: BlogClientPost[] = [
 export function BlogClient({ posts }: { posts: BlogClientPost[] }) {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
+  // Debounce search query for better performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const displayPosts = posts.length ? posts : fallbackPosts;
 
@@ -49,13 +52,16 @@ export function BlogClient({ posts }: { posts: BlogClientPost[] }) {
     return ["All", ...Array.from(set)];
   }, [displayPosts]);
 
-  const filteredPosts = displayPosts.filter((post) => {
-    const matchesCategory = selectedCategory === "All" || post.category === selectedCategory;
-    const matchesSearch =
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (post.excerpt || "").toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredPosts = useMemo(() => {
+    return displayPosts.filter((post) => {
+      const matchesCategory = selectedCategory === "All" || post.category === selectedCategory;
+      const matchesSearch =
+        !debouncedSearchQuery ||
+        post.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        (post.excerpt || "").toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
+  }, [displayPosts, selectedCategory, debouncedSearchQuery]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

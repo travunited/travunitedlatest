@@ -5,11 +5,17 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const query = searchParams.get("q") || "";
+    const query = (searchParams.get("q") || "").trim();
     const country = searchParams.get("country") || "";
     const visaType = searchParams.get("visaType") || "";
     const destination = searchParams.get("destination") || "";
     const type = searchParams.get("type") || "all"; // "visa", "tour", or "all"
+    const limit = parseInt(searchParams.get("limit") || "20", 10);
+
+    // Early return if query is too short
+    if (query.length < 2 && !country && !visaType && !destination) {
+      return NextResponse.json({ visas: [], tours: [] });
+    }
 
     const results: {
       visas: any[];
@@ -19,7 +25,7 @@ export async function GET(req: Request) {
       tours: [],
     };
 
-    // Search visas
+    // Search visas with optimized query
     if (type === "all" || type === "visa") {
       const visaWhere: any = {
         isActive: true,
@@ -41,16 +47,17 @@ export async function GET(req: Request) {
           { category: { contains: visaType, mode: "insensitive" } },
           { subtitle: { contains: visaType, mode: "insensitive" } },
         ];
-      }
-
-      if (query && !visaType) {
+      } else if (query) {
+        // Optimized: Use OR for multiple fields, prioritize name matches
         visaWhere.OR = [
           { name: { contains: query, mode: "insensitive" } },
           { category: { contains: query, mode: "insensitive" } },
           { subtitle: { contains: query, mode: "insensitive" } },
+          { slug: { contains: query, mode: "insensitive" } },
         ];
       }
 
+      // Use Promise.all for parallel queries if needed, but keep it simple for now
       results.visas = await prisma.visa.findMany({
         where: visaWhere,
         include: {
@@ -62,14 +69,16 @@ export async function GET(req: Request) {
             },
           },
         },
-        take: 20,
-        orderBy: {
-          updatedAt: "desc",
-        },
+        take: limit,
+        orderBy: [
+          // Prioritize featured and recently updated
+          { isFeatured: "desc" },
+          { updatedAt: "desc" },
+        ],
       });
     }
 
-    // Search tours
+    // Search tours with optimized query
     if (type === "all" || type === "tour") {
       const tourWhere: any = {
         isActive: true,
@@ -83,14 +92,15 @@ export async function GET(req: Request) {
           { primaryDestination: { contains: destination, mode: "insensitive" } },
           { name: { contains: destination, mode: "insensitive" } },
         ];
-      }
-
-      if (query && !destination) {
+      } else if (query) {
+        // Optimized: Search across multiple fields
         tourWhere.OR = [
           { name: { contains: query, mode: "insensitive" } },
           { destinationCountry: { contains: query, mode: "insensitive" } },
           { destinationState: { contains: query, mode: "insensitive" } },
           { primaryDestination: { contains: query, mode: "insensitive" } },
+          { destination: { contains: query, mode: "insensitive" } },
+          { slug: { contains: query, mode: "insensitive" } },
         ];
       }
 
@@ -105,10 +115,12 @@ export async function GET(req: Request) {
             },
           },
         },
-        take: 20,
-        orderBy: {
-          updatedAt: "desc",
-        },
+        take: limit,
+        orderBy: [
+          // Prioritize featured and recently updated
+          { isFeatured: "desc" },
+          { updatedAt: "desc" },
+        ],
       });
     }
 

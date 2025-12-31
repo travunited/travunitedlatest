@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getMediaProxyUrl } from "@/lib/media";
 import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
+import { useDebounce } from "@/hooks/useDebounce";
 import { 
   Search, 
   Calendar, 
@@ -134,6 +135,8 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
   const initialState = getInitialState();
   
   const [searchQuery, setSearchQuery] = useState(initialState.searchQuery);
+  // Debounce search query for better performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
   const [selectedCountry, setSelectedCountry] = useState<string>(initialState.selectedCountry);
   const [selectedRegion, setSelectedRegion] = useState<string>(initialState.selectedRegion);
   const [selectedTourType, setSelectedTourType] = useState<string>(initialState.selectedTourType);
@@ -185,9 +188,10 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
   ]);
 
   const filteredTours = useMemo(() => {
-    const lower = searchQuery.toLowerCase();
+    const lower = debouncedSearchQuery.toLowerCase();
     return tours.filter((tour) => {
       const matchesSearch =
+        !debouncedSearchQuery ||
         tour.name.toLowerCase().includes(lower) ||
         tour.destination.toLowerCase().includes(lower) ||
         tour.primaryDestination?.toLowerCase().includes(lower) ||
@@ -232,7 +236,7 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
     });
   }, [
     tours,
-    searchQuery,
+    debouncedSearchQuery,
     selectedCountry,
     selectedRegion,
     selectedTourType,

@@ -8,6 +8,7 @@ import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationBell } from "@/components/ui/NotificationBell";
 import { Logo } from "@/components/ui/Logo";
+import { GlobalSearch } from "@/components/ui/GlobalSearch";
 
 export function Navbar() {
   const { data: session } = useSession();
@@ -36,7 +37,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-6 flex-1 max-w-4xl mx-8">
             {navLinks.map((link) => {
               const Icon = link.icon;
               return (
@@ -50,6 +51,9 @@ export function Navbar() {
                 </Link>
               );
             })}
+            <div className="flex-1 max-w-md ml-4">
+              <GlobalSearch />
+            </div>
           </div>
 
           {/* Auth Buttons */}
@@ -135,7 +139,10 @@ export function Navbar() {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden bg-white border-t border-neutral-200"
           >
-            <div className="px-4 py-4 space-y-2">
+            <div className="px-4 py-4 space-y-4">
+              <div className="pb-2 border-b border-neutral-200">
+                <GlobalSearch />
+              </div>
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 return (

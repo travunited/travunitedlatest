@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getMediaProxyUrl } from "@/lib/media";
 import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
+import { useDebounce } from "@/hooks/useDebounce";
 import { 
   Search, 
   Calendar, 
@@ -146,6 +147,9 @@ export default function ToursGridClient({ tours, countries, regions, tourTypes, 
   >(initialState.sortOption);
   const [showFilters, setShowFilters] = useState(false);
   
+  // Debounce search query for better performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  
   // Initialize search query from URL params
   useEffect(() => {
     if (destinationParam) {
@@ -184,9 +188,10 @@ export default function ToursGridClient({ tours, countries, regions, tourTypes, 
   ]);
 
   const filteredTours = useMemo(() => {
-    const lower = searchQuery.toLowerCase();
+    const lower = debouncedSearchQuery.toLowerCase();
     return tours.filter((tour) => {
       const matchesSearch =
+        !debouncedSearchQuery ||
         tour.name.toLowerCase().includes(lower) ||
         tour.destination.toLowerCase().includes(lower) ||
         tour.primaryDestination?.toLowerCase().includes(lower) ||
@@ -231,7 +236,7 @@ export default function ToursGridClient({ tours, countries, regions, tourTypes, 
     });
   }, [
     tours,
-    searchQuery,
+    debouncedSearchQuery,
     selectedCountry,
     selectedRegion,
     selectedTourType,
