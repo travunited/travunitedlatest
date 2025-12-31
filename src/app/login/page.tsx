@@ -93,7 +93,9 @@ function LoginPageContent() {
 
       if (result?.error) {
         if (result.error === "USER_NOT_FOUND") {
-          setError("Account not found. Please sign up first.");
+          // User doesn't exist, redirect to signup with phone pre-filled
+          router.push(`/signup?phone=${encodeURIComponent(phone)}&from=login`);
+          return;
         } else {
           setError("Authentication failed. Please try again.");
         }
@@ -117,6 +119,23 @@ function LoginPageContent() {
     setLoading(true);
 
     try {
+      // First check if user exists before attempting login
+      try {
+        const checkUserResponse = await fetch(`/api/auth/check-user?email=${encodeURIComponent(email)}`);
+        if (checkUserResponse.ok) {
+          const checkData = await checkUserResponse.json();
+          if (!checkData.exists) {
+            // User doesn't exist, redirect to signup with email pre-filled
+            setLoading(false);
+            router.push(`/signup?email=${encodeURIComponent(email)}&from=login`);
+            return;
+          }
+        }
+      } catch (err) {
+        // If check fails, continue with login attempt
+        console.error("Error checking user:", err);
+      }
+
       const result = await signIn("credentials", {
         email,
         password,
@@ -126,9 +145,27 @@ function LoginPageContent() {
       if (result?.error) {
         if (result.error === "EMAIL_NOT_VERIFIED" || result.error.includes("EMAIL_NOT_VERIFIED")) {
           setError("Please verify your email before logging in. Check your inbox for the OTP or resend it.");
+        } else if (result.error === "CredentialsSignin" || result.error.includes("CredentialsSignin")) {
+          setError("Invalid email or password. Don't have an account? Sign up instead.");
         } else {
           setError("Invalid email or password");
         }
+      } else if (!result?.ok) {
+        // Login failed but no specific error - check if user exists
+        try {
+          const checkUserResponse = await fetch(`/api/auth/check-user?email=${encodeURIComponent(email)}`);
+          if (checkUserResponse.ok) {
+            const checkData = await checkUserResponse.json();
+            if (!checkData.exists) {
+              // User doesn't exist, redirect to signup
+              router.push(`/signup?email=${encodeURIComponent(email)}&from=login`);
+              return;
+            }
+          }
+        } catch (err) {
+          // If check fails, show generic error
+        }
+        setError("Invalid email or password");
       } else {
         handlePostLogin();
       }
@@ -333,11 +370,14 @@ function LoginPageContent() {
           </div>
 
           <div className="mt-8 pt-6 border-t border-neutral-200/50 text-center">
-            <p className="text-neutral-700 font-medium">
+            <p className="text-neutral-700 font-medium mb-2">
               Don&rsquo;t have an account?{" "}
-              <Link href="/signup" className="text-primary-600 hover:text-primary-700 font-bold transition-colors">
-                Sign up
+              <Link href={`/signup${email ? `?email=${encodeURIComponent(email)}` : ""}`} className="text-primary-600 hover:text-primary-700 font-bold transition-colors">
+                Sign up now
               </Link>
+            </p>
+            <p className="text-xs text-neutral-500">
+              New users are automatically redirected to signup for a smoother experience
             </p>
           </div>
         </div>

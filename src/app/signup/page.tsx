@@ -17,8 +17,11 @@ function SignupPageContent() {
   const [email, setEmail] = useState(searchParams?.get("email") || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [verifyMethod, setVerifyMethod] = useState<"email" | "mobile">("email");
+  const [phone, setPhone] = useState(searchParams?.get("phone") || "");
+  // If phone is provided, default to mobile verification
+  const [verifyMethod, setVerifyMethod] = useState<"email" | "mobile">(
+    searchParams?.get("phone") ? "mobile" : "email"
+  );
   const [mobileVerified, setMobileVerified] = useState(false);
   const [mobileVerificationToken, setMobileVerificationToken] = useState<string | null>(null);
 
@@ -210,6 +213,14 @@ function SignupPageContent() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {searchParams?.get("from") === "login" && (
+              <div className="bg-blue-50/90 border border-blue-200 rounded-lg p-4 flex items-start space-x-2 text-blue-700 backdrop-blur-sm animate-fade-in">
+                <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />
+                <span className="text-sm font-medium">
+                  Account not found. Please create an account to continue.
+                </span>
+              </div>
+            )}
             {error && (
               <div className="bg-red-50/90 border border-red-200 rounded-lg p-4 flex items-start space-x-2 text-red-700 backdrop-blur-sm animate-fade-in">
                 <AlertCircle size={20} className="mt-0.5 flex-shrink-0" />

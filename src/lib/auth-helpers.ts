@@ -10,7 +10,8 @@ export async function getCurrentUser() {
 export async function requireAuth() {
   const user = await getCurrentUser();
   if (!user) {
-    redirect("/login");
+    // Redirect to signup for new users (they can switch to login if they have an account)
+    redirect("/signup");
   }
   return user;
 }

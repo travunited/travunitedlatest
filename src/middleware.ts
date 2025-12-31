@@ -11,6 +11,7 @@ export default withAuth(
     // Admin routes
     if (path.startsWith("/admin")) {
       if (!isAdmin) {
+        // For admin routes, redirect to login (admins should use login)
         return NextResponse.redirect(new URL("/login", req.url));
       }
     }

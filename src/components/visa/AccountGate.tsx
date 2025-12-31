@@ -17,6 +17,7 @@ interface AccountGateProps {
 
 export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectUrl }: AccountGateProps) {
   const router = useRouter();
+  // Default to signup mode for new users
   const [mode, setMode] = useState<"signup" | "login">("signup");
   const [formData, setFormData] = useState({
     name: "",
@@ -226,9 +227,16 @@ export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectU
         >
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-neutral-900">
-                {showOtpVerification ? "Verify Your Email" : mode === "signup" ? "Create Account" : "Login"}
-              </h2>
+              <div>
+                <h2 className="text-2xl font-bold text-neutral-900">
+                  {showOtpVerification ? "Verify Your Email" : mode === "signup" ? "Create Account" : "Login"}
+                </h2>
+                {mode === "signup" && !showOtpVerification && (
+                  <p className="text-sm text-neutral-600 mt-1">
+                    Create your account to continue with your application
+                  </p>
+                )}
+              </div>
               <button
                 onClick={onClose}
                 className="p-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
