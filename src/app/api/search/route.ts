@@ -17,13 +17,8 @@ export async function GET(req: Request) {
       return NextResponse.json({ visas: [], tours: [] });
     }
 
-    const results: {
-      visas: any[];
-      tours: any[];
-    } = {
-      visas: [],
-      tours: [],
-    };
+    // Build queries in parallel for maximum speed
+    const searchPromises: Promise<any>[] = [];
 
     // Search visas with optimized query
     if (type === "all" || type === "visa") {
@@ -57,25 +52,28 @@ export async function GET(req: Request) {
         ];
       }
 
-      // Use Promise.all for parallel queries if needed, but keep it simple for now
-      results.visas = await prisma.visa.findMany({
-        where: visaWhere,
-        include: {
-          Country: {
-            select: {
-              id: true,
-              name: true,
-              code: true,
+      searchPromises.push(
+        prisma.visa.findMany({
+          where: visaWhere,
+          include: {
+            Country: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+              },
             },
           },
-        },
-        take: limit,
-        orderBy: [
-          // Prioritize featured and recently updated
-          { isFeatured: "desc" },
-          { updatedAt: "desc" },
-        ],
-      });
+          take: limit,
+          orderBy: [
+            // Prioritize featured and recently updated
+            { isFeatured: "desc" },
+            { updatedAt: "desc" },
+          ],
+        })
+      );
+    } else {
+      searchPromises.push(Promise.resolve([]));
     }
 
     // Search tours with optimized query
@@ -104,27 +102,37 @@ export async function GET(req: Request) {
         ];
       }
 
-      results.tours = await prisma.tour.findMany({
-        where: tourWhere,
-        include: {
-          Country: {
-            select: {
-              id: true,
-              name: true,
-              code: true,
+      searchPromises.push(
+        prisma.tour.findMany({
+          where: tourWhere,
+          include: {
+            Country: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+              },
             },
           },
-        },
-        take: limit,
-        orderBy: [
-          // Prioritize featured and recently updated
-          { isFeatured: "desc" },
-          { updatedAt: "desc" },
-        ],
-      });
+          take: limit,
+          orderBy: [
+            // Prioritize featured and recently updated
+            { isFeatured: "desc" },
+            { updatedAt: "desc" },
+          ],
+        })
+      );
+    } else {
+      searchPromises.push(Promise.resolve([]));
     }
 
-    return NextResponse.json(results);
+    // Execute both queries in parallel for maximum speed
+    const [visas, tours] = await Promise.all(searchPromises);
+
+    return NextResponse.json({
+      visas: Array.isArray(visas) ? visas : [],
+      tours: Array.isArray(tours) ? tours : [],
+    });
   } catch (error) {
     console.error("Error searching:", error);
     return NextResponse.json(
