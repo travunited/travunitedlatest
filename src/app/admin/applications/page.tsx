@@ -121,20 +121,32 @@ function AdminApplicationsPageContent() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login");
-    } else if (status === "authenticated") {
+      try {
+        router.push("/login");
+      } catch (error) {
+        console.error("Router push failed, using window.location:", error);
+        window.location.href = "/login";
+      }
+      return;
+    }
+    if (status === "authenticated") {
       const isAdmin = session?.user?.role === "STAFF_ADMIN" || session?.user?.role === "SUPER_ADMIN";
       if (!isAdmin) {
-        router.push("/dashboard");
-      } else {
-        const params = new URLSearchParams(window.location.search);
-        const urlStatus = params.get("status");
-        if (urlStatus) {
-          setStatusFilter(urlStatus);
+        try {
+          router.push("/dashboard");
+        } catch (error) {
+          console.error("Router push failed, using window.location:", error);
+          window.location.href = "/dashboard";
         }
-        fetchApplications();
-        fetchAdmins();
+        return;
       }
+      const params = new URLSearchParams(window.location.search);
+      const urlStatus = params.get("status");
+      if (urlStatus) {
+        setStatusFilter(urlStatus);
+      }
+      fetchApplications();
+      fetchAdmins();
     }
   }, [session, status, router, fetchApplications, fetchAdmins]);
 
@@ -783,7 +795,12 @@ function AdminApplicationsPageContent() {
                         if (target.closest('input[type="checkbox"]') || target.closest('button') || target.closest('a')) {
                           return;
                         }
-                        router.push(`/admin/applications/${app.id}`);
+                        try {
+                          router.push(`/admin/applications/${encodeURIComponent(app.id)}`);
+                        } catch (error) {
+                          console.error("Router push failed, using window.location:", error);
+                          window.location.href = `/admin/applications/${encodeURIComponent(app.id)}`;
+                        }
                       }}
                     >
                       <td className="px-6 py-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
@@ -833,7 +850,7 @@ function AdminApplicationsPageContent() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" onClick={(e) => e.stopPropagation()}>
                         <Link
-                          href={`/admin/applications/${app.id}`}
+                          href={`/admin/applications/${encodeURIComponent(app.id)}`}
                           className="text-primary-600 hover:text-primary-900 inline-flex items-center space-x-1"
                         >
                           <Eye size={16} />

@@ -709,31 +709,7 @@ export default function AdminVisaEditorPage() {
 
   // Memoized handlers for specific fields to prevent inline function creation
   const updateProcessingTime = useCallback((value: string) => updateFormField("processingTime", value), [updateFormField]);
-  const updateStayDurationDays = useCallback((value: number | null) => {
-    // Convert number to string for state
-    const strValue = value === null || value === undefined ? "" : String(value);
-    setFormData((prev) => ({
-      ...prev,
-      stayDurationDays: strValue,
-      // Auto-populate text field if it's empty or looks like a generated duration
-      stayDuration: (value && (!prev.stayDuration || prev.stayDuration.startsWith("Up to ")))
-        ? `Up to ${value} days`
-        : (value ? prev.stayDuration : "")
-    }));
-  }, []);
 
-  const updateValidityDays = useCallback((value: number | null) => {
-    // Convert number to string for state
-    const strValue = value === null || value === undefined ? "" : String(value);
-    setFormData((prev) => ({
-      ...prev,
-      validityDays: strValue,
-      // Auto-populate text field if it's empty or looks like a generated validity
-      validity: (value && (!prev.validity || prev.validity.includes("days from issue")))
-        ? `${value} days from issue`
-        : (value ? prev.validity : "")
-    }));
-  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1211,49 +1187,25 @@ export default function AdminVisaEditorPage() {
                       <label className="text-sm font-medium text-neutral-700">
                         Stay Duration
                       </label>
-                      <NumberInput
-                        min={0}
-                        value={formData.stayDurationDays ? parseInt(formData.stayDurationDays) : null}
-                        onChange={updateStayDurationDays}
-                        placeholder="1825"
+                      <TextareaInput
+                        value={formData.stayDuration}
+                        onChange={(value) => updateFormField("stayDuration", value)}
+                        placeholder="e.g. 30 Days"
+                        rows={2}
                       />
-                      <p className="text-xs text-neutral-500 mt-1">Duration allowed to stay (in days)</p>
+                      <p className="text-xs text-neutral-500 mt-1">Duration allowed to stay</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-neutral-700">
                         Validity (from Issue)
                       </label>
-                      <NumberInput
-                        min={0}
-                        value={formData.validityDays ? parseInt(formData.validityDays) : null}
-                        onChange={updateValidityDays}
-                        placeholder="1825"
-                      />
-                      <p className="text-xs text-neutral-500 mt-1">Validity period from date of issue (in days)</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-neutral-700">
-                        Stay Duration (Displayed Text)
-                      </label>
-                      <TextInput
-                        value={formData.stayDuration}
-                        onChange={(value) => updateFormField("stayDuration", value)}
-                        placeholder="Up to 30 days"
-                      />
-                      <p className="text-xs text-neutral-500 mt-1">Override the text displayed to the user</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-neutral-700">
-                        Validity (Displayed Text)
-                      </label>
-                      <TextInput
+                      <TextareaInput
                         value={formData.validity}
                         onChange={(value) => updateFormField("validity", value)}
-                        placeholder="60 days from issue"
+                        placeholder="e.g. 60 days from issue"
+                        rows={2}
                       />
-                      <p className="text-xs text-neutral-500 mt-1">Override the text displayed to the user</p>
+                      <p className="text-xs text-neutral-500 mt-1">Validity period from date of issue</p>
                     </div>
                   </div>
                 </div>

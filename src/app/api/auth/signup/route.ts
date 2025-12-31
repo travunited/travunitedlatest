@@ -46,15 +46,30 @@ export async function POST(req: Request) {
     const normalizedName = name && name.trim() ? name.trim() : "User";
     let normalizedPhone = phone ? phone.replace(/\D/g, "") : undefined;
 
-    if (normalizedPhone && normalizedPhone.length === 10) {
-      normalizedPhone = `91${normalizedPhone}`;
+    // Normalize phone: if it's 10 digits, add country code; if it's 12 digits and starts with 91, keep it; otherwise use as is
+    if (normalizedPhone) {
+      if (normalizedPhone.length === 10) {
+        normalizedPhone = `91${normalizedPhone}`;
+      } else if (normalizedPhone.length === 12 && normalizedPhone.startsWith("91")) {
+        // Already has country code, keep it
+        normalizedPhone = normalizedPhone;
+      } else if (normalizedPhone.length < 10 || normalizedPhone.length > 12) {
+        // Invalid length
+        normalizedPhone = undefined;
+      }
     }
 
     if (verifyMethod === "email" && (!email || !password)) {
       return NextResponse.json({ error: "Email and password are required for email signup" }, { status: 400 });
     }
-    if (verifyMethod === "mobile" && !normalizedPhone && !accessToken) {
-      return NextResponse.json({ error: "Mobile number or verification token is required for phone signup" }, { status: 400 });
+    
+    // For mobile signup, require either phone number OR accessToken (for widget verification)
+    if (verifyMethod === "mobile") {
+      if (!normalizedPhone && !accessToken) {
+        return NextResponse.json({ error: "Mobile number or verification token is required for phone signup" }, { status: 400 });
+      }
+      // If we have accessToken but no phone, that's okay (phone will come from token verification)
+      // If we have phone but no accessToken and not verified, that's also okay (will send OTP)
     }
 
     // Security: Verify the token server-side if provided

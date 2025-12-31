@@ -135,9 +135,13 @@ interface Application {
 }
 
 export default function AdminApplicationDetailPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
+  
+  // Validate and extract application ID
+  const applicationId = Array.isArray(params.id) ? params.id[0] : params.id;
+  
   const [application, setApplication] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -158,9 +162,52 @@ export default function AdminApplicationDetailPage() {
   const [deletingApplication, setDeletingApplication] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // Handle authentication and authorization
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      try {
+        router.push("/login");
+      } catch (error) {
+        console.error("Router push failed, using window.location:", error);
+        window.location.href = "/login";
+      }
+      return;
+    }
+    if (status === "authenticated") {
+      const isAdmin = session?.user?.role === "STAFF_ADMIN" || session?.user?.role === "SUPER_ADMIN";
+      if (!isAdmin) {
+        try {
+          router.push("/dashboard");
+        } catch (error) {
+          console.error("Router push failed, using window.location:", error);
+          window.location.href = "/dashboard";
+        }
+        return;
+      }
+    }
+  }, [session, status, router]);
+
+  // Validate application ID
+  useEffect(() => {
+    if (!applicationId || typeof applicationId !== "string") {
+      console.error("Invalid application ID:", applicationId);
+      try {
+        router.push("/admin/applications");
+      } catch (error) {
+        console.error("Router push failed, using window.location:", error);
+        window.location.href = "/admin/applications";
+      }
+      return;
+    }
+  }, [applicationId, router]);
+
   const fetchApplication = useCallback(async () => {
+    if (!applicationId || typeof applicationId !== "string") {
+      setLoading(false);
+      return;
+    }
     try {
-      const response = await fetch(`/api/admin/applications/${params.id}`);
+      const response = await fetch(`/api/admin/applications/${encodeURIComponent(applicationId)}`);
       if (response.ok) {
         const data = await response.json();
         setApplication(data);
@@ -176,13 +223,29 @@ export default function AdminApplicationDetailPage() {
         } else if (data.documents?.some((doc: Document) => !doc.travellerId)) {
           setActiveTravellerTab("application");
         }
+      } else if (response.status === 404) {
+        // Application not found, redirect to list
+        console.error("Application not found:", applicationId);
+        try {
+          router.push("/admin/applications");
+        } catch (error) {
+          window.location.href = "/admin/applications";
+        }
+      } else if (response.status === 401 || response.status === 403) {
+        // Unauthorized or forbidden, redirect to login
+        console.error("Unauthorized access to application");
+        try {
+          router.push("/login");
+        } catch (error) {
+          window.location.href = "/login";
+        }
       }
     } catch (error) {
       console.error("Error fetching application:", error);
     } finally {
       setLoading(false);
     }
-  }, [params.id]);
+  }, [applicationId, router]);
 
   const fetchAdmins = useCallback(async () => {
     try {
@@ -228,7 +291,11 @@ export default function AdminApplicationDetailPage() {
         body.rejectionReason = rejectionReason;
       }
 
-      const response = await fetch(`/api/admin/applications/${params.id}/status`, {
+      if (!applicationId || typeof applicationId !== "string") {
+        alert("Invalid application ID");
+        return;
+      }
+      const response = await fetch(`/api/admin/applications/${encodeURIComponent(applicationId)}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -257,13 +324,29 @@ export default function AdminApplicationDetailPage() {
     setDeletingApplication(true);
     setDeleteError(null);
     try {
-      const response = await fetch(`/api/admin/applications/${params.id}`, {
+      if (!applicationId || typeof applicationId !== "string") {
+        setDeleteError("Invalid application ID");
+        setDeletingApplication(false);
+        return;
+      }
+      const response = await fetch(`/api/admin/applications/${encodeURIComponent(applicationId)}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
         // Redirect to applications list after successful deletion
-        router.push("/admin/applications");
+        try {
+          router.push("/admin/applications");
+          // Fallback redirect
+          setTimeout(() => {
+            if (window.location.pathname !== "/admin/applications") {
+              window.location.href = "/admin/applications";
+            }
+          }, 500);
+        } catch (redirectError) {
+          console.error("Router redirect failed, using window.location:", redirectError);
+          window.location.href = "/admin/applications";
+        }
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.error || "Failed to delete application");
@@ -282,9 +365,13 @@ export default function AdminApplicationDetailPage() {
       return;
     }
 
+    if (!applicationId || typeof applicationId !== "string") {
+      alert("Invalid application ID");
+      return;
+    }
     setAssigningAdmin(true);
     try {
-      const response = await fetch(`/api/admin/applications/${params.id}/assign`, {
+      const response = await fetch(`/api/admin/applications/${encodeURIComponent(applicationId)}/assign`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ adminId }),
@@ -312,7 +399,11 @@ export default function AdminApplicationDetailPage() {
       // Map VERIFIED to APPROVED for backend
       const backendStatus = status === "VERIFIED" ? "APPROVED" : status;
 
-      const response = await fetch(`/api/admin/applications/${params.id}/documents/${docId}/review`, {
+      if (!applicationId || typeof applicationId !== "string") {
+        alert("Invalid application ID");
+        return;
+      }
+      const response = await fetch(`/api/admin/applications/${encodeURIComponent(applicationId)}/documents/${encodeURIComponent(docId)}/review`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -352,7 +443,11 @@ export default function AdminApplicationDetailPage() {
       // Append to existing notes
       const updatedNotes = notes ? `${notes}\n\n[${new Date().toLocaleString()}] ${newNote}` : `[${new Date().toLocaleString()}] ${newNote}`;
 
-      const response = await fetch(`/api/admin/applications/${params.id}/notes`, {
+      if (!applicationId || typeof applicationId !== "string") {
+        alert("Invalid application ID");
+        return;
+      }
+      const response = await fetch(`/api/admin/applications/${encodeURIComponent(applicationId)}/notes`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notes: updatedNotes }),
@@ -387,11 +482,16 @@ export default function AdminApplicationDetailPage() {
 
     (application.documents || []).forEach((doc) => {
       const travellerId = doc.travellerId;
-      const traveller = travellerId && application.travellers
-        ? application.travellers.find((t) => t?.traveller?.id === travellerId)?.traveller
-        : null;
+      // Find traveller with proper null checks
+      let traveller: Traveller | null = null;
+      if (travellerId && application.travellers && Array.isArray(application.travellers)) {
+        const travellerEntry = application.travellers.find((t) => {
+          return t && t.traveller && t.traveller.id && t.traveller.id === travellerId;
+        });
+        traveller = travellerEntry?.traveller || null;
+      }
 
-      if (traveller && typeof travellerId === "string") {
+      if (traveller && traveller.id && typeof travellerId === "string") {
         if (!travellerDocs[travellerId]) {
           travellerDocs[travellerId] = { traveller, documents: [] };
         }
@@ -402,7 +502,12 @@ export default function AdminApplicationDetailPage() {
     });
 
     return {
-      travellers: Object.values(travellerDocs).filter(group => group?.traveller?.id),
+      travellers: Object.values(travellerDocs).filter(group => 
+        group && 
+        group.traveller && 
+        group.traveller.id &&
+        Array.isArray(group.documents)
+      ),
       application: applicationDocs,
     };
   };
@@ -741,7 +846,9 @@ export default function AdminApplicationDetailPage() {
               <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
                 <h2 className="text-xl font-bold text-neutral-900 mb-4">Other Travellers</h2>
                 <div className="space-y-4">
-                  {application.travellers.slice(1).filter(t => t?.traveller?.id).map((t, index) => (
+                  {application.travellers.slice(1).filter(t => t && t.traveller && t.traveller.id).map((t, index) => {
+                    if (!t || !t.traveller || !t.traveller.id) return null;
+                    return (
                     <div key={t.traveller.id} className="border border-neutral-200 rounded-lg p-4">
                       <h3 className="font-semibold mb-3">{t.traveller.firstName} {t.traveller.lastName}</h3>
                       <div className="grid md:grid-cols-2 gap-3 text-sm">
@@ -881,14 +988,16 @@ export default function AdminApplicationDetailPage() {
               {/* Documents Content */}
               <div className="space-y-4">
                 {/* Per-Traveller Documents */}
-                {documentsGrouped.travellers.map((group) => (
-                  activeTravellerTab === group.traveller.id && (
+                {documentsGrouped.travellers.map((group) => {
+                  if (!group || !group.traveller || !group.traveller.id) return null;
+                  if (activeTravellerTab === group.traveller.id) {
+                    return (
                     <div key={group.traveller.id} className="space-y-3">
                       {group.documents.map((doc) => (
                         <DocumentCard
                           key={doc.id}
                           doc={doc}
-                          applicationId={params.id as string}
+                          applicationId={applicationId as string}
                           documentStatusUpdates={documentStatusUpdates}
                           setDocumentStatusUpdates={setDocumentStatusUpdates}
                           handleDocumentStatusChange={handleDocumentStatusChange}
@@ -897,8 +1006,10 @@ export default function AdminApplicationDetailPage() {
                         />
                       ))}
                     </div>
-                  )
-                ))}
+                    );
+                  }
+                  return null;
+                })}
 
                 {/* Application-Level Documents */}
                 {activeTravellerTab === "application" && documentsGrouped.application.length > 0 && (
@@ -907,7 +1018,7 @@ export default function AdminApplicationDetailPage() {
                       <DocumentCard
                         key={doc.id}
                         doc={doc}
-                        applicationId={params.id as string}
+                        applicationId={applicationId as string}
                         documentStatusUpdates={documentStatusUpdates}
                         setDocumentStatusUpdates={setDocumentStatusUpdates}
                         handleDocumentStatusChange={handleDocumentStatusChange}
@@ -925,7 +1036,7 @@ export default function AdminApplicationDetailPage() {
                       <DocumentCard
                         key={doc.id}
                         doc={doc}
-                        applicationId={params.id as string}
+                        applicationId={applicationId as string}
                         documentStatusUpdates={documentStatusUpdates}
                         setDocumentStatusUpdates={setDocumentStatusUpdates}
                         handleDocumentStatusChange={handleDocumentStatusChange}
@@ -943,7 +1054,7 @@ export default function AdminApplicationDetailPage() {
                       <DocumentCard
                         key={doc.id}
                         doc={doc}
-                        applicationId={params.id as string}
+                        applicationId={applicationId as string}
                         documentStatusUpdates={documentStatusUpdates}
                         setDocumentStatusUpdates={setDocumentStatusUpdates}
                         handleDocumentStatusChange={handleDocumentStatusChange}
@@ -1028,7 +1139,12 @@ export default function AdminApplicationDetailPage() {
                               const formData = new FormData();
                               formData.append("file", file);
 
-                              const response = await fetch(`/api/admin/applications/${params.id}/visa`, {
+                              if (!applicationId || typeof applicationId !== "string") {
+                                alert("Invalid application ID");
+                                setUploadingVisa(false);
+                                return;
+                              }
+                              const response = await fetch(`/api/admin/applications/${encodeURIComponent(applicationId)}/visa`, {
                                 method: "POST",
                                 body: formData,
                               });
@@ -1074,7 +1190,12 @@ export default function AdminApplicationDetailPage() {
                               const formData = new FormData();
                               formData.append("file", file);
 
-                              const response = await fetch(`/api/admin/applications/${params.id}/visa`, {
+                              if (!applicationId || typeof applicationId !== "string") {
+                                alert("Invalid application ID");
+                                setUploadingVisa(false);
+                                return;
+                              }
+                              const response = await fetch(`/api/admin/applications/${encodeURIComponent(applicationId)}/visa`, {
                                 method: "POST",
                                 body: formData,
                               });
@@ -1124,7 +1245,7 @@ export default function AdminApplicationDetailPage() {
                         </div>
                       </div>
                       <a
-                        href={`/api/invoices/download/application/${params.id}`}
+                        href={`/api/invoices/download/application/${encodeURIComponent(applicationId || "")}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-primary-600 hover:text-primary-700 text-sm font-medium"
@@ -1147,7 +1268,12 @@ export default function AdminApplicationDetailPage() {
                               const formData = new FormData();
                               formData.append("file", file);
 
-                              const response = await fetch(`/api/admin/applications/${params.id}/invoice`, {
+                              if (!applicationId || typeof applicationId !== "string") {
+                                alert("Invalid application ID");
+                                setUploadingInvoice(false);
+                                return;
+                              }
+                              const response = await fetch(`/api/admin/applications/${encodeURIComponent(applicationId)}/invoice`, {
                                 method: "POST",
                                 body: formData,
                               });
@@ -1178,7 +1304,12 @@ export default function AdminApplicationDetailPage() {
 
                           setRemovingInvoice(true);
                           try {
-                            const response = await fetch(`/api/admin/applications/${params.id}/invoice`, {
+                            if (!applicationId || typeof applicationId !== "string") {
+                              alert("Invalid application ID");
+                              setRemovingInvoice(false);
+                              return;
+                            }
+                            const response = await fetch(`/api/admin/applications/${encodeURIComponent(applicationId)}/invoice`, {
                               method: "DELETE",
                             });
 
@@ -1219,7 +1350,12 @@ export default function AdminApplicationDetailPage() {
                               const formData = new FormData();
                               formData.append("file", file);
 
-                              const response = await fetch(`/api/admin/applications/${params.id}/invoice`, {
+                              if (!applicationId || typeof applicationId !== "string") {
+                                alert("Invalid application ID");
+                                setUploadingInvoice(false);
+                                return;
+                              }
+                              const response = await fetch(`/api/admin/applications/${encodeURIComponent(applicationId)}/invoice`, {
                                 method: "POST",
                                 body: formData,
                               });

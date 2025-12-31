@@ -33,7 +33,7 @@ export function Hero() {
   const [selectedVisaType, setSelectedVisaType] = useState("");
   const [tourDestination, setTourDestination] = useState("");
   const [tourDate, setTourDate] = useState("");
-  
+
   // Backend data
   const [countries, setCountries] = useState<Country[]>([]);
   const [visaTypes, setVisaTypes] = useState<VisaType[]>([]);
@@ -64,7 +64,7 @@ export function Hero() {
       // Clear visa types immediately when country changes
       setVisaTypes([]);
       setSelectedVisaType("");
-      
+
       const fetchVisaTypes = async () => {
         try {
           // selectedCountry is the country ID, use it directly to ensure exact match
@@ -73,7 +73,7 @@ export function Hero() {
             const data = await response.json();
             // The API already filters by country, so we trust the response
             // But add an additional safety check to ensure country IDs match
-            const filteredData = Array.isArray(data) 
+            const filteredData = Array.isArray(data)
               ? data.filter((visa: VisaType) => visa.country?.id === selectedCountry)
               : [];
             setVisaTypes(filteredData);
@@ -86,7 +86,7 @@ export function Hero() {
           setVisaTypes([]);
         }
       };
-      
+
       fetchVisaTypes();
     } else {
       setVisaTypes([]);
@@ -188,7 +188,7 @@ export function Hero() {
             </span>
           </h1>
           <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto">
-          Trusted by Global Travellers Across 160+ Destinations
+            Trusted by Global Travellers Across 160+ Destinations
           </p>
         </motion.div>
 
@@ -201,18 +201,17 @@ export function Hero() {
         >
           {/* Mode Toggle */}
           <div className="flex items-center justify-center mb-6">
-            <div className="bg-neutral-100 rounded-lg p-1 flex flex-col gap-2 w-full max-w-md sm:inline-flex sm:flex-row sm:w-auto">
+            <div className="bg-neutral-100 rounded-lg p-1 flex flex-row gap-1 w-full max-w-md sm:inline-flex sm:w-auto">
               <button
                 onClick={() => {
                   setMode("visa");
                   setTourDestination("");
                   setSelectedVisaType("");
                 }}
-                className={`px-4 py-2 rounded-md font-medium text-sm sm:text-base transition-all w-full sm:w-auto ${
-                  mode === "visa"
-                    ? "bg-white text-primary-600 shadow-soft"
-                    : "text-neutral-600 hover:text-neutral-900"
-                }`}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-md font-medium text-sm sm:text-base transition-all ${mode === "visa"
+                  ? "bg-white text-primary-600 shadow-soft"
+                  : "text-neutral-600 hover:text-neutral-900"
+                  }`}
               >
                 <Plane size={18} className="inline mr-2" />
                 Visa Services
@@ -223,11 +222,10 @@ export function Hero() {
                   setSelectedCountry("");
                   setSelectedVisaType("");
                 }}
-                className={`px-4 py-2 rounded-md font-medium text-sm sm:text-base transition-all w-full sm:w-auto ${
-                  mode === "tour"
-                    ? "bg-white text-primary-600 shadow-soft"
-                    : "text-neutral-600 hover:text-neutral-900"
-                }`}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-md font-medium text-sm sm:text-base transition-all ${mode === "tour"
+                  ? "bg-white text-primary-600 shadow-soft"
+                  : "text-neutral-600 hover:text-neutral-900"
+                  }`}
               >
                 <MapPin size={18} className="inline mr-2" />
                 Tour Packages
@@ -248,7 +246,7 @@ export function Hero() {
                     setSelectedCountry(e.target.value);
                     setSelectedVisaType(""); // Reset visa type when country changes
                   }}
-                  className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
                 >
                   <option value="">Choose a country</option>
                   {countries.map((country) => (
@@ -266,10 +264,10 @@ export function Hero() {
                   value={selectedVisaType}
                   onChange={(e) => setSelectedVisaType(e.target.value)}
                   disabled={!selectedCountry}
-                  className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-base"
                 >
                   <option value="">
-                    {selectedCountry 
+                    {selectedCountry
                       ? (visaTypes.length === 0 ? "Loading visa types..." : "Select visa type")
                       : "Select a country first"}
                   </option>
@@ -314,7 +312,7 @@ export function Hero() {
                     setTimeout(() => setShowSuggestions(false), 200);
                   }}
                   placeholder="e.g., Dubai, Singapore, Europe"
-                  className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
                 />
                 {showSuggestions && destinationSuggestions.length > 0 && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg max-h-60 overflow-auto">
@@ -340,7 +338,7 @@ export function Hero() {
                   value={tourDate}
                   onChange={(e) => setTourDate(e.target.value)}
                   min={new Date().toISOString().split("T")[0]}
-                  className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
                 />
               </div>
               <div className="flex items-end">

@@ -1232,18 +1232,31 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       uploadFormData.append("documentType", doc.requirementId);
 
       try {
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
         const response = await fetch(`/api/applications/${applicationId}/documents`, {
           method: "POST",
           body: uploadFormData,
+          signal: controller.signal,
         });
+        
+        clearTimeout(timeoutId);
         
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
           console.error("Error uploading document:", errorData.error || "Upload failed");
           // Continue with other documents even if one fails
+        } else {
+          console.log("Document uploaded successfully:", doc.requirementId);
         }
-      } catch (error) {
-        console.error("Error uploading document:", error);
+      } catch (error: any) {
+        if (error.name === "AbortError") {
+          console.error("Document upload timed out:", doc.requirementId);
+        } else {
+          console.error("Error uploading document:", error);
+        }
         // Continue with other documents even if one fails
       }
     }
@@ -1423,26 +1436,89 @@ export default function VisaApplicationPage({ params }: { params: { country: str
 
     setLoading(true);
     try {
-      // Upload documents if any exist
+      console.log("Finishing application...", { applicationId, documentCount: Object.keys(formData.documents || {}).length });
+      
+      // Upload documents if any exist (with timeout to prevent hanging)
       if (formData.documents && Object.keys(formData.documents).length > 0) {
         try {
-          await uploadDocuments(applicationId, formData.travellerIds || createdTravellerIds);
+          console.log("Uploading documents...");
+          // Add timeout wrapper to prevent hanging
+          const uploadPromise = uploadDocuments(applicationId, formData.travellerIds || createdTravellerIds);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Document upload timeout")), 60000) // 60 second max
+          );
+          
+          await Promise.race([uploadPromise, timeoutPromise]);
+          console.log("Documents uploaded successfully");
         } catch (uploadError) {
           console.error("Error uploading documents:", uploadError);
           // Continue even if document upload fails - don't block completion
-          alert("Some documents may not have been uploaded. Please check your application status.");
+          // Don't show alert as it might block the redirect
+          console.warn("Some documents may not have been uploaded, but continuing with completion");
         }
+      } else {
+        console.log("No documents to upload");
+      }
+
+      // Submit application to change status from DOCUMENTS_PENDING to SUBMITTED
+      try {
+        console.log("Submitting application...");
+        const submitResponse = await fetch(`/api/applications/${applicationId}/submit`, {
+          method: "POST",
+        });
+
+        if (submitResponse.ok) {
+          console.log("Application submitted successfully");
+        } else {
+          const errorData = await submitResponse.json().catch(() => ({ error: "Unknown error" }));
+          console.warn("Failed to submit application:", errorData.error);
+          // Continue anyway - the application exists and documents are uploaded
+        }
+      } catch (submitError) {
+        console.error("Error submitting application:", submitError);
+        // Continue anyway - don't block redirect
       }
 
       // Clear draft locally
       clearDraftFromLocalStorage();
+      console.log("Draft cleared from localStorage");
 
-      // Redirect to thank you page
-      router.push(`/applications/thank-you?applicationId=${applicationId}`);
+      // Redirect to thank you page with fallback
+      const redirectUrl = `/applications/thank-you?applicationId=${applicationId}`;
+      console.log("Redirecting to:", redirectUrl);
+      
+      // Always redirect, even if submit failed
+      setLoading(false); // Clear loading state before redirect
+      
+      try {
+        router.push(redirectUrl);
+        // Fallback: if router.push doesn't work, use window.location after a short delay
+        setTimeout(() => {
+          if (window.location.pathname !== redirectUrl.split('?')[0]) {
+            console.log("Router push may have failed, using window.location fallback");
+            window.location.href = redirectUrl;
+          }
+        }, 500);
+      } catch (redirectError) {
+        console.error("Router redirect failed, using window.location:", redirectError);
+        window.location.href = redirectUrl;
+      }
     } catch (error) {
       console.error("Error finishing application:", error);
-      alert("An error occurred while completing your application. Please try again.");
       setLoading(false);
+      const errorMessage = error instanceof Error ? error.message : "An error occurred while completing your application.";
+      alert(errorMessage);
+      
+      // Even on error, try to redirect to thank you page if we have an applicationId
+      if (applicationId) {
+        const redirectUrl = `/applications/thank-you?applicationId=${applicationId}`;
+        console.log("Attempting redirect despite error:", redirectUrl);
+        try {
+          router.push(redirectUrl);
+        } catch {
+          window.location.href = redirectUrl;
+        }
+      }
     }
   };
 

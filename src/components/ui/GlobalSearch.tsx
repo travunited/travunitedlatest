@@ -214,7 +214,7 @@ export function GlobalSearch() {
           value={query}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
-          className="w-full pl-12 pr-10 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-sm"
+          className="w-full pl-12 pr-10 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all text-base sm:text-sm"
         />
         {query && (
           <button
@@ -258,9 +258,8 @@ export function GlobalSearch() {
                     key={`${result.type}-${result.id}`}
                     onClick={() => handleSelectResult(result)}
                     onMouseEnter={() => setSelectedIndex(index)}
-                    className={`w-full px-4 py-3 text-left hover:bg-neutral-50 transition-colors flex items-start space-x-3 ${
-                      selectedIndex === index ? "bg-neutral-50" : ""
-                    }`}
+                    className={`w-full px-4 py-3 text-left hover:bg-neutral-50 transition-colors flex items-start space-x-3 ${selectedIndex === index ? "bg-neutral-50" : ""
+                      }`}
                   >
                     <div className="flex-shrink-0 mt-0.5">
                       {result.type === "visa" ? (

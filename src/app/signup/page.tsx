@@ -19,6 +19,8 @@ function SignupPageContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [verifyMethod, setVerifyMethod] = useState<"email" | "mobile">("email");
+  const [mobileVerified, setMobileVerified] = useState(false);
+  const [mobileVerificationToken, setMobileVerificationToken] = useState<string | null>(null);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -30,6 +32,11 @@ function SignupPageContent() {
 
     try {
       const verifiedPhone = data.mobileNumber || data.identifier;
+      const token = data.access_token || data.token;
+
+      // Store verification state
+      setMobileVerified(true);
+      setMobileVerificationToken(token);
 
       const response = await fetch("/api/auth/signup", {
         method: "POST",
@@ -39,7 +46,7 @@ function SignupPageContent() {
           phone: verifiedPhone,
           verifyMethod: "mobile",
           isVerified: true,
-          accessToken: data.access_token || data.token
+          accessToken: token
         }),
       });
 
@@ -47,6 +54,7 @@ function SignupPageContent() {
 
       if (!response.ok) {
         setError(result.error || "Signup failed");
+        setLoading(false);
       } else {
         // Since mobile is already verified by widget, we can auto-login or redirect to login
         // For security, if the API doesn't auto-login, we redirect to login with a success msg
@@ -54,7 +62,6 @@ function SignupPageContent() {
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
-    } finally {
       setLoading(false);
     }
   }, [name, router]);
@@ -68,6 +75,20 @@ function SignupPageContent() {
     setError("");
     setLoading(true);
 
+    // For mobile signup, require verification through widget
+    if (verifyMethod === "mobile") {
+      if (!phone || phone.length !== 10) {
+        setError("Please enter a valid 10-digit mobile number");
+        setLoading(false);
+        return;
+      }
+      if (!mobileVerified || !mobileVerificationToken) {
+        setError("Please complete mobile verification using the OTP widget above");
+        setLoading(false);
+        return;
+      }
+    }
+
     if (verifyMethod === "email" && password !== confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
@@ -78,11 +99,6 @@ function SignupPageContent() {
       // Normalize phone if mobile verification chosen
       let normalizedPhone = undefined;
       if (verifyMethod === "mobile") {
-        if (!phone || phone.length !== 10) {
-          setError("Please enter a valid 10-digit mobile number");
-          setLoading(false);
-          return;
-        }
         normalizedPhone = `91${phone}`;
       }
 
@@ -94,7 +110,11 @@ function SignupPageContent() {
           email,
           password,
           phone: normalizedPhone,
-          verifyMethod
+          verifyMethod,
+          ...(verifyMethod === "mobile" && mobileVerified && mobileVerificationToken ? {
+            isVerified: true,
+            accessToken: mobileVerificationToken
+          } : {})
         }),
       });
 
@@ -176,6 +196,8 @@ function SignupPageContent() {
               onClick={() => {
                 setVerifyMethod("mobile");
                 setError("");
+                setMobileVerified(false);
+                setMobileVerificationToken(null);
               }}
               className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${verifyMethod === "mobile"
                 ? "bg-white text-primary-600 shadow-md transform scale-[1.02]"
@@ -316,11 +338,18 @@ function SignupPageContent() {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none"
+              disabled={loading || (verifyMethod === "mobile" && !mobileVerified)}
+              className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed"
             >
-              <span className="text-lg">{loading ? "Creating account..." : "Create Account"}</span>
-              {!loading && <ArrowRight size={22} />}
+              <span className="text-lg">
+                {loading 
+                  ? "Creating account..." 
+                  : verifyMethod === "mobile" && !mobileVerified
+                    ? "Verify Mobile to Continue"
+                    : "Create Account"}
+              </span>
+              {!loading && verifyMethod !== "mobile" && <ArrowRight size={22} />}
+              {verifyMethod === "mobile" && mobileVerified && !loading && <CheckCircle size={22} />}
             </button>
           </form>
 
