@@ -60,15 +60,18 @@ export const authOptions: NextAuthOptions = {
 
           // Unified Login/Signup: Auto-create user if not found
           if (!user) {
-            user = await prisma.user.create({
+            user = await (prisma.user as any).create({
               data: {
                 phone: phone,
                 role: "CUSTOMER",
                 phoneVerified: true,
                 isActive: true,
-                // No name or email needed for OTP-only flow
               }
             });
+          }
+
+          if (!user) {
+            throw new Error("FAILED_TO_CREATE_USER");
           }
 
           if (!user.isActive) {
