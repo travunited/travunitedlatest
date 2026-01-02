@@ -193,12 +193,8 @@ export default async function VisaDetailPage({
     subTypes: (visa as any).VisaSubType,
   } as any);
   const stayTypeDisplay = formatEnumLabel(visa.stayType ?? null, stayTypeLabels);
-  const stayDurationDisplay = visa.stayDuration || (visa.stayDurationDays
-    ? `Up to ${visa.stayDurationDays} days`
-    : "Not specified");
-  const validityDisplay = visa.validity || (visa.validityDays
-    ? `${visa.validityDays} days from issue`
-    : "Not specified");
+  const stayDurationDisplay = visa.stayDuration || "Not specified";
+  const validityDisplay = visa.validity || "Not specified";
 
   // Check if this is an information-only visa (VOA or Visa Free Entry)
   const isInformationOnly = visa.visaMode === "VOA" || visa.visaMode === "VISA_FREE_ENTRY";
@@ -518,12 +514,12 @@ export default async function VisaDetailPage({
                   </div>
                   <div className="flex items-center">
                     <CheckCircle size={16} className="mr-2 text-primary-600" />
-                    <span>Stay: {visa.stayDurationDays ? `Up to ${visa.stayDurationDays} days` : visa.stayDuration}</span>
+                    <span>Stay: {visa.stayDuration || "Not specified"}</span>
                   </div>
-                  {visa.validityDays && (
+                  {visa.validity && (
                     <div className="flex items-center">
                       <Info size={16} className="mr-2 text-primary-600" />
-                      <span>Validity: {visa.validityDays} days from issue</span>
+                      <span>Validity: {visa.validity}</span>
                     </div>
                   )}
                 </div>

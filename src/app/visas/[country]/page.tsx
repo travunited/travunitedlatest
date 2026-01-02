@@ -149,24 +149,18 @@ export default async function CountryVisasPage({
                         </div>
                         <div>
                           <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider mb-px">Stay Duration</p>
-                          <p className="font-semibold text-neutral-800 text-[11px] leading-tight">{visa.stayDurationDays ? `Up to ${visa.stayDurationDays} days` : visa.stayDuration}</p>
+                          <p className="font-semibold text-neutral-800 text-[11px] leading-tight">{visa.stayDuration || "Not specified"}</p>
                         </div>
                       </div>
 
-                      {((visa.validityDays != null && visa.validityDays > 0) || visa.validity) && (
+                      {visa.validity && (
                         <div className="flex items-center group/item">
                           <div className="w-6 h-6 rounded-lg bg-amber-50 flex items-center justify-center mr-2 group-hover/item:bg-amber-100 transition-colors">
                             <Calendar size={13} className="text-amber-600" />
                           </div>
                           <div>
                             <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider mb-px">Validity</p>
-                            <p className="font-semibold text-neutral-800 text-[11px] leading-tight">
-                              {visa.validity
-                                ? visa.validity
-                                : (visa.validityDays != null && visa.validityDays > 0
-                                  ? `${visa.validityDays} days from issue`
-                                  : "Not specified")}
-                            </p>
+                            <p className="font-semibold text-neutral-800 text-[11px] leading-tight">{visa.validity}</p>
                           </div>
                         </div>
                       )}

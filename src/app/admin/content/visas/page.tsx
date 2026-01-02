@@ -670,13 +670,13 @@ export default function AdminVisasPage() {
                     <div>
                       <div className="text-xs text-neutral-500 uppercase">Stay Duration</div>
                       <div className="font-medium text-neutral-900">
-                        {visa.stayDurationDays ? String(visa.stayDurationDays) : visa.stayDuration || "N/A"}
+                        {visa.stayDuration || "N/A"}
                       </div>
                     </div>
                     <div>
                       <div className="text-xs text-neutral-500 uppercase">Validity</div>
                       <div className="font-medium text-neutral-900">
-                        {visa.validityDays ? String(visa.validityDays) : visa.validity || "N/A"}
+                        {visa.validity || "N/A"}
                       </div>
                     </div>
                     <div>

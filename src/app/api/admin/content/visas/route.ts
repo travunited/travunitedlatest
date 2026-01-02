@@ -174,8 +174,6 @@ export async function POST(req: Request) {
       metaTitle,
       metaDescription,
       // New fields
-      stayDurationDays,
-      validityDays,
       currency,
       visaMode,
       structuredEntryType,
@@ -317,13 +315,9 @@ export async function POST(req: Request) {
       sampleVisaImageUrl: sampleVisaImageUrl || null,
       metaTitle: metaTitle || null,
       metaDescription: metaDescription || null,
-      // New fields - accept as string or number, try to parse number
-      stayDurationDays: stayDurationDays !== undefined && stayDurationDays !== null && stayDurationDays !== ""
-        ? (typeof stayDurationDays === 'string' ? (parseInt(stayDurationDays) || null) : Number(stayDurationDays))
-        : null,
-      validityDays: validityDays !== undefined && validityDays !== null && validityDays !== ""
-        ? (typeof validityDays === 'string' ? (parseInt(validityDays) || null) : Number(validityDays))
-        : null,
+      // Clear number fields - we only use text fields now
+      stayDurationDays: null,
+      validityDays: null,
       currency: currency || "INR",
       VisaDocumentRequirement: (() => {
         const validRequirements = requirements
