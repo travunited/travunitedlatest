@@ -12,6 +12,8 @@ import {
   ArrowRight,
   Info,
   MessageCircle,
+  ShieldCheck,
+  Calendar,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
@@ -508,6 +510,18 @@ export default async function VisaDetailPage({
                     <Clock size={16} className="mr-2 text-primary-600" />
                     <span>Processing: {visa.processingTime}</span>
                   </div>
+                  {visa.stayDuration && String(visa.stayDuration).trim() !== "" && visa.stayDuration !== "0" && (
+                    <div className="flex items-center">
+                      <ShieldCheck size={16} className="mr-2 text-blue-600" />
+                      <span>Stay Duration: {visa.stayDuration}</span>
+                    </div>
+                  )}
+                  {visa.validity && String(visa.validity).trim() !== "" && visa.validity !== "0" && (
+                    <div className="flex items-center">
+                      <Calendar size={16} className="mr-2 text-amber-600" />
+                      <span>Validity: {visa.validity}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </aside>

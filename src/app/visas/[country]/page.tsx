@@ -151,9 +151,29 @@ export default async function CountryVisasPage({
                         </div>
                       ) : null}
 
+                      {visa.stayDuration && String(visa.stayDuration).trim() !== "" && visa.stayDuration !== "0" && (
+                        <div className="flex items-center group/item">
+                          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center mr-3 group-hover/item:bg-blue-100 transition-colors">
+                            <ShieldCheck size={20} className="text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Stay Duration</p>
+                            <p className="font-semibold text-neutral-800">{visa.stayDuration}</p>
+                          </div>
+                        </div>
+                      )}
 
-
-
+                      {visa.validity && String(visa.validity).trim() !== "" && visa.validity !== "0" && (
+                        <div className="flex items-center group/item">
+                          <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center mr-3 group-hover/item:bg-amber-100 transition-colors">
+                            <Calendar size={20} className="text-amber-600" />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Validity</p>
+                            <p className="font-semibold text-neutral-800">{visa.validity}</p>
+                          </div>
+                        </div>
+                      )}
 
                       {buildEntrySummary(visa) && buildEntrySummary(visa) !== "0" && (
                         <div className="flex items-center group/item">

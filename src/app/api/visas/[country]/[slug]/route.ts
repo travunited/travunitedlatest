@@ -56,6 +56,8 @@ export async function GET(
       category: visa.category,
       priceInInr: visa.priceInInr,
       processingTime: visa.processingTime,
+      stayDuration: visa.stayDuration,
+      validity: visa.validity,
       entryType: visa.entryType,
       entryTypeLegacy: visa.entryTypeLegacy,
       visaMode: visa.visaMode,
