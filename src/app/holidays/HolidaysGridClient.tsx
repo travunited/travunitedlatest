@@ -8,17 +8,19 @@ import Image from "next/image";
 import { getMediaProxyUrl } from "@/lib/media";
 import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
 import { useDebounce } from "@/hooks/useDebounce";
-import { 
-  Search, 
-  Calendar, 
-  MapPin, 
-  ArrowRight, 
-  SlidersHorizontal, 
+import {
+  Search,
+  Calendar,
+  MapPin,
+  ArrowRight,
+  SlidersHorizontal,
   X,
   Users,
   TrendingUp,
   Tag,
   Star,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface TourCard {
@@ -69,7 +71,7 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
   const router = useRouter();
   const pathname = usePathname();
   const destinationParam = searchParams?.get("destination") || "";
-  
+
   // Calculate min/max for ranges (needed for initial state)
   const maxDuration = useMemo(() => {
     return Math.max(...tours.map((t) => t.durationDays || 0), 30);
@@ -104,7 +106,7 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
         }
       }
     }
-    
+
     // Otherwise, use URL params
     return {
       searchQuery: destinationParam,
@@ -133,7 +135,7 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
   }, [searchParams, destinationParam, maxDuration, maxPrice]);
 
   const initialState = getInitialState();
-  
+
   const [searchQuery, setSearchQuery] = useState(initialState.searchQuery);
   // Debounce search query for better performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -149,14 +151,14 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
     "recommended" | "price-asc" | "price-desc" | "duration-asc" | "duration-desc" | "newest"
   >(initialState.sortOption);
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Initialize search query from URL params
   useEffect(() => {
     if (destinationParam) {
       setSearchQuery(destinationParam);
     }
   }, [destinationParam]);
-  
+
   // Save filter state to sessionStorage whenever it changes
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -283,7 +285,7 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
   // Function to build URL with current filter state
   const buildToursUrl = useCallback((tourId?: string) => {
     const params = new URLSearchParams();
-    
+
     if (searchQuery) params.set("destination", searchQuery);
     if (selectedCountry !== "all") params.set("country", selectedCountry);
     if (selectedRegion !== "all") params.set("region", selectedRegion);
@@ -296,9 +298,9 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
     if (onlyFeatured) params.set("featured", "true");
     if (onlyAdvance) params.set("advance", "true");
     if (sortOption !== "recommended") params.set("sort", sortOption);
-    
+
     const queryString = params.toString();
-    return tourId 
+    return tourId
       ? `/holidays/${tourId}${queryString ? `?${queryString}` : ""}`
       : `/holidays${queryString ? `?${queryString}` : ""}`;
   }, [
@@ -352,117 +354,142 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 mb-8">
         <div className="bg-white rounded-2xl shadow-large p-6 space-y-4">
           {/* Search and Quick Filters */}
-          <div className="flex flex-col gap-4 lg:flex-row">
-            <div className="flex-1 relative">
-              <Search
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400"
-                size={20}
-              />
-              <input
-                type="text"
-                placeholder="Search holidays, destinations, themes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2 items-center">
-              <select
-                value={selectedCountry}
-                onChange={(e) => setSelectedCountry(e.target.value)}
-                className="px-3 py-2 border border-neutral-200 rounded-lg text-sm"
+          <div className="flex flex-col gap-4">
+            {/* Search Bar with Button */}
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Search
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400"
+                  size={20}
+                />
+                <input
+                  type="text"
+                  placeholder="Search holidays, destinations, themes..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              <button
+                onClick={() => {/* Filtering is handled by state changes, button can trigger blur or analytics */ }}
+                className="bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 transition-colors shadow-sm hidden md:block"
               >
-                <option value="all">All destinations</option>
-                {countries.map((country) => (
-                  <option key={country.code} value={country.code}>
-                    {country.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={sortOption}
-                onChange={(e) =>
-                  setSortOption(
-                    e.target.value as
+                Search
+              </button>
+            </div>
+
+            {/* Mobile Search Button & Filter Toggle */}
+            <div className="flex gap-2 md:hidden">
+              <button className="flex-1 bg-primary-600 text-white py-3 rounded-lg font-bold">
+                Search
+              </button>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2 px-4 py-3 border border-neutral-200 rounded-lg text-sm font-medium bg-white text-neutral-700 shadow-sm"
+              >
+                Filters
+                {showFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </div>
+
+            {/* Filters Section - Collapsible on Mobile */}
+            <div className={`${showFilters ? "flex" : "hidden md:flex"} flex-col gap-4 transition-all duration-300`}>
+              <div className="flex flex-wrap gap-2 items-center">
+                <select
+                  value={selectedCountry}
+                  onChange={(e) => setSelectedCountry(e.target.value)}
+                  className="flex-1 md:flex-none px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white"
+                >
+                  <option value="all">All destinations</option>
+                  {countries.map((country) => (
+                    <option key={country.code} value={country.code}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={sortOption}
+                  onChange={(e) =>
+                    setSortOption(
+                      e.target.value as
                       | "recommended"
                       | "price-asc"
                       | "price-desc"
                       | "duration-asc"
                       | "duration-desc"
                       | "newest"
-                  )
-                }
-                className="px-3 py-2 border border-neutral-200 rounded-lg text-sm"
-              >
-                <option value="recommended">Sort: Recommended</option>
-                <option value="price-asc">Price: Low → High</option>
-                <option value="price-desc">Price: High → Low</option>
-                <option value="duration-asc">Duration: Short → Long</option>
-                <option value="duration-desc">Duration: Long → Short</option>
-                <option value="newest">Newest First</option>
-              </select>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border ${
-                  showFilters || hasActiveFilters
-                    ? "bg-primary-600 text-white border-primary-600"
-                    : "bg-white text-neutral-700 border-neutral-200"
-                }`}
-              >
-                <SlidersHorizontal size={16} />
-                Filters
-                {hasActiveFilters && (
-                  <span className="bg-white text-primary-600 rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                    {[
-                      selectedCountry !== "all" ? 1 : 0,
-                      selectedRegion !== "all" ? 1 : 0,
-                      selectedTourType !== "all" ? 1 : 0,
-                      selectedThemes.length,
-                      onlyFeatured ? 1 : 0,
-                      onlyAdvance ? 1 : 0,
-                    ].reduce((a, b) => a + b, 0)}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
+                    )
+                  }
+                  className="flex-1 md:flex-none px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white"
+                >
+                  <option value="recommended">Sort: Recommended</option>
+                  <option value="price-asc">Price: Low → High</option>
+                  <option value="price-desc">Price: High → Low</option>
+                  <option value="duration-asc">Duration: Short → Long</option>
+                  <option value="duration-desc">Duration: Long → Short</option>
+                  <option value="newest">Newest First</option>
+                </select>
 
-          {/* Quick Filter Pills */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setOnlyFeatured((prev: boolean) => !prev)}
-              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                onlyFeatured
-                  ? "bg-primary-600 text-white"
-                  : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
-              }`}
-            >
-              <Star size={14} />
-              Featured
-            </button>
-            <button
-              onClick={() => setOnlyAdvance((prev: boolean) => !prev)}
-              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                onlyAdvance
-                  ? "bg-primary-600 text-white"
-                  : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
-              }`}
-            >
-              <Calendar size={14} />
-              Advance Payment
-            </button>
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors"
-              >
-                <X size={14} />
-                Clear All
-              </button>
-            )}
-            <p className="text-sm text-neutral-500 ml-auto flex items-center">
-              {sortedTours.length} {sortedTours.length === 1 ? "holiday package" : "holiday packages"}
-            </p>
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`hidden lg:inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${hasActiveFilters
+                      ? "bg-primary-50 text-primary-600 border-primary-200"
+                      : "bg-white text-neutral-700 border-neutral-200"
+                    }`}
+                >
+                  <SlidersHorizontal size={16} />
+                  More Filters
+                  {hasActiveFilters && (
+                    <span className="bg-primary-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px]">
+                      {[
+                        selectedCountry !== "all" ? 1 : 0,
+                        selectedRegion !== "all" ? 1 : 0,
+                        selectedTourType !== "all" ? 1 : 0,
+                        selectedThemes.length,
+                        onlyFeatured ? 1 : 0,
+                        onlyAdvance ? 1 : 0,
+                      ].reduce((a, b) => a + b, 0)}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Quick Filter Pills */}
+              <div className="flex flex-wrap gap-2 items-center pt-2 border-t border-neutral-100 lg:border-none lg:pt-0">
+                <button
+                  onClick={() => setOnlyFeatured((prev: boolean) => !prev)}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${onlyFeatured
+                      ? "bg-primary-600 text-white"
+                      : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                    }`}
+                >
+                  <Star size={12} />
+                  Featured
+                </button>
+                <button
+                  onClick={() => setOnlyAdvance((prev: boolean) => !prev)}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${onlyAdvance
+                      ? "bg-primary-600 text-white"
+                      : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
+                    }`}
+                >
+                  <Calendar size={12} />
+                  Advance Payment
+                </button>
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors"
+                  >
+                    <X size={12} />
+                    Clear All
+                  </button>
+                )}
+                <p className="text-xs text-neutral-500 ml-auto hidden sm:flex items-center">
+                  {sortedTours.length} {sortedTours.length === 1 ? "package" : "packages"}
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Advanced Filters Panel */}
@@ -583,11 +610,10 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
                       <button
                         key={theme}
                         onClick={() => toggleTheme(theme)}
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                          selectedThemes.includes(theme)
+                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${selectedThemes.includes(theme)
                             ? "bg-primary-600 text-white"
                             : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
-                        }`}
+                          }`}
                       >
                         <Tag size={12} />
                         {theme}
