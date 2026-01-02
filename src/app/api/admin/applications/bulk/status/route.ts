@@ -82,29 +82,32 @@ export async function POST(req: Request) {
         const previousStatus = app.status;
 
         // Send appropriate email based on status
-        if (status === "APPROVED") {
-          await sendVisaApprovedEmail(
-            app.User_Application_userIdToUser.email,
-            app.id,
-            app.country || "",
-            app.visaType || ""
-          );
-        } else if (status === "REJECTED") {
-          await sendVisaRejectedEmail(
-            app.User_Application_userIdToUser.email,
-            app.id,
-            app.country || "",
-            app.visaType || "",
-            ""
-          );
-        } else {
-          await sendVisaStatusUpdateEmail(
-            app.User_Application_userIdToUser.email,
-            app.id,
-            app.country || "",
-            app.visaType || "",
-            status
-          );
+        const userEmail = app.User_Application_userIdToUser.email;
+        if (userEmail) {
+          if (status === "APPROVED") {
+            await sendVisaApprovedEmail(
+              userEmail,
+              app.id,
+              app.country || "",
+              app.visaType || ""
+            );
+          } else if (status === "REJECTED") {
+            await sendVisaRejectedEmail(
+              userEmail,
+              app.id,
+              app.country || "",
+              app.visaType || "",
+              ""
+            );
+          } else {
+            await sendVisaStatusUpdateEmail(
+              userEmail,
+              app.id,
+              app.country || "",
+              app.visaType || "",
+              status
+            );
+          }
         }
 
         // Send in-app notification

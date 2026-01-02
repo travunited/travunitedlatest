@@ -100,21 +100,26 @@ export default function Msg91OtpWidget({
                     widgetId: WIDGET_ID,
                     tokenAuth: TOKEN_AUTH,
                     identifier: normalizedIdentifier,
+                    exposeMethods: true, // Allow manual trigger if needed
                     success: (data: any) => {
-                        console.log("[MSG91] Success:", data);
+                        console.log("[MSG91] Verified Successfully!", data);
                         if (isMounted) {
                             setIsLoading(false);
                             onSuccess(data);
                         }
                     },
                     failure: (err: any) => {
-                        console.error("[MSG91] Failure:", err);
+                        console.error("[MSG91] Verification Failed/Cancelled:", err);
                         if (isMounted) {
                             setIsLoading(false);
+                            const errorMsg = typeof err === 'string' ? err : err.message || "Verification failed";
+                            setError(errorMsg);
                             onFailure?.(err);
                         }
                     },
                 };
+
+                console.log("[MSG91] Initializing widget for:", normalizedIdentifier);
 
                 // The widget attaches itself to the DOM. 
                 // We provide the configuration which the widget reads.

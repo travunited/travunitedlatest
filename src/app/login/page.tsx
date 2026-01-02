@@ -83,11 +83,12 @@ function LoginPageContent() {
       // MSG91 Widget success provides data with verified identification
       // We might need to handle the structure of 'data' based on actual widget response
       // Usually, it includes the verified mobile number and a token
-      const verifiedPhone = data.mobileNumber || data.identifier;
+      const verifiedPhone = data.mobileNumber || data.identifier || data.mobile || data.email;
+      const accessToken = data["access-token"] || data.access_token || data.token;
 
       const result = await signIn("mobile-otp", {
         phone: verifiedPhone,
-        otp: data.access_token || data.token || "WIDGET_VERIFIED",
+        otp: accessToken || "WIDGET_VERIFIED",
         redirect: false,
       });
 

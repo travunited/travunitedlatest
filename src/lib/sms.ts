@@ -23,18 +23,19 @@ export async function sendOtp(phone: string): Promise<boolean> {
     }
 
     try {
-        const url = `https://control.msg91.com/api/v5/otp?template_id=${MSG91_OTP_TEMPLATE_ID}&mobile=${phone}&authkey=${MSG91_AUTH_KEY}`;
+        const url = `https://control.msg91.com/api/v5/otp?template_id=${MSG91_OTP_TEMPLATE_ID}&mobile=${phone}`;
 
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'authkey': MSG91_AUTH_KEY,
             },
         });
 
         const data = await response.json() as Msg91Response;
 
-        if (data.type === 'success') {
+        if (data.type === 'success' || (data as any).request_id) {
             console.log(`[SMS] OTP sent successfully to ${phone}`);
             return true;
         } else {
@@ -59,15 +60,18 @@ export async function verifyOtp(phone: string, otp: string): Promise<boolean> {
     }
 
     try {
-        const url = `https://control.msg91.com/api/v5/otp/verify?otp=${otp}&mobile=${phone}&authkey=${MSG91_AUTH_KEY}`;
+        const url = `https://control.msg91.com/api/v5/otp/verify?otp=${otp}&mobile=${phone}`;
 
         const response = await fetch(url, {
             method: 'GET',
+            headers: {
+                'authkey': MSG91_AUTH_KEY,
+            }
         });
 
         const data = await response.json() as Msg91Response;
 
-        if (data.type === 'success' || data.message === 'OTP verified successfully' || data.message === 'already_verified') {
+        if (data.type === 'success' || data.message === 'OTP verified successfully' || data.message === 'already_verified' || (data as any).message?.toLowerCase().includes("verified")) {
             console.log(`[SMS] OTP verified successfully for ${phone}`);
             return true;
         } else {
@@ -91,10 +95,13 @@ export async function resendOtp(phone: string): Promise<boolean> {
     }
 
     try {
-        const url = `https://control.msg91.com/api/v5/otp/retry?authkey=${MSG91_AUTH_KEY}&retrytype=text&mobile=${phone}`;
+        const url = `https://control.msg91.com/api/v5/otp/retry?retrytype=text&mobile=${phone}`;
 
         const response = await fetch(url, {
             method: 'GET',
+            headers: {
+                'authkey': MSG91_AUTH_KEY,
+            }
         });
 
         const data = await response.json() as Msg91Response;
@@ -111,6 +118,7 @@ export async function resendOtp(phone: string): Promise<boolean> {
         return false;
     }
 }
+
 /**
  * Verify access token from MSG91 OTP Widget
  * @param accessToken JWT token from the widget
@@ -122,24 +130,22 @@ export async function verifyMsg91Token(accessToken: string): Promise<{ success: 
     }
 
     try {
-        const url = 'https://control.msg91.com/api/v5/widget/verifyAccessToken';
+        const url = 'https://api.msg91.com/api/v5/widget/verifyAccessToken';
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
+                "authkey": MSG91_AUTH_KEY,
             },
             body: JSON.stringify({
-                "authkey": MSG91_AUTH_KEY,
                 "access-token": accessToken
             })
         });
 
         const data = await response.json();
 
-        // MSG91 verification response usually has type: 'success'
         if (data.type === 'success') {
-            // Identifier is usually the verified mobile/email
             const phone = data.mobile || data.identifier;
             return { success: true, phone };
         } else {

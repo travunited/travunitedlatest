@@ -78,12 +78,15 @@ export async function POST(
     });
 
     // Send approval email and notification
-    await sendVisaApprovedEmail(
-      application.User_Application_userIdToUser.email,
-      application.id,
-      application.country || "",
-      application.visaType || ""
-    );
+    const userEmail = application.User_Application_userIdToUser.email;
+    if (userEmail) {
+      await sendVisaApprovedEmail(
+        userEmail,
+        application.id,
+        application.country || "",
+        application.visaType || ""
+      );
+    }
     await notify({
       userId: application.userId,
       type: "VISA_READY",

@@ -59,6 +59,14 @@ export async function POST(
       );
     }
 
+    const userEmail = application.User_Application_userIdToUser.email;
+    if (!userEmail) {
+      return NextResponse.json(
+        { error: "User does not have an email address. Cannot resend email." },
+        { status: 400 }
+      );
+    }
+
     // Send appropriate email based on type
     let emailSent = false;
     let emailError: Error | null = null;
@@ -67,7 +75,7 @@ export async function POST(
       switch (emailType) {
         case "application_submitted":
           emailSent = await sendVisaStatusUpdateEmail(
-            application.User_Application_userIdToUser.email,
+            userEmail,
             application.id,
             application.country || "",
             application.visaType || "",
@@ -82,7 +90,7 @@ export async function POST(
             reason: doc.rejectionReason || "Document does not meet requirements",
           }));
           emailSent = await sendVisaDocumentRejectedEmail(
-            application.User_Application_userIdToUser.email,
+            userEmail,
             application.id,
             application.country || "",
             application.visaType || "",
@@ -93,7 +101,7 @@ export async function POST(
 
         case "visa_approved":
           emailSent = await sendVisaApprovedEmail(
-            application.User_Application_userIdToUser.email,
+            userEmail,
             application.id,
             application.country || "",
             application.visaType || "",
@@ -103,7 +111,7 @@ export async function POST(
 
         case "status_update":
           emailSent = await sendVisaStatusUpdateEmail(
-            application.User_Application_userIdToUser.email,
+            userEmail,
             application.id,
             application.country || "",
             application.visaType || "",

@@ -50,9 +50,17 @@ export async function POST(
     }
 
     // Send email notification
+    const userEmail = booking.User_Booking_userIdToUser.email;
+    if (!userEmail) {
+      return NextResponse.json(
+        { error: "User does not have an email address. Cannot send notification." },
+        { status: 400 }
+      );
+    }
+
     try {
       await sendTourStatusUpdateEmail(
-        booking.User_Booking_userIdToUser.email,
+        userEmail,
         booking.id,
         booking.tourName || "",
         booking.status

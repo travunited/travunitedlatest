@@ -107,19 +107,22 @@ export async function PUT(
         sendEmail: true,
       });
     } else if (normalizedStatus === "REJECTED" && rejectionReason) {
-      await sendVisaDocumentRejectedEmail(
-        document.Application.User_Application_userIdToUser.email,
-        document.applicationId,
-        document.Application.country || "",
-        document.Application.visaType || "",
-        [
-          {
-            type: document.documentType || "Document",
-            reason: rejectionReason,
-            documentId: document.id,
-          },
-        ]
-      );
+      const userEmail = document.Application.User_Application_userIdToUser.email;
+      if (userEmail) {
+        await sendVisaDocumentRejectedEmail(
+          userEmail,
+          document.applicationId,
+          document.Application.country || "",
+          document.Application.visaType || "",
+          [
+            {
+              type: document.documentType || "Document",
+              reason: rejectionReason,
+              documentId: document.id,
+            },
+          ]
+        );
+      }
       await notify({
         userId: document.Application.userId,
         type: "VISA_DOCUMENT_REJECTED",
@@ -160,7 +163,7 @@ export async function PUT(
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <h2>Document rejected</h2>
               <p><strong>Application:</strong> ${document.applicationId}</p>
-              <p><strong>Applicant:</strong> ${document.Application.User_Application_userIdToUser?.name || document.Application.User_Application_userIdToUser.email
+              <p><strong>Applicant:</strong> ${document.Application.User_Application_userIdToUser?.name || document.Application.User_Application_userIdToUser.email || "Applicant (No Email)"
             }</p>
               <p><strong>Document:</strong> ${document.documentType || "Document"}</p>
               <p><strong>Reason:</strong> ${rejectionReason}</p>

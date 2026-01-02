@@ -66,17 +66,19 @@ export async function PUT(
 
     // Send email notifications and in-app notifications
     try {
+      const userEmail = application.User_Application_userIdToUser.email;
       if (status === "APPROVED") {
-        try {
-          await sendVisaApprovedEmail(
-            application.User_Application_userIdToUser.email,
-            application.id,
-            application.country || "",
-            application.visaType || ""
-          );
-        } catch (emailError) {
-          console.error("Error sending visa approved email:", emailError);
-          // Continue with notification even if email fails
+        if (userEmail) {
+          try {
+            await sendVisaApprovedEmail(
+              userEmail,
+              application.id,
+              application.country || "",
+              application.visaType || ""
+            );
+          } catch (emailError) {
+            console.error("Error sending visa approved email:", emailError);
+          }
         }
         await notify({
           userId: application.userId,
@@ -90,20 +92,21 @@ export async function PUT(
             country: application.country,
             visaType: application.visaType,
           },
-          sendEmail: false, // Email already sent above
+          sendEmail: false, // Explicitly false as we handle it above
         });
       } else if (status === "REJECTED") {
-        try {
-          await sendVisaRejectedEmail(
-            application.User_Application_userIdToUser.email,
-            application.id,
-            application.country || "",
-            application.visaType || "",
-            rejectionReason || ""
-          );
-        } catch (emailError) {
-          console.error("Error sending visa rejected email:", emailError);
-          // Continue with notification even if email fails
+        if (userEmail) {
+          try {
+            await sendVisaRejectedEmail(
+              userEmail,
+              application.id,
+              application.country || "",
+              application.visaType || "",
+              rejectionReason || ""
+            );
+          } catch (emailError) {
+            console.error("Error sending visa rejected email:", emailError);
+          }
         }
         await notify({
           userId: application.userId,
@@ -118,20 +121,21 @@ export async function PUT(
             visaType: application.visaType,
             reason: rejectionReason,
           },
-          sendEmail: false, // Email already sent above
+          sendEmail: false,
         });
       } else {
-        try {
-          await sendVisaStatusUpdateEmail(
-            application.User_Application_userIdToUser.email,
-            application.id,
-            application.country || "",
-            application.visaType || "",
-            status
-          );
-        } catch (emailError) {
-          console.error("Error sending visa status update email:", emailError);
-          // Continue with notification even if email fails
+        if (userEmail) {
+          try {
+            await sendVisaStatusUpdateEmail(
+              userEmail,
+              application.id,
+              application.country || "",
+              application.visaType || "",
+              status
+            );
+          } catch (emailError) {
+            console.error("Error sending visa status update email:", emailError);
+          }
         }
         await notify({
           userId: application.userId,
@@ -145,7 +149,7 @@ export async function PUT(
             country: application.country,
             visaType: application.visaType,
           },
-          sendEmail: false, // Email already sent above
+          sendEmail: false,
         });
       }
     } catch (notificationError) {

@@ -172,8 +172,9 @@ function VerifyMobileContent() {
                             <Msg91OtpWidget
                                 identifier={phone}
                                 onSuccess={(data) => {
-                                    if (data && data["access-token"]) {
-                                        handleVerifyOtp(undefined, data["access-token"]);
+                                    const token = data?.["access-token"] || data?.access_token || data?.token;
+                                    if (token) {
+                                        handleVerifyOtp(undefined, token);
                                     }
                                 }}
                                 onFailure={(error) => {
