@@ -718,6 +718,9 @@ export default function AdminVisaEditorPage() {
 
       const payload = {
         ...restFormData,
+        // Explicitly include stayDuration and validity to ensure they're always sent
+        stayDuration: formData.stayDuration || "",
+        validity: formData.validity || "",
         // Only include entryType/structuredEntryType if they have non-empty values
         // Don't send entryTypeLegacy as entryType - entryType should only come from the structured entryType field
         // entryTypeLegacy is handled separately in the API
