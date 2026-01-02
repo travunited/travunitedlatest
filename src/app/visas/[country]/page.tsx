@@ -107,11 +107,11 @@ export default async function CountryVisasPage({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {(country as any).Visa.map((visa: any) => (
                 <div
                   key={visa.id}
-                  className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-3 border border-neutral-100 relative overflow-hidden flex flex-col h-full"
+                  className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-2.5 border border-neutral-100 relative overflow-hidden flex flex-col h-full"
                 >
                   <div className="mb-auto">
                     <div className="flex items-center justify-between mb-2">
@@ -132,7 +132,7 @@ export default async function CountryVisasPage({
                       <p className="text-neutral-500 font-medium mb-2 text-xs">{visa.subtitle}</p>
                     )}
 
-                    <div className="space-y-1.5 mb-3 text-xs text-neutral-600">
+                    <div className="space-y-1.5 mb-2 text-xs text-neutral-600">
                       <div className="flex items-center group/item">
                         <div className="w-6 h-6 rounded-lg bg-primary-50 flex items-center justify-center mr-2 group-hover/item:bg-primary-100 transition-colors">
                           <Clock size={13} className="text-primary-600" />
@@ -195,7 +195,7 @@ export default async function CountryVisasPage({
                     </div>
                   </div>
 
-                  <div className="pt-2.5 border-t border-neutral-100 mt-auto">
+                  <div className="pt-2 border-t border-neutral-100 mt-auto">
                     <div className="flex flex-col gap-2">
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-wider">Starting from</p>
