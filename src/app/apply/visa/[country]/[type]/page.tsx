@@ -170,7 +170,9 @@ export default function VisaApplicationPage({ params }: { params: { country: str
 
   const visaName = visaInfo?.name || `${params?.country?.toUpperCase() || "Visa"} Visa`;
   const visaPrice = visaInfo?.priceInInr ?? 0;
-  const visaProcessing = visaInfo?.processingTime || "Processing time shared after review";
+  const visaProcessing = (visaInfo?.processingTime && visaInfo.processingTime !== "0")
+    ? visaInfo.processingTime
+    : "Processing time shared after review";
 
   const requirementMap = useMemo(() => {
     const map = new Map<string, VisaRequirement>();
@@ -252,16 +254,16 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         const response = await fetch(
           `/api/visas/${encodeURIComponent(params.country)}/${encodeURIComponent(params.type)}`
         );
-        
+
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Visa not found");
           }
           throw new Error(`Failed to load visa: ${response.statusText}`);
         }
-        
+
         const data: VisaDetailsResponse = await response.json();
-        
+
         if (!isMounted) return;
 
         // Validate data structure
@@ -296,9 +298,9 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         }
       }
     }
-    
+
     loadVisa();
-    
+
     return () => {
       isMounted = false;
     };
@@ -1235,15 +1237,15 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         // Add timeout to prevent hanging
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-        
+
         const response = await fetch(`/api/applications/${applicationId}/documents`, {
           method: "POST",
           body: uploadFormData,
           signal: controller.signal,
         });
-        
+
         clearTimeout(timeoutId);
-        
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
           console.error("Error uploading document:", errorData.error || "Upload failed");
@@ -1437,17 +1439,17 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     setLoading(true);
     try {
       console.log("Finishing application...", { applicationId, documentCount: Object.keys(formData.documents || {}).length });
-      
+
       // Upload documents if any exist (with timeout to prevent hanging)
       if (formData.documents && Object.keys(formData.documents).length > 0) {
         try {
           console.log("Uploading documents...");
           // Add timeout wrapper to prevent hanging
           const uploadPromise = uploadDocuments(applicationId, formData.travellerIds || createdTravellerIds);
-          const timeoutPromise = new Promise((_, reject) => 
+          const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error("Document upload timeout")), 60000) // 60 second max
           );
-          
+
           await Promise.race([uploadPromise, timeoutPromise]);
           console.log("Documents uploaded successfully");
         } catch (uploadError) {
@@ -1486,10 +1488,10 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       // Redirect to thank you page with fallback
       const redirectUrl = `/applications/thank-you?applicationId=${applicationId}`;
       console.log("Redirecting to:", redirectUrl);
-      
+
       // Always redirect, even if submit failed
       setLoading(false); // Clear loading state before redirect
-      
+
       try {
         router.push(redirectUrl);
         // Fallback: if router.push doesn't work, use window.location after a short delay
@@ -1508,7 +1510,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       setLoading(false);
       const errorMessage = error instanceof Error ? error.message : "An error occurred while completing your application.";
       alert(errorMessage);
-      
+
       // Even on error, try to redirect to thank you page if we have an applicationId
       if (applicationId) {
         const redirectUrl = `/applications/thank-you?applicationId=${applicationId}`;
@@ -1540,15 +1542,21 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                 </div>
                 <div>
                   <p className="text-xs text-neutral-500 mb-1">Validity</p>
-                  <p className="font-medium text-sm sm:text-base">{visaLoading ? "..." : visaInfo?.validity || "—"}</p>
+                  <p className="font-medium text-sm sm:text-base">
+                    {visaLoading ? "..." : (visaInfo?.validity && visaInfo.validity !== "0" ? visaInfo.validity : "—")}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-neutral-500 mb-1">Max Stay</p>
-                  <p className="font-medium text-sm sm:text-base">{visaLoading ? "..." : visaInfo?.stayDuration || "—"}</p>
+                  <p className="font-medium text-sm sm:text-base">
+                    {visaLoading ? "..." : (visaInfo?.stayDuration && visaInfo.stayDuration !== "0" ? visaInfo.stayDuration : "—")}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-neutral-500 mb-1">Entry Type</p>
-                  <p className="font-medium text-sm sm:text-base">{visaLoading ? "..." : visaInfo?.entryType || "—"}</p>
+                  <p className="font-medium text-sm sm:text-base">
+                    {visaLoading ? "..." : (visaInfo?.entryType && visaInfo.entryType !== "0" ? visaInfo.entryType : "—")}
+                  </p>
                 </div>
               </div>
 
