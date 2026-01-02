@@ -34,8 +34,6 @@ interface VisaDetailsResponse {
   category: string;
   priceInInr: number;
   processingTime: string;
-  stayDuration: string;
-  validity: string;
   entryType: string;
   visaMode: string | null;
   overview: string;

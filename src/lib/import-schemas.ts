@@ -29,7 +29,6 @@ export const VisaImportRowSchema = z.object({
   image: z.string().optional().nullable(),
   description: z.string().optional(),
   processing_time: z.string().optional(), // e.g., "1 to 2 Working Days"
-  validity: z.string().optional(), // e.g., "3 Months"
   
   // JSON array strings
   requirements: z.string().optional().nullable(), // JSON array of requirement names
@@ -72,16 +71,6 @@ export const VisaImportRowSchema = z.object({
   visa_name: z.string().optional(),
   visa_slug: z.string().optional(),
   entry_type: z.string().optional(),
-  stay_duration_days: z.string().optional().transform((val) => {
-    if (!val) return null;
-    const num = parseInt(val);
-    return isNaN(num) ? null : num;
-  }),
-  validity_days: z.string().optional().transform((val) => {
-    if (!val) return null;
-    const num = parseInt(val);
-    return isNaN(num) ? null : num;
-  }),
   processing_time_days: z.string().optional(),
   govt_fee: z.string().optional().transform((val) => {
     if (!val) return null;

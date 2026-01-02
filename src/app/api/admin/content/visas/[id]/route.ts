@@ -283,12 +283,6 @@ export async function PUT(
     //   if (existingVisa.processingTime && existingVisa.processingTime.trim() !== "" && (!processingTime || (typeof processingTime === 'string' && processingTime.trim() === ""))) {
     //     missingFields.push("processingTime");
     //   }
-    //   if (existingVisa.stayDuration && existingVisa.stayDuration.trim() !== "" && (!stayDuration || (typeof stayDuration === 'string' && stayDuration.trim() === ""))) {
-    //     missingFields.push("stayDuration");
-    //   }
-    //   if (existingVisa.validity && existingVisa.validity.trim() !== "" && (!validity || (typeof validity === 'string' && validity.trim() === ""))) {
-    //     missingFields.push("validity");
-    //   }
     //   if (existingVisa.overview && existingVisa.overview.trim() !== "" && (!overview || (typeof overview === 'string' && overview.trim() === ""))) {
     //     missingFields.push("overview");
     //   }
@@ -409,9 +403,6 @@ export async function PUT(
               : undefined,
           metaTitle: metaTitle || null,
           metaDescription: metaDescription || null,
-          // Clear number fields - we only use text fields now
-          stayDurationDays: null,
-          validityDays: null,
           currency: currency || undefined,
         },
       });

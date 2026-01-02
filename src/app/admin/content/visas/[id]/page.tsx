@@ -31,8 +31,6 @@ interface FormState {
   isFeatured: boolean;
   priceInInr: number;
   processingTime: string;
-  stayDuration: string;
-  validity: string;
   entryType: string; // structured enum value (SINGLE/DOUBLE/MULTIPLE)
   entryTypeLegacy: string;
   visaMode: string;
@@ -165,8 +163,6 @@ export default function AdminVisaEditorPage() {
     isFeatured: false,
     priceInInr: 0,
     processingTime: "",
-    stayDuration: "",
-    validity: "",
     entryType: "",
     entryTypeLegacy: "",
     visaMode: "",
@@ -511,8 +507,6 @@ export default function AdminVisaEditorPage() {
       isFeatured: isClone ? false : data.isFeatured,
       priceInInr: data.priceInInr,
       processingTime: data.processingTime || "",
-      stayDuration: data.stayDuration || "",
-      validity: data.validity || "",
       entryType: data.entryType || "",
       entryTypeLegacy: data.entryTypeLegacy || "",
       visaMode: data.visaMode || "EVISA",
@@ -1170,33 +1164,6 @@ export default function AdminVisaEditorPage() {
                       onChange={updateProcessingTime}
                       placeholder="3-5 working days"
                     />
-                  </div>
-                </div>
-                <div className="border-t border-neutral-200 pt-4">
-                  <h3 className="text-lg font-semibold text-neutral-900 mb-4">Validity & Duration</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-neutral-700">
-                        Stay Duration (Display Text)
-                      </label>
-                      <TextInput
-                        value={formData.stayDuration}
-                        onChange={(value) => updateFormField("stayDuration", value)}
-                        placeholder="e.g. 30 Days"
-                      />
-                      <p className="text-xs text-neutral-500 mt-1">Duration allowed to stay</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-neutral-700">
-                        Validity (Display Text)
-                      </label>
-                      <TextInput
-                        value={formData.validity}
-                        onChange={(value) => updateFormField("validity", value)}
-                        placeholder="e.g. 60 days from issue"
-                      />
-                      <p className="text-xs text-neutral-500 mt-1">Validity period from date of issue</p>
-                    </div>
                   </div>
                 </div>
 

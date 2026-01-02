@@ -25,18 +25,6 @@ function parseJSON<T>(jsonString: string | null | undefined, defaultValue: T): T
   }
 }
 
-// Helper to extract days from duration/validity strings like "30 Days", "3 Months"
-function extractDays(text: string | null | undefined): number | null {
-  if (!text) return null;
-  const match = text.match(/(\d+)\s*(day|days|month|months|year|years)/i);
-  if (!match) return null;
-  const num = parseInt(match[1]);
-  const unit = match[2].toLowerCase();
-  if (unit.startsWith("month")) return num * 30;
-  if (unit.startsWith("year")) return num * 365;
-  return num;
-}
-
 // Helper to find or create country by name
 async function findOrCreateCountry(countryName: string | undefined, flagEmoji: string | undefined) {
   if (!countryName) {

@@ -603,8 +603,6 @@ model Visa {
   isFeatured              Boolean                   @default(false)
   priceInInr              Int
   processingTime          String
-  stayDuration            String?
-  validity                String?
   entryTypeLegacy         String
   overview                String
   eligibility             String
@@ -617,8 +615,6 @@ model Visa {
   metaDescription         String?
   createdAt               DateTime                  @default(now())
   updatedAt               DateTime
-  stayDurationDays        Int?
-  validityDays            Int?
   govtFee                 Int?
   serviceFee              Int?
   currency                String?                   @default("INR")

@@ -217,8 +217,6 @@ export async function POST(req: Request) {
     //   !category ||
     //   !priceInInr ||
     //   !processingTime ||
-    //   !stayDuration ||
-    //   !validity ||
     //   !overview ||
     //   !eligibility
     // ) {
@@ -309,9 +307,6 @@ export async function POST(req: Request) {
       sampleVisaImageUrl: sampleVisaImageUrl || null,
       metaTitle: metaTitle || null,
       metaDescription: metaDescription || null,
-      // Clear number fields - we only use text fields now
-      stayDurationDays: null,
-      validityDays: null,
       currency: currency || "INR",
       VisaDocumentRequirement: (() => {
         const validRequirements = requirements

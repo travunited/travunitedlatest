@@ -50,16 +50,30 @@ function SignupPageContent() {
         return;
       }
 
+      // Normalize phone number
+      let normalizedPhone = verifiedPhone.replace(/\D/g, "");
+      if (normalizedPhone.length === 10) {
+        normalizedPhone = `91${normalizedPhone}`;
+      } else if (normalizedPhone.length === 12 && normalizedPhone.startsWith("91")) {
+        // Already has country code
+        normalizedPhone = normalizedPhone;
+      } else {
+        setError("Invalid phone number format. Please try again.");
+        setLoading(false);
+        return;
+      }
+
       // Store verification state
       setMobileVerified(true);
       setMobileVerificationToken(token);
 
+      // Create account via API
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: name.trim(),
-          phone: verifiedPhone,
+          phone: normalizedPhone,
           verifyMethod: "mobile",
           isVerified: true,
           accessToken: token
@@ -73,10 +87,30 @@ function SignupPageContent() {
         setLoading(false);
         setMobileVerified(false);
         setMobileVerificationToken(null);
-      } else {
-        // Since mobile is already verified by widget, we can auto-login or redirect to login
-        // For security, if the API doesn't auto-login, we redirect to login with a success msg
-        router.push(`/login?email=${encodeURIComponent(verifiedPhone)}&verified=true`);
+        return;
+      }
+
+      // Auto-login after successful signup since OTP is already verified
+      try {
+        const loginResult = await signIn("mobile-otp", {
+          phone: normalizedPhone,
+          otp: token || "WIDGET_VERIFIED",
+          redirect: false,
+        });
+
+        if (loginResult?.ok) {
+          // Successfully logged in - redirect to dashboard or intended page
+          const redirectUrl = searchParams?.get("redirect") || "/dashboard";
+          router.push(redirectUrl);
+        } else {
+          // Login failed but account created - redirect to login page
+          console.error("Auto-login failed after signup:", loginResult?.error);
+          router.push(`/login?phone=${encodeURIComponent(normalizedPhone)}&verified=true`);
+        }
+      } catch (loginError) {
+        console.error("Auto-login error:", loginError);
+        // Account created but login failed - redirect to login
+        router.push(`/login?phone=${encodeURIComponent(normalizedPhone)}&verified=true`);
       }
     } catch (err) {
       console.error("Mobile signup error:", err);
@@ -85,16 +119,29 @@ function SignupPageContent() {
       setMobileVerified(false);
       setMobileVerificationToken(null);
     }
-  }, [name, router]);
+  }, [name, router, searchParams]);
 
   const handleMobileSignupFailure = useCallback((err: any) => {
-    setError(err.message || "OTP verification failed");
+    console.error("Mobile OTP verification failed:", err);
+    setError(err.message || "OTP verification failed. Please try again.");
+    setMobileVerified(false);
+    setMobileVerificationToken(null);
+    setLoading(false);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    
+    // For mobile signup, if already verified via widget, the widget callback should handle signup
+    // This form submission is mainly for email signup or as a fallback
+    if (verifyMethod === "mobile" && mobileVerified && mobileVerificationToken) {
+      // Mobile signup should be handled by handleMobileSignupSuccess callback
+      // But if form is submitted manually, we can still process it
+      setLoading(true);
+    } else {
+      setLoading(true);
+    }
 
     // Validate name first
     if (!name || name.trim().length < 2) {
@@ -136,63 +183,97 @@ function SignupPageContent() {
     }
 
     try {
-      // Normalize phone if mobile verification chosen
-      let normalizedPhone = undefined;
-      if (verifyMethod === "mobile") {
-        normalizedPhone = `91${phone}`;
-      }
-
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          phone: normalizedPhone,
-          verifyMethod,
-          ...(verifyMethod === "mobile" && mobileVerified && mobileVerificationToken ? {
+      // For mobile signup, the widget should have already handled signup via handleMobileSignupSuccess
+      // This handleSubmit is mainly for email signup or as a fallback
+      if (verifyMethod === "mobile" && mobileVerified && mobileVerificationToken) {
+        // Mobile signup should be handled by handleMobileSignupSuccess callback
+        // But if form is submitted, we can still process it
+        const normalizedPhone = `91${phone}`;
+        
+        const response = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim(),
+            phone: normalizedPhone,
+            verifyMethod: "mobile",
             isVerified: true,
             accessToken: mobileVerificationToken
-          } : {})
-        }),
-      });
+          }),
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        setError(data.error || "Signup failed");
-      } else {
+        if (!response.ok) {
+          setError(data.error || "Signup failed");
+          setLoading(false);
+          return;
+        }
+
+        // Auto-login after successful mobile signup
+        try {
+          const loginResult = await signIn("mobile-otp", {
+            phone: normalizedPhone,
+            otp: mobileVerificationToken || "WIDGET_VERIFIED",
+            redirect: false,
+          });
+
+          if (loginResult?.ok) {
+            const redirectUrl = searchParams?.get("redirect") || "/dashboard";
+            router.push(redirectUrl);
+          } else {
+            router.push(`/login?phone=${encodeURIComponent(normalizedPhone)}&verified=true`);
+          }
+        } catch (loginError) {
+          console.error("Auto-login error:", loginError);
+          router.push(`/login?phone=${encodeURIComponent(normalizedPhone)}&verified=true`);
+        }
+        return;
+      }
+
+      // Email signup flow
+      if (verifyMethod === "email") {
+        const response = await fetch("/api/auth/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim(),
+            email,
+            password,
+            verifyMethod: "email"
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setError(data.error || "Signup failed");
+          setLoading(false);
+          return;
+        }
+
         // Show OTP verification step
         if (data.requiresVerification) {
           const redirectUrl = searchParams?.get("redirect") || "/dashboard";
-          if (verifyMethod === "email") {
-            router.push(`/verify-email?email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirectUrl)}`);
-          } else {
-            router.push(`/verify-mobile?phone=${encodeURIComponent(normalizedPhone || "")}&redirect=${encodeURIComponent(redirectUrl)}`);
-          }
+          router.push(`/verify-email?email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirectUrl)}`);
         } else {
-          // If already verified (e.g. verification-first flow or verification skipped)
-          if (verifyMethod === "email") {
-            const result = await signIn("credentials", {
-              email,
-              password,
-              redirect: false,
-            });
+          // If already verified, auto-login
+          const result = await signIn("credentials", {
+            email,
+            password,
+            redirect: false,
+          });
 
-            if (result?.ok) {
-              const redirectUrl = searchParams?.get("redirect") || "/dashboard";
-              router.push(redirectUrl);
-            } else {
-              router.push("/login?email=" + encodeURIComponent(email));
-            }
+          if (result?.ok) {
+            const redirectUrl = searchParams?.get("redirect") || "/dashboard";
+            router.push(redirectUrl);
           } else {
-            // For mobile, redirect to login with verified flag
-            router.push(`/login?email=${encodeURIComponent(normalizedPhone || "")}&verified=true`);
+            router.push("/login?email=" + encodeURIComponent(email));
           }
         }
       }
     } catch (err) {
+      console.error("Signup error:", err);
       setError("An error occurred. Please try again.");
     } finally {
       setLoading(false);
@@ -386,13 +467,13 @@ function SignupPageContent() {
 
             <button
               type="submit"
-              disabled={loading || (verifyMethod === "mobile" && !mobileVerified)}
+              disabled={loading || (verifyMethod === "mobile" && (!mobileVerified || !mobileVerificationToken))}
               className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed"
             >
               <span className="text-lg">
                 {loading 
                   ? "Creating account..." 
-                  : verifyMethod === "mobile" && !mobileVerified
+                  : verifyMethod === "mobile" && (!mobileVerified || !mobileVerificationToken)
                     ? "Verify Mobile to Continue"
                     : "Create Account"}
               </span>
