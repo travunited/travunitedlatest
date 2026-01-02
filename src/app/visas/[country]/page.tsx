@@ -82,7 +82,6 @@ export default async function CountryVisasPage({
     (country as any).Visa = (country as any).Visa.map((visa: any) => ({
       ...visa,
       validityDays: null,
-      stayDurationDays: null,
     }));
   }
 
@@ -154,23 +153,7 @@ export default async function CountryVisasPage({
                         </div>
                       ) : null}
 
-                      {(() => {
-                        const stayDurationValue = visa.stayDuration;
-                        if (!stayDurationValue) return null;
-                        const strValue = String(stayDurationValue).trim();
-                        if (strValue === "" || strValue === "0" || strValue === "null" || strValue === "undefined") return null;
-                        return (
-                          <div className="flex items-center group/item">
-                            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center mr-3 group-hover/item:bg-blue-100 transition-colors">
-                              <ShieldCheck size={20} className="text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Stay Duration</p>
-                              <p className="font-semibold text-neutral-800">{stayDurationValue}</p>
-                            </div>
-                          </div>
-                        );
-                      })()}
+
 
                       {(() => {
                         const validityValue = visa.validity;

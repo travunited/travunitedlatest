@@ -1546,12 +1546,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                     {visaLoading ? "..." : (visaInfo?.validity && visaInfo.validity !== "0" ? visaInfo.validity : "—")}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-neutral-500 mb-1">Max Stay</p>
-                  <p className="font-medium text-sm sm:text-base">
-                    {visaLoading ? "..." : (visaInfo?.stayDuration && visaInfo.stayDuration !== "0" ? visaInfo.stayDuration : "—")}
-                  </p>
-                </div>
+
                 <div>
                   <p className="text-xs text-neutral-500 mb-1">Entry Type</p>
                   <p className="font-medium text-sm sm:text-base">

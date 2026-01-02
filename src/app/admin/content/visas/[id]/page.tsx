@@ -31,7 +31,6 @@ interface FormState {
   isFeatured: boolean;
   priceInInr: number;
   processingTime: string;
-  stayDuration: string;
   validity: string;
   entryType: string; // structured enum value (SINGLE/DOUBLE/MULTIPLE)
   entryTypeLegacy: string;
@@ -165,7 +164,6 @@ export default function AdminVisaEditorPage() {
     isFeatured: false,
     priceInInr: 0,
     processingTime: "",
-    stayDuration: "",
     validity: "",
     entryType: "",
     entryTypeLegacy: "",
@@ -511,7 +509,6 @@ export default function AdminVisaEditorPage() {
       isFeatured: isClone ? false : data.isFeatured,
       priceInInr: data.priceInInr,
       processingTime: data.processingTime,
-      stayDuration: data.stayDuration,
       validity: data.validity,
       entryType: data.entryType || "",
       entryTypeLegacy: data.entryTypeLegacy || "",
@@ -713,13 +710,13 @@ export default function AdminVisaEditorPage() {
         visaMode,
         stayType,
         visaSubTypeLabel,
+        stayDuration, // Removed from payload, but still destructured if needed elsewhere
         ...restFormData
       } = formData;
 
       const payload = {
         ...restFormData,
-        // Explicitly include stayDuration and validity to ensure they're always sent
-        stayDuration: formData.stayDuration || "",
+        // Explicitly include validity to ensure it's always sent
         validity: formData.validity || "",
         // Only include entryType/structuredEntryType if they have non-empty values
         // Don't send entryTypeLegacy as entryType - entryType should only come from the structured entryType field
@@ -1178,17 +1175,6 @@ export default function AdminVisaEditorPage() {
                 <div className="border-t border-neutral-200 pt-4">
                   <h3 className="text-lg font-semibold text-neutral-900 mb-4">Validity & Duration</h3>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-neutral-700">
-                        Stay Duration
-                      </label>
-                      <TextInput
-                        value={formData.stayDuration}
-                        onChange={(value) => updateFormField("stayDuration", value)}
-                        placeholder="e.g. 30 Days"
-                      />
-                      <p className="text-xs text-neutral-500 mt-1">Duration allowed to stay</p>
-                    </div>
                     <div>
                       <label className="text-sm font-medium text-neutral-700">
                         Validity

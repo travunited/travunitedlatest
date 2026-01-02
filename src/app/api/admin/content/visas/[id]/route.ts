@@ -139,7 +139,6 @@ export async function PUT(
         isFeatured: true,
         priceInInr: true,
         processingTime: true,
-        stayDuration: true,
         validity: true,
         entryType: true,
         overview: true,
@@ -203,12 +202,7 @@ export async function PUT(
     const processingTime = (body.processingTime !== undefined && body.processingTime !== null && body.processingTime !== "")
       ? body.processingTime
       : existingVisa.processingTime;
-    
-    // Use only text fields for stayDuration and validity
-    // Allow empty strings to be saved (to clear the field), but use existing if not provided
-    const stayDuration = body.stayDuration !== undefined && body.stayDuration !== null
-      ? body.stayDuration
-      : existingVisa.stayDuration;
+
     const validity = body.validity !== undefined && body.validity !== null
       ? body.validity
       : existingVisa.validity;
@@ -402,7 +396,6 @@ export async function PUT(
           isFeatured: isFeatured ?? false,
           priceInInr: Number(priceInInr),
           processingTime,
-          stayDuration,
           validity,
           entryTypeLegacy: (body.entryTypeLegacy !== undefined && body.entryTypeLegacy !== null && typeof body.entryTypeLegacy === "string" && body.entryTypeLegacy.trim() !== "") ? body.entryTypeLegacy : (existingVisa.entryTypeLegacy || undefined),
           visaMode: parsedVisaMode ?? undefined,
