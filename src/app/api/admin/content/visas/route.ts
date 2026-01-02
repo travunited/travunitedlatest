@@ -292,6 +292,8 @@ export async function POST(req: Request) {
       isFeatured: isFeatured ?? false,
       priceInInr: Number(safePriceInInr),
       processingTime: safeProcessingTime,
+      stayDuration: (body.stayDuration !== undefined && body.stayDuration !== null && typeof body.stayDuration === "string" && body.stayDuration.trim() !== "") ? body.stayDuration.trim() : null,
+      validity: (body.validity !== undefined && body.validity !== null && typeof body.validity === "string" && body.validity.trim() !== "") ? body.validity.trim() : null,
       entryTypeLegacy: (entryTypeLegacy !== undefined && entryTypeLegacy !== null && typeof entryTypeLegacy === "string" && entryTypeLegacy.trim() !== "") ? entryTypeLegacy : null,
       visaMode: parsedVisaMode,
       entryType: parsedEntryType,

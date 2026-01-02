@@ -603,6 +603,8 @@ model Visa {
   isFeatured              Boolean                   @default(false)
   priceInInr              Int
   processingTime          String
+  stayDuration            String?
+  validity                String?
   entryTypeLegacy         String
   overview                String
   eligibility             String
