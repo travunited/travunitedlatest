@@ -92,13 +92,7 @@ function LoginPageContent() {
       });
 
       if (result?.error) {
-        if (result.error === "USER_NOT_FOUND") {
-          // User doesn't exist, redirect to signup with phone pre-filled
-          router.push(`/signup?phone=${encodeURIComponent(phone)}&from=login`);
-          return;
-        } else {
-          setError("Authentication failed. Please try again.");
-        }
+        setError(result.error === "USER_INACTIVE" ? "Your account is inactive. Please contact support." : "Authentication failed. Please try again.");
       } else {
         handlePostLogin();
       }
@@ -377,7 +371,7 @@ function LoginPageContent() {
               </Link>
             </p>
             <p className="text-xs text-neutral-500">
-              New users are automatically redirected to signup for a smoother experience
+              New users are automatically registered for a seamless experience
             </p>
           </div>
         </div>

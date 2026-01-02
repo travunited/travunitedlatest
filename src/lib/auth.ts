@@ -58,29 +58,17 @@ export const authOptions: NextAuthOptions = {
             },
           });
 
-          // Implicit Signup if user not found but name is provided
-          if (!user && name) {
-            const crypto = await import("crypto");
-            const randomPassword = crypto.randomBytes(16).toString("hex");
-            const passwordHash = await bcrypt.hash(randomPassword, 10);
-            const email = `${phone}@mobile.travunited.local`;
-
+          // Unified Login/Signup: Auto-create user if not found
+          if (!user) {
             user = await prisma.user.create({
               data: {
-                name: name,
-                email: email,
                 phone: phone,
-                passwordHash: passwordHash,
                 role: "CUSTOMER",
-                emailVerified: true,
                 phoneVerified: true,
                 isActive: true,
+                // No name or email needed for OTP-only flow
               }
             });
-          }
-
-          if (!user) {
-            throw new Error("USER_NOT_FOUND");
           }
 
           if (!user.isActive) {

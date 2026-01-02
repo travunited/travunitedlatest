@@ -29,19 +29,8 @@ export async function POST(req: Request) {
             );
         }
 
-        // If type is login, check if user exists
-        if (type === "login") {
-            const user = await prisma.user.findFirst({
-                where: { phone: phone }, // Strict 12-digit match
-            });
-
-            if (!user) {
-                return NextResponse.json(
-                    { error: "Account not found with this mobile number. Please sign up." },
-                    { status: 404 }
-                );
-            }
-        }
+        // Unified Flow: We allow OTP send for any valid 10-digit number.
+        // If it's a new number, it will be auto-registered during verification.
 
         const success = await sendOtp(phone);
 
