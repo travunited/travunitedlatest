@@ -56,14 +56,17 @@ export async function POST(req: Request) {
     // Send status update emails
     for (const app of applications) {
       try {
-        await sendVisaStatusUpdateEmail(
-          app.User_Application_userIdToUser.email,
-          app.id,
-          app.country || "",
-          app.visaType || "",
-          app.status,
-          app.User_Application_userIdToUser.role || "CUSTOMER"
-        );
+        const userEmail = app.User_Application_userIdToUser.email;
+        if (userEmail) {
+          await sendVisaStatusUpdateEmail(
+            userEmail,
+            app.id,
+            app.country || "",
+            app.visaType || "",
+            app.status,
+            app.User_Application_userIdToUser.role || "CUSTOMER"
+          );
+        }
       } catch (error) {
         console.error(`Error sending email for application ${app.id}:`, error);
       }

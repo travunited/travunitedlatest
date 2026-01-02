@@ -56,13 +56,16 @@ export async function POST(req: Request) {
     // Send status update emails
     for (const booking of bookings) {
       try {
-        await sendTourStatusUpdateEmail(
-          booking.User_Booking_userIdToUser.email,
-          booking.id,
-          booking.tourName || "",
-          booking.status,
-          booking.User_Booking_userIdToUser.role || "CUSTOMER"
-        );
+        const userEmail = booking.User_Booking_userIdToUser.email;
+        if (userEmail) {
+          await sendTourStatusUpdateEmail(
+            userEmail,
+            booking.id,
+            booking.tourName || "",
+            booking.status,
+            booking.User_Booking_userIdToUser.role || "CUSTOMER"
+          );
+        }
       } catch (error) {
         console.error(`Error sending email for booking ${booking.id}:`, error);
       }

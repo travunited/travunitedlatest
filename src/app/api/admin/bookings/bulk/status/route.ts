@@ -76,12 +76,15 @@ export async function POST(req: Request) {
     // Send email notifications
     for (const booking of bookings) {
       try {
-        await sendTourStatusUpdateEmail(
-          booking.User_Booking_userIdToUser.email,
-          booking.id,
-          booking.tourName || "",
-          status
-        );
+        const userEmail = booking.User_Booking_userIdToUser.email;
+        if (userEmail) {
+          await sendTourStatusUpdateEmail(
+            userEmail,
+            booking.id,
+            booking.tourName || "",
+            status
+          );
+        }
 
         await logAuditEvent({
           adminId: session.user.id,

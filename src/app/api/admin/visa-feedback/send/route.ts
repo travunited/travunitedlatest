@@ -94,16 +94,19 @@ export async function GET(req: Request) {
 
     for (const application of eligibleApplications as any[]) {
       try {
-        await sendVisaFeedbackEmail(
-          application.User_Application_userIdToUser.email,
-          application.id,
-          application.country || "",
-          application.visaType || "",
-          googleReviewUrl,
-          application.User_Application_userIdToUser.role || "CUSTOMER"
-        );
+        const userEmail = application.User_Application_userIdToUser.email;
+        if (userEmail) {
+          await sendVisaFeedbackEmail(
+            userEmail,
+            application.id,
+            application.country || "",
+            application.visaType || "",
+            googleReviewUrl,
+            application.User_Application_userIdToUser.role || "CUSTOMER"
+          );
+        }
 
-        // Mark as sent
+        // Mark as sent (or skipped if no email)
         await prisma.application.update({
           where: { id: application.id },
           data: {
@@ -111,7 +114,7 @@ export async function GET(req: Request) {
           },
         });
 
-        sentCount++;
+        if (userEmail) sentCount++;
       } catch (error: any) {
         console.error(`Error sending feedback email for application ${application.id}:`, error);
         errorCount++;
