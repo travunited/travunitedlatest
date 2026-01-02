@@ -77,6 +77,15 @@ export default async function CountryVisasPage({
     },
   });
 
+  // Clean up any validityDays/stayDurationDays that might be 0 to prevent React rendering "0"
+  if (country && (country as any).Visa) {
+    (country as any).Visa = (country as any).Visa.map((visa: any) => ({
+      ...visa,
+      validityDays: null,
+      stayDurationDays: null,
+    }));
+  }
+
   if (!country) {
     notFound();
   }
@@ -133,7 +142,7 @@ export default async function CountryVisasPage({
                     )}
 
                     <div className="space-y-3 mb-5 text-sm md:text-base text-neutral-600">
-                      {visa.processingTime && visa.processingTime !== "0" && (
+                      {visa.processingTime && String(visa.processingTime).trim() !== "" && visa.processingTime !== "0" ? (
                         <div className="flex items-center group/item">
                           <div className="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center mr-3 group-hover/item:bg-primary-100 transition-colors">
                             <Clock size={20} className="text-primary-600" />
@@ -143,15 +152,14 @@ export default async function CountryVisasPage({
                             <p className="font-semibold text-neutral-800">{visa.processingTime}</p>
                           </div>
                         </div>
-                      )}
+                      ) : null}
 
                       {(() => {
                         const stayDurationValue = visa.stayDuration;
-                        const isValid = stayDurationValue && 
-                          stayDurationValue !== "0" && 
-                          stayDurationValue !== 0 &&
-                          String(stayDurationValue).trim() !== "";
-                        return isValid ? (
+                        if (!stayDurationValue) return null;
+                        const strValue = String(stayDurationValue).trim();
+                        if (strValue === "" || strValue === "0" || strValue === "null" || strValue === "undefined") return null;
+                        return (
                           <div className="flex items-center group/item">
                             <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center mr-3 group-hover/item:bg-blue-100 transition-colors">
                               <ShieldCheck size={20} className="text-blue-600" />
@@ -161,16 +169,15 @@ export default async function CountryVisasPage({
                               <p className="font-semibold text-neutral-800">{stayDurationValue}</p>
                             </div>
                           </div>
-                        ) : null;
+                        );
                       })()}
 
                       {(() => {
                         const validityValue = visa.validity;
-                        const isValid = validityValue && 
-                          validityValue !== "0" && 
-                          validityValue !== 0 &&
-                          String(validityValue).trim() !== "";
-                        return isValid ? (
+                        if (!validityValue) return null;
+                        const strValue = String(validityValue).trim();
+                        if (strValue === "" || strValue === "0" || strValue === "null" || strValue === "undefined") return null;
+                        return (
                           <div className="flex items-center group/item">
                             <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center mr-3 group-hover/item:bg-amber-100 transition-colors">
                               <Calendar size={20} className="text-amber-600" />
@@ -180,7 +187,7 @@ export default async function CountryVisasPage({
                               <p className="font-semibold text-neutral-800">{validityValue}</p>
                             </div>
                           </div>
-                        ) : null;
+                        );
                       })()}
 
                       {buildEntrySummary(visa) && buildEntrySummary(visa) !== "0" && (
