@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Smartphone, CheckCircle, AlertCircle, RefreshCw, ArrowRight } from "lucide-react";
+import Msg91OtpWidget from "@/components/auth/Msg91OtpWidget";
 
 function VerifyMobileContent() {
     const { data: session, status: sessionStatus } = useSession();
@@ -22,12 +23,12 @@ function VerifyMobileContent() {
     const email = searchParams?.get("email") || session?.user?.email || "";
     const redirectUrl = searchParams?.get("redirect") || "/dashboard";
 
-    const handleVerifyOtp = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleVerifyOtp = async (e?: React.FormEvent, accessToken?: string) => {
+        if (e) e.preventDefault();
         setOtpError("");
         setOtpLoading(true);
 
-        if (otp.length !== 6) {
+        if (!accessToken && otp.length !== 6) {
             setOtpError("Please enter a valid 6-digit OTP");
             setOtpLoading(false);
             return;
@@ -37,13 +38,17 @@ function VerifyMobileContent() {
             const response = await fetch("/api/auth/mobile/verify-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phone, otp }),
+                body: JSON.stringify({
+                    phone: accessToken ? undefined : phone,
+                    otp: accessToken ? undefined : otp,
+                    accessToken: accessToken
+                }),
             });
 
             const data = await response.json();
 
             if (!response.ok) {
-                setOtpError(data.error || "OTP verification failed");
+                setOtpError(data.error || "Verification failed");
             } else {
                 setVerified(true);
 
@@ -162,23 +167,30 @@ function VerifyMobileContent() {
                         </p>
                     </div>
 
-                    <form onSubmit={handleVerifyOtp} className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-semibold text-neutral-800 mb-2 text-center">
-                                Enter the 6-digit code sent to you
-                            </label>
-                            <input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                maxLength={6}
-                                value={otp}
-                                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                                required
-                                className="w-full px-4 py-4 bg-white/70 border border-neutral-300 rounded-xl focus:ring-4 focus:ring-primary-500/20 focus:border-primary-500 text-center text-4xl font-bold tracking-[0.5em] transition-all outline-none"
-                                placeholder="000000"
+                    <div className="space-y-6">
+                        {phone ? (
+                            <Msg91OtpWidget
+                                identifier={phone}
+                                onSuccess={(data) => {
+                                    if (data && data["access-token"]) {
+                                        handleVerifyOtp(undefined, data["access-token"]);
+                                    }
+                                }}
+                                onFailure={(error) => {
+                                    setOtpError(error.message || "OTP Widget failed to load");
+                                }}
                             />
-                        </div>
+                        ) : (
+                            <div className="text-center py-8">
+                                <p className="text-neutral-600">No phone number provided for verification.</p>
+                                <Link
+                                    href="/login"
+                                    className="text-primary-600 font-bold hover:underline mt-4 inline-block"
+                                >
+                                    Return to Login
+                                </Link>
+                            </div>
+                        )}
 
                         {otpError && (
                             <div className="bg-red-50/90 border border-red-200 rounded-lg p-4 flex items-start space-x-2 text-red-700 backdrop-blur-sm animate-fade-in">
@@ -187,43 +199,12 @@ function VerifyMobileContent() {
                             </div>
                         )}
 
-                        {resendSuccess && (
-                            <div className="bg-green-50/90 border border-green-200 rounded-lg p-4 flex items-start space-x-2 text-green-700 backdrop-blur-sm animate-fade-in">
-                                <CheckCircle size={20} className="mt-0.5 flex-shrink-0" />
-                                <p className="text-sm font-medium">New code sent successfully!</p>
-                            </div>
-                        )}
-
-                        <button
-                            type="submit"
-                            disabled={otpLoading || otp.length !== 6}
-                            className="w-full bg-primary-600 text-white px-6 py-4 rounded-xl font-bold hover:bg-primary-700 shadow-xl hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none"
-                        >
-                            <span className="text-lg">{otpLoading ? "Verifying..." : "Verify Mobile"}</span>
-                            {!otpLoading && <ArrowRight size={22} />}
-                        </button>
-
                         <div className="text-center pt-2">
-                            <button
-                                type="button"
-                                onClick={handleResendOtp}
-                                disabled={resendLoading}
-                                className="text-sm font-bold text-primary-600 hover:text-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 mx-auto transition-colors"
-                            >
-                                {resendLoading ? (
-                                    <>
-                                        <RefreshCw size={18} className="animate-spin" />
-                                        <span>Sending...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <RefreshCw size={18} />
-                                        <span>Resend Verification Code</span>
-                                    </>
-                                )}
-                            </button>
+                            <p className="text-xs text-neutral-500">
+                                Protected by MSG91 Secure Verification
+                            </p>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </motion.div>
         </div>

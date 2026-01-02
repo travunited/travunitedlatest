@@ -16,8 +16,8 @@ declare global {
     }
 }
 
-const WIDGET_ID = "356c4264755a393237303132";
-const TOKEN_AUTH = "455112TQr7Dbe2ZlOl6950b0feP1";
+const WIDGET_ID = process.env.NEXT_PUBLIC_MSG91_WIDGET_ID || "356c4264755a393237303132";
+const TOKEN_AUTH = process.env.NEXT_PUBLIC_MSG91_TOKEN_AUTH || "455112TQr7Dbe2ZlOl6950b0feP1";
 
 export default function Msg91OtpWidget({
     onSuccess,
@@ -122,7 +122,7 @@ export default function Msg91OtpWidget({
                 const s = document.createElement("script");
                 s.src = "https://control.msg91.com/app/assets/otp-provider/otp-provider.js";
                 s.async = true;
-                s.onload = () => { 
+                s.onload = () => {
                     if (isMounted) {
                         // Wait a bit for the script to fully initialize
                         setTimeout(() => {

@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, ArrowRight } from "lucide-react";
+import { Search, ArrowRight, ChevronDown, ChevronUp, SlidersHorizontal, X } from "lucide-react";
 import { getCountryFlagUrl } from "@/lib/flags";
 import { getMediaProxyUrl } from "@/lib/media";
 import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
@@ -26,7 +26,7 @@ interface Props {
 
 export default function VisasGridClient({ countries }: Props) {
   const searchParams = useSearchParams();
-  
+
   // Initialize state from URL params or sessionStorage
   const getInitialState = useCallback(() => {
     // Try to restore from sessionStorage first (for back navigation)
@@ -45,7 +45,7 @@ export default function VisasGridClient({ countries }: Props) {
         }
       }
     }
-    
+
     // Otherwise, use URL params or defaults
     return {
       searchQuery: searchParams?.get("search") || "",
@@ -55,11 +55,12 @@ export default function VisasGridClient({ countries }: Props) {
   }, [searchParams]);
 
   const initialState = getInitialState();
-  
+
   const [searchQuery, setSearchQuery] = useState(initialState.searchQuery);
   const [selectedRegion, setSelectedRegion] = useState<string>(initialState.selectedRegion);
   const [sortOption, setSortOption] = useState<"alpha" | "volume">(initialState.sortOption);
-  
+  const [showFilters, setShowFilters] = useState(false);
+
   // Save filter state to sessionStorage whenever it changes
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -107,49 +108,98 @@ export default function VisasGridClient({ countries }: Props) {
     return next;
   }, [countries, searchQuery, selectedRegion, sortOption]);
 
+  const hasActiveFilters = searchQuery !== "" || selectedRegion !== "all";
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedRegion("all");
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("visas-filter-state");
+    }
+  };
+
   return (
     <>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 mb-12">
         <div className="bg-white rounded-2xl shadow-large p-6 space-y-4">
-          <div className="relative">
-            <Search
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400"
-              size={20}
-            />
-            <input
-              type="text"
-              placeholder="Search for a country..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-          </div>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex flex-wrap gap-3">
-              <select
-                value={selectedRegion}
-                onChange={(e) => setSelectedRegion(e.target.value)}
-                className="px-3 py-2 border border-neutral-200 rounded-lg text-sm"
-              >
-                <option value="all">All regions</option>
-                {regions.map((region) => (
-                  <option key={region} value={region}>
-                    {region}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={sortOption}
-                onChange={(e) => setSortOption(e.target.value as "alpha" | "volume")}
-                className="px-3 py-2 border border-neutral-200 rounded-lg text-sm"
-              >
-                <option value="alpha">Sort: A → Z</option>
-                <option value="volume">Sort: Most visas</option>
-              </select>
+          <div className="flex flex-col gap-4">
+            {/* Search Bar with Button */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400"
+                  size={20}
+                />
+                <input
+                  type="text"
+                  placeholder="Search for a country..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                />
+              </div>
+              <button className="bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 transition-colors shadow-sm hidden md:block">
+                Search
+              </button>
             </div>
-            <p className="text-sm text-neutral-500">
-              Showing {filtered.length} {filtered.length === 1 ? "destination" : "destinations"}
-            </p>
+
+            {/* Mobile Search Button & Filter Toggle */}
+            <div className="flex gap-2 md:hidden">
+              <button className="flex-1 bg-primary-600 text-white py-3 rounded-lg font-bold">
+                Search
+              </button>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2 px-4 py-3 border border-neutral-200 rounded-lg text-sm font-medium bg-white text-neutral-700 shadow-sm"
+              >
+                Filters
+                {showFilters ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </div>
+
+            {/* Filters Section - Collapsible on Mobile */}
+            <div className={`${showFilters ? "flex" : "hidden md:flex"} flex-col gap-4 transition-all duration-300`}>
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="flex flex-wrap gap-3">
+                  <select
+                    value={selectedRegion}
+                    onChange={(e) => setSelectedRegion(e.target.value)}
+                    className="flex-1 md:flex-none px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white"
+                  >
+                    <option value="all">All regions</option>
+                    {regions.map((region) => (
+                      <option key={region} value={region}>
+                        {region}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value as "alpha" | "volume")}
+                    className="flex-1 md:flex-none px-3 py-2 border border-neutral-200 rounded-lg text-sm bg-white"
+                  >
+                    <option value="alpha">Sort: A → Z</option>
+                    <option value="volume">Sort: Most visas</option>
+                  </select>
+
+                  {hasActiveFilters && (
+                    <button
+                      onClick={clearFilters}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors"
+                    >
+                      <X size={12} />
+                      Clear All
+                    </button>
+                  )}
+                </div>
+                <p className="text-sm text-neutral-500 hidden md:block">
+                  Showing {filtered.length} {filtered.length === 1 ? "destination" : "destinations"}
+                </p>
+                <p className="text-xs text-neutral-500 md:hidden pt-2 border-t border-neutral-100">
+                  Showing {filtered.length} {filtered.length === 1 ? "destination" : "destinations"}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

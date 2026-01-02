@@ -8,14 +8,14 @@ import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationBell } from "@/components/ui/NotificationBell";
 import { Logo } from "@/components/ui/Logo";
-import { GlobalSearch } from "@/components/ui/GlobalSearch";
+
 
 export function Navbar() {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [isServicesOpen, setIsServicesOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  
+
   const isAdmin = session?.user?.role === "STAFF_ADMIN" || session?.user?.role === "SUPER_ADMIN";
 
   const navLinks: { href: string; label: string; icon: LucideIcon }[] = [
@@ -37,7 +37,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6 flex-1 max-w-4xl mx-8">
+          <div className="hidden md:flex items-center space-x-6">
             {navLinks.map((link) => {
               const Icon = link.icon;
               return (
@@ -51,9 +51,6 @@ export function Navbar() {
                 </Link>
               );
             })}
-            <div className="flex-1 max-w-md ml-4">
-              <GlobalSearch />
-            </div>
           </div>
 
           {/* Auth Buttons */}
@@ -70,36 +67,36 @@ export function Navbar() {
                     <span>{session.user?.name || session.user?.email}</span>
                     {isAdmin && <Shield size={16} className="text-primary-600" />}
                   </button>
-                {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-large border border-neutral-200 py-2 z-50">
-                    <Link
-                      href="/dashboard"
-                      className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-                      onClick={() => setIsUserMenuOpen(false)}
-                    >
-                      Dashboard
-                    </Link>
-                    {isAdmin && (
+                  {isUserMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-large border border-neutral-200 py-2 z-50">
                       <Link
-                        href="/admin"
+                        href="/dashboard"
                         className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
-                        Admin Panel
+                        Dashboard
                       </Link>
-                    )}
-                    <button
-                      onClick={() => {
-                        signOut({ callbackUrl: "/" });
-                        setIsUserMenuOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center space-x-2"
-                    >
-                      <LogOut size={16} />
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
-                )}
+                      {isAdmin && (
+                        <Link
+                          href="/admin"
+                          className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+                          onClick={() => setIsUserMenuOpen(false)}
+                        >
+                          Admin Panel
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => {
+                          signOut({ callbackUrl: "/" });
+                          setIsUserMenuOpen(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center space-x-2"
+                      >
+                        <LogOut size={16} />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
@@ -140,9 +137,7 @@ export function Navbar() {
             className="md:hidden bg-white border-t border-neutral-200"
           >
             <div className="px-4 py-4 space-y-4">
-              <div className="pb-2 border-b border-neutral-200">
-                <GlobalSearch />
-              </div>
+
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 return (
