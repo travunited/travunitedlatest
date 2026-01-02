@@ -91,8 +91,6 @@ interface VisaRecord {
   category: string;
   priceInInr: number;
   processingTime: string;
-  stayDuration: string;
-  validity: string;
   entryType?: string | null;
   entryTypeLegacy?: string | null;
   visaMode?: string | null;
@@ -101,8 +99,6 @@ interface VisaRecord {
   isActive: boolean;
   isFeatured: boolean;
   // New fields
-  stayDurationDays?: number | null;
-  validityDays?: number | null;
   sampleVisaImageUrl?: string | null;
   currency?: string | null;
   country: {
@@ -666,18 +662,6 @@ export default function AdminVisasPage() {
                     <div>
                       <div className="text-xs text-neutral-500 uppercase">Processing</div>
                       <div className="font-medium text-neutral-900">{visa.processingTime}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-neutral-500 uppercase">Stay Duration</div>
-                      <div className="font-medium text-neutral-900">
-                        {visa.stayDuration || "N/A"}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-neutral-500 uppercase">Validity</div>
-                      <div className="font-medium text-neutral-900">
-                        {visa.validity || "N/A"}
-                      </div>
                     </div>
                     <div>
                       <div className="text-xs text-neutral-500 uppercase">Visa Mode</div>

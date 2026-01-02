@@ -246,8 +246,6 @@ export default async function VisaDetailPage({
                   { label: "Processing", value: visa.processingTime },
                   { label: "Mode", value: modeDisplay },
                   { label: "Entry", value: entryDisplay },
-                  { label: "Stay Duration", value: stayDurationDisplay },
-                  { label: "Validity", value: validityDisplay },
                 ].map((item) => (
                   <div
                     key={item.label}
@@ -512,16 +510,6 @@ export default async function VisaDetailPage({
                     <Clock size={16} className="mr-2 text-primary-600" />
                     <span>Processing: {visa.processingTime}</span>
                   </div>
-                  <div className="flex items-center">
-                    <CheckCircle size={16} className="mr-2 text-primary-600" />
-                    <span>Stay: {visa.stayDuration || "Not specified"}</span>
-                  </div>
-                  {visa.validity && (
-                    <div className="flex items-center">
-                      <Info size={16} className="mr-2 text-primary-600" />
-                      <span>Validity: {visa.validity}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             </aside>

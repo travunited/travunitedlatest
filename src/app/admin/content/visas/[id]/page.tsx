@@ -31,7 +31,6 @@ interface FormState {
   isFeatured: boolean;
   priceInInr: number;
   processingTime: string;
-  validity: string;
   entryType: string; // structured enum value (SINGLE/DOUBLE/MULTIPLE)
   entryTypeLegacy: string;
   visaMode: string;
@@ -61,8 +60,9 @@ interface RequirementState {
 }
 
 interface FaqState {
+  uid: string;
   category: string;
-  visaMode: string;
+  question: string;
   answer: string;
   sortOrder: number;
 }
@@ -439,7 +439,7 @@ export default function AdminVisaEditorPage() {
   const tabs = useMemo(
     () => [
       { id: "basic", label: "Basic Info" },
-      { id: "pricing", label: "Pricing & Validity" },
+      { id: "pricing", label: "Pricing & Details" },
       { id: "content", label: "Content" },
       { id: "documents", label: "Documents & Process" },
       { id: "faqs", label: "FAQs" },
@@ -707,7 +707,6 @@ export default function AdminVisaEditorPage() {
         visaMode,
         stayType,
         visaSubTypeLabel,
-        stayDuration, // Removed from payload, but still destructured if needed elsewhere
         ...restFormData
       } = formData;
 
@@ -725,7 +724,6 @@ export default function AdminVisaEditorPage() {
         stayType: stayType || "",
         ...(visaSubTypeLabel && visaSubTypeLabel.trim() !== "" ? { visaSubTypeLabel } : {}),
         sampleVisaImageUrl: formData.sampleVisaImageUrl ? formData.sampleVisaImageUrl : null,
-        priceInInr: Number(formData.priceInInr),
         // Ensure SEO fields are always included, even if empty
         metaTitle: formData.metaTitle?.trim() || null,
         metaDescription: formData.metaDescription?.trim() || null,

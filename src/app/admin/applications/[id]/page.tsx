@@ -116,8 +116,6 @@ interface Application {
     id: string;
     name: string;
     processingTime?: string;
-    stayDuration?: string;
-    validity?: string;
     entryType?: string;
     country: {
       id: string;
@@ -138,10 +136,10 @@ export default function AdminApplicationDetailPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const params = useParams();
-  
+
   // Validate and extract application ID
   const applicationId = Array.isArray(params.id) ? params.id[0] : params.id;
-  
+
   const [application, setApplication] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -502,9 +500,9 @@ export default function AdminApplicationDetailPage() {
     });
 
     return {
-      travellers: Object.values(travellerDocs).filter(group => 
-        group && 
-        group.traveller && 
+      travellers: Object.values(travellerDocs).filter(group =>
+        group &&
+        group.traveller &&
         group.traveller.id &&
         Array.isArray(group.documents)
       ),
@@ -621,10 +619,10 @@ export default function AdminApplicationDetailPage() {
               {/* Right: Status Badge & Actions */}
               <div className="flex items-center gap-3 flex-wrap">
                 <span className={`px-4 py-2 rounded-full text-sm font-semibold ${application.status === "APPROVED" ? "bg-green-100 text-green-700" :
-                    application.status === "REJECTED" ? "bg-red-100 text-red-700" :
-                      application.status === "IN_PROCESS" ? "bg-primary-100 text-primary-700" :
-                        application.status === "SUBMITTED" ? "bg-blue-100 text-blue-700" :
-                          "bg-neutral-100 text-neutral-700"
+                  application.status === "REJECTED" ? "bg-red-100 text-red-700" :
+                    application.status === "IN_PROCESS" ? "bg-primary-100 text-primary-700" :
+                      application.status === "SUBMITTED" ? "bg-blue-100 text-blue-700" :
+                        "bg-neutral-100 text-neutral-700"
                   }`}>
                   {application.status.replace(/_/g, " ")}
                 </span>
@@ -755,18 +753,6 @@ export default function AdminApplicationDetailPage() {
                     <div className="font-medium text-neutral-900">{application.visa.processingTime}</div>
                   </div>
                 )}
-                {application.visa?.stayDuration && (
-                  <div>
-                    <div className="text-sm text-neutral-600 mb-1">Stay Duration</div>
-                    <div className="font-medium text-neutral-900">{application.visa.stayDuration}</div>
-                  </div>
-                )}
-                {application.visa?.validity && (
-                  <div>
-                    <div className="text-sm text-neutral-600 mb-1">Validity</div>
-                    <div className="font-medium text-neutral-900">{application.visa.validity}</div>
-                  </div>
-                )}
                 {visaEntryDisplay && (
                   <div>
                     <div className="text-sm text-neutral-600 mb-1">Entry Type</div>
@@ -846,31 +832,29 @@ export default function AdminApplicationDetailPage() {
               <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
                 <h2 className="text-xl font-bold text-neutral-900 mb-4">Other Travellers</h2>
                 <div className="space-y-4">
-                  {application.travellers.slice(1).filter(t => t && t.traveller && t.traveller.id).map((t, index) => {
-                    if (!t || !t.traveller || !t.traveller.id) return null;
-                    return (
-                    <div key={t.traveller.id} className="border border-neutral-200 rounded-lg p-4">
-                      <h3 className="font-semibold mb-3">{t.traveller.firstName} {t.traveller.lastName}</h3>
+                  {application.travellers.slice(1).filter(t => t && t.traveller && t.traveller.id).map((t) => (
+                    <div key={t.traveller?.id} className="border border-neutral-200 rounded-lg p-4">
+                      <h3 className="font-semibold mb-3">{t.traveller?.firstName} {t.traveller?.lastName}</h3>
                       <div className="grid md:grid-cols-2 gap-3 text-sm">
-                        {t.traveller.dateOfBirth && (
+                        {t.traveller?.dateOfBirth && (
                           <div>
                             <span className="text-neutral-600">Date of Birth:</span>{" "}
                             <span className="font-medium">{formatDate(t.traveller.dateOfBirth)}</span>
                           </div>
                         )}
-                        {t.traveller.passportNumber && (
+                        {t.traveller?.passportNumber && (
                           <div>
                             <span className="text-neutral-600">Passport Number:</span>{" "}
                             <span className="font-medium">{t.traveller.passportNumber}</span>
                           </div>
                         )}
-                        {t.traveller.nationality && (
+                        {t.traveller?.nationality && (
                           <div>
                             <span className="text-neutral-600">Nationality:</span>{" "}
                             <span className="font-medium">{t.traveller.nationality}</span>
                           </div>
                         )}
-                        {t.traveller.gender && (
+                        {t.traveller?.gender && (
                           <div>
                             <span className="text-neutral-600">Gender:</span>{" "}
                             <span className="font-medium">{t.traveller.gender}</span>
@@ -891,9 +875,9 @@ export default function AdminApplicationDetailPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-neutral-600">Payment Status:</span>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${completedPayment.status === "COMPLETED" ? "bg-green-100 text-green-700" :
-                        completedPayment.status === "PENDING" ? "bg-yellow-100 text-yellow-700" :
-                          completedPayment.status === "FAILED" ? "bg-red-100 text-red-700" :
-                            "bg-neutral-100 text-neutral-700"
+                      completedPayment.status === "PENDING" ? "bg-yellow-100 text-yellow-700" :
+                        completedPayment.status === "FAILED" ? "bg-red-100 text-red-700" :
+                          "bg-neutral-100 text-neutral-700"
                       }`}>
                       {completedPayment.status}
                     </span>
@@ -963,8 +947,8 @@ export default function AdminApplicationDetailPage() {
                         key={group.traveller.id}
                         onClick={() => setActiveTravellerTab(group.traveller.id)}
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTravellerTab === group.traveller.id
-                            ? "border-primary-600 text-primary-600"
-                            : "border-transparent text-neutral-600 hover:text-neutral-900"
+                          ? "border-primary-600 text-primary-600"
+                          : "border-transparent text-neutral-600 hover:text-neutral-900"
                           }`}
                       >
                         {group.traveller.firstName} {group.traveller.lastName}
@@ -974,8 +958,8 @@ export default function AdminApplicationDetailPage() {
                       <button
                         onClick={() => setActiveTravellerTab("application")}
                         className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${activeTravellerTab === "application"
-                            ? "border-primary-600 text-primary-600"
-                            : "border-transparent text-neutral-600 hover:text-neutral-900"
+                          ? "border-primary-600 text-primary-600"
+                          : "border-transparent text-neutral-600 hover:text-neutral-900"
                           }`}
                       >
                         Application
@@ -992,20 +976,20 @@ export default function AdminApplicationDetailPage() {
                   if (!group || !group.traveller || !group.traveller.id) return null;
                   if (activeTravellerTab === group.traveller.id) {
                     return (
-                    <div key={group.traveller.id} className="space-y-3">
-                      {group.documents.map((doc) => (
-                        <DocumentCard
-                          key={doc.id}
-                          doc={doc}
-                          applicationId={applicationId as string}
-                          documentStatusUpdates={documentStatusUpdates}
-                          setDocumentStatusUpdates={setDocumentStatusUpdates}
-                          handleDocumentStatusChange={handleDocumentStatusChange}
-                          updating={updating}
-                          getDocumentUrl={getDocumentUrl}
-                        />
-                      ))}
-                    </div>
+                      <div key={group.traveller.id} className="space-y-3">
+                        {group.documents.map((doc) => (
+                          <DocumentCard
+                            key={doc.id}
+                            doc={doc}
+                            applicationId={applicationId as string}
+                            documentStatusUpdates={documentStatusUpdates}
+                            setDocumentStatusUpdates={setDocumentStatusUpdates}
+                            handleDocumentStatusChange={handleDocumentStatusChange}
+                            updating={updating}
+                            getDocumentUrl={getDocumentUrl}
+                          />
+                        ))}
+                      </div>
                     );
                   }
                   return null;
@@ -1462,8 +1446,8 @@ function DocumentCard({
   return (
     <div
       className={`border rounded-lg p-4 ${doc.status === "REJECTED" ? "border-red-200 bg-red-50" :
-          doc.status === "APPROVED" ? "border-green-200 bg-green-50" :
-            "border-neutral-200 bg-white"
+        doc.status === "APPROVED" ? "border-green-200 bg-green-50" :
+          "border-neutral-200 bg-white"
         }`}
     >
       <div className="flex items-start justify-between mb-2">
@@ -1476,8 +1460,8 @@ function DocumentCard({
           )}
         </div>
         <span className={`px-2 py-1 rounded text-xs font-medium ${doc.status === "APPROVED" ? "bg-green-100 text-green-700" :
-            doc.status === "REJECTED" ? "bg-red-100 text-red-700" :
-              "bg-yellow-100 text-yellow-700"
+          doc.status === "REJECTED" ? "bg-red-100 text-red-700" :
+            "bg-yellow-100 text-yellow-700"
           }`}>
           {doc.status === "APPROVED" ? "VERIFIED" : doc.status}
         </span>

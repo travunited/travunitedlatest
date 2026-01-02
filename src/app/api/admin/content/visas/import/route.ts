@@ -183,9 +183,6 @@ export async function POST(req: NextRequest) {
         // Find or create country
         const country = await findOrCreateCountry(countryName, data.flag_emoji);
 
-        // Parse duration and validity
-        const stayDurationDays = data.stay_duration_days || extractDays(data.duration) || null;
-        const validityDays = data.validity_days || extractDays(data.validity) || null;
 
         // Parse price - use price field or calculate from govt_fee + service_fee
         let priceInInr = data.price || 0;
@@ -237,8 +234,6 @@ export async function POST(req: NextRequest) {
           category: data.visa_type || data.entry_type || "Tourist",
           priceInInr: Math.round(priceInInr),
           processingTime: data.processing_time || data.processing_time_days || "3-5 days",
-          stayDuration: data.duration || (stayDurationDays ? `${stayDurationDays} days` : null) || "",
-          validity: data.validity || (validityDays ? `${validityDays} days` : null) || "",
           entryTypeLegacy: data.entry_type || "",
           visaMode: visaModeValue,
           entryType: entryTypeValue,
@@ -250,8 +245,6 @@ export async function POST(req: NextRequest) {
           sampleVisaImageUrl: data.visa_sample_image || null,
           metaTitle: data.meta_title || null,
           metaDescription: data.meta_description || null,
-          stayDurationDays: stayDurationDays,
-          validityDays: validityDays,
           govtFee: data.govt_fee || null,
           serviceFee: data.service_fee || null,
           currency: data.currency || "INR",
