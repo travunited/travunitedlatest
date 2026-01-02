@@ -47,9 +47,6 @@ interface FormState {
   heroImageUrl: string;
   metaTitle: string;
   metaDescription: string;
-  // New fields matching CSV template
-  stayDurationDays: string;
-  validityDays: string;
   sampleVisaImageUrl: string;
   currency: string;
 }
@@ -184,9 +181,6 @@ export default function AdminVisaEditorPage() {
     heroImageUrl: "",
     metaTitle: "",
     metaDescription: "",
-    // New fields
-    stayDurationDays: "",
-    validityDays: "",
     sampleVisaImageUrl: "",
     currency: "INR",
   });
@@ -533,8 +527,6 @@ export default function AdminVisaEditorPage() {
       heroImageUrl: data.heroImageUrl || "",
       metaTitle: data.metaTitle || "",
       metaDescription: data.metaDescription || "",
-      stayDurationDays: data.stayDurationDays ? String(data.stayDurationDays) : "",
-      validityDays: data.validityDays ? String(data.validityDays) : "",
       sampleVisaImageUrl: data.sampleVisaImageUrl || "",
       currency: data.currency || "INR",
     };
@@ -1187,23 +1179,21 @@ export default function AdminVisaEditorPage() {
                       <label className="text-sm font-medium text-neutral-700">
                         Stay Duration
                       </label>
-                      <TextareaInput
+                      <TextInput
                         value={formData.stayDuration}
                         onChange={(value) => updateFormField("stayDuration", value)}
                         placeholder="e.g. 30 Days"
-                        rows={2}
                       />
                       <p className="text-xs text-neutral-500 mt-1">Duration allowed to stay</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-neutral-700">
-                        Validity (from Issue)
+                        Validity
                       </label>
-                      <TextareaInput
+                      <TextInput
                         value={formData.validity}
                         onChange={(value) => updateFormField("validity", value)}
                         placeholder="e.g. 60 days from issue"
-                        rows={2}
                       />
                       <p className="text-xs text-neutral-500 mt-1">Validity period from date of issue</p>
                     </div>
