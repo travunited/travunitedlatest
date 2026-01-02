@@ -145,29 +145,43 @@ export default async function CountryVisasPage({
                         </div>
                       )}
 
-                      {visa.stayDuration && visa.stayDuration !== "0" && visa.stayDuration.trim() !== "" && (
-                        <div className="flex items-center group/item">
-                          <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center mr-3 group-hover/item:bg-blue-100 transition-colors">
-                            <ShieldCheck size={20} className="text-blue-600" />
+                      {(() => {
+                        const stayDurationValue = visa.stayDuration;
+                        const isValid = stayDurationValue && 
+                          stayDurationValue !== "0" && 
+                          stayDurationValue !== 0 &&
+                          String(stayDurationValue).trim() !== "";
+                        return isValid ? (
+                          <div className="flex items-center group/item">
+                            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center mr-3 group-hover/item:bg-blue-100 transition-colors">
+                              <ShieldCheck size={20} className="text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Stay Duration</p>
+                              <p className="font-semibold text-neutral-800">{stayDurationValue}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Stay Duration</p>
-                            <p className="font-semibold text-neutral-800">{visa.stayDuration}</p>
-                          </div>
-                        </div>
-                      )}
+                        ) : null;
+                      })()}
 
-                      {visa.validity && visa.validity !== "0" && visa.validity.trim() !== "" && (
-                        <div className="flex items-center group/item">
-                          <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center mr-3 group-hover/item:bg-amber-100 transition-colors">
-                            <Calendar size={20} className="text-amber-600" />
+                      {(() => {
+                        const validityValue = visa.validity;
+                        const isValid = validityValue && 
+                          validityValue !== "0" && 
+                          validityValue !== 0 &&
+                          String(validityValue).trim() !== "";
+                        return isValid ? (
+                          <div className="flex items-center group/item">
+                            <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center mr-3 group-hover/item:bg-amber-100 transition-colors">
+                              <Calendar size={20} className="text-amber-600" />
+                            </div>
+                            <div>
+                              <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Validity</p>
+                              <p className="font-semibold text-neutral-800">{validityValue}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Validity</p>
-                            <p className="font-semibold text-neutral-800">{visa.validity}</p>
-                          </div>
-                        </div>
-                      )}
+                        ) : null;
+                      })()}
 
                       {buildEntrySummary(visa) && buildEntrySummary(visa) !== "0" && (
                         <div className="flex items-center group/item">
