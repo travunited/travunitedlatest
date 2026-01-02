@@ -90,7 +90,7 @@ export default async function CountryVisasPage({
   return (
     <CountryVisasClient>
       <div className="min-h-screen bg-white">
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-16">
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <Link
               href="/visas"
@@ -105,7 +105,7 @@ export default async function CountryVisasPage({
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           {((country as any).Visa || []).length === 0 ? (
             <div className="text-center py-12">
               <p className="text-neutral-600 text-lg">
