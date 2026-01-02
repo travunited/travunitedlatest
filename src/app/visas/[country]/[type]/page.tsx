@@ -215,9 +215,14 @@ export default async function VisaDetailPage({
               <span>
                 <span className="font-semibold text-white">Entry:</span> {entryDisplay}
               </span>
-              {stayTypeDisplay && (
+              {visa.stayDuration && String(visa.stayDuration).trim() !== "" && visa.stayDuration !== "0" && (
                 <span>
-                  <span className="font-semibold text-white">Stay:</span> {stayTypeDisplay}
+                  <span className="font-semibold text-white">Stay Duration:</span> {visa.stayDuration}
+                </span>
+              )}
+              {visa.validity && String(visa.validity).trim() !== "" && visa.validity !== "0" && (
+                <span>
+                  <span className="font-semibold text-white">Validity:</span> {visa.validity}
                 </span>
               )}
             </p>
@@ -241,12 +246,14 @@ export default async function VisaDetailPage({
                   />
                 </div>
               )}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 {[
                   { label: "Processing", value: visa.processingTime },
                   { label: "Mode", value: modeDisplay },
                   { label: "Entry", value: entryDisplay },
-                ].map((item) => (
+                  { label: "Stay Duration", value: visa.stayDuration },
+                  { label: "Validity", value: visa.validity },
+                ].filter(item => item.value && String(item.value).trim() !== "" && item.value !== "0").map((item) => (
                   <div
                     key={item.label}
                     className="bg-neutral-50 rounded-lg p-4 text-sm text-neutral-600"
