@@ -159,7 +159,6 @@ export async function POST(req: Request) {
       isFeatured,
       priceInInr,
       processingTime,
-      validity,
       entryType,
       entryTypeLegacy,
       overview,
@@ -209,7 +208,6 @@ export async function POST(req: Request) {
     const safeCategory = category || "Tourist";
     const safePriceInInr = priceInInr || 0;
     const safeProcessingTime = processingTime || "Not specified";
-    const safeValidity = validity || "Not specified";
     const safeOverview = overview || "No overview provided.";
     const safeEligibility = eligibility || "No eligibility criteria provided.";
 
@@ -296,7 +294,6 @@ export async function POST(req: Request) {
       isFeatured: isFeatured ?? false,
       priceInInr: Number(safePriceInInr),
       processingTime: safeProcessingTime,
-      validity: safeValidity,
       entryTypeLegacy: (entryTypeLegacy !== undefined && entryTypeLegacy !== null && typeof entryTypeLegacy === "string" && entryTypeLegacy.trim() !== "") ? entryTypeLegacy : null,
       visaMode: parsedVisaMode,
       entryType: parsedEntryType,

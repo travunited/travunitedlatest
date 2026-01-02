@@ -139,7 +139,6 @@ export async function PUT(
         isFeatured: true,
         priceInInr: true,
         processingTime: true,
-        validity: true,
         entryType: true,
         overview: true,
         eligibility: true,
@@ -202,10 +201,6 @@ export async function PUT(
     const processingTime = (body.processingTime !== undefined && body.processingTime !== null && body.processingTime !== "")
       ? body.processingTime
       : existingVisa.processingTime;
-
-    const validity = body.validity !== undefined && body.validity !== null
-      ? body.validity
-      : existingVisa.validity;
     // Handle entryTypeLegacy separately - it's a free-form text field
     const entryTypeLegacy = (body.entryTypeLegacy !== undefined && body.entryTypeLegacy !== null && typeof body.entryTypeLegacy === "string" && body.entryTypeLegacy.trim() !== "")
       ? body.entryTypeLegacy
@@ -396,7 +391,6 @@ export async function PUT(
           isFeatured: isFeatured ?? false,
           priceInInr: Number(priceInInr),
           processingTime,
-          validity,
           entryTypeLegacy: (body.entryTypeLegacy !== undefined && body.entryTypeLegacy !== null && typeof body.entryTypeLegacy === "string" && body.entryTypeLegacy.trim() !== "") ? body.entryTypeLegacy : (existingVisa.entryTypeLegacy || undefined),
           visaMode: parsedVisaMode ?? undefined,
           entryType: parsedEntryType ?? undefined,

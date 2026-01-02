@@ -1540,12 +1540,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                   <p className="text-xs text-neutral-500 mb-1">Processing Time</p>
                   <p className="font-medium text-sm sm:text-base">{visaLoading ? "Fetching..." : visaProcessing}</p>
                 </div>
-                <div>
-                  <p className="text-xs text-neutral-500 mb-1">Validity</p>
-                  <p className="font-medium text-sm sm:text-base">
-                    {visaLoading ? "..." : (visaInfo?.validity && visaInfo.validity !== "0" ? visaInfo.validity : "—")}
-                  </p>
-                </div>
+
 
                 <div>
                   <p className="text-xs text-neutral-500 mb-1">Entry Type</p>

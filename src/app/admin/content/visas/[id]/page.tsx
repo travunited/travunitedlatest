@@ -61,9 +61,8 @@ interface RequirementState {
 }
 
 interface FaqState {
-  uid: string;
   category: string;
-  question: string;
+  visaMode: string;
   answer: string;
   sortOrder: number;
 }
@@ -164,7 +163,6 @@ export default function AdminVisaEditorPage() {
     isFeatured: false,
     priceInInr: 0,
     processingTime: "",
-    validity: "",
     entryType: "",
     entryTypeLegacy: "",
     visaMode: "",
@@ -504,15 +502,14 @@ export default function AdminVisaEditorPage() {
       name: isClone ? `${data.name} Copy` : data.name,
       slug: isClone ? `${data.slug}-copy` : data.slug,
       subtitle: data.subtitle || "",
-      category: data.category,
+      category: data.category || "TOURIST",
       isActive: isClone ? false : data.isActive,
       isFeatured: isClone ? false : data.isFeatured,
       priceInInr: data.priceInInr,
       processingTime: data.processingTime,
-      validity: data.validity,
       entryType: data.entryType || "",
       entryTypeLegacy: data.entryTypeLegacy || "",
-      visaMode: data.visaMode || "",
+      visaMode: data.visaMode || "EVISA",
       stayType: data.stayType || "",
       visaSubTypeLabel: data.visaSubTypeLabel || "",
       overview: data.overview || "",
@@ -716,8 +713,7 @@ export default function AdminVisaEditorPage() {
 
       const payload = {
         ...restFormData,
-        // Explicitly include validity to ensure it's always sent
-        validity: formData.validity || "",
+        priceInInr: Number(formData.priceInInr),
         // Only include entryType/structuredEntryType if they have non-empty values
         // Don't send entryTypeLegacy as entryType - entryType should only come from the structured entryType field
         // entryTypeLegacy is handled separately in the API
@@ -1172,22 +1168,7 @@ export default function AdminVisaEditorPage() {
                     />
                   </div>
                 </div>
-                <div className="border-t border-neutral-200 pt-4">
-                  <h3 className="text-lg font-semibold text-neutral-900 mb-4">Validity & Duration</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-neutral-700">
-                        Validity
-                      </label>
-                      <TextInput
-                        value={formData.validity}
-                        onChange={(value) => updateFormField("validity", value)}
-                        placeholder="e.g. 60 days from issue"
-                      />
-                      <p className="text-xs text-neutral-500 mt-1">Validity period from date of issue</p>
-                    </div>
-                  </div>
-                </div>
+
               </div>
             )}
 

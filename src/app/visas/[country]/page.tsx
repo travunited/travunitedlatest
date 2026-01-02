@@ -77,11 +77,9 @@ export default async function CountryVisasPage({
     },
   });
 
-  // Clean up any validityDays/stayDurationDays that might be 0 to prevent React rendering "0"
   if (country && (country as any).Visa) {
     (country as any).Visa = (country as any).Visa.map((visa: any) => ({
       ...visa,
-      validityDays: null,
     }));
   }
 
@@ -155,23 +153,7 @@ export default async function CountryVisasPage({
 
 
 
-                      {(() => {
-                        const validityValue = visa.validity;
-                        if (!validityValue) return null;
-                        const strValue = String(validityValue).trim();
-                        if (strValue === "" || strValue === "0" || strValue === "null" || strValue === "undefined") return null;
-                        return (
-                          <div className="flex items-center group/item">
-                            <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center mr-3 group-hover/item:bg-amber-100 transition-colors">
-                              <Calendar size={20} className="text-amber-600" />
-                            </div>
-                            <div>
-                              <p className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-0.5">Validity</p>
-                              <p className="font-semibold text-neutral-800">{validityValue}</p>
-                            </div>
-                          </div>
-                        );
-                      })()}
+
 
                       {buildEntrySummary(visa) && buildEntrySummary(visa) !== "0" && (
                         <div className="flex items-center group/item">
