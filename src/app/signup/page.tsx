@@ -22,8 +22,6 @@ function SignupPageContent() {
   const [verifyMethod, setVerifyMethod] = useState<"email" | "mobile">(
     searchParams?.get("phone") ? "mobile" : "email"
   );
-  const [mobileVerified, setMobileVerified] = useState(false);
-  const [mobileVerificationToken, setMobileVerificationToken] = useState<string | null>(null);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,8 +39,8 @@ function SignupPageContent() {
     }
 
     try {
-      const verifiedPhone = data.mobileNumber || data.identifier || data.phone;
-      const token = data.access_token || data.token || data.accessToken;
+      const verifiedPhone = data.phone;
+      const accessToken = data.accessToken;
 
       if (!verifiedPhone) {
         setError("Phone number verification failed. Please try again.");
@@ -50,118 +48,58 @@ function SignupPageContent() {
         return;
       }
 
-      // Normalize phone number
-      let normalizedPhone = verifiedPhone.replace(/\D/g, "");
-      if (normalizedPhone.length === 10) {
-        normalizedPhone = `91${normalizedPhone}`;
-      } else if (normalizedPhone.length === 12 && normalizedPhone.startsWith("91")) {
-        // Already has country code
-        normalizedPhone = normalizedPhone;
-      } else {
-        setError("Invalid phone number format. Please try again.");
-        setLoading(false);
-        return;
-      }
-
-      // Store verification state
-      setMobileVerified(true);
-      setMobileVerificationToken(token);
-
-      // Create account via API
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          phone: normalizedPhone,
-          verifyMethod: "mobile",
-          isVerified: true,
-          accessToken: token
-        }),
+      // Auto-register/login via mobile-otp provider
+      const loginResult = await signIn("mobile-otp", {
+        phone: verifiedPhone,
+        otp: accessToken || "WIDGET_VERIFIED",
+        name: name.trim(), // Key: Pass name for auto-registration
+        redirect: false,
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        setError(result.error || "Signup failed. Please try again.");
-        setLoading(false);
-        setMobileVerified(false);
-        setMobileVerificationToken(null);
-        return;
-      }
-
-      // Auto-login after successful signup since OTP is already verified
-      try {
-        const loginResult = await signIn("mobile-otp", {
-          phone: normalizedPhone,
-          otp: token || "WIDGET_VERIFIED",
-          redirect: false,
-        });
-
-        if (loginResult?.ok) {
-          // Successfully logged in - redirect to dashboard or intended page
-          const redirectUrl = searchParams?.get("redirect") || "/dashboard";
-          router.push(redirectUrl);
-        } else {
-          // Login failed but account created - redirect to login page
-          console.error("Auto-login failed after signup:", loginResult?.error);
-          router.push(`/login?phone=${encodeURIComponent(normalizedPhone)}&verified=true`);
+      if (loginResult?.ok) {
+        // Merge guest application before redirecting
+        try {
+          await fetch("/api/guest-applications/merge", { method: "POST" });
+        } catch (error) {
+          console.error("Error merging guest application:", error);
         }
-      } catch (loginError) {
-        console.error("Auto-login error:", loginError);
-        // Account created but login failed - redirect to login
-        router.push(`/login?phone=${encodeURIComponent(normalizedPhone)}&verified=true`);
+
+        const redirectUrl = searchParams?.get("redirect") || "/dashboard";
+        router.push(redirectUrl);
+      } else {
+        setError(loginResult?.error || "Account creation failed. Please try again.");
+        setLoading(false);
       }
     } catch (err) {
       console.error("Mobile signup error:", err);
       setError("An error occurred. Please try again.");
       setLoading(false);
-      setMobileVerified(false);
-      setMobileVerificationToken(null);
     }
   }, [name, router, searchParams]);
 
   const handleMobileSignupFailure = useCallback((err: any) => {
     console.error("Mobile OTP verification failed:", err);
     setError(err.message || "OTP verification failed. Please try again.");
-    setMobileVerified(false);
-    setMobileVerificationToken(null);
     setLoading(false);
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
-    // For mobile signup, if already verified via widget, the widget callback should handle signup
-    // This form submission is mainly for email signup or as a fallback
-    if (verifyMethod === "mobile" && mobileVerified && mobileVerificationToken) {
-      // Mobile signup should be handled by handleMobileSignupSuccess callback
-      // But if form is submitted manually, we can still process it
-      setLoading(true);
-    } else {
-      setLoading(true);
+
+    // For mobile signup, everything is handled by handleMobileSignupSuccess callback
+    if (verifyMethod === "mobile") {
+      setLoading(false);
+      return;
     }
+
+    setLoading(true);
 
     // Validate name first
     if (!name || name.trim().length < 2) {
       setError("Please enter your full name (at least 2 characters)");
       setLoading(false);
       return;
-    }
-
-    // For mobile signup, require verification through widget
-    if (verifyMethod === "mobile") {
-      if (!phone || phone.length !== 10) {
-        setError("Please enter a valid 10-digit mobile number");
-        setLoading(false);
-        return;
-      }
-      if (!mobileVerified || !mobileVerificationToken) {
-        setError("Please complete mobile verification using the OTP widget above");
-        setLoading(false);
-        return;
-      }
     }
 
     if (verifyMethod === "email") {
@@ -183,54 +121,6 @@ function SignupPageContent() {
     }
 
     try {
-      // For mobile signup, the widget should have already handled signup via handleMobileSignupSuccess
-      // This handleSubmit is mainly for email signup or as a fallback
-      if (verifyMethod === "mobile" && mobileVerified && mobileVerificationToken) {
-        // Mobile signup should be handled by handleMobileSignupSuccess callback
-        // But if form is submitted, we can still process it
-        const normalizedPhone = `91${phone}`;
-        
-        const response = await fetch("/api/auth/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name.trim(),
-            phone: normalizedPhone,
-            verifyMethod: "mobile",
-            isVerified: true,
-            accessToken: mobileVerificationToken
-          }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          setError(data.error || "Signup failed");
-          setLoading(false);
-          return;
-        }
-
-        // Auto-login after successful mobile signup
-        try {
-          const loginResult = await signIn("mobile-otp", {
-            phone: normalizedPhone,
-            otp: mobileVerificationToken || "WIDGET_VERIFIED",
-            redirect: false,
-          });
-
-          if (loginResult?.ok) {
-            const redirectUrl = searchParams?.get("redirect") || "/dashboard";
-            router.push(redirectUrl);
-          } else {
-            router.push(`/login?phone=${encodeURIComponent(normalizedPhone)}&verified=true`);
-          }
-        } catch (loginError) {
-          console.error("Auto-login error:", loginError);
-          router.push(`/login?phone=${encodeURIComponent(normalizedPhone)}&verified=true`);
-        }
-        return;
-      }
-
       // Email signup flow
       if (verifyMethod === "email") {
         const response = await fetch("/api/auth/signup", {
@@ -317,8 +207,6 @@ function SignupPageContent() {
               onClick={() => {
                 setVerifyMethod("mobile");
                 setError("");
-                setMobileVerified(false);
-                setMobileVerificationToken(null);
               }}
               className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${verifyMethod === "mobile"
                 ? "bg-white text-primary-600 shadow-md transform scale-[1.02]"
@@ -467,18 +355,15 @@ function SignupPageContent() {
 
             <button
               type="submit"
-              disabled={loading || (verifyMethod === "mobile" && (!mobileVerified || !mobileVerificationToken))}
-              className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed"
+              disabled={loading}
+              className={`w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed ${verifyMethod === "mobile" ? "hidden" : ""}`}
             >
               <span className="text-lg">
-                {loading 
-                  ? "Creating account..." 
-                  : verifyMethod === "mobile" && (!mobileVerified || !mobileVerificationToken)
-                    ? "Verify Mobile to Continue"
-                    : "Create Account"}
+                {loading
+                  ? "Creating account..."
+                  : "Create Account"}
               </span>
-              {!loading && verifyMethod !== "mobile" && <ArrowRight size={22} />}
-              {verifyMethod === "mobile" && mobileVerified && !loading && <CheckCircle size={22} />}
+              {!loading && <ArrowRight size={22} />}
             </button>
           </form>
 

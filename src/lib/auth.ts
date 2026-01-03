@@ -63,9 +63,12 @@ export const authOptions: NextAuthOptions = {
             user = await (prisma.user as any).create({
               data: {
                 phone: phone,
+                name: name || null,
                 role: "CUSTOMER",
                 phoneVerified: true,
                 isActive: true,
+                email: null,
+                passwordHash: null,
               }
             });
           }

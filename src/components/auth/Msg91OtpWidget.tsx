@@ -105,7 +105,15 @@ export default function Msg91OtpWidget({
                         console.log("[MSG91] Verified Successfully!", data);
                         if (isMounted) {
                             setIsLoading(false);
-                            onSuccess(data);
+                            // Normalize token across different response versions
+                            const token = data?.["access-token"] || data?.access_token || data?.token || data?.accessToken;
+                            const normalizedData = {
+                                ...data,
+                                accessToken: token,
+                                // Also ensure phone is easy to find
+                                phone: data.mobileNumber || data.identifier || data.mobile || data.phone
+                            };
+                            onSuccess(normalizedData);
                         }
                     },
                     failure: (err: any) => {

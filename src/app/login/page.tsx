@@ -80,11 +80,9 @@ function LoginPageContent() {
     setError("");
 
     try {
-      // MSG91 Widget success provides data with verified identification
-      // We might need to handle the structure of 'data' based on actual widget response
-      // Usually, it includes the verified mobile number and a token
-      const verifiedPhone = data.mobileNumber || data.identifier || data.mobile || data.email;
-      const accessToken = data["access-token"] || data.access_token || data.token;
+      // Use standard fields from our normalized Msg91OtpWidget response
+      const verifiedPhone = data.phone;
+      const accessToken = data.accessToken;
 
       const result = await signIn("mobile-otp", {
         phone: verifiedPhone,
@@ -102,7 +100,7 @@ function LoginPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [router]);
+  }, [handlePostLogin]);
 
   const handleMobileLoginFailure = useCallback((err: any) => {
     setError(err.message || "OTP verification failed");
