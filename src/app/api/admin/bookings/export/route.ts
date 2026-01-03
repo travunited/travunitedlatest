@@ -137,7 +137,7 @@ export async function GET(req: Request) {
         booking.travelDate ? new Date(booking.travelDate).toISOString().split("T")[0] : "",
         booking.travellersCount?.toString() || "0",
         booking.User_Booking_userIdToUser.name || "",
-        booking.User_Booking_userIdToUser.email,
+        booking.User_Booking_userIdToUser.email || "",
         booking.User_Booking_userIdToUser.phone || "",
         booking.totalAmount.toString(),
         booking.amountPaid.toString(),

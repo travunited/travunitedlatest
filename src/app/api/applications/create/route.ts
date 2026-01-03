@@ -314,7 +314,7 @@ export async function POST(req: Request) {
         select: { email: true, name: true, role: true },
       });
 
-      if (user) {
+      if (user && user.email) {
         // Send email to user
         await sendVisaStatusUpdateEmail(
           user.email,

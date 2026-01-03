@@ -73,14 +73,16 @@ export async function POST(
       const documents = app.documents;
 
       // Send confirmation email to user
-      await sendVisaStatusUpdateEmail(
-        user.email,
-        application.id,
-        application.country || "",
-        application.visaType || "",
-        "SUBMITTED",
-        user.role || "CUSTOMER"
-      );
+      if (user.email) {
+        await sendVisaStatusUpdateEmail(
+          user.email,
+          application.id,
+          application.country || "",
+          application.visaType || "",
+          "SUBMITTED",
+          user.role || "CUSTOMER"
+        );
+      }
 
       // Send notification to user
       await notify({

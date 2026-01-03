@@ -79,7 +79,7 @@ export async function GET(req: Request) {
       app.visaType || "",
       app.status,
       app.User_Application_userIdToUser.name || "",
-      app.User_Application_userIdToUser.email,
+      app.User_Application_userIdToUser.email || "",
       app.User_Application_userIdToUser.phone || "",
       app.totalAmount.toString(),
       app.User_Application_processedByIdToUser?.name || app.User_Application_processedByIdToUser?.email || "Unassigned",

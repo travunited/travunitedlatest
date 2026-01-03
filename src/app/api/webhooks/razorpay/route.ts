@@ -114,13 +114,15 @@ export async function POST(req: Request) {
           },
         });
 
-        await sendVisaPaymentSuccessEmail(
-          user.email,
-          payment.applicationId,
-          application.country || "",
-          application.visaType || "",
-          payment.amount
-        );
+        if (user.email) {
+          await sendVisaPaymentSuccessEmail(
+            user.email,
+            payment.applicationId,
+            application.country || "",
+            application.visaType || "",
+            payment.amount
+          );
+        }
       }
 
       // Update booking status if applicable
@@ -143,14 +145,16 @@ export async function POST(req: Request) {
             },
           });
 
-          await sendTourPaymentSuccessEmail(
-            user.email,
-            payment.bookingId,
-            booking.tourName || "",
-            payment.amount,
-            isAdvance,
-            isAdvance ? pendingBalance : undefined
-          );
+          if (user.email) {
+            await sendTourPaymentSuccessEmail(
+              user.email,
+              payment.bookingId,
+              booking.tourName || "",
+              payment.amount,
+              isAdvance,
+              isAdvance ? pendingBalance : undefined
+            );
+          }
         }
       }
 

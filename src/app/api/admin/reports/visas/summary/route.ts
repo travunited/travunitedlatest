@@ -180,7 +180,7 @@ export async function GET(req: NextRequest) {
           "Total Amount (INR)": app.totalAmount,
           "Amount Paid (INR)": app.Payment.reduce((sum: number, p: any) => sum + p.amount, 0),
           "Customer Name": app.User_Application_userIdToUser.name || "N/A",
-          "Customer Email": app.User_Application_userIdToUser.email,
+          "Customer Email": app.User_Application_userIdToUser.email || "N/A",
         };
       });
 
@@ -252,7 +252,7 @@ export async function GET(req: NextRequest) {
           totalAmount: app.totalAmount,
           amountPaid: app.Payment.reduce((sum: number, p: any) => sum + p.amount, 0),
           customerName: app.User_Application_userIdToUser.name,
-          customerEmail: app.User_Application_userIdToUser.email,
+          customerEmail: app.User_Application_userIdToUser.email || "N/A",
           travelDate: app.travelDate,
         };
       }), pagination: {

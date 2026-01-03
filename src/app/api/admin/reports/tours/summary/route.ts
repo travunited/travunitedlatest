@@ -162,7 +162,7 @@ export async function GET(req: NextRequest) {
           "Total Amount (INR)": booking.totalAmount,
           "Amount Paid (INR)": booking.Payment.reduce((sum: number, p: any) => sum + p.amount, 0),
           "Customer Name": booking.User_Booking_userIdToUser.name || "N/A",
-          "Customer Email": booking.User_Booking_userIdToUser.email,
+          "Customer Email": booking.User_Booking_userIdToUser.email || "N/A",
           "Travel Date": booking.travelDate ? new Date(booking.travelDate).toISOString().split("T")[0] : "N/A",
         };
       });
@@ -230,7 +230,7 @@ export async function GET(req: NextRequest) {
           totalAmount: booking.totalAmount,
           amountPaid: booking.Payment.reduce((sum: number, p: any) => sum + p.amount, 0),
           customerName: booking.User_Booking_userIdToUser.name,
-          customerEmail: booking.User_Booking_userIdToUser.email,
+          customerEmail: booking.User_Booking_userIdToUser.email || "N/A",
           travelDate: booking.travelDate,
         };
       }),

@@ -82,7 +82,7 @@ export async function GET(
       {
         id: "created",
         action: "CREATE",
-        description: `Booking created by ${booking.User_Booking_userIdToUser.email}`,
+        description: `Booking created by ${booking.User_Booking_userIdToUser.email || booking.User_Booking_userIdToUser.name || "Customer"}`,
         adminName: null,
         createdAt: booking.createdAt,
       },

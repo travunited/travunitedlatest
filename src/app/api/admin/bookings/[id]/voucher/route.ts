@@ -78,11 +78,14 @@ export async function POST(
     });
 
     // Send confirmation email and notification
-    await sendTourConfirmedEmail(
-      booking.User_Booking_userIdToUser.email,
-      booking.id,
-      booking.tourName || ""
-    );
+    const userEmail = booking.User_Booking_userIdToUser.email;
+    if (userEmail) {
+      await sendTourConfirmedEmail(
+        userEmail,
+        booking.id,
+        booking.tourName || ""
+      );
+    }
 
     await notify({
       userId: booking.userId,

@@ -67,7 +67,7 @@ export async function GET(
       {
         id: "created",
         type: "application_created",
-        description: `Application created by ${application.User_Application_userIdToUser.email}`,
+        description: `Application created by ${application.User_Application_userIdToUser.email || application.User_Application_userIdToUser.name || "Customer"}`,
         createdBy: null,
         createdAt: application.createdAt,
       },

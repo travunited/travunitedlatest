@@ -73,12 +73,15 @@ export async function POST(
 
     // Send email notification
     try {
-      await sendTourStatusUpdateEmail(
-        booking.User_Booking_userIdToUser.email,
-        booking.id,
-        booking.tourName || "",
-        "CANCELLED"
-      );
+      const userEmail = booking.User_Booking_userIdToUser.email;
+      if (userEmail) {
+        await sendTourStatusUpdateEmail(
+          userEmail,
+          booking.id,
+          booking.tourName || "",
+          "CANCELLED"
+        );
+      }
       // TODO: Enhance email template to include cancellation reason
     } catch (emailError) {
       console.error("Error sending cancellation email:", emailError);

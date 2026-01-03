@@ -60,6 +60,14 @@ export async function POST(
       );
     }
 
+    const userEmail = booking.User_Booking_userIdToUser.email;
+    if (!userEmail) {
+      return NextResponse.json(
+        { error: "User does not have an email address. Cannot resend email." },
+        { status: 400 }
+      );
+    }
+
     const amountPaid = booking.Payment.reduce((sum, p) => sum + p.amount, 0);
     const pendingBalance = booking.totalAmount - amountPaid;
 
@@ -67,7 +75,7 @@ export async function POST(
     switch (emailType) {
       case "tour_confirmed":
         await sendTourConfirmedEmail(
-          booking.User_Booking_userIdToUser.email,
+          userEmail,
           booking.id,
           booking.tourName || "",
           booking.User_Booking_userIdToUser.role || "CUSTOMER"
@@ -76,7 +84,7 @@ export async function POST(
 
       case "vouchers_ready":
         await sendTourVouchersReadyEmail(
-          booking.User_Booking_userIdToUser.email,
+          userEmail,
           booking.id,
           booking.tourName || "",
           booking.User_Booking_userIdToUser.role || "CUSTOMER"
@@ -86,7 +94,7 @@ export async function POST(
       case "payment_reminder":
         if (pendingBalance > 0) {
           await sendTourPaymentReminderEmail(
-            booking.User_Booking_userIdToUser.email,
+            userEmail,
             booking.id,
             booking.tourName || "",
             pendingBalance,
@@ -98,7 +106,7 @@ export async function POST(
 
       case "status_update":
         await sendTourStatusUpdateEmail(
-          booking.User_Booking_userIdToUser.email,
+          userEmail,
           booking.id,
           booking.tourName || "",
           booking.status,

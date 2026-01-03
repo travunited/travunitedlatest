@@ -62,11 +62,14 @@ export async function PUT(
 
     // Send email and notification if confirmed
     if (status === "CONFIRMED") {
-      await sendTourConfirmedEmail(
-        booking.User_Booking_userIdToUser.email,
-        booking.id,
-        booking.tourName || ""
-      );
+      const userEmail = booking.User_Booking_userIdToUser.email;
+      if (userEmail) {
+        await sendTourConfirmedEmail(
+          userEmail,
+          booking.id,
+          booking.tourName || ""
+        );
+      }
       await notify({
         userId: booking.userId,
         type: "TOUR_BOOKING_CONFIRMED",

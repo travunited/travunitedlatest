@@ -81,13 +81,15 @@ export async function handlePaymentSuccess({
 
     // Send email notification
     try {
-      await sendTourPaymentSuccessEmail(
-        user.email,
-        bookingId,
-        booking.tourName || tour?.name || "Tour",
-        payment.amount,
-        false // isAdvance - for free bookings, this is always false
-      );
+      if (user.email) {
+        await sendTourPaymentSuccessEmail(
+          user.email,
+          bookingId,
+          booking.tourName || tour?.name || "Tour",
+          payment.amount,
+          false // isAdvance - for free bookings, this is always false
+        );
+      }
     } catch (emailError) {
       console.error("Error sending tour payment success email:", emailError);
       // Don't fail the whole process if email fails
@@ -150,14 +152,16 @@ export async function handlePaymentSuccess({
 
     // Send email notification
     try {
-      await sendVisaPaymentSuccessEmail(
-        user.email,
-        applicationId,
-        application.country || "",
-        application.visaType || "",
-        payment.amount,
-        user.role || "CUSTOMER"
-      );
+      if (user.email) {
+        await sendVisaPaymentSuccessEmail(
+          user.email,
+          applicationId,
+          application.country || "",
+          application.visaType || "",
+          payment.amount,
+          user.role || "CUSTOMER"
+        );
+      }
     } catch (emailError) {
       console.error("Error sending visa payment success email:", emailError);
       // Don't fail the whole process if email fails

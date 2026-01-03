@@ -50,7 +50,9 @@ export async function POST(req: Request) {
     // Send OTP email
     try {
       const { sendRegistrationOTPEmail } = await import("@/lib/email");
-      await sendRegistrationOTPEmail(user.email, otp, user.name || undefined, user.role);
+      if (user.email) {
+        await sendRegistrationOTPEmail(user.email, otp, user.name || undefined, user.role);
+      }
     } catch (error) {
       console.error("Failed to send OTP email:", error);
       return NextResponse.json(

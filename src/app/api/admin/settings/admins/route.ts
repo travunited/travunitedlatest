@@ -206,13 +206,15 @@ export async function POST(req: Request) {
     // Send welcome email with credentials
     const loginUrl = `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/login`;
     try {
-      await sendAdminWelcomeEmail(
-        admin.email,
-        admin.name || "Admin",
-        admin.role,
-        generatePassword ? tempPassword : null,
-        loginUrl
-      );
+      if (admin.email) {
+        await sendAdminWelcomeEmail(
+          admin.email,
+          admin.name || "Admin",
+          admin.role,
+          generatePassword ? tempPassword : null,
+          loginUrl
+        );
+      }
     } catch (emailError) {
       console.error("Error sending welcome email to admin:", emailError);
       // Don't fail the request if email fails, but log it

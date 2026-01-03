@@ -14,7 +14,7 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -66,7 +66,14 @@ export async function POST(
 
     // Send password reset email
     const resetLink = `${process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/reset-password/${resetToken}`;
-    
+
+    if (!admin.email) {
+      return NextResponse.json(
+        { error: "Admin does not have an email address. Cannot send reset email." },
+        { status: 400 }
+      );
+    }
+
     try {
       const emailSent = await sendPasswordResetEmail(admin.email, resetLink, admin.role);
       if (!emailSent) {
