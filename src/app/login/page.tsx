@@ -85,8 +85,7 @@ function LoginPageContent() {
       const accessToken = data.accessToken;
 
       const result = await signIn("mobile-otp", {
-        phone: verifiedPhone,
-        otp: accessToken || "WIDGET_VERIFIED",
+        accessToken: data.accessToken,
         redirect: false,
       });
 

@@ -9,57 +9,47 @@ export const authOptions: NextAuthOptions = {
       id: "mobile-otp",
       name: "Mobile OTP",
       credentials: {
-        phone: { label: "Phone", type: "text" },
-        otp: { label: "OTP", type: "text" },
-        name: { label: "Dispay Name", type: "text" },
+        accessToken: { label: "Access Token", type: "text" },
+        name: { label: "Display Name", type: "text" },
       },
       async authorize(credentials) {
         try {
-          if (!credentials?.phone || !credentials?.otp) {
+          if (!credentials?.accessToken) {
+            console.error("[Auth] Missing accessToken");
             return null;
           }
 
-          let { phone, otp, name } = credentials;
+          const { accessToken, name } = credentials;
 
-          // Strict normalization
-          phone = phone.replace(/\D/g, "");
+          // Step 1: Verify token with MSG91 (SERVER-SIDE ONLY)
+          const { verifyMsg91Token } = await import("./sms");
+          const verification = await verifyMsg91Token(accessToken);
+
+          console.log("[Auth] MSG91 Verify Result:", verification);
+
+          if (!verification.success || !verification.phone) {
+            console.error("[Auth] Token verification failed:", verification.message);
+            throw new Error("INVALID_TOKEN");
+          }
+
+          let phone = verification.phone.replace(/\D/g, "");
+          // Ensure country code
           if (phone.length === 10) {
             phone = `91${phone}`;
           }
 
-          // If the 'otp' is very long, it's an access token from the widget
-          if (otp.length > 20) {
-            const { verifyMsg91Token } = await import("./sms");
-            const verification = await verifyMsg91Token(otp);
-
-            if (!verification.success) {
-              throw new Error("INVALID_TOKEN");
-            }
-
-            // Trust the verified phone from the token
-            if (verification.phone) {
-              phone = verification.phone.replace(/\D/g, "");
-              if (phone.length === 10) phone = `91${phone}`;
-            }
-          } else if (otp !== "WIDGET_VERIFIED") {
-            // Verify traditional OTP via MSG91
-            const { verifyOtp } = await import("./sms");
-            const isVerified = await verifyOtp(phone, otp);
-
-            if (!isVerified) {
-              throw new Error("INVALID_OTP");
-            }
-          }
+          console.log("[Auth] Proceeding with phone:", phone);
 
           // Find user by phone
           let user = await prisma.user.findFirst({
             where: {
-              phone: phone, // Strict match after normalization
+              phone: phone,
             },
           });
 
           // Unified Login/Signup: Auto-create user if not found
           if (!user) {
+            console.log("[Auth] User not found, creating new user for:", phone);
             user = await (prisma.user as any).create({
               data: {
                 phone: phone,
@@ -80,6 +70,8 @@ export const authOptions: NextAuthOptions = {
           if (!user.isActive) {
             throw new Error("USER_INACTIVE");
           }
+
+          console.log("[Auth] Auth successful for user ID:", user.id);
 
           return {
             id: user.id,

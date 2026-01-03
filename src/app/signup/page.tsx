@@ -51,8 +51,7 @@ function SignupPageContent() {
 
       // Auto-register/login via mobile-otp provider
       const loginResult = await signIn("mobile-otp", {
-        phone: verifiedPhone,
-        otp: accessToken || "WIDGET_VERIFIED",
+        accessToken: data.accessToken,
         name: name.trim(), // Key: Pass name for auto-registration
         redirect: false,
       });
