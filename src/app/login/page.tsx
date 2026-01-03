@@ -354,7 +354,7 @@ function LoginPageContent() {
                       identifier={`91${phone}`}
                       onSuccess={handleMobileLoginSuccess}
                       onFailure={handleMobileLoginFailure}
-                      className="w-full overflow-hidden rounded-lg shadow-sm"
+                      className="w-full rounded-lg shadow-sm"
                     />
                   </div>
                 )}

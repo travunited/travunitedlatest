@@ -100,17 +100,17 @@ export default function Msg91OtpWidget({
                     widgetId: WIDGET_ID,
                     tokenAuth: TOKEN_AUTH,
                     identifier: normalizedIdentifier,
-                    exposeMethods: true, // Allow manual trigger if needed
+                    exposeMethods: true,
+                    // If the widget supports rendering into a specific element
+                    elementId: "msg91-otp-widget",
                     success: (data: any) => {
                         console.log("[MSG91] Verified Successfully!", data);
                         if (isMounted) {
                             setIsLoading(false);
-                            // Normalize token across different response versions
                             const token = data?.["access-token"] || data?.access_token || data?.token || data?.accessToken;
                             const normalizedData = {
                                 ...data,
                                 accessToken: token,
-                                // Also ensure phone is easy to find
                                 phone: data.mobileNumber || data.identifier || data.mobile || data.phone
                             };
                             onSuccess(normalizedData);
@@ -129,13 +129,13 @@ export default function Msg91OtpWidget({
 
                 console.log("[MSG91] Initializing widget for:", normalizedIdentifier);
 
-                // The widget attaches itself to the DOM. 
-                // We provide the configuration which the widget reads.
-                widgetRef.current = window.initSendOTP(config);
-
+                // Small delay to ensure DOM is ready
                 setTimeout(() => {
-                    if (isMounted) setIsLoading(false);
-                }, 1000);
+                    if (isMounted) {
+                        widgetRef.current = window.initSendOTP(config);
+                        setIsLoading(false);
+                    }
+                }, 100);
 
             } catch (err: any) {
                 console.error("[MSG91] Init Error:", err);

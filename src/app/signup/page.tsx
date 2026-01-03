@@ -22,6 +22,7 @@ function SignupPageContent() {
   const [verifyMethod, setVerifyMethod] = useState<"email" | "mobile">(
     searchParams?.get("phone") ? "mobile" : "email"
   );
+  const [otpRequested, setOtpRequested] = useState(false);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -318,20 +319,51 @@ function SignupPageContent() {
                     <input
                       type="tel"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      onChange={(e) => {
+                        setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
+                        setOtpRequested(false);
+                      }}
                       className="w-full pl-16 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none font-bold tracking-wider"
                       placeholder="9876543210"
+                      disabled={otpRequested}
                     />
                   </div>
                 </div>
 
-                {phone.length === 10 && (
-                  <div className="animate-slide-up">
+                {!otpRequested ? (
+                  <button
+                    type="button"
+                    disabled={phone.length < 10 || loading || !name || name.trim().length < 2}
+                    onClick={() => {
+                      if (!name || name.trim().length < 2) {
+                        setError("Please enter your full name first");
+                        return;
+                      }
+                      setOtpRequested(true);
+                      setError("");
+                    }}
+                    className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none"
+                  >
+                    <span>Verify Mobile & Signup</span>
+                    <ArrowRight size={22} />
+                  </button>
+                ) : (
+                  <div className="animate-slide-up space-y-4">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-neutral-600 font-medium">Enter OTP sent to +91 {phone}</span>
+                      <button
+                        type="button"
+                        onClick={() => setOtpRequested(false)}
+                        className="text-primary-600 hover:text-primary-700 font-bold transition-colors"
+                      >
+                        Change Number
+                      </button>
+                    </div>
                     <Msg91OtpWidget
                       identifier={`91${phone}`}
                       onSuccess={handleMobileSignupSuccess}
                       onFailure={handleMobileSignupFailure}
-                      className="w-full overflow-hidden rounded-lg shadow-sm"
+                      className="w-full rounded-lg shadow-sm"
                     />
                   </div>
                 )}
