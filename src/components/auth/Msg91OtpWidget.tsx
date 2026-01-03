@@ -19,8 +19,8 @@ const WIDGET_ID = process.env.NEXT_PUBLIC_MSG91_WIDGET_ID || "356c4264755a393237
 const TOKEN_AUTH = process.env.NEXT_PUBLIC_MSG91_TOKEN_AUTH || "455112TQr7Dbe2ZlOl6950b0feP1";
 
 const SCRIPT_URLS = [
-    'https://verify.msg91.com/otp-provider.js',
-    'https://verify.phone91.com/otp-provider.js'
+    'https://control.msg91.com/app/assets/otp-widget/otp-widget.js',
+    'https://verify.msg91.com/otp-provider.js' // Fallback
 ];
 
 export default function Msg91OtpWidget({
@@ -100,9 +100,8 @@ export default function Msg91OtpWidget({
                     widgetId: WIDGET_ID,
                     tokenAuth: TOKEN_AUTH,
                     identifier: normalizedIdentifier,
-                    exposeMethods: true,
-                    // If the widget supports rendering into a specific element
-                    elementId: "msg91-otp-widget",
+                    exposeMethods: false, // Ensure default UI is shown
+                    elementId: "msg91-otp-widget", // Render inside this div
                     success: (data: any) => {
                         console.log("[MSG91] Verified Successfully!", data);
                         if (isMounted) {
@@ -129,13 +128,13 @@ export default function Msg91OtpWidget({
 
                 console.log("[MSG91] Initializing widget for:", normalizedIdentifier);
 
-                // Small delay to ensure DOM is ready
+                // Small delay to ensure DOM is ready and element exists
                 setTimeout(() => {
-                    if (isMounted) {
+                    if (isMounted && window.initSendOTP) {
                         widgetRef.current = window.initSendOTP(config);
                         setIsLoading(false);
                     }
-                }, 100);
+                }, 300);
 
             } catch (err: any) {
                 console.error("[MSG91] Init Error:", err);
@@ -183,7 +182,8 @@ export default function Msg91OtpWidget({
             <div
                 id="msg91-otp-widget"
                 ref={containerRef}
-                className="w-full flex justify-center"
+                className={className}
+                style={{ minHeight: '220px', width: '100%', overflow: 'visible' }}
             />
         </div>
     );
