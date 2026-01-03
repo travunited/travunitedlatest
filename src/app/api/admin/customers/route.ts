@@ -71,12 +71,12 @@ export async function GET(req: Request) {
 
     // Transform to include counts and filter out invalid entries
     const customersWithCounts = customers
-      .filter((customer) => customer && customer.id && customer.email)
+      .filter((customer) => customer && customer.id)
       .map((customer) => ({
         id: customer.id,
-        name: customer.name,
-        email: customer.email,
-        phone: customer.phone,
+        name: customer.name || "N/A",
+        email: customer.email || "",
+        phone: customer.phone || "",
         isActive: customer.isActive,
         createdAt: customer.createdAt.toISOString(),
         applicationsCount: customer._count.Application_Application_userIdToUser,

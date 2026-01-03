@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
       return {
         id: user.id,
         name: user.name || "N/A",
-        email: user.email,
+        email: user.email || "N/A",
         phone: user.phone || "N/A",
         visaApplications,
         tourBookings,
@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
       const headers = ["Name", "Email", "Phone", "Visa Apps", "Tour Bookings", "Lifetime Revenue (INR)", "Signup Date", "Last Activity"];
       const rows = filteredCustomers.slice(0, 100).map((c) => [
         c.name,
-        c.email,
+        c.email || "N/A",
         c.phone,
         c.visaApplications,
         c.tourBookings,
@@ -172,7 +172,7 @@ export async function GET(req: NextRequest) {
     if (format === "xlsx" || format === "csv") {
       const exportData = filteredCustomers.map((customer) => ({
         "Name": customer.name,
-        "Email": customer.email,
+        "Email": customer.email || "N/A",
         "Phone": customer.phone,
         "Visa Applications": customer.visaApplications,
         "Tour Bookings": customer.tourBookings,

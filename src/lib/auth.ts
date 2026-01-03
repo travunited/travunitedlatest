@@ -83,7 +83,7 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.name,
             role: user.role,
-          };
+          } as any;
         } catch (error: any) {
           if (error?.message === "INVALID_OTP" || error?.message === "USER_NOT_FOUND") {
             throw error;
@@ -148,7 +148,7 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.name,
             role: user.role,
-          };
+          } as any;
         } catch (error: any) {
           // Re-throw specific errors so they can be caught by NextAuth
           if (error?.message === "EMAIL_NOT_VERIFIED" || error?.message === "DATABASE_ERROR") {

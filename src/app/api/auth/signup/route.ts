@@ -43,12 +43,12 @@ export async function POST(req: Request) {
     }
 
     const { name, email, password, phone, verifyMethod, isVerified, accessToken } = validatedData;
-    
+
     // Validate name - required for signup
     if (!name || !name.trim() || name.trim().length < 2) {
       return NextResponse.json({ error: "Name is required and must be at least 2 characters" }, { status: 400 });
     }
-    
+
     const normalizedName = name.trim();
     let normalizedPhone = phone ? phone.replace(/\D/g, "") : undefined;
 
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
     if (verifyMethod === "email" && (!email || !password)) {
       return NextResponse.json({ error: "Email and password are required for email signup" }, { status: 400 });
     }
-    
+
     // For mobile signup, require either phone number OR accessToken (for widget verification)
     if (verifyMethod === "mobile") {
       if (!normalizedPhone && !accessToken) {
@@ -164,7 +164,9 @@ export async function POST(req: Request) {
       } else {
         try {
           const { sendRegistrationOTPEmail } = await import("@/lib/email");
-          await sendRegistrationOTPEmail(user.email, otp, user.name || undefined, user.role);
+          if (user.email) {
+            await sendRegistrationOTPEmail(user.email, otp, user.name || undefined, user.role);
+          }
         } catch (error) {
           console.error("[Signup] Failed to send OTP email:", error);
         }

@@ -227,7 +227,7 @@ export async function GET(req: Request) {
 
     // Filter out invalid entries and ensure user data is properly formatted
     const transformedBookings = filteredBookings
-      .filter((booking) => booking && booking.id && booking.user && booking.user.email)
+      .filter((booking) => booking && booking.id && booking.user)
       .map((booking) => ({
         id: booking.id,
         tourName: booking.tourName,

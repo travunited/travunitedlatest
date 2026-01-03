@@ -63,7 +63,9 @@ export async function POST(req: Request) {
     // Send welcome email after verification
     try {
       const { sendWelcomeEmail } = await import("@/lib/email");
-      await sendWelcomeEmail(user.email, user.name || undefined, user.role);
+      if (user.email) {
+        await sendWelcomeEmail(user.email, user.name || undefined, user.role);
+      }
     } catch (error) {
       // Non-blocking - don't fail verification if welcome email fails
       console.error("Failed to send welcome email:", error);

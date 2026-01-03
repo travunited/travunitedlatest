@@ -44,7 +44,7 @@ export async function POST(req: Request) {
       visaId: data.visaId,
       countryId: data.countryId,
       tourId: data.tourId,
-      userEmail: user?.email,
+      userEmail: user?.email || undefined,
     });
 
     if (!result.valid) {

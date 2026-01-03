@@ -142,8 +142,8 @@ export async function GET(req: NextRequest) {
 
       return {
         id: admin.id,
-        name: admin.name || admin.email,
-        email: admin.email,
+        name: admin.name || admin.email || "Admin",
+        email: admin.email || "",
         applicationsAssigned,
         applicationsProcessed,
         avgProcessingTimeHours: avgProcessingTime,
@@ -160,8 +160,8 @@ export async function GET(req: NextRequest) {
     if (format === "pdf") {
       const headers = ["Admin", "Email", "Applications Assigned", "Applications Processed", "Avg Processing Time (hrs)", "Pending >7 Days", "Document Verifications"];
       const rows = adminData.map((a) => [
-        a.name,
-        a.email,
+        a.name || "Admin",
+        a.email || "N/A",
         a.applicationsAssigned,
         a.applicationsProcessed,
         a.avgProcessingTimeHours.toFixed(1),
@@ -194,8 +194,8 @@ export async function GET(req: NextRequest) {
 
     if (format === "xlsx" || format === "csv") {
       const exportData = adminData.map((admin) => ({
-        "Admin Name": admin.name,
-        "Email": admin.email,
+        "Admin Name": admin.name || "Admin",
+        "Email": admin.email || "N/A",
         "Applications Assigned": admin.applicationsAssigned,
         "Applications Processed": admin.applicationsProcessed,
         "Average Processing Time (Hours)": admin.avgProcessingTimeHours.toFixed(1),

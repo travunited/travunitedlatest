@@ -98,7 +98,7 @@ export async function GET(
         userUsageCounts[userId] = {
           count: 0,
           totalDiscount: 0,
-          email: usage.user.email,
+          email: usage.user.email || "",
           name: usage.user.name,
         };
       }
@@ -135,7 +135,7 @@ export async function GET(
       topUsers,
       recentUsages: usages.slice(0, 50).map((usage) => ({
         id: usage.id,
-        userEmail: usage.user.email,
+        userEmail: usage.user.email || "",
         userName: usage.user.name,
         discountAmount: usage.discountAmount,
         finalAmount: usage.finalAmount,
@@ -143,16 +143,16 @@ export async function GET(
         type: usage.applicationId ? "visa" : usage.bookingId ? "tour" : "unknown",
         application: usage.application
           ? {
-              id: usage.application.id,
-              country: usage.application.country,
-              visaType: usage.application.visaType,
-            }
+            id: usage.application.id,
+            country: usage.application.country,
+            visaType: usage.application.visaType,
+          }
           : null,
         booking: usage.booking
           ? {
-              id: usage.booking.id,
-              tourName: usage.booking.tourName,
-            }
+            id: usage.booking.id,
+            tourName: usage.booking.tourName,
+          }
           : null,
       })),
     });

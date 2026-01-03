@@ -81,7 +81,7 @@ export async function GET(req: Request) {
         ? {
           id: log.User.id,
           name: log.User.name,
-          email: log.User.email,
+          email: log.User.email || "",
         }
         : {
           id: null,

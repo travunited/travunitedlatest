@@ -80,8 +80,8 @@ export async function POST(req: Request) {
       timestamp: new Date().toISOString(),
     });
 
-    if (!user) {
-      console.log("[Password Reset] ⚠️ User not found - returning silent success", {
+    if (!user || !user.email) {
+      console.log("[Password Reset] ⚠️ User or email not found - returning silent success", {
         normalizedEmail,
         timestamp: new Date().toISOString(),
       });
