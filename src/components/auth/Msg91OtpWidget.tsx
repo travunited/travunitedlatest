@@ -19,8 +19,8 @@ const WIDGET_ID = process.env.NEXT_PUBLIC_MSG91_WIDGET_ID || "356c4264755a393237
 const TOKEN_AUTH = process.env.NEXT_PUBLIC_MSG91_TOKEN_AUTH || "455112TQr7Dbe2ZlOl6950b0feP1";
 
 const SCRIPT_URLS = [
-    'https://control.msg91.com/app/assets/otp-widget/otp-widget.js',
-    'https://verify.msg91.com/otp-provider.js' // Fallback
+    'https://verify.msg91.com/otp-provider.js',
+    'https://verify.phone91.com/otp-provider.js'
 ];
 
 export default function Msg91OtpWidget({
@@ -106,11 +106,14 @@ export default function Msg91OtpWidget({
                         console.log("[MSG91] Verified Successfully!", data);
                         if (isMounted) {
                             setIsLoading(false);
-                            const token = data?.["access-token"] || data?.access_token || data?.token || data?.accessToken;
+                            // MSG91 v5 widget returns token in 'message' field as per logs
+                            const token = data?.message || data?.["access-token"] || data?.access_token || data?.token || data?.accessToken;
                             const normalizedData = {
                                 ...data,
                                 accessToken: token,
-                                phone: data.mobileNumber || data.identifier || data.mobile || data.phone
+                                // Preserve identifiers which are lost in message response
+                                phone: normalizedIdentifier,
+                                mobileNumber: normalizedIdentifier
                             };
                             onSuccess(normalizedData);
                         }
