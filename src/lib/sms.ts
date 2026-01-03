@@ -130,25 +130,28 @@ export async function verifyMsg91Token(accessToken: string): Promise<{ success: 
     }
 
     try {
-        const url = 'https://api.msg91.com/api/v5/widget/verifyAccessToken';
+        const url = 'https://control.msg91.com/api/v5/widget/verifyAccessToken';
+        console.log("[SMS] Verifying MSG91 token...");
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
-                "authkey": MSG91_AUTH_KEY,
             },
             body: JSON.stringify({
+                "authkey": MSG91_AUTH_KEY,
                 "access-token": accessToken
             })
         });
 
         const data = await response.json();
+        console.log("[SMS] MSG91 verification response:", data);
 
         if (data.type === 'success') {
             const phone = data.mobile || data.identifier;
             return { success: true, phone };
         } else {
+            console.error("[SMS] MSG91 token verification failed:", data.message);
             return { success: false, message: data.message || "Token verification failed" };
         }
     } catch (error) {

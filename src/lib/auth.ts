@@ -88,10 +88,10 @@ export const authOptions: NextAuthOptions = {
             role: user.role,
           } as any;
         } catch (error: any) {
-          if (error?.message === "INVALID_OTP" || error?.message === "USER_NOT_FOUND") {
+          console.error("[Auth] Mobile OTP error:", error.message || error);
+          if (error?.message === "INVALID_TOKEN" || error?.message === "INVALID_OTP" || error?.message === "USER_INACTIVE" || error?.message === "FAILED_TO_CREATE_USER") {
             throw error;
           }
-          console.error("[Auth] Mobile OTP unexpected error:", error);
           return null;
         }
       },
