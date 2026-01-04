@@ -28,8 +28,8 @@ export const authOptions: NextAuthOptions = {
           console.log("[Auth] MSG91 Verify Result:", verification);
 
           if (!verification.success || !verification.phone) {
-            console.error("[Auth] Token verification failed:", verification.message);
-            throw new Error("INVALID_TOKEN");
+            console.error("[Auth] Token verification failed. Response:", verification);
+            throw new Error(verification.message || "INVALID_TOKEN");
           }
 
           let phone = verification.phone.replace(/\D/g, "");

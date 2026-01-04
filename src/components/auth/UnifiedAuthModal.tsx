@@ -190,9 +190,10 @@ export function UnifiedAuthModal({
             if (result?.error) {
                 if (result.error === "USER_INACTIVE") {
                     setError("Account is inactive. Please contact support.");
+                } else if (result.error === "CredentialsSignin") {
+                    setError("Invalid or expired OTP token. Please try again.");
                 } else {
-                    // If it fails with USER_NOT_FOUND, it means name wasn't provided (unlikely with UI) or db error
-                    setError("Authentication failed. Please try again.");
+                    setError(result.error || "Authentication failed. Please try again.");
                 }
             } else {
                 await handleAuthSuccess();

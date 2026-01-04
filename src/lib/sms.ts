@@ -148,11 +148,14 @@ export async function verifyMsg91Token(accessToken: string): Promise<{ success: 
         console.log("[SMS] MSG91 verification response:", data);
 
         if (data.type === 'success') {
-            const phone = data.mobile || data.identifier;
+            const phone = data.mobile || data.identifier || data.phone || data.mobileNumber || data.contact;
+            if (!phone) {
+                console.warn("[SMS] MSG91 token verified but no phone number found in data:", data);
+            }
             return { success: true, phone };
         } else {
-            console.error("[SMS] MSG91 token verification failed:", data.message);
-            return { success: false, message: data.message || "Token verification failed" };
+            console.error("[SMS] MSG91 token verification failed. Status:", response.status, "Data:", data);
+            return { success: false, message: data.message || `Verification failed (${data.type || 'unknown error'})` };
         }
     } catch (error) {
         console.error("[SMS] Error verifying MSG91 token:", error);
