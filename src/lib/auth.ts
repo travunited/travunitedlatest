@@ -127,17 +127,19 @@ export const authOptions: NextAuthOptions = {
 
           if (!user) {
             // Create a new user if not found
-            // If they provided a name, use it
+            // Since the database might have a NOT NULL constraint on email,
+            // we use a placeholder that the user can update later from the dashboard.
             user = await prisma.user.create({
               data: {
-                phone: credentials.phone,
+                phone: mobile,
                 name: credentials.name || "User",
+                email: `${mobile.replace("+", "")}@user.travunited`,
                 phoneVerified: true,
                 isActive: true,
                 role: "CUSTOMER",
               },
             });
-            console.log("[Auth] Created new user via mobile OTP:", credentials.phone);
+            console.log("[Auth] Created new user via mobile OTP:", mobile);
           } else {
             // Update phoneVerified if not already
             if (!user.phoneVerified) {

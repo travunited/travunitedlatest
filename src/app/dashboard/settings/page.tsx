@@ -25,7 +25,16 @@ export default function AccountSettingsPage() {
     newPassword: "",
     confirmPassword: "",
   });
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
+  useEffect(() => {
+    if (session?.user) {
+      setNewName(session.user.name || "");
+      setNewEmail(session.user.email?.includes("@user.travunited") ? "" : session.user.email || "");
+    }
+  }, [session]);
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -94,15 +103,15 @@ export default function AccountSettingsPage() {
 
       if (response.ok) {
         setSuccess("Password changed successfully! You will be logged out for security reasons.");
-        
+
         // Wait a moment to show the success message, then sign out
         setTimeout(async () => {
           // Sign out from NextAuth session
           await signOut({ redirect: false });
-          
+
           // Clear any local storage
           localStorage.clear();
-          
+
           // Redirect to login page with message about new password
           router.push("/login?passwordChanged=true");
         }, 1500);
@@ -110,6 +119,38 @@ export default function AccountSettingsPage() {
         const data = await response.json();
         setError(data.error || "Failed to change password. Please check your current password.");
         setLoading(false);
+      }
+    } catch (error) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newName,
+          email: newEmail,
+        }),
+      });
+
+      if (response.ok) {
+        setSuccess("Profile updated successfully!");
+        setIsEditingProfile(false);
+        // Refresh session to show new data
+        router.refresh();
+      } else {
+        const data = await response.json();
+        setError(data.error || "Failed to update profile");
       }
     } catch (error) {
       setError("An error occurred. Please try again.");
@@ -138,10 +179,10 @@ export default function AccountSettingsPage() {
         // Sign out from NextAuth session
         const { signOut } = await import("next-auth/react");
         await signOut({ redirect: false });
-        
+
         // Clear any local storage
         localStorage.clear();
-        
+
         // Redirect to homepage
         window.location.href = "/";
       } else {
@@ -186,7 +227,7 @@ export default function AccountSettingsPage() {
         {/* Account Information */}
         <div className="bg-white rounded-2xl shadow-medium p-6 mb-6 border border-neutral-200">
           <h2 className="text-xl font-bold text-neutral-900 mb-6">Account Information</h2>
-          
+
           <div className="space-y-4">
             <div className="flex items-center justify-between py-3 border-b border-neutral-200">
               <div className="flex items-center space-x-3">
@@ -203,32 +244,80 @@ export default function AccountSettingsPage() {
                 <Mail className="text-neutral-400" size={20} />
                 <div>
                   <div className="text-sm text-neutral-600">Email</div>
-                  <div className="font-medium text-neutral-900">{session?.user?.email}</div>
+                  <div className="font-medium text-neutral-900">
+                    {session?.user?.email?.includes("@user.travunited")
+                      ? "Not provided (Action Required)"
+                      : session?.user?.email}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                {emailVerified ? (
-                  <span className="inline-flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                    <CheckCircle size={14} />
-                    <span>Verified</span>
-                  </span>
-                ) : (
-                  <>
-                    <span className="inline-flex items-center space-x-1 px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
-                      <AlertCircle size={14} />
-                      <span>Not Verified</span>
+                {!session?.user?.email?.includes("@user.travunited") && (
+                  emailVerified ? (
+                    <span className="inline-flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                      <CheckCircle size={14} />
+                      <span>Verified</span>
                     </span>
-                    <button
-                      onClick={handleVerifyEmail}
-                      disabled={loading}
-                      className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-                    >
-                      Verify
-                    </button>
-                  </>
+                  ) : (
+                    <>
+                      <span className="inline-flex items-center space-x-1 px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+                        <AlertCircle size={14} />
+                        <span>Not Verified</span>
+                      </span>
+                      <button
+                        onClick={handleVerifyEmail}
+                        disabled={loading}
+                        className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                      >
+                        Verify
+                      </button>
+                    </>
+                  )
                 )}
+                <button
+                  onClick={() => setIsEditingProfile(!isEditingProfile)}
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                >
+                  {isEditingProfile ? "Cancel" : "Edit"}
+                </button>
               </div>
             </div>
+
+            {isEditingProfile && (
+              <motion.form
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                onSubmit={handleUpdateProfile}
+                className="bg-neutral-50 p-4 rounded-xl border border-neutral-200 space-y-4 my-2"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg"
+                    placeholder="Enter your real email"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-primary-600 text-white py-2 rounded-lg font-medium"
+                >
+                  {loading ? "Updating..." : "Save Changes"}
+                </button>
+              </motion.form>
+            )}
 
             {session?.user?.role && (
               <div className="flex items-center justify-between py-3">
@@ -249,7 +338,7 @@ export default function AccountSettingsPage() {
         {/* Security Settings */}
         <div className="bg-white rounded-2xl shadow-medium p-6 mb-6 border border-neutral-200">
           <h2 className="text-xl font-bold text-neutral-900 mb-6">Security</h2>
-          
+
           {!showPasswordForm ? (
             <button
               onClick={() => setShowPasswordForm(true)}
@@ -339,7 +428,7 @@ export default function AccountSettingsPage() {
               <div>
                 <h3 className="font-semibold text-yellow-900 mb-1">Email Not Verified</h3>
                 <p className="text-sm text-yellow-700 mb-3">
-                  Your email address hasn&rsquo;t been verified yet. Email verification is optional and won&rsquo;t block payments, 
+                  Your email address hasn&rsquo;t been verified yet. Email verification is optional and won&rsquo;t block payments,
                   but we recommend verifying your email for account security.
                 </p>
                 <button
@@ -373,7 +462,7 @@ export default function AccountSettingsPage() {
         <div className="bg-white rounded-2xl shadow-medium p-6 border border-red-200">
           <h2 className="text-xl font-bold text-red-900 mb-2">Danger Zone</h2>
           <p className="text-sm text-neutral-600 mb-6">
-            Once you delete your account, you will lose access to your dashboard and all your applications/bookings. 
+            Once you delete your account, you will lose access to your dashboard and all your applications/bookings.
             This action cannot be undone.
           </p>
 

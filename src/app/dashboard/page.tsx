@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { FileText, Plane, Clock, CheckCircle, X, AlertCircle, ArrowRight, Settings, Users, CreditCard, Calendar, Download, MessageSquare } from "lucide-react";
+import { FileText, Plane, Clock, CheckCircle, X, AlertCircle, ArrowRight, Settings, Users, CreditCard, Calendar, Download, MessageSquare, Mail } from "lucide-react";
 import { formatDate } from "@/lib/dateFormat";
 
 export const dynamic = "force-dynamic";
@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
   const buildNextSteps = useCallback((apps: Application[], books: Booking[]) => {
     const steps: any[] = [];
-    
+
     // Payment pending applications
     apps.filter(a => a.status === "PAYMENT_PENDING").forEach(app => {
       steps.push({
@@ -76,14 +76,14 @@ export default function DashboardPage() {
     });
 
     // Upcoming tours
-    const upcomingTours = books.filter(b => 
-      b.status === "CONFIRMED" && 
-      b.travelDate && 
+    const upcomingTours = books.filter(b =>
+      b.status === "CONFIRMED" &&
+      b.travelDate &&
       new Date(b.travelDate) > new Date()
-    ).sort((a, b) => 
+    ).sort((a, b) =>
       new Date(a.travelDate!).getTime() - new Date(b.travelDate!).getTime()
     );
-    
+
     if (upcomingTours.length > 0) {
       const nextTour = upcomingTours[0];
       steps.push({
@@ -111,7 +111,7 @@ export default function DashboardPage() {
 
   const buildActivities = useCallback((apps: Application[], books: Booking[]) => {
     const acts: Activity[] = [];
-    
+
     // Recent applications
     apps.slice(0, 5).forEach(app => {
       acts.push({
@@ -216,6 +216,28 @@ export default function DashboardPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Profile Completion Warning */}
+        {session?.user?.email?.includes("@user.travunited") && (
+          <div className="mb-8 bg-primary-50 border border-primary-200 rounded-2xl p-6 flex items-start space-x-4">
+            <div className="p-3 bg-primary-100 rounded-xl">
+              <Mail className="text-primary-600" size={24} />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-neutral-900 mb-1">Action Required: Complete Your Profile</h3>
+              <p className="text-neutral-600 mb-4">
+                You signed up using your mobile number. Please add your email address to receive booking confirmations and important updates.
+              </p>
+              <Link
+                href="/dashboard/settings"
+                className="inline-flex items-center space-x-2 bg-primary-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+              >
+                <span>Add Email Now</span>
+                <ArrowRight size={18} />
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Next Important Steps */}
         {nextSteps.length > 0 && (
           <div className="mb-8">
@@ -284,9 +306,8 @@ export default function DashboardPage() {
             <div className="space-y-4">
               {activities.map((activity) => (
                 <div key={activity.id} className="flex items-start space-x-4 pb-4 border-b border-neutral-100 last:border-0">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    activity.type === "application" ? "bg-blue-100" : "bg-green-100"
-                  }`}>
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${activity.type === "application" ? "bg-blue-100" : "bg-green-100"
+                    }`}>
                     {activity.type === "application" ? (
                       <FileText size={20} className="text-blue-600" />
                     ) : (
