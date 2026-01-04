@@ -110,14 +110,15 @@ function LoginPageContent() {
     }
   };
 
-  const handleMobileSuccess = async (phone: string, otp: string) => {
+  const handleMobileSuccess = async (phone: string, token: string, requestId?: string) => {
     setLoading(true);
     setError("");
 
     try {
       const result = await signIn("mobile-otp", {
         phone,
-        otp,
+        token,
+        requestId,
         redirect: false,
       });
 

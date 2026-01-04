@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Phone, ArrowRight, Loader2 } from "lucide-react";
 
 interface MobileOtpFormProps {
-    onSuccess: (phone: string, otp: string) => void;
+    onSuccess: (phone: string, token: string, requestId?: string) => void;
     onError?: (error: string) => void;
     showName?: boolean;
     name?: string;
@@ -25,6 +25,7 @@ export function MobileOtpForm({
     const [error, setError] = useState("");
     const [countdown, setCountdown] = useState(0);
     const [sdkLoaded, setSdkLoaded] = useState(false);
+    const [requestId, setRequestId] = useState("");
 
     // Initialize MSG91 SDK
     useEffect(() => {
@@ -82,6 +83,12 @@ export function MobileOtpForm({
             (window as any).sendOtp(
                 `91${phone}`,
                 (data: any) => {
+                    console.log("[MSG91] Send Success:", data);
+                    const reqId = data.message || data.requestId;
+                    if (reqId && typeof reqId === 'string' && reqId.length > 5) {
+                        setRequestId(reqId);
+                    }
+
                     setStep("otp");
                     setCountdown(30);
                     const timer = setInterval(() => {
@@ -134,7 +141,7 @@ export function MobileOtpForm({
                     }
 
                     if (token) {
-                        onSuccess(`91${phone}`, token);
+                        onSuccess(`91${phone}`, token, requestId);
                     } else if (data.message === "otp already verified") {
                         setError("OTP already verified. Please try again.");
                     } else {

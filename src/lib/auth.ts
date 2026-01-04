@@ -2,7 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
-import { verifyMsg91OTP, verifyMsg91AccessToken } from "./sms";
+import { verifyMsg91OTP, verifyMsg91AccessToken, verifyMsg91WidgetOTP } from "./sms";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -80,11 +80,10 @@ export const authOptions: NextAuthOptions = {
         phone: { label: "Phone", type: "text" },
         token: { label: "Token", type: "text" },
         name: { label: "Name", type: "text" },
+        requestId: { label: "Request ID", type: "text" },
       },
       async authorize(credentials) {
         try {
-          // If token is exactly 4 digits, it's an OTP code (fallback)
-          // If it's longer, it's likely the access token from the widget
           if (!credentials?.phone || !credentials?.token) {
             console.log("[Auth] Missing phone or token");
             return null;
@@ -93,16 +92,27 @@ export const authOptions: NextAuthOptions = {
           let verification;
           let mobile = credentials.phone;
 
-          if (credentials.token.length === 4) {
-            console.log("[Auth] Verifying direct OTP code:", credentials.token);
-            verification = await verifyMsg91OTP(credentials.phone, credentials.token);
-          } else {
-            console.log("[Auth] Verifying MSG91 Access Token (length:", credentials.token.length, ")");
+          // PRIORITY 1: JWT Access Token (long strings)
+          if (credentials.token.length > 20) {
+            console.log("[Auth] Verifying MSG91 Access Token (JWT)");
             verification = await verifyMsg91AccessToken(credentials.token);
+
             if (verification.success && verification.mobile) {
-              console.log("[Auth] Access token verified for phone:", verification.mobile);
+              console.log("[Auth] Access token verified for mobile:", verification.mobile);
               mobile = verification.mobile;
             }
+          }
+          // PRIORITY 2: Manual Widget Verification (requires requestId + 4-6 digit OTP)
+          else if (credentials.requestId && credentials.token.length >= 4) {
+            console.log("[Auth] Falling back to manual widget verification with requestId");
+            verification = await verifyMsg91WidgetOTP(credentials.requestId, credentials.token);
+          }
+          // PRIORITY 3: Standard OTP (Exactly 4 digits, no requestId)
+          else if (credentials.token.length === 4) {
+            console.log("[Auth] Verifying standard 4-digit OTP code");
+            verification = await verifyMsg91OTP(credentials.phone, credentials.token);
+          } else {
+            return null;
           }
 
           if (!verification.success) {

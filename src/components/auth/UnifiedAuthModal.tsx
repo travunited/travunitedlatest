@@ -169,16 +169,15 @@ export function UnifiedAuthModal({
     };
 
     // Handle Mobile OTP Success
-    const handleMobileSuccess = async (data: any) => {
+    const handleMobileSuccess = async (phone: string, token: string, requestId?: string) => {
         setLoading(true);
         setError("");
 
         try {
-            // The data object from MSG91 widget usually contains the verified phone and a requestId/token
-            // Depending on the widget version, we might need to verify the token server-side
             const result = await signIn("mobile-otp", {
-                phone: data.mobileNumber || data.phone || data.requestId, // Adjust based on MSG91 response
-                token: data.requestId || data.token,
+                phone: phone,
+                token: token,
+                requestId: requestId,
                 name: formData.name,
                 redirect: false,
             });
@@ -374,7 +373,7 @@ export function UnifiedAuthModal({
                             ) : (
                                 <div className="space-y-4">
                                     <MobileOtpForm
-                                        onSuccess={(phone, otp) => handleMobileSuccess({ mobileNumber: phone, requestId: otp })}
+                                        onSuccess={(phone, token, requestId) => handleMobileSuccess(phone, token, requestId)}
                                         onError={(err: string) => setError(err)}
                                         showName={mode === "signup"}
                                         name={formData.name}
