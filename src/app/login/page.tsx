@@ -4,7 +4,10 @@ import { useState, useEffect, Suspense } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, ArrowRight, AlertCircle, CheckCircle } from "lucide-react";
+import { Mail, Lock, ArrowRight, AlertCircle, CheckCircle, Phone } from "lucide-react";
+import { Msg91OtpWidget } from "@/components/auth/Msg91OtpWidget";
+
+type LoginMethod = "email" | "phone";
 
 function LoginPageContent() {
   const searchParams = useSearchParams();
@@ -13,6 +16,7 @@ function LoginPageContent() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [method, setMethod] = useState<LoginMethod>("email");
   const router = useRouter();
 
   const handlePostLogin = () => {
@@ -117,6 +121,30 @@ function LoginPageContent() {
     }
   };
 
+  // Handle Mobile OTP Success
+  const handleMobileSuccess = async (data: any) => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await signIn("mobile-otp", {
+        phone: data.mobileNumber || data.phone || data.requestId,
+        token: data.requestId || data.token,
+        redirect: false,
+      });
+
+      if (result?.ok) {
+        handlePostLogin();
+      } else {
+        setError(result?.error || "Mobile verification failed");
+      }
+    } catch (err) {
+      setError("An error occurred during mobile login");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       {/* Background Image with Overlay */}
@@ -161,60 +189,89 @@ function LoginPageContent() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-neutral-800 mb-2">
-                  Email Address
-                </label>
-                <div className="relative group">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
-                    placeholder="your.email@example.com"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-neutral-800 mb-2">
-                  Password
-                </label>
-                <div className="relative group">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
-                    placeholder="Enter your password"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <label className="flex items-center group cursor-pointer">
-                  <input type="checkbox" className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500 transition-colors" />
-                  <span className="ml-2 text-sm text-neutral-700 group-hover:text-black transition-colors font-medium">Remember me</span>
-                </label>
-                <Link href="/forgot-password" className="text-sm text-primary-600 hover:text-primary-700 font-semibold transition-colors">
-                  Forgot password?
-                </Link>
-              </div>
-
+            {/* Method Switcher: Email vs Mobile */}
+            <div className="flex bg-neutral-100 p-1 rounded-lg w-full">
               <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none"
+                type="button"
+                onClick={() => { setMethod("email"); setError(""); }}
+                className={`flex-1 flex items-center justify-center space-x-2 px-3 py-2.5 text-sm font-bold rounded-md transition-all ${method === "email" ? "bg-white text-primary-600 shadow-sm" : "text-neutral-500"}`}
               >
-                <span className="text-lg">{loading ? "Signing in..." : "Sign In"}</span>
-                {!loading && <ArrowRight size={22} />}
+                <Mail size={16} />
+                <span>Email</span>
               </button>
-            </form>
+              <button
+                type="button"
+                onClick={() => { setMethod("phone"); setError(""); }}
+                className={`flex-1 flex items-center justify-center space-x-2 px-3 py-2.5 text-sm font-bold rounded-md transition-all ${method === "phone" ? "bg-white text-primary-600 shadow-sm" : "text-neutral-500"}`}
+              >
+                <Phone size={16} />
+                <span>Mobile</span>
+              </button>
+            </div>
+
+            {method === "email" ? (
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative group">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
+                      placeholder="your.email@example.com"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
+                    Password
+                  </label>
+                  <div className="relative group">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
+                      placeholder="Enter your password"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center group cursor-pointer">
+                    <input type="checkbox" className="rounded border-neutral-300 text-primary-600 focus:ring-primary-500 transition-colors" />
+                    <span className="ml-2 text-sm text-neutral-700 group-hover:text-black transition-colors font-medium">Remember me</span>
+                  </label>
+                  <Link href="/forgot-password" className="text-sm text-primary-600 hover:text-primary-700 font-semibold transition-colors">
+                    Forgot password?
+                  </Link>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none"
+                >
+                  <span className="text-lg">{loading ? "Signing in..." : "Sign In"}</span>
+                  {!loading && <ArrowRight size={22} />}
+                </button>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                <Msg91OtpWidget
+                  onSuccess={handleMobileSuccess}
+                  onFailure={(err) => setError("Mobile OTP failed. Please try again.")}
+                />
+              </div>
+            )}
           </div>
 
           <div className="mt-8 pt-6 border-t border-neutral-200/50 text-center">
@@ -256,3 +313,4 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+
