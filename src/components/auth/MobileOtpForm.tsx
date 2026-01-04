@@ -125,17 +125,32 @@ export function MobileOtpForm({
             (window as any).verifyOtp(
                 otp,
                 (data: any) => {
+                    console.log("[MSG91] Verification Success Data:", data);
                     // Success: data usually contains access_token if configured
-                    // We pass this token to NextAuth for server-side validation
-                    onSuccess(`91${phone}`, data.message || data.access_token);
+                    // We MUST prioritize access_token for server-side verification
+                    const token = data.access_token || data.requestId;
+
+                    if (token) {
+                        onSuccess(`91${phone}`, token);
+                    } else if (data.message === "otp already verified") {
+                        setError("OTP already verified. Please try again.");
+                    } else {
+                        setError("Verification succeeded but no access token received");
+                    }
                     setLoading(false);
                 },
                 (error: any) => {
-                    setError(error.message || "Invalid OTP");
+                    console.warn("[MSG91] Verification Failure:", error);
+                    if (error.message === "otp already verified") {
+                        setError("OTP already verified. Try logging in again.");
+                    } else {
+                        setError(error.message || "Invalid OTP");
+                    }
                     setLoading(false);
                 }
             );
         } catch (err) {
+            console.error("[MSG91] Error in verifyOtp call:", err);
             setError("OTP verification failed");
             setLoading(false);
         }

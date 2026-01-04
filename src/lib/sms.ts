@@ -55,23 +55,29 @@ export async function verifyMsg91AccessToken(accessToken: string) {
     }
 
     try {
+        console.log("[MSG91] Verifying access token with server...");
         const response = await fetch(
-            `https://control.msg91.com/api/v5/widget/verifyAccessToken?accessToken=${accessToken}`,
+            `https://api.msg91.com/api/v5/widget/verifyAccessToken`,
             {
-                method: "GET",
+                method: "POST",
                 headers: {
-                    authkey: MSG91_AUTH_KEY,
+                    "Content-Type": "application/json",
+                    "authkey": MSG91_AUTH_KEY,
                 },
+                body: JSON.stringify({
+                    "access-token": accessToken
+                })
             }
         );
 
         const data = await response.json();
+        console.log("[MSG91] Server Response:", data);
 
         if (data.type === "success") {
             return {
                 success: true,
                 message: data.message,
-                mobile: data.mobile_number
+                mobile: data.mobile_number || data.mobile
             };
         } else {
             console.warn("MSG91 Access Token Verification Failed:", data);

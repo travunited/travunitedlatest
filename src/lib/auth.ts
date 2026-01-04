@@ -94,10 +94,13 @@ export const authOptions: NextAuthOptions = {
           let mobile = credentials.phone;
 
           if (credentials.token.length === 4) {
+            console.log("[Auth] Verifying direct OTP code:", credentials.token);
             verification = await verifyMsg91OTP(credentials.phone, credentials.token);
           } else {
+            console.log("[Auth] Verifying MSG91 Access Token (length:", credentials.token.length, ")");
             verification = await verifyMsg91AccessToken(credentials.token);
             if (verification.success && verification.mobile) {
+              console.log("[Auth] Access token verified for phone:", verification.mobile);
               mobile = verification.mobile;
             }
           }
