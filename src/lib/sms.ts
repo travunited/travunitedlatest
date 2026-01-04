@@ -129,44 +129,57 @@ export async function verifyMsg91Token(accessToken: string): Promise<{ success: 
         return { success: false, message: "Server configuration error" };
     }
 
-    try {
-        // Try the standard API endpoint first
-        const url = 'https://api.msg91.com/api/v5/widget/verifyToken';
-        console.log("[SMS] Verifying MSG91 token at:", url);
+    const endpoints = [
+        'https://control.msg91.com/api/v5/widget/verifyAccessToken',
+        'https://api.msg91.com/api/v5/widget/verifyToken',
+        'https://control.msg91.com/api/v5/widget/verifyToken'
+    ];
 
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "authkey": MSG91_AUTH_KEY
-            },
-            body: JSON.stringify({
-                "authkey": MSG91_AUTH_KEY,
-                "access-token": accessToken,
-                "accessToken": accessToken,
-                "token": accessToken
-            })
-        });
+    for (const url of endpoints) {
+        try {
+            console.log(`[SMS] Trying MSG91 verification at: ${url}`);
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "authkey": MSG91_AUTH_KEY.trim()
+                },
+                body: JSON.stringify({
+                    "authkey": MSG91_AUTH_KEY.trim(),
+                    "access-token": accessToken,
+                    "accessToken": accessToken,
+                    "token": accessToken
+                })
+            });
 
-        const data = await response.json();
-        console.log("[SMS] MSG91 verification response data:", JSON.stringify(data));
-
-        if (data.type === 'success' || data.status === 'success' || data.message === 'verified' || (data.message && !data.message.includes('fail'))) {
-            // Extract phone from all possible fields
-            const phone = data.mobile || data.identifier || data.phone || data.mobileNumber || data.contact ||
-                (typeof data.message === 'string' && data.message.length > 5 ? data.message : null);
-
-            if (!phone) {
-                console.warn("[SMS] MSG91 token verified but no phone number found in data. Response:", JSON.stringify(data));
+            if (!response.ok) {
+                console.warn(`[SMS] Endpoint ${url} returned status ${response.status}`);
+                continue;
             }
-            return { success: true, phone };
-        } else {
-            console.error("[SMS] MSG91 token verification failed. Status:", response.status, "Response:", JSON.stringify(data));
-            return { success: false, message: data.message || `Verification failed (${data.type || data.status || 'unknown error'})` };
+
+            const data = await response.json();
+            console.log(`[SMS] Response from ${url}:`, JSON.stringify(data));
+
+            if (data.type === 'success' || data.status === 'success' || data.message === 'verified' || (typeof data.message === 'string' && data.message.length > 5)) {
+                // Extract phone from all possible fields
+                const phone = data.mobile || data.identifier || data.phone || data.mobileNumber || data.contact ||
+                    (typeof data.message === 'string' && data.message.length > 5 ? data.message : null);
+
+                if (phone) {
+                    return { success: true, phone };
+                }
+            }
+
+            // If we got a success but no phone, maybe it's a different structure?
+            if (data.type === 'success' || data.status === 'success') {
+                console.warn("[SMS] Token verified but no phone number found in data structure:", data);
+            }
+
+        } catch (error) {
+            console.error(`[SMS] Error during verification attempt at ${url}:`, error);
         }
-    } catch (error) {
-        console.error("[SMS] Error verifying MSG91 token:", error);
-        return { success: false, message: "Verification request failed" };
     }
+
+    return { success: false, message: "Verification failed on all available endpoints" };
 }
