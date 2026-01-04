@@ -134,6 +134,9 @@ export const authOptions: NextAuthOptions = {
                 phone: mobile,
                 name: credentials.name || "User",
                 email: `${mobile.replace("+", "")}@user.travunited`,
+                // Database might have a NOT NULL constraint on passwordHash.
+                // We set a placeholder so the account can be created without a password.
+                passwordHash: "OTP_USER_NO_PASSWORD",
                 phoneVerified: true,
                 isActive: true,
                 role: "CUSTOMER",
