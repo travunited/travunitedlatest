@@ -33,11 +33,6 @@ export const authOptions: NextAuthOptions = {
           }
 
           let phone = verification.phone.replace(/\D/g, "");
-          // Ensure country code
-          if (phone.length === 10) {
-            phone = `91${phone}`;
-          }
-
           console.log("[Auth] Proceeding with phone:", phone);
 
           // Find user by phone

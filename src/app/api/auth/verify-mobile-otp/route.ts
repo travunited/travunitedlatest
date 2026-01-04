@@ -30,10 +30,6 @@ export async function POST(req: Request) {
         }
 
         let phone = verification.phone.replace(/\D/g, "");
-        // Ensure country code (assuming India 91 if 10 digits)
-        if (phone.length === 10) {
-            phone = `91${phone}`;
-        }
 
         // 2. Find or create user
         let user = await prisma.user.findFirst({

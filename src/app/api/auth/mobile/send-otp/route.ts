@@ -14,22 +14,17 @@ export async function POST(req: Request) {
         const validatedData = sendOtpSchema.parse(body);
         let { phone, type } = validatedData;
 
-        // Strict 10-digit normalization for Indian numbers (+91 by default)
-        // Remove any non-digits first
+        // Allow any phone number that looks reasonable (7 to 15 digits)
         phone = phone.replace(/\D/g, "");
 
-        if (phone.length === 10) {
-            phone = `91${phone}`;
-        } else if (phone.length === 12 && phone.startsWith("91")) {
-            // Already has 91, keep it
-        } else {
+        if (phone.length < 7 || phone.length > 15) {
             return NextResponse.json(
-                { error: "Please enter a valid 10-digit mobile number" },
+                { error: "Please enter a valid mobile number" },
                 { status: 400 }
             );
         }
 
-        // Unified Flow: We allow OTP send for any valid 10-digit number.
+        // Unified Flow: We allow OTP send for any valid number.
         // If it's a new number, it will be auto-registered during verification.
 
         const success = await sendOtp(phone);

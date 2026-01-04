@@ -434,20 +434,17 @@ export function UnifiedAuthModal({
                                     <label className="block text-sm font-medium text-neutral-700 mb-2">
                                         Mobile Number
                                     </label>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 font-semibold border-r border-neutral-300 pr-2">+91</span>
-                                        <input
-                                            type="tel"
-                                            value={formData.phone}
-                                            onChange={(e) => {
-                                                setFormData({ ...formData, phone: e.target.value.replace(/\D/g, "").slice(0, 10) });
-                                                setOtpRequested(false);
-                                            }}
-                                            className="w-full pl-16 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 tracking-wider"
-                                            placeholder="9876543210"
-                                            disabled={otpRequested}
-                                        />
-                                    </div>
+                                    <input
+                                        type="tel"
+                                        value={formData.phone}
+                                        onChange={(e) => {
+                                            setFormData({ ...formData, phone: e.target.value.replace(/[^\d+]/g, "") });
+                                            setOtpRequested(false);
+                                        }}
+                                        className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 tracking-wider"
+                                        placeholder="eg. +919876543210"
+                                        disabled={otpRequested}
+                                    />
                                     {!otpRequested && (
                                         <p className="mt-2 text-xs text-neutral-500">We&rsquo;ll send a secure OTP to this number</p>
                                     )}
@@ -463,7 +460,7 @@ export function UnifiedAuthModal({
                                     >
                                         <button
                                             type="button"
-                                            disabled={formData.phone.length < 10 || loading}
+                                            disabled={formData.phone.length < 7 || loading}
                                             onClick={() => setOtpRequested(true)}
                                             className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
                                         >
@@ -481,7 +478,7 @@ export function UnifiedAuthModal({
                                         className="space-y-3"
                                     >
                                         <div className="flex justify-between items-center text-sm">
-                                            <span className="text-neutral-600">Enter OTP sent to +91 {formData.phone}</span>
+                                            <span className="text-neutral-600">Enter OTP sent to {formData.phone}</span>
                                             <button
                                                 type="button"
                                                 onClick={() => setOtpRequested(false)}
@@ -491,7 +488,7 @@ export function UnifiedAuthModal({
                                             </button>
                                         </div>
                                         <Msg91OtpWidget
-                                            identifier={`91${formData.phone}`}
+                                            identifier={formData.phone}
                                             onSuccess={handlePhoneSuccess}
                                             onFailure={handlePhoneFailure}
                                             className="w-full overflow-hidden rounded-lg"

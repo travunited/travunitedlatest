@@ -38,7 +38,7 @@ export default function Msg91OtpWidget({
     useEffect(() => {
         let isMounted = true;
 
-        if (!identifier || identifier.length < 10) {
+        if (!identifier || identifier.length < 7) {
             setError("Invalid mobile number");
             setIsLoading(false);
             return;
