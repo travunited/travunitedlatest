@@ -2,7 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
-import { verifyMsg91OTP } from "./sms";
+import { verifyMsg91OTP, verifyMsg91AccessToken } from "./sms";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -83,21 +83,33 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
+          // If token is exactly 4 digits, it's an OTP code (fallback)
+          // If it's longer, it's likely the access token from the widget
           if (!credentials?.phone || !credentials?.token) {
             console.log("[Auth] Missing phone or token");
             return null;
           }
 
-          const verification = await verifyMsg91OTP(credentials.phone, credentials.token);
+          let verification;
+          let mobile = credentials.phone;
+
+          if (credentials.token.length === 4) {
+            verification = await verifyMsg91OTP(credentials.phone, credentials.token);
+          } else {
+            verification = await verifyMsg91AccessToken(credentials.token);
+            if (verification.success && verification.mobile) {
+              mobile = verification.mobile;
+            }
+          }
 
           if (!verification.success) {
-            console.log("[Auth] Mobile OTP verification failed:", verification.message);
+            console.log("[Auth] Mobile verification failed:", verification.message);
             throw new Error(verification.message || "INVALID_OTP");
           }
 
-          // OTP is valid, now find or create the user
+          // Verification is valid, now find or create the user
           let user = await prisma.user.findUnique({
-            where: { phone: credentials.phone },
+            where: { phone: mobile },
           });
 
           if (!user) {

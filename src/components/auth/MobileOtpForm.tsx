@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Phone, ArrowRight, Loader2 } from "lucide-react";
 
 interface MobileOtpFormProps {
@@ -24,6 +24,46 @@ export function MobileOtpForm({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [countdown, setCountdown] = useState(0);
+    const [sdkLoaded, setSdkLoaded] = useState(false);
+
+    // Initialize MSG91 SDK
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        const scriptId = "msg91-otp-sdk";
+        if (document.getElementById(scriptId)) {
+            setSdkLoaded(true);
+            return;
+        }
+
+        const script = document.createElement("script");
+        script.id = scriptId;
+        script.src = "https://verify.msg91.com/otp-provider.js";
+        script.defer = true;
+        script.onload = () => {
+            const configuration = {
+                widgetId: process.env.NEXT_PUBLIC_MSG91_WIDGET_ID,
+                tokenAuth: process.env.NEXT_PUBLIC_MSG91_TOKEN_AUTH,
+                exposeMethods: true,
+                success: (data: any) => {
+                    // This callback might be called by verifyOtp if not handled there
+                    if (data?.type === "success") {
+                        onSuccess(`91${phone}`, data.message);
+                    }
+                },
+                failure: (error: any) => {
+                    setError(error.message || "Verification failed");
+                }
+            };
+
+            if ((window as any).initSendOTP) {
+                (window as any).initSendOTP(configuration);
+                setSdkLoaded(true);
+                console.log("[MSG91] SDK initialized with exposeMethods");
+            }
+        };
+        document.body.appendChild(script);
+    }, []);
 
     const sendOtp = async () => {
         if (!phone || phone.length < 10) {
@@ -31,38 +71,38 @@ export function MobileOtpForm({
             return;
         }
 
+        if (!sdkLoaded || !(window as any).sendOtp) {
+            setError("Authentication service is initializing. Please wait.");
+            return;
+        }
+
         setLoading(true);
         setError("");
 
         try {
-            const response = await fetch("/api/auth/mobile/send-otp", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phone: `91${phone}` }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                setStep("otp");
-                setCountdown(30);
-                const timer = setInterval(() => {
-                    setCountdown((prev) => {
-                        if (prev <= 1) {
-                            clearInterval(timer);
-                            return 0;
-                        }
-                        return prev - 1;
-                    });
-                }, 1000);
-            } else {
-                setError(data.error || "Failed to send OTP");
-                if (onError) onError(data.error);
-            }
+            (window as any).sendOtp(
+                `91${phone}`,
+                (data: any) => {
+                    setStep("otp");
+                    setCountdown(30);
+                    const timer = setInterval(() => {
+                        setCountdown((prev) => {
+                            if (prev <= 1) {
+                                clearInterval(timer);
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                    setLoading(false);
+                },
+                (error: any) => {
+                    setError(error.message || "Failed to send OTP");
+                    setLoading(false);
+                }
+            );
         } catch (err) {
             setError("Failed to send OTP. Please try again.");
-            if (onError) onError("Network error");
-        } finally {
             setLoading(false);
         }
     };
@@ -73,14 +113,30 @@ export function MobileOtpForm({
             return;
         }
 
+        if (!sdkLoaded || !(window as any).verifyOtp) {
+            setError("Verification service unavailable");
+            return;
+        }
+
         setLoading(true);
         setError("");
 
         try {
-            onSuccess(`91${phone}`, otp);
+            (window as any).verifyOtp(
+                otp,
+                (data: any) => {
+                    // Success: data usually contains access_token if configured
+                    // We pass this token to NextAuth for server-side validation
+                    onSuccess(`91${phone}`, data.message || data.access_token);
+                    setLoading(false);
+                },
+                (error: any) => {
+                    setError(error.message || "Invalid OTP");
+                    setLoading(false);
+                }
+            );
         } catch (err) {
             setError("OTP verification failed");
-        } finally {
             setLoading(false);
         }
     };
