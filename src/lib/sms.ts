@@ -1,0 +1,45 @@
+/**
+ * MSG91 SMS Utility
+ * Handles OTP verification using MSG91 API
+ */
+
+const MSG91_AUTH_KEY = process.env.MSG91_AUTH_KEY;
+
+/**
+ * Verifies the OTP token against MSG91 API
+ * @param mobile - The mobile number with country code (e.g., 919999999999)
+ * @param otpToken - The token/OTP to verify (Widget returns a token, or standard OTP)
+ * @returns Promise<{ success: boolean; message: string }>
+ */
+export async function verifyMsg91OTP(mobile: string, otpToken: string) {
+    if (!MSG91_AUTH_KEY) {
+        console.error("MSG91_AUTH_KEY is not defined in environment variables");
+        return { success: false, message: "Configuration error" };
+    }
+
+    try {
+        // Remove '+' if present from mobile
+        const cleanMobile = mobile.replace("+", "");
+
+        // MSG91 OTP Verification API
+        // https://docs.msg91.com/p/tf9vsw6un/v/6v3r7z/otp/verify-otp
+        const response = await fetch(
+            `https://control.msg91.com/api/v5/otp/verify?otp=${otpToken}&mobile=${cleanMobile}&authkey=${MSG91_AUTH_KEY}`,
+            {
+                method: "GET",
+            }
+        );
+
+        const data = await response.json();
+
+        if (data.type === "success") {
+            return { success: true, message: data.message };
+        } else {
+            console.warn("MSG91 OTP Verification Failed:", data);
+            return { success: false, message: data.message || "Invalid OTP" };
+        }
+    } catch (error) {
+        console.error("Error verifying MSG91 OTP:", error);
+        return { success: false, message: "Verification failed" };
+    }
+}

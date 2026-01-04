@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
+import { verifyMsg91OTP } from "./sms";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -68,6 +69,75 @@ export const authOptions: NextAuthOptions = {
           }
           // Log other errors but don't expose them
           console.error("[Auth] Unexpected error:", error);
+          return null;
+        }
+      },
+    }),
+    CredentialsProvider({
+      id: "mobile-otp",
+      name: "Mobile OTP",
+      credentials: {
+        phone: { label: "Phone", type: "text" },
+        token: { label: "Token", type: "text" },
+        name: { label: "Name", type: "text" },
+      },
+      async authorize(credentials) {
+        try {
+          if (!credentials?.phone || !credentials?.token) {
+            console.log("[Auth] Missing phone or token");
+            return null;
+          }
+
+          const verification = await verifyMsg91OTP(credentials.phone, credentials.token);
+
+          if (!verification.success) {
+            console.log("[Auth] Mobile OTP verification failed:", verification.message);
+            throw new Error(verification.message || "INVALID_OTP");
+          }
+
+          // OTP is valid, now find or create the user
+          let user = await prisma.user.findUnique({
+            where: { phone: credentials.phone },
+          });
+
+          if (!user) {
+            // Create a new user if not found
+            // If they provided a name, use it
+            user = await prisma.user.create({
+              data: {
+                phone: credentials.phone,
+                name: credentials.name || "User",
+                phoneVerified: true,
+                isActive: true,
+                role: "CUSTOMER",
+              },
+            });
+            console.log("[Auth] Created new user via mobile OTP:", credentials.phone);
+          } else {
+            // Update phoneVerified if not already
+            if (!user.phoneVerified) {
+              await prisma.user.update({
+                where: { id: user.id },
+                data: { phoneVerified: true },
+              });
+            }
+            console.log("[Auth] Login successful via mobile OTP:", credentials.phone);
+          }
+
+          if (!user.isActive) {
+            console.log("[Auth] User is inactive:", credentials.phone);
+            return null;
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          } as any;
+        } catch (error: any) {
+          console.error("[Auth] Mobile OTP unexpected error:", error);
+          if (error?.message) throw error;
           return null;
         }
       },
