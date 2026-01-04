@@ -42,6 +42,7 @@ export function MobileOtpForm({
         setError("");
 
         try {
+            console.log(`[Auth] Requesting OTP for phone: ${phone}`);
             const response = await fetch("/api/auth/mobile/send-otp", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -49,15 +50,20 @@ export function MobileOtpForm({
             });
 
             const data = await response.json();
+            console.log(`[Auth] Send OTP response:`, data);
 
             if (!response.ok) {
+                console.error(`[Auth] Send OTP failed:`, data.error);
                 setError(data.error || "Failed to send OTP");
                 setLoading(false);
                 return;
             }
 
             const reqId = data.requestId;
-            if (reqId) setRequestId(reqId);
+            if (reqId) {
+                console.log(`[Auth] Received requestId: ${reqId}`);
+                setRequestId(reqId);
+            }
 
             setStep("otp");
             setCountdown(30);
@@ -72,6 +78,7 @@ export function MobileOtpForm({
             }, 1000);
             setLoading(false);
         } catch (err) {
+            console.error(`[Auth] Exception in sendOtp:`, err);
             setError("Failed to send OTP. Please try again.");
             setLoading(false);
         }
