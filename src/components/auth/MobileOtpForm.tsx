@@ -68,8 +68,8 @@ export function MobileOtpForm({
     };
 
     const verifyOtp = async () => {
-        if (!otp || otp.length !== 6) {
-            setError("Please enter the 6-digit OTP");
+        if (!otp || otp.length !== 4) {
+            setError("Please enter the 4-digit OTP");
             return;
         }
 
@@ -167,16 +167,16 @@ export function MobileOtpForm({
 
                     <div>
                         <label className="block text-sm font-semibold text-neutral-800 mb-2">
-                            Enter OTP
+                            Enter 4-Digit OTP
                         </label>
                         <input
                             type="text"
                             value={otp}
-                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 4))}
                             required
-                            maxLength={6}
-                            className="w-full px-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none text-center text-2xl tracking-widest font-mono"
-                            placeholder="000000"
+                            maxLength={4}
+                            className="w-full px-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none text-center text-3xl tracking-[1em] font-bold"
+                            placeholder="0000"
                             autoFocus
                         />
                     </div>
@@ -184,7 +184,7 @@ export function MobileOtpForm({
                     <button
                         type="button"
                         onClick={verifyOtp}
-                        disabled={loading || otp.length !== 6}
+                        disabled={loading || otp.length !== 4}
                         className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? (

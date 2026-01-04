@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Mail, Lock, User, ArrowRight, AlertCircle, Phone } from "lucide-react";
 import Link from "next/link";
-import { Msg91OtpWidget } from "./Msg91OtpWidget";
+import { MobileOtpForm } from "./MobileOtpForm";
 
 interface UnifiedAuthModalProps {
     isOpen: boolean;
@@ -373,27 +373,12 @@ export function UnifiedAuthModal({
                                 </form>
                             ) : (
                                 <div className="space-y-4">
-                                    {mode === "signup" && (
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-semibold text-neutral-700 mb-2">
-                                                Full Name
-                                            </label>
-                                            <div className="relative">
-                                                <User size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400" />
-                                                <input
-                                                    type="text"
-                                                    value={formData.name}
-                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                    required
-                                                    className="w-full pl-12 pr-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
-                                                    placeholder="John Doe"
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-                                    <Msg91OtpWidget
-                                        onSuccess={handleMobileSuccess}
-                                        onFailure={(err) => setError("Mobile OTP failed. Please try again.")}
+                                    <MobileOtpForm
+                                        onSuccess={(phone, otp) => handleMobileSuccess({ mobileNumber: phone, requestId: otp })}
+                                        onError={(err: string) => setError(err)}
+                                        showName={mode === "signup"}
+                                        name={formData.name}
+                                        onNameChange={(name) => setFormData({ ...formData, name })}
                                     />
                                 </div>
                             )}
@@ -416,7 +401,7 @@ export function UnifiedAuthModal({
                     </div>
                 </motion.div>
             </motion.div>
-        </AnimatePresence>
+        </AnimatePresence >
     );
 }
 

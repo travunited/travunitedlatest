@@ -9,29 +9,29 @@ export async function POST(request: Request) {
 
         const authKey = process.env.MSG91_AUTH_KEY;
         const templateId = process.env.MSG91_OTP_TEMPLATE_ID;
+
         if (!authKey || !templateId) {
             return NextResponse.json({ error: 'MSG91 configuration missing' }, { status: 500 });
         }
 
-        const payload = {
-            mobile: phone,
-            authkey: authKey,
-            template_id: templateId,
-            otp_length: 6,
-        };
+        // Clean phone number (remove any non-digits, ensuring it has country code)
+        const cleanPhone = phone.replace(/\D/g, "");
 
-        const response = await fetch('https://api.msg91.com/api/v5/otp', {
+        // MSG91 v5 OTP Send API
+        // https://docs.msg91.com/p/tf9vsw6un/v/6v3r7z/otp/send-otp
+        const url = `https://control.msg91.com/api/v5/otp?template_id=${templateId}&mobile=${cleanPhone}&authkey=${authKey}&otp_length=4`;
+
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
+            }
         });
 
         const data = await response.json();
-        if (!response.ok) {
+        if (data.type !== "success") {
             console.error('MSG91 send OTP error:', data);
-            return NextResponse.json({ error: data?.message || 'Failed to send OTP' }, { status: 500 });
+            return NextResponse.json({ error: data?.message || 'Failed to send OTP' }, { status: 400 });
         }
 
         return NextResponse.json({ success: true, requestId: data?.request_id || data?.requestId });
