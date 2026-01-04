@@ -27,9 +27,41 @@ export function MobileOtpForm({
     const [sdkLoaded, setSdkLoaded] = useState(false);
     const [requestId, setRequestId] = useState("");
 
-    // Initialize (No longer needs external script)
+    // Initialize MSG91 SDK with exposeMethods
     useEffect(() => {
-        setSdkLoaded(true);
+        if (typeof window === "undefined") return;
+
+        const scriptId = "msg91-otp-sdk";
+        if (document.getElementById(scriptId)) {
+            setSdkLoaded(true);
+            return;
+        }
+
+        const script = document.createElement("script");
+        script.id = scriptId;
+        script.src = "https://verify.msg91.com/otp-provider.js";
+        script.defer = true;
+        script.onload = () => {
+            const configuration = {
+                widgetId: process.env.NEXT_PUBLIC_MSG91_WIDGET_ID,
+                tokenAuth: process.env.NEXT_PUBLIC_MSG91_TOKEN_AUTH,
+                exposeMethods: true,
+                success: (data: any) => {
+                    // This is triggered if verifyOtp is successful without its own callback
+                    console.log('[Auth] Global success:', data);
+                },
+                failure: (error: any) => {
+                    console.error('[Auth] Global failure:', error);
+                }
+            };
+
+            if ((window as any).initSendOTP) {
+                (window as any).initSendOTP(configuration);
+                setSdkLoaded(true);
+                console.log("[Auth] SDK initialized with exposeMethods: true");
+            }
+        };
+        document.body.appendChild(script);
     }, []);
 
     const sendOtp = async () => {
@@ -38,47 +70,47 @@ export function MobileOtpForm({
             return;
         }
 
+        if (!sdkLoaded || !(window as any).sendOtp) {
+            setError("Authentication service is initializing. Please wait.");
+            return;
+        }
+
         setLoading(true);
         setError("");
 
         try {
-            console.log(`[Auth] Requesting OTP for phone: ${phone}`);
-            const response = await fetch("/api/auth/mobile/send-otp", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ phone: `91${phone}` })
-            });
-
-            const data = await response.json();
-            console.log(`[Auth] Send OTP response:`, data);
-
-            if (!response.ok) {
-                console.error(`[Auth] Send OTP failed:`, data.error);
-                setError(data.error || "Failed to send OTP");
-                setLoading(false);
-                return;
-            }
-
-            const reqId = data.requestId;
-            if (reqId) {
-                console.log(`[Auth] Received requestId: ${reqId}`);
-                setRequestId(reqId);
-            }
-
-            setStep("otp");
-            setCountdown(30);
-            const timer = setInterval(() => {
-                setCountdown((prev) => {
-                    if (prev <= 1) {
-                        clearInterval(timer);
-                        return 0;
+            console.log(`[Auth] Triggering SDK sendOtp for: 91${phone}`);
+            (window as any).sendOtp(
+                `91${phone}`,
+                (data: any) => {
+                    console.log('[Auth] SDK send successful:', data);
+                    // Capturing requestId/message for potential manual verification
+                    const reqId = data.message || data.requestId;
+                    if (reqId && typeof reqId === 'string' && reqId.length > 5) {
+                        setRequestId(reqId);
                     }
-                    return prev - 1;
-                });
-            }, 1000);
-            setLoading(false);
+
+                    setStep("otp");
+                    setCountdown(30);
+                    const timer = setInterval(() => {
+                        setCountdown((prev) => {
+                            if (prev <= 1) {
+                                clearInterval(timer);
+                                return 0;
+                            }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                    setLoading(false);
+                },
+                (error: any) => {
+                    console.error('[Auth] SDK send failed:', error);
+                    setError(error.message || "Failed to send OTP");
+                    setLoading(false);
+                }
+            );
         } catch (err) {
-            console.error(`[Auth] Exception in sendOtp:`, err);
+            console.error('[Auth] Exception in sendOtp:', err);
             setError("Failed to send OTP. Please try again.");
             setLoading(false);
         }
@@ -90,13 +122,49 @@ export function MobileOtpForm({
             return;
         }
 
+        if (!sdkLoaded || !(window as any).verifyOtp) {
+            setError("Verification service unavailable");
+            return;
+        }
+
         setLoading(true);
         setError("");
 
-        // For pure custom UI without SDK, we call onSuccess with the OTP and requestId
-        // The parent component (NextAuth signIn) will handle the server-side verification
-        onSuccess(`91${phone}`, otp, requestId);
-        setLoading(false);
+        try {
+            console.log(`[Auth] Triggering SDK verifyOtp for code: ${otp}`);
+            (window as any).verifyOtp(
+                otp,
+                (data: any) => {
+                    console.log('[Auth] SDK verification successful:', data);
+
+                    // The SDK gives us a token/JWT on success
+                    let token = data.access_token || data.message || data.requestId;
+
+                    if (token) {
+                        onSuccess(`91${phone}`, token, requestId);
+                    } else {
+                        // Fallback: If no token in data, pass the OTP itself as token 
+                        // and let the server verify manually with requestId
+                        onSuccess(`91${phone}`, otp, requestId);
+                    }
+                    setLoading(false);
+                },
+                (error: any) => {
+                    console.error('[Auth] SDK verification failed:', error);
+                    if (error.message === "otp already verified") {
+                        setError("OTP already verified. Try logging in again.");
+                    } else {
+                        setError(error.message || "Invalid OTP");
+                    }
+                    setLoading(false);
+                },
+                requestId // Optional: Passing requestId back to widget
+            );
+        } catch (err) {
+            console.error('[Auth] Exception in verifyOtp:', err);
+            setError("OTP verification failed");
+            setLoading(false);
+        }
     };
 
     return (
@@ -222,7 +290,28 @@ export function MobileOtpForm({
                         ) : (
                             <button
                                 type="button"
-                                onClick={sendOtp}
+                                onClick={() => {
+                                    if ((window as any).retryOtp) {
+                                        setLoading(true);
+                                        setError("");
+                                        (window as any).retryOtp(
+                                            null, // default channel
+                                            (data: any) => {
+                                                console.log('[Auth] OTP Resend successful:', data);
+                                                setCountdown(30);
+                                                setLoading(false);
+                                            },
+                                            (error: any) => {
+                                                console.error('[Auth] OTP Resend failed:', error);
+                                                setError(error.message || "Failed to resend OTP");
+                                                setLoading(false);
+                                            },
+                                            requestId
+                                        );
+                                    } else {
+                                        sendOtp();
+                                    }
+                                }}
                                 disabled={loading}
                                 className="text-primary-600 text-sm font-semibold hover:underline"
                             >
