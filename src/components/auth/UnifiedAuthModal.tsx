@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Mail, Lock, User, ArrowRight, AlertCircle, CheckCircle, Smartphone } from "lucide-react";
+import { X, Mail, Lock, User, ArrowRight, ArrowLeft, AlertCircle, CheckCircle, Smartphone } from "lucide-react";
 import Link from "next/link";
 import Msg91OtpWidget from "@/components/auth/Msg91OtpWidget";
 
@@ -182,6 +182,7 @@ export function UnifiedAuthModal({
             // We pass the name so the server can simple create the user if they don't exist (Implicit Signup)
             const result = await signIn("mobile-otp", {
                 accessToken: token,
+                phone: formData.phone,
                 name: formData.name, // Pass name for implicit signup
                 redirect: false,
             });

@@ -130,33 +130,37 @@ export async function verifyMsg91Token(accessToken: string): Promise<{ success: 
     }
 
     try {
-        const url = 'https://control.msg91.com/api/v5/widget/verifyAccessToken';
-        console.log("[SMS] Verifying MSG91 token...");
+        // Try the standard API endpoint first
+        const url = 'https://api.msg91.com/api/v5/widget/verifyToken';
+        console.log("[SMS] Verifying MSG91 token at:", url);
+
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json",
                 "Accept": "application/json",
+                "authkey": MSG91_AUTH_KEY
             },
             body: JSON.stringify({
                 "authkey": MSG91_AUTH_KEY,
                 "access-token": accessToken,
-                "accessToken": accessToken
+                "accessToken": accessToken,
+                "token": accessToken
             })
         });
 
         const data = await response.json();
         console.log("[SMS] MSG91 verification response:", data);
 
-        if (data.type === 'success') {
-            const phone = data.mobile || data.identifier || data.phone || data.mobileNumber || data.contact;
+        if (data.type === 'success' || data.status === 'success') {
+            const phone = data.mobile || data.identifier || data.phone || data.mobileNumber || data.contact || (data.message && !data.message.includes('verified') ? data.message : null);
             if (!phone) {
                 console.warn("[SMS] MSG91 token verified but no phone number found in data:", data);
             }
             return { success: true, phone };
         } else {
             console.error("[SMS] MSG91 token verification failed. Status:", response.status, "Data:", data);
-            return { success: false, message: data.message || `Verification failed (${data.type || 'unknown error'})` };
+            return { success: false, message: data.message || `Verification failed (${data.type || data.status || 'unknown error'})` };
         }
     } catch (error) {
         console.error("[SMS] Error verifying MSG91 token:", error);
