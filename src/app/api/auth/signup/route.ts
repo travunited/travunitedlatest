@@ -5,25 +5,9 @@ import { z } from "zod";
 export const dynamic = "force-dynamic";
 
 const signupSchema = z.object({
-  name: z.preprocess(
-    (val) => (val === "" || val === null || val === undefined ? undefined : val),
-    z.string().min(2).optional()
-  ),
-  email: z.preprocess(
-    (val) => (val === "" || val === null || val === undefined ? undefined : val),
-    z.string().email().optional()
-  ),
-  password: z.preprocess(
-    (val) => (val === "" || val === null || val === undefined ? undefined : val),
-    z.string().min(8).optional()
-  ),
-  phone: z.preprocess(
-    (val) => (val === "" || val === null || val === undefined ? undefined : val),
-    z.string().optional()
-  ),
-  verifyMethod: z.enum(["email", "mobile"]).optional().default("email"),
-  isVerified: z.boolean().optional().default(false),
-  accessToken: z.string().optional(),
+  name: z.string().min(2),
+  email: z.string().email(),
+  password: z.string().min(8),
 });
 
 export async function POST(req: Request) {
@@ -42,91 +26,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid input", details: validationError }, { status: 400 });
     }
 
-    const { name, email, password, phone, verifyMethod, isVerified, accessToken } = validatedData;
-
-    // Validate name - required for signup
-    if (!name || !name.trim() || name.trim().length < 2) {
-      return NextResponse.json({ error: "Name is required and must be at least 2 characters" }, { status: 400 });
-    }
+    const { name, email, password } = validatedData;
 
     const normalizedName = name.trim();
-    let normalizedPhone = phone ? phone.replace(/\D/g, "") : undefined;
-
-    // Normalize phone: if it's 10 digits, add country code; if it's 12 digits and starts with 91, keep it; otherwise use as is
-    if (normalizedPhone) {
-      if (normalizedPhone.length === 10) {
-        normalizedPhone = `91${normalizedPhone}`;
-      } else if (normalizedPhone.length === 12 && normalizedPhone.startsWith("91")) {
-        // Already has country code, keep it
-        normalizedPhone = normalizedPhone;
-      } else if (normalizedPhone.length < 10 || normalizedPhone.length > 12) {
-        // Invalid length
-        normalizedPhone = undefined;
-      }
-    }
-
-    if (verifyMethod === "email" && (!email || !password)) {
-      return NextResponse.json({ error: "Email and password are required for email signup" }, { status: 400 });
-    }
-
-    // For mobile signup, require either phone number OR accessToken (for widget verification)
-    if (verifyMethod === "mobile") {
-      if (!normalizedPhone && !accessToken) {
-        return NextResponse.json({ error: "Mobile number or verification token is required for phone signup" }, { status: 400 });
-      }
-      // If we have accessToken but no phone, that's okay (phone will come from token verification)
-      // If we have phone but no accessToken and not verified, that's also okay (will send OTP)
-    }
-
-    // Security: Verify the token server-side if provided
-    let finalPhone = normalizedPhone;
-    if (verifyMethod === "mobile" && isVerified && accessToken) {
-      const { verifyMsg91Token } = await import("@/lib/sms");
-      const verification = await verifyMsg91Token(accessToken);
-
-      if (!verification.success) {
-        return NextResponse.json({ error: "Mobile verification failed or token expired. Please try again." }, { status: 401 });
-      }
-
-      // Trust the phone from the token if available
-      if (verification.phone) {
-        finalPhone = verification.phone.replace(/\D/g, "");
-        if (finalPhone.length === 10) finalPhone = `91${finalPhone}`;
-      }
-    }
-
-    let targetEmail = email;
-    let targetPassword = password;
-
-    if (verifyMethod === "mobile") {
-      if (!targetEmail) {
-        targetEmail = `${normalizedPhone}@mobile.travunited.local`;
-      }
-      if (!targetPassword) {
-        const crypto = await import("crypto");
-        targetPassword = crypto.randomBytes(16).toString("hex");
-      }
-    }
+    const normalizedEmail = email.toLowerCase().trim();
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [
-          ...(targetEmail ? [{ email: targetEmail }] : []),
-          ...(finalPhone ? [{ phone: finalPhone }] : []),
-        ],
+        email: normalizedEmail,
       },
     });
 
     if (existingUser) {
-      const isPhoneMatch = normalizedPhone && existingUser.phone === normalizedPhone;
       return NextResponse.json(
-        { error: isPhoneMatch ? "User with this mobile number already exists" : "User with this email already exists" },
+        { error: "User with this email already exists" },
         { status: 400 }
       );
     }
 
-    const passwordHash = await bcrypt.hash(targetPassword!, 10);
+    const passwordHash = await bcrypt.hash(password, 10);
     const crypto = await import("crypto");
     const otp = crypto.randomInt(100000, 999999).toString();
     const otpExpires = new Date();
@@ -135,49 +54,33 @@ export async function POST(req: Request) {
     const user = await prisma.user.create({
       data: {
         name: normalizedName,
-        email: targetEmail!,
+        email: normalizedEmail,
         passwordHash,
-        phone: finalPhone,
         role: "CUSTOMER",
-        emailVerified: isVerified ? true : false,
-        phoneVerified: isVerified ? true : false,
-        registrationOtp: isVerified ? undefined : otp,
-        registrationOtpExpires: isVerified ? undefined : otpExpires,
+        emailVerified: false,
+        registrationOtp: otp,
+        registrationOtpExpires: otpExpires,
       },
       select: {
         id: true,
         email: true,
         name: true,
         role: true,
-        phone: true,
       },
     });
 
-    if (!isVerified) {
-      if (verifyMethod === "mobile" && normalizedPhone) {
-        try {
-          const { sendOtp } = await import("@/lib/sms");
-          await sendOtp(normalizedPhone);
-        } catch (error) {
-          console.error("[Signup] Failed to send mobile OTP:", error);
-        }
-      } else {
-        try {
-          const { sendRegistrationOTPEmail } = await import("@/lib/email");
-          if (user.email) {
-            await sendRegistrationOTPEmail(user.email, otp, user.name || undefined, user.role);
-          }
-        } catch (error) {
-          console.error("[Signup] Failed to send OTP email:", error);
-        }
-      }
+    try {
+      const { sendRegistrationOTPEmail } = await import("@/lib/email");
+      await sendRegistrationOTPEmail(user.email!, otp, user.name || undefined, user.role);
+    } catch (error) {
+      console.error("[Signup] Failed to send OTP email:", error);
     }
 
     return NextResponse.json(
       {
-        message: isVerified ? "User created successfully." : `User created successfully. Please verify your ${verifyMethod === 'mobile' ? 'mobile number' : 'email'} with the OTP sent.`,
+        message: "User created successfully. Please verify your email with the OTP sent.",
         user,
-        requiresVerification: !isVerified
+        requiresVerification: true
       },
       { status: 201 }
     );

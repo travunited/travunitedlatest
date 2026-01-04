@@ -1,12 +1,10 @@
 "use client";
 
-import { Suspense, useState, useCallback } from "react";
-
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Mail, Lock, User, ArrowRight, AlertCircle, CheckCircle, Smartphone } from "lucide-react";
-import Msg91OtpWidget from "@/components/auth/Msg91OtpWidget";
+import { Mail, Lock, User, ArrowRight, AlertCircle } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -17,81 +15,14 @@ function SignupPageContent() {
   const [email, setEmail] = useState(searchParams?.get("email") || "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [phone, setPhone] = useState(searchParams?.get("phone") || "");
-  // If phone is provided, default to mobile verification
-  const [verifyMethod, setVerifyMethod] = useState<"email" | "mobile">(
-    searchParams?.get("phone") ? "mobile" : "email"
-  );
-  const [otpRequested, setOtpRequested] = useState(false);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleMobileSignupSuccess = useCallback(async (data: any) => {
-    setLoading(true);
-    setError("");
-
-    // Validate name before proceeding
-    if (!name || name.trim().length < 2) {
-      setError("Please enter your full name (at least 2 characters)");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const verifiedPhone = data.phone;
-      const accessToken = data.accessToken;
-
-      if (!verifiedPhone) {
-        setError("Phone number verification failed. Please try again.");
-        setLoading(false);
-        return;
-      }
-
-      // Auto-register/login via mobile-otp provider
-      const loginResult = await signIn("mobile-otp", {
-        accessToken: data.accessToken,
-        name: name.trim(), // Key: Pass name for auto-registration
-        redirect: false,
-      });
-
-      if (loginResult?.ok) {
-        // Merge guest application before redirecting
-        try {
-          await fetch("/api/guest-applications/merge", { method: "POST" });
-        } catch (error) {
-          console.error("Error merging guest application:", error);
-        }
-
-        const redirectUrl = searchParams?.get("redirect") || "/dashboard";
-        router.push(redirectUrl);
-      } else {
-        setError(loginResult?.error || "Account creation failed. Please try again.");
-        setLoading(false);
-      }
-    } catch (err) {
-      console.error("Mobile signup error:", err);
-      setError("An error occurred. Please try again.");
-      setLoading(false);
-    }
-  }, [name, router, searchParams]);
-
-  const handleMobileSignupFailure = useCallback((err: any) => {
-    console.error("Mobile OTP verification failed:", err);
-    setError(err.message || "OTP verification failed. Please try again.");
-    setLoading(false);
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    // For mobile signup, everything is handled by handleMobileSignupSuccess callback
-    if (verifyMethod === "mobile") {
-      setLoading(false);
-      return;
-    }
 
     setLoading(true);
 
@@ -102,64 +33,58 @@ function SignupPageContent() {
       return;
     }
 
-    if (verifyMethod === "email") {
-      if (!email || !email.includes("@")) {
-        setError("Please enter a valid email address");
-        setLoading(false);
-        return;
-      }
-      if (!password || password.length < 8) {
-        setError("Password must be at least 8 characters");
-        setLoading(false);
-        return;
-      }
-      if (password !== confirmPassword) {
-        setError("Passwords do not match");
-        setLoading(false);
-        return;
-      }
+    if (!email || !email.includes("@")) {
+      setError("Please enter a valid email address");
+      setLoading(false);
+      return;
+    }
+    if (!password || password.length < 8) {
+      setError("Password must be at least 8 characters");
+      setLoading(false);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
     }
 
     try {
-      // Email signup flow
-      if (verifyMethod === "email") {
-        const response = await fetch("/api/auth/signup", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: name.trim(),
-            email,
-            password,
-            verifyMethod: "email"
-          }),
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Signup failed");
+        setLoading(false);
+        return;
+      }
+
+      // Show OTP verification step
+      if (data.requiresVerification) {
+        const redirectUrl = searchParams?.get("redirect") || "/dashboard";
+        router.push(`/verify-email?email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirectUrl)}`);
+      } else {
+        // If already verified, auto-login
+        const result = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          setError(data.error || "Signup failed");
-          setLoading(false);
-          return;
-        }
-
-        // Show OTP verification step
-        if (data.requiresVerification) {
+        if (result?.ok) {
           const redirectUrl = searchParams?.get("redirect") || "/dashboard";
-          router.push(`/verify-email?email=${encodeURIComponent(email || "")}&redirect=${encodeURIComponent(redirectUrl)}`);
+          router.push(redirectUrl);
         } else {
-          // If already verified, auto-login
-          const result = await signIn("credentials", {
-            email,
-            password,
-            redirect: false,
-          });
-
-          if (result?.ok) {
-            const redirectUrl = searchParams?.get("redirect") || "/dashboard";
-            router.push(redirectUrl);
-          } else {
-            router.push("/login?email=" + encodeURIComponent(email));
-          }
+          router.push("/login?email=" + encodeURIComponent(email));
         }
       }
     } catch (err) {
@@ -185,37 +110,6 @@ function SignupPageContent() {
           <div className="text-center mb-8">
             <h1 className="text-4xl font-extrabold text-neutral-900 mb-2 tracking-tight">Join Travunited</h1>
             <p className="text-neutral-700 font-medium">Start your journey with us today</p>
-          </div>
-
-          <div className="flex p-1 bg-neutral-200/50 rounded-xl mb-8 backdrop-blur-sm">
-            <button
-              type="button"
-              onClick={() => {
-                setVerifyMethod("email");
-                setError("");
-              }}
-              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${verifyMethod === "email"
-                ? "bg-white text-primary-600 shadow-md transform scale-[1.02]"
-                : "text-neutral-600 hover:text-neutral-900"
-                }`}
-            >
-              <Mail size={18} />
-              <span>Email</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setVerifyMethod("mobile");
-                setError("");
-              }}
-              className={`flex-1 flex items-center justify-center space-x-2 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${verifyMethod === "mobile"
-                ? "bg-white text-primary-600 shadow-md transform scale-[1.02]"
-                : "text-neutral-600 hover:text-neutral-900"
-                }`}
-            >
-              <Smartphone size={18} />
-              <span>Phone</span>
-            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -251,123 +145,59 @@ function SignupPageContent() {
                   />
                 </div>
               </div>
-            </div>
 
-            {verifyMethod === "email" ? (
-              <>
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
-                    Email Address
-                  </label>
-                  <div className="relative group">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
-                      placeholder="your.email@example.com"
-                    />
-                  </div>
+              <div>
+                <label className="block text-sm font-semibold text-neutral-800 mb-2">
+                  Email Address
+                </label>
+                <div className="relative group">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
+                    placeholder="your.email@example.com"
+                  />
                 </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
-                    Password
-                  </label>
-                  <div className="relative group">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={8}
-                      className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
-                      placeholder="At least 8 characters"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
-                    Confirm Password
-                  </label>
-                  <div className="relative group">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                      className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
-                      placeholder="Confirm your password"
-                    />
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="space-y-6 animate-fade-in">
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
-                    Mobile Number
-                  </label>
-                  <div className="relative group">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 font-bold border-r border-neutral-300 pr-2">+91</span>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => {
-                        setPhone(e.target.value.replace(/\D/g, "").slice(0, 10));
-                        setOtpRequested(false);
-                      }}
-                      className="w-full pl-16 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none font-bold tracking-wider"
-                      placeholder="9876543210"
-                      disabled={otpRequested}
-                    />
-                  </div>
-                </div>
-
-                {!otpRequested ? (
-                  <button
-                    type="button"
-                    disabled={phone.length < 10 || loading || !name || name.trim().length < 2}
-                    onClick={() => {
-                      if (!name || name.trim().length < 2) {
-                        setError("Please enter your full name first");
-                        return;
-                      }
-                      setOtpRequested(true);
-                      setError("");
-                    }}
-                    className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none"
-                  >
-                    <span>Verify Mobile & Signup</span>
-                    <ArrowRight size={22} />
-                  </button>
-                ) : (
-                  <div className="animate-slide-up space-y-4">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-neutral-600 font-medium">Enter OTP sent to +91 {phone}</span>
-                      <button
-                        type="button"
-                        onClick={() => setOtpRequested(false)}
-                        className="text-primary-600 hover:text-primary-700 font-bold transition-colors"
-                      >
-                        Change Number
-                      </button>
-                    </div>
-                    <Msg91OtpWidget
-                      identifier={`91${phone}`}
-                      onSuccess={handleMobileSignupSuccess}
-                      onFailure={handleMobileSignupFailure}
-                      className="w-full rounded-lg shadow-sm"
-                    />
-                  </div>
-                )}
               </div>
-            )}
+
+              <div>
+                <label className="block text-sm font-semibold text-neutral-800 mb-2">
+                  Password
+                </label>
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    minLength={8}
+                    className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
+                    placeholder="At least 8 characters"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-neutral-800 mb-2">
+                  Confirm Password
+                </label>
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-3 bg-white/70 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
+                    placeholder="Confirm your password"
+                  />
+                </div>
+              </div>
+            </div>
 
             <div className="flex items-start group cursor-pointer">
               <input
@@ -387,7 +217,7 @@ function SignupPageContent() {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed ${verifyMethod === "mobile" ? "hidden" : ""}`}
+              className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-700 shadow-lg hover:shadow-primary-500/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:transform-none disabled:cursor-not-allowed"
             >
               <span className="text-lg">
                 {loading
