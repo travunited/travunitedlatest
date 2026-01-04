@@ -45,15 +45,6 @@ export function MobileOtpForm({
                 widgetId: process.env.NEXT_PUBLIC_MSG91_WIDGET_ID,
                 tokenAuth: process.env.NEXT_PUBLIC_MSG91_TOKEN_AUTH,
                 exposeMethods: true,
-                success: (data: any) => {
-                    // This callback might be called by verifyOtp if not handled there
-                    if (data?.type === "success") {
-                        onSuccess(`91${phone}`, data.message);
-                    }
-                },
-                failure: (error: any) => {
-                    setError(error.message || "Verification failed");
-                }
             };
 
             if ((window as any).initSendOTP) {

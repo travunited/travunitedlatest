@@ -57,10 +57,10 @@ export async function verifyMsg91AccessToken(accessToken: string) {
     const authKey = MSG91_AUTH_KEY.trim();
 
     try {
-        console.log("[MSG91] Verifying access token with server...");
-        // Some docs say api.msg91.com, others control.msg91.com
-        // We'll try api.msg91.com first.
-        const response = await fetch(
+        console.log("[MSG91] Verifying access token with MSG91 server...");
+
+        // Try the official api.msg91.com domain first
+        let response = await fetch(
             `https://api.msg91.com/api/v5/widget/verifyAccessToken`,
             {
                 method: "POST",
@@ -69,14 +69,37 @@ export async function verifyMsg91AccessToken(accessToken: string) {
                     "authkey": authKey,
                 },
                 body: JSON.stringify({
-                    "access-token": accessToken,
-                    "accessToken": accessToken // Support both camelCase and kebab-case
+                    "access-token": accessToken
                 })
             }
         );
 
-        const data = await response.json();
-        console.log("[MSG91] Server response for verifyAccessToken:", JSON.stringify(data));
+        let data = await response.json();
+        console.log("[MSG91] Server response (api.msg91.com):", JSON.stringify(data));
+
+        // If not successful and we might have used the wrong domain, try control.msg91.com
+        if (data.type !== "success") {
+            console.log("[MSG91] Retrying verification via control.msg91.com...");
+            const retryResponse = await fetch(
+                `https://control.msg91.com/api/v5/widget/verifyAccessToken`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "authkey": authKey,
+                    },
+                    body: JSON.stringify({
+                        "access-token": accessToken
+                    })
+                }
+            );
+            const retryData = await retryResponse.json();
+            console.log("[MSG91] Server response (control.msg91.com):", JSON.stringify(retryData));
+
+            if (retryData.type === "success") {
+                data = retryData;
+            }
+        }
 
         if (data.type === "success") {
             return {
@@ -86,12 +109,6 @@ export async function verifyMsg91AccessToken(accessToken: string) {
             };
         } else {
             console.warn("[MSG91] Access Token Verification Failed:", data);
-
-            // If failed, maybe try the other domain? 
-            if (data.message?.includes("invalid") || data.type === "error") {
-                // Log detail to help debugging
-            }
-
             return { success: false, message: data.message || "Invalid Token" };
         }
     } catch (error) {
