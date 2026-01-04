@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, ArrowRight, AlertCircle, CheckCircle, Phone } from "lucide-react";
-import { Msg91OtpWidget } from "@/components/auth/Msg91OtpWidget";
+import { MobileOtpForm } from "@/components/auth/MobileOtpForm";
 
 type LoginMethod = "email" | "phone";
 
@@ -20,18 +20,15 @@ function LoginPageContent() {
   const router = useRouter();
 
   const handlePostLogin = () => {
-    // Wait a moment for session to update, then check for guest applications and redirect
     setTimeout(async () => {
       router.refresh();
 
-      // Check for guest application to merge
       try {
         const mergeResponse = await fetch("/api/guest-applications/merge", {
           method: "POST",
         });
         if (mergeResponse.ok) {
           const mergeData = await mergeResponse.json();
-          // If we have merged guest application with visa data, redirect to visa application
           if (mergeData.formData && mergeData.formData.country && mergeData.formData.visaType) {
             router.push(`/apply/visa/${mergeData.formData.country}/${mergeData.formData.visaType}?restored=true`);
             return;
@@ -41,13 +38,10 @@ function LoginPageContent() {
         console.error("Error merging guest application:", error);
       }
 
-      // Fetch session to get user role
       const sessionRes = await fetch("/api/auth/session");
       const session = await sessionRes.json();
-
       const role = session?.user?.role;
 
-      // Redirect based on role
       if (role === "STAFF_ADMIN" || role === "SUPER_ADMIN") {
         router.push("/admin");
       } else {
@@ -56,7 +50,6 @@ function LoginPageContent() {
     }, 100);
   };
 
-  // Show success message if email was just verified
   useEffect(() => {
     if (searchParams?.get("verified") === "true") {
       setSuccess("Email verified successfully! Please login with your password.");
@@ -64,7 +57,6 @@ function LoginPageContent() {
     }
   }, [searchParams, router]);
 
-  // Show message if password was just changed
   useEffect(() => {
     if (searchParams?.get("passwordChanged") === "true") {
       setSuccess("Your password has been changed successfully. Please log in with your new password.");
@@ -72,26 +64,23 @@ function LoginPageContent() {
     }
   }, [searchParams, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      // First check if user exists before attempting login
       try {
         const checkUserResponse = await fetch(`/api/auth/check-user?email=${encodeURIComponent(email)}`);
         if (checkUserResponse.ok) {
           const checkData = await checkUserResponse.json();
           if (!checkData.exists) {
-            // User doesn't exist, redirect to signup with email pre-filled
             setLoading(false);
             router.push(`/signup?email=${encodeURIComponent(email)}&from=login`);
             return;
           }
         }
       } catch (err) {
-        // If check fails, continue with login attempt
         console.error("Error checking user:", err);
       }
 
@@ -103,9 +92,9 @@ function LoginPageContent() {
 
       if (result?.error) {
         if (result.error === "EMAIL_NOT_VERIFIED" || result.error.includes("EMAIL_NOT_VERIFIED")) {
-          setError("Please verify your email before logging in. Check your inbox for the OTP or resend it.");
+          setError("Please verify your email before logging in.");
         } else if (result.error === "CredentialsSignin" || result.error.includes("CredentialsSignin")) {
-          setError("Invalid email or password. Don't have an account? Sign up instead.");
+          setError("Invalid email or password.");
         } else {
           setError("Invalid email or password");
         }
@@ -121,15 +110,14 @@ function LoginPageContent() {
     }
   };
 
-  // Handle Mobile OTP Success
-  const handleMobileSuccess = async (data: any) => {
+  const handleMobileSuccess = async (phone: string, otp: string) => {
     setLoading(true);
     setError("");
 
     try {
       const result = await signIn("mobile-otp", {
-        phone: data.mobileNumber || data.phone || data.requestId,
-        token: data.requestId || data.token,
+        phone,
+        otp,
         redirect: false,
       });
 
@@ -147,7 +135,6 @@ function LoginPageContent() {
 
   return (
     <div className="min-h-screen relative flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      {/* Background Image with Overlay */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-center"
         style={{ backgroundImage: "url('/images/login-bg.png')" }}
@@ -176,20 +163,18 @@ function LoginPageContent() {
                 <div className="flex-1">
                   <span className="text-sm font-medium block">{error}</span>
                   {error.includes("verify your email") && email && (
-                    <div className="mt-2 space-y-2">
-                      <Link
-                        href={`/verify-email?email=${encodeURIComponent(email)}&redirect=/dashboard`}
-                        className="text-sm text-primary-600 hover:text-primary-700 font-semibold underline block"
-                      >
-                        Verify Email Now →
-                      </Link>
-                    </div>
+                    <Link
+                      href={`/verify-email?email=${encodeURIComponent(email)}&redirect=/dashboard`}
+                      className="text-sm text-primary-600 hover:text-primary-700 font-semibold underline block mt-2"
+                    >
+                      Verify Email Now →
+                    </Link>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Method Switcher: Email vs Mobile */}
+            {/* Method Switcher */}
             <div className="flex bg-neutral-100 p-1 rounded-lg w-full">
               <button
                 type="button"
@@ -210,11 +195,9 @@ function LoginPageContent() {
             </div>
 
             {method === "email" ? (
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleEmailSubmit} className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
-                    Email Address
-                  </label>
+                  <label className="block text-sm font-semibold text-neutral-800 mb-2">Email Address</label>
                   <div className="relative group">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
                     <input
@@ -229,9 +212,7 @@ function LoginPageContent() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-neutral-800 mb-2">
-                    Password
-                  </label>
+                  <label className="block text-sm font-semibold text-neutral-800 mb-2">Password</label>
                   <div className="relative group">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 group-focus-within:text-primary-500 transition-colors" size={20} />
                     <input
@@ -265,12 +246,10 @@ function LoginPageContent() {
                 </button>
               </form>
             ) : (
-              <div className="space-y-4">
-                <Msg91OtpWidget
-                  onSuccess={handleMobileSuccess}
-                  onFailure={(err) => setError("Mobile OTP failed. Please try again.")}
-                />
-              </div>
+              <MobileOtpForm
+                onSuccess={handleMobileSuccess}
+                onError={(err) => setError(err)}
+              />
             )}
           </div>
 
@@ -313,4 +292,5 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+
 
