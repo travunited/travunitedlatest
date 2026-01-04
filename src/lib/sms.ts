@@ -150,16 +150,19 @@ export async function verifyMsg91Token(accessToken: string): Promise<{ success: 
         });
 
         const data = await response.json();
-        console.log("[SMS] MSG91 verification response:", data);
+        console.log("[SMS] MSG91 verification response data:", JSON.stringify(data));
 
-        if (data.type === 'success' || data.status === 'success') {
-            const phone = data.mobile || data.identifier || data.phone || data.mobileNumber || data.contact || (data.message && !data.message.includes('verified') ? data.message : null);
+        if (data.type === 'success' || data.status === 'success' || data.message === 'verified' || (data.message && !data.message.includes('fail'))) {
+            // Extract phone from all possible fields
+            const phone = data.mobile || data.identifier || data.phone || data.mobileNumber || data.contact ||
+                (typeof data.message === 'string' && data.message.length > 5 ? data.message : null);
+
             if (!phone) {
-                console.warn("[SMS] MSG91 token verified but no phone number found in data:", data);
+                console.warn("[SMS] MSG91 token verified but no phone number found in data. Response:", JSON.stringify(data));
             }
             return { success: true, phone };
         } else {
-            console.error("[SMS] MSG91 token verification failed. Status:", response.status, "Data:", data);
+            console.error("[SMS] MSG91 token verification failed. Status:", response.status, "Response:", JSON.stringify(data));
             return { success: false, message: data.message || `Verification failed (${data.type || data.status || 'unknown error'})` };
         }
     } catch (error) {

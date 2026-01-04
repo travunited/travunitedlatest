@@ -20,20 +20,22 @@ export const authOptions: NextAuthOptions = {
           }
 
           const { accessToken, name } = credentials;
+          console.log("[Auth] Attempting mobile-otp signin with token:", accessToken?.substring(0, 10) + "...");
 
           // Step 1: Verify token with MSG91 (SERVER-SIDE ONLY)
           const { verifyMsg91Token } = await import("./sms");
           const verification = await verifyMsg91Token(accessToken);
 
-          console.log("[Auth] MSG91 Verify Result:", verification);
+          console.log("[Auth] MSG91 Verify Result:", JSON.stringify(verification));
 
           if (!verification.success || !verification.phone) {
-            console.error("[Auth] Token verification failed. Response:", verification);
+            console.error("[Auth] Token verification failed. Verification object:", verification);
+            // Throwing a specific error that NextAuth can pass to the client
             throw new Error(verification.message || "INVALID_TOKEN");
           }
 
-          let phone = verification.phone.replace(/\D/g, "");
-          console.log("[Auth] Proceeding with phone:", phone);
+          let phone = verification.phone.toString().replace(/\D/g, "");
+          console.log("[Auth] Normalized phone from MSG91:", phone);
 
           // Find user by phone
           let user = await prisma.user.findFirst({
