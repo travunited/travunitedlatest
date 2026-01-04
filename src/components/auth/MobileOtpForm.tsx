@@ -45,6 +45,14 @@ export function MobileOtpForm({
                 widgetId: process.env.NEXT_PUBLIC_MSG91_WIDGET_ID,
                 tokenAuth: process.env.NEXT_PUBLIC_MSG91_TOKEN_AUTH,
                 exposeMethods: true,
+                success: (data: any) => {
+                    // Global success handler (required by SDK)
+                    console.log("[MSG91] Global Success:", data);
+                },
+                failure: (error: any) => {
+                    // Global failure handler (required by SDK)
+                    console.error("[MSG91] Global Failure:", error);
+                }
             };
 
             if ((window as any).initSendOTP) {
