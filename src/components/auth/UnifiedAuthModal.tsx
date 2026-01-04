@@ -27,14 +27,14 @@ export function UnifiedAuthModal({
     onSuccess,
     defaultEmail = "",
     redirectUrl,
-    title = "Continue with Travunited",
-    subtitle = "Login or create an account to continue",
+    title = "Join Travunited",
+    subtitle = "Start your journey with us today",
 }: UnifiedAuthModalProps) {
     const router = useRouter();
 
     // Auth state
     const [mode, setMode] = useState<AuthMode>("login");
-    const [method, setMethod] = useState<AuthMethod>("email");
+    const [method, setMethod] = useState<AuthMethod | "selection">("selection");
 
     // Form data
     const [formData, setFormData] = useState({
@@ -176,7 +176,6 @@ export function UnifiedAuthModal({
         setError("");
 
         try {
-            const verifiedPhone = data.mobileNumber || data.identifier || data.phone;
             const token = data.accessToken || data.access_token || data.token || "WIDGET_VERIFIED";
 
             // Unified Phone Login/Signup
@@ -231,7 +230,7 @@ export function UnifiedAuthModal({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
                 onClick={onClose}
             >
                 <motion.div
@@ -241,273 +240,299 @@ export function UnifiedAuthModal({
                     className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <div className="p-6">
+                    <div className="p-8">
                         {/* Header */}
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center justify-between mb-8">
                             <div>
-                                <h2 className="text-2xl font-bold text-neutral-900">{title}</h2>
-                                <p className="text-sm text-neutral-600 mt-1">{subtitle}</p>
+                                <h2 className="text-3xl font-bold text-neutral-900 tracking-tight">{title}</h2>
+                                <p className="text-base text-neutral-500 mt-2">{subtitle}</p>
                             </div>
                             <button
                                 onClick={onClose}
-                                className="p-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
+                                className="p-2 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-all"
                             >
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        {/* Login/Signup Toggle */}
-                        <div className="flex p-1 bg-neutral-100 rounded-xl mb-6">
-                            <button
-                                type="button"
-                                onClick={() => { setMode("login"); setError(""); setOtpRequested(false); }}
-                                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === "login"
-                                    ? "bg-white text-primary-600 shadow-sm"
-                                    : "text-neutral-600 hover:text-neutral-900"
-                                    }`}
-                            >
-                                Login
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => { setMode("signup"); setError(""); setOtpRequested(false); }}
-                                className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${mode === "signup"
-                                    ? "bg-white text-primary-600 shadow-sm"
-                                    : "text-neutral-600 hover:text-neutral-900"
-                                    }`}
-                            >
-                                Sign Up
-                            </button>
-                        </div>
-
-                        {/* Email/Phone Method Toggle */}
-                        <div className="flex p-1 bg-neutral-100 rounded-xl mb-6">
-                            <button
-                                type="button"
-                                onClick={() => { setMethod("email"); setError(""); setOtpRequested(false); }}
-                                className={`flex-1 flex items-center justify-center space-x-2 py-2 text-sm font-medium rounded-lg transition-all ${method === "email"
-                                    ? "bg-white text-primary-600 shadow-sm"
-                                    : "text-neutral-600 hover:text-neutral-900"
-                                    }`}
-                            >
-                                <Mail size={16} />
-                                <span>Email</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => { setMethod("phone"); setError(""); setOtpRequested(false); }}
-                                className={`flex-1 flex items-center justify-center space-x-2 py-2 text-sm font-medium rounded-lg transition-all ${method === "phone"
-                                    ? "bg-white text-primary-600 shadow-sm"
-                                    : "text-neutral-600 hover:text-neutral-900"
-                                    }`}
-                            >
-                                <Smartphone size={16} />
-                                <span>Phone</span>
+                                <X size={24} />
                             </button>
                         </div>
 
                         {/* Error Message */}
                         {error && (
-                            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3 flex items-start space-x-2">
-                                <AlertCircle size={20} className="text-red-600 mt-0.5 flex-shrink-0" />
-                                <p className="text-sm text-red-800">{error}</p>
+                            <div className="mb-6 bg-red-50 border border-red-100 rounded-xl p-4 flex items-start space-x-3">
+                                <AlertCircle size={20} className="text-red-500 mt-0.5 flex-shrink-0" />
+                                <p className="text-sm text-red-700 font-medium">{error}</p>
                             </div>
                         )}
 
-                        {/* Email Form */}
-                        {method === "email" && (
-                            <form onSubmit={mode === "login" ? handleEmailLogin : handleEmailSignup} className="space-y-4">
-                                {mode === "signup" && (
+                        {/* INITIAL SELECTION VIEW */}
+                        {method === "selection" && (
+                            <div className="space-y-4 py-4">
+                                <button
+                                    onClick={() => { setMethod("phone"); setError(""); }}
+                                    className="w-full flex items-center justify-between p-4 bg-primary-50 hover:bg-primary-100 border border-primary-200 rounded-2xl transition-all group"
+                                >
+                                    <div className="flex items-center space-x-4">
+                                        <div className="w-12 h-12 bg-primary-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-primary-200">
+                                            <Smartphone size={24} />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="font-bold text-lg text-neutral-900">Mobile OTP</p>
+                                            <p className="text-sm text-neutral-500">Fast & secure verification</p>
+                                        </div>
+                                    </div>
+                                    <ArrowRight size={20} className="text-primary-600 group-hover:translate-x-1 transition-transform" />
+                                </button>
+
+                                <button
+                                    onClick={() => { setMethod("email"); setError(""); }}
+                                    className="w-full flex items-center justify-between p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-2xl transition-all group"
+                                >
+                                    <div className="flex items-center space-x-4">
+                                        <div className="w-12 h-12 bg-neutral-800 text-white rounded-xl flex items-center justify-center">
+                                            <Mail size={24} />
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="font-bold text-lg text-neutral-900">Email Login</p>
+                                            <p className="text-sm text-neutral-500">Continue with password</p>
+                                        </div>
+                                    </div>
+                                    <ArrowRight size={20} className="text-neutral-400 group-hover:translate-x-1 transition-transform" />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* PHONE OTP VIEW */}
+                        {method === "phone" && (
+                            <div className="space-y-6">
+                                <button
+                                    onClick={() => { setMethod("selection"); setOtpRequested(false); setError(""); }}
+                                    className="flex items-center text-primary-600 hover:text-primary-700 font-semibold text-sm transition-colors mb-2"
+                                >
+                                    <ArrowLeft size={16} className="mr-2" />
+                                    Back to options
+                                </button>
+
+                                <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                                        <label className="block text-sm font-semibold text-neutral-700 mb-2">
                                             Full Name
                                         </label>
                                         <div className="relative">
-                                            <User size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
+                                            <User size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400" />
                                             <input
                                                 type="text"
+                                                autoFocus
                                                 value={formData.name}
                                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                required
-                                                className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                                placeholder="John Doe"
+                                                className="w-full pl-12 pr-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all text-neutral-900"
+                                                placeholder="Enter your name"
                                             />
                                         </div>
                                     </div>
-                                )}
 
-                                <div>
-                                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                        Email Address
-                                    </label>
-                                    <div className="relative">
-                                        <Mail size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
-                                        <input
-                                            type="email"
-                                            value={formData.email}
-                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                            required
-                                            className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                            placeholder="john@example.com"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                        Password
-                                    </label>
-                                    <div className="relative">
-                                        <Lock size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
-                                        <input
-                                            type="password"
-                                            value={formData.password}
-                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                            required
-                                            minLength={mode === "signup" ? 8 : undefined}
-                                            className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                            placeholder={mode === "signup" ? "At least 8 characters" : "Enter your password"}
-                                        />
-                                    </div>
-                                </div>
-
-                                {mode === "signup" && (
                                     <div>
-                                        <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                            Confirm Password
+                                        <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                                            Mobile Number
                                         </label>
                                         <div className="relative">
-                                            <Lock size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
                                             <input
-                                                type="password"
-                                                value={formData.confirmPassword}
-                                                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                                                required
-                                                minLength={8}
-                                                className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                                placeholder="Confirm your password"
+                                                type="tel"
+                                                value={formData.phone}
+                                                onChange={(e) => {
+                                                    setFormData({ ...formData, phone: e.target.value.replace(/[^\d+]/g, "") });
+                                                    setOtpRequested(false);
+                                                }}
+                                                className="w-full px-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all text-neutral-900 tracking-wide font-medium"
+                                                placeholder="eg. +918660025993"
+                                                disabled={otpRequested}
                                             />
                                         </div>
+                                        {!otpRequested && (
+                                            <p className="mt-2 text-xs text-neutral-500 flex items-center">
+                                                <Lock size={12} className="mr-1" />
+                                                Verified via secure MSG91 engine
+                                            </p>
+                                        )}
                                     </div>
-                                )}
 
-                                {mode === "login" && (
-                                    <div className="flex justify-end">
-                                        <Link href="/forgot-password" className="text-sm text-primary-600 hover:text-primary-700">
-                                            Forgot password?
-                                        </Link>
-                                    </div>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
-                                >
-                                    <span>{loading ? (mode === "login" ? "Signing in..." : "Creating account...") : (mode === "login" ? "Sign In" : "Create Account")}</span>
-                                    {!loading && <ArrowRight size={20} />}
-                                </button>
-                            </form>
-                        )}
-
-                        {/* Phone Form */}
-                        {method === "phone" && (
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                        Full Name
-                                    </label>
-                                    <div className="relative">
-                                        <User size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400" />
-                                        <input
-                                            type="text"
-                                            autoFocus
-                                            value={formData.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full pl-10 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                                            placeholder="John Doe"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                                        Mobile Number
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        value={formData.phone}
-                                        onChange={(e) => {
-                                            setFormData({ ...formData, phone: e.target.value.replace(/[^\d+]/g, "") });
-                                            setOtpRequested(false);
-                                        }}
-                                        className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 tracking-wider"
-                                        placeholder="eg. +919876543210"
-                                        disabled={otpRequested}
-                                    />
-                                    {!otpRequested && (
-                                        <p className="mt-2 text-xs text-neutral-500">We&rsquo;ll send a secure OTP to this number</p>
-                                    )}
-                                </div>
-
-                                {!otpRequested ? (
-                                    <motion.div
-                                        key="phone-input"
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        transition={{ duration: 0.2 }}
-                                    >
+                                    {!otpRequested ? (
                                         <button
                                             type="button"
                                             disabled={formData.phone.length < 7 || loading}
                                             onClick={() => setOtpRequested(true)}
-                                            className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                                            className="w-full bg-primary-600 text-white px-6 py-4 rounded-xl font-bold shadow-lg shadow-primary-200 hover:bg-primary-700 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2"
                                         >
-                                            <span>{loading ? "Requesting OTP..." : "Request OTP"}</span>
-                                            {!loading && <ArrowRight size={20} />}
+                                            {loading ? (
+                                                <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+                                            ) : (
+                                                <>
+                                                    <span>Request OTP</span>
+                                                    <ArrowRight size={20} />
+                                                </>
+                                            )}
                                         </button>
-                                    </motion.div>
-                                ) : (
-                                    <motion.div
-                                        key="otp-widget"
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: 20 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="space-y-3"
+                                    ) : (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="space-y-4"
+                                        >
+                                            <div className="flex justify-between items-center text-sm">
+                                                <span className="text-neutral-600">Enter code sent to <span className="font-bold text-neutral-900">{formData.phone}</span></span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setOtpRequested(false)}
+                                                    className="text-primary-600 hover:underline font-bold"
+                                                >
+                                                    Change
+                                                </button>
+                                            </div>
+                                            <Msg91OtpWidget
+                                                identifier={formData.phone}
+                                                onSuccess={handlePhoneSuccess}
+                                                onFailure={handlePhoneFailure}
+                                                className="w-full overflow-hidden rounded-2xl border border-neutral-100 shadow-sm"
+                                            />
+                                        </motion.div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* EMAIL FLOW VIEW */}
+                        {method === "email" && (
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between mb-2">
+                                    <button
+                                        onClick={() => { setMethod("selection"); setError(""); }}
+                                        className="flex items-center text-primary-600 hover:text-primary-700 font-semibold text-sm transition-colors"
                                     >
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-neutral-600">Enter OTP sent to {formData.phone}</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => setOtpRequested(false)}
-                                                className="text-primary-600 hover:text-primary-700 font-semibold"
-                                            >
-                                                Change
-                                            </button>
+                                        <ArrowLeft size={16} className="mr-2" />
+                                        Back
+                                    </button>
+
+                                    <div className="flex bg-neutral-100 p-1 rounded-lg">
+                                        <button
+                                            onClick={() => { setMode("login"); setError(""); }}
+                                            className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${mode === "login" ? "bg-white text-primary-600 shadow-sm" : "text-neutral-500"}`}
+                                        >
+                                            Login
+                                        </button>
+                                        <button
+                                            onClick={() => { setMode("signup"); setError(""); }}
+                                            className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${mode === "signup" ? "bg-white text-primary-600 shadow-sm" : "text-neutral-500"}`}
+                                        >
+                                            Join
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <form onSubmit={mode === "login" ? handleEmailLogin : handleEmailSignup} className="space-y-4">
+                                    {mode === "signup" && (
+                                        <div>
+                                            <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                                                Full Name
+                                            </label>
+                                            <div className="relative">
+                                                <User size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400" />
+                                                <input
+                                                    type="text"
+                                                    value={formData.name}
+                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                    required
+                                                    className="w-full pl-12 pr-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                    placeholder="John Doe"
+                                                />
+                                            </div>
                                         </div>
-                                        <Msg91OtpWidget
-                                            identifier={formData.phone}
-                                            onSuccess={handlePhoneSuccess}
-                                            onFailure={handlePhoneFailure}
-                                            className="w-full overflow-hidden rounded-lg"
-                                        />
-                                    </motion.div>
-                                )}
+                                    )}
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                                            Email Address
+                                        </label>
+                                        <div className="relative">
+                                            <Mail size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400" />
+                                            <input
+                                                type="email"
+                                                value={formData.email}
+                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                required
+                                                className="w-full pl-12 pr-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                placeholder="email@example.com"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-sm font-semibold text-neutral-700 mb-2 font-inter">
+                                            Password
+                                        </label>
+                                        <div className="relative">
+                                            <Lock size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400" />
+                                            <input
+                                                type="password"
+                                                value={formData.password}
+                                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                                required
+                                                minLength={mode === "signup" ? 8 : undefined}
+                                                className="w-full pl-12 pr-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                placeholder="••••••••"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {mode === "signup" && (
+                                        <div>
+                                            <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                                                Confirm Password
+                                            </label>
+                                            <div className="relative">
+                                                <Lock size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-neutral-400" />
+                                                <input
+                                                    type="password"
+                                                    value={formData.confirmPassword}
+                                                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                                    required
+                                                    className="w-full pl-12 pr-4 py-3.5 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all"
+                                                    placeholder="Repeat password"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {mode === "login" && (
+                                        <div className="flex justify-end">
+                                            <Link href="/forgot-password" title="reset password" className="text-sm font-bold text-primary-600 hover:text-primary-700">
+                                                Forgot password?
+                                            </Link>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="w-full bg-neutral-900 text-white px-6 py-4 rounded-xl font-bold hover:bg-black active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2"
+                                    >
+                                        <span>{loading ? "Processing..." : (mode === "login" ? "Sign In" : "Create Account")}</span>
+                                        {!loading && <ArrowRight size={20} />}
+                                    </button>
+                                </form>
                             </div>
                         )}
 
                         {/* Footer */}
-                        <div className="mt-6 pt-4 border-t border-neutral-200 text-center text-sm text-neutral-600">
-                            By continuing, you agree to our{" "}
-                            <Link href="/terms" className="text-primary-600 hover:text-primary-700">
-                                Terms
-                            </Link>{" "}
-                            and{" "}
-                            <Link href="/privacy" className="text-primary-600 hover:text-primary-700">
-                                Privacy Policy
-                            </Link>
+                        <div className="mt-10 pt-6 border-t border-neutral-100 flex flex-col items-center">
+                            <label className="flex items-start space-x-3 cursor-pointer group">
+                                <input
+                                    type="checkbox"
+                                    required
+                                    defaultChecked
+                                    className="mt-1 w-4 h-4 text-primary-600 bg-neutral-100 border-neutral-300 rounded focus:ring-primary-500"
+                                />
+                                <span className="text-xs text-neutral-500 leading-relaxed text-center">
+                                    I agree to the <Link href="/terms" className="text-secondary-600 font-bold hover:underline">Terms & Conditions</Link> and <Link href="/privacy" className="text-secondary-600 font-bold hover:underline">Privacy Policy</Link>
+                                </span>
+                            </label>
                         </div>
                     </div>
                 </motion.div>
