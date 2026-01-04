@@ -127,8 +127,12 @@ export function MobileOtpForm({
                 (data: any) => {
                     console.log("[MSG91] Verification Success Data:", data);
                     // Success: data usually contains access_token if configured
-                    // We MUST prioritize access_token for server-side verification
-                    const token = data.access_token || data.requestId;
+                    // In some widgets, the JWT is in the 'message' field
+                    let token = data.access_token || data.requestId;
+
+                    if (!token && data.message && (data.message.startsWith("ey") || data.message.length > 50)) {
+                        token = data.message;
+                    }
 
                     if (token) {
                         onSuccess(`91${phone}`, token);

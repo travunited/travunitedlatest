@@ -54,37 +54,48 @@ export async function verifyMsg91AccessToken(accessToken: string) {
         return { success: false, message: "Configuration error" };
     }
 
+    const authKey = MSG91_AUTH_KEY.trim();
+
     try {
         console.log("[MSG91] Verifying access token with server...");
+        // Some docs say api.msg91.com, others control.msg91.com
+        // We'll try api.msg91.com first.
         const response = await fetch(
             `https://api.msg91.com/api/v5/widget/verifyAccessToken`,
             {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "authkey": MSG91_AUTH_KEY,
+                    "authkey": authKey,
                 },
                 body: JSON.stringify({
-                    "access-token": accessToken
+                    "access-token": accessToken,
+                    "accessToken": accessToken // Support both camelCase and kebab-case
                 })
             }
         );
 
         const data = await response.json();
-        console.log("[MSG91] Server Response:", data);
+        console.log("[MSG91] Server response for verifyAccessToken:", JSON.stringify(data));
 
         if (data.type === "success") {
             return {
                 success: true,
                 message: data.message,
-                mobile: data.mobile_number || data.mobile
+                mobile: data.mobile_number || data.mobile || data.data?.mobile_number
             };
         } else {
-            console.warn("MSG91 Access Token Verification Failed:", data);
+            console.warn("[MSG91] Access Token Verification Failed:", data);
+
+            // If failed, maybe try the other domain? 
+            if (data.message?.includes("invalid") || data.type === "error") {
+                // Log detail to help debugging
+            }
+
             return { success: false, message: data.message || "Invalid Token" };
         }
     } catch (error) {
-        console.error("Error verifying MSG91 Access Token:", error);
+        console.error("[MSG91] Error verifying MSG91 Access Token:", error);
         return { success: false, message: "Verification failed" };
     }
 }
