@@ -2,7 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./prisma";
 import bcrypt from "bcryptjs";
-import { verifyMsg91OTP, verifyMsg91AccessToken, verifyMsg91WidgetOTP } from "./sms";
+import { verifySMSOTP, verifySMSAccessToken, verifySMSWidgetOTP } from "./sms";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -94,24 +94,31 @@ export const authOptions: NextAuthOptions = {
 
           // PRIORITY 1: JWT Access Token (long strings)
           if (credentials.token.length > 20) {
-            console.log("[Auth] Verifying MSG91 Access Token (JWT)");
-            verification = await verifyMsg91AccessToken(credentials.token);
+            console.log("[Auth] Verifying Access Token (JWT)");
+            verification = await verifySMSAccessToken(credentials.token);
 
             if (verification.success && verification.mobile) {
               console.log("[Auth] Access token verified for mobile:", verification.mobile);
               mobile = verification.mobile;
             }
           }
-          // PRIORITY 2: Manual Widget Verification (requires requestId + 4-6 digit OTP)
-          else if (credentials.requestId && credentials.token.length >= 4) {
-            console.log("[Auth] Falling back to manual widget verification with requestId");
-            verification = await verifyMsg91WidgetOTP(credentials.requestId, credentials.token);
+          // PRIORITY 2: OTP Verification (Try widget manual first if requestId exists, else standard)
+          else if (credentials.token.length >= 4) {
+            if (credentials.requestId) {
+              console.log("[Auth] Attempting verification with requestId:", credentials.requestId);
+              verification = await verifySMSWidgetOTP(credentials.requestId, credentials.token);
+
+              // If widget verification fails, try standard verification as fallback
+              if (!verification.success) {
+                console.log("[Auth] Widget verification failed, trying standard verification");
+                verification = await verifySMSOTP(credentials.phone, credentials.token);
+              }
+            } else {
+              console.log("[Auth] Verifying standard 4-digit code");
+              verification = await verifySMSOTP(credentials.phone, credentials.token);
+            }
           }
-          // PRIORITY 3: Standard OTP (Exactly 4 digits, no requestId)
-          else if (credentials.token.length === 4) {
-            console.log("[Auth] Verifying standard 4-digit OTP code");
-            verification = await verifyMsg91OTP(credentials.phone, credentials.token);
-          } else {
+          else {
             return null;
           }
 

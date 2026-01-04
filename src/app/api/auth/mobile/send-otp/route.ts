@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
         const data = await response.json();
         if (data.type !== "success") {
-            console.error('MSG91 send OTP error:', data);
+            console.error('OTP send error:', data);
             return NextResponse.json({ error: data?.message || 'Failed to send OTP' }, { status: 400 });
         }
 
