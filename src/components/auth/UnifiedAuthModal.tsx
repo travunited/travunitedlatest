@@ -176,14 +176,13 @@ export function UnifiedAuthModal({
         setError("");
 
         try {
-            const verifiedPhone = data.mobileNumber || data.identifier;
-            const token = data.access_token || data.token || "WIDGET_VERIFIED";
+            const verifiedPhone = data.mobileNumber || data.identifier || data.phone;
+            const token = data.accessToken || data.access_token || data.token || "WIDGET_VERIFIED";
 
             // Unified Phone Login/Signup
             // We pass the name so the server can simple create the user if they don't exist (Implicit Signup)
             const result = await signIn("mobile-otp", {
-                phone: verifiedPhone,
-                otp: token,
+                accessToken: token,
                 name: formData.name, // Pass name for implicit signup
                 redirect: false,
             });
