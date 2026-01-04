@@ -178,24 +178,28 @@ export function UnifiedAuthModal({
         try {
             const token = data.accessToken || data.access_token || data.token || "WIDGET_VERIFIED";
 
-            // Unified Phone Login/Signup
-            // We pass the name so the server can simple create the user if they don't exist (Implicit Signup)
-            const result = await signIn("mobile-otp", {
-                accessToken: token,
-                phone: formData.phone,
-                name: formData.name, // Pass name for implicit signup
-                redirect: false,
+            // BYPASS NEXTAUTH: Call our custom verify route that sets the session directly
+            const response = await fetch("/api/auth/verify-mobile-otp", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    accessToken: token,
+                    phone: formData.phone,
+                    name: formData.name,
+                }),
             });
 
-            if (result?.error) {
-                if (result.error === "USER_INACTIVE") {
+            const result = await response.json();
+
+            if (!response.ok) {
+                const errorMsg = result.error || "Authentication failed";
+                if (errorMsg.includes("inactive")) {
                     setError("Account is inactive. Please contact support.");
-                } else if (result.error === "CredentialsSignin") {
-                    setError("Invalid or expired OTP token. Please try again.");
                 } else {
-                    setError(result.error || "Authentication failed. Please try again.");
+                    setError(errorMsg || "Authentication failed. Please try again.");
                 }
             } else {
+                // Success! The cookie is now set by the backend
                 await handleAuthSuccess();
             }
         } catch (err) {
