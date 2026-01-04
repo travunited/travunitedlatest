@@ -4,8 +4,8 @@
  * Handles sending and verifying OTPs via MSG91 API
  */
 
-const MSG91_AUTH_KEY = process.env.MSG91_AUTH_KEY;
-const MSG91_OTP_TEMPLATE_ID = process.env.MSG91_OTP_TEMPLATE_ID;
+const MSG91_AUTH_KEY = process.env.MSG91_AUTH_KEY || "455112A2GSu4oHCET6949181cP1";
+const MSG91_OTP_TEMPLATE_ID = process.env.MSG91_OTP_TEMPLATE_ID || "69580bd61ecf7f50b04befb4";
 
 export interface Msg91Response {
     message: string;
@@ -140,7 +140,8 @@ export async function verifyMsg91Token(accessToken: string): Promise<{ success: 
             },
             body: JSON.stringify({
                 "authkey": MSG91_AUTH_KEY,
-                "access-token": accessToken
+                "access-token": accessToken,
+                "accessToken": accessToken
             })
         });
 
