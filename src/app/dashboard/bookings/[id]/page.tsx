@@ -154,6 +154,16 @@ export default function BookingDetailPage() {
       razorpay.open();
     } catch (error: any) {
       console.error("Payment error:", error);
+      
+      // Check if error message indicates payment already completed
+      if (error.message && error.message.includes("already completed")) {
+        // Refresh booking data to get updated status
+        await fetchBooking();
+        // Show user-friendly message
+        alert("Payment has already been completed for this booking. The page will refresh to show the updated status.");
+        return;
+      }
+      
       alert(`Unable to process payment: ${error.message || "Please try again."}`);
       setPaymentLoading(false);
     }
@@ -364,6 +374,23 @@ export default function BookingDetailPage() {
 
                       if (!response.ok) {
                         const error = await response.json();
+                        
+                        // Handle case where payment is already completed
+                        if (response.status === 409 && error.alreadyPaid) {
+                          // Refresh booking data to get updated status
+                          await fetchBooking();
+                          
+                          // Redirect to thank you page if provided
+                          if (error.redirectUrl) {
+                            router.push(error.redirectUrl);
+                            return;
+                          }
+                          
+                          // Otherwise show success message
+                          alert("Payment has already been completed for this booking.");
+                          return;
+                        }
+                        
                         throw new Error(error.error || "Failed to create payment order");
                       }
 
@@ -431,6 +458,16 @@ export default function BookingDetailPage() {
                       razorpay.open();
                     } catch (error: any) {
                       console.error("Payment error:", error);
+                      
+                      // Check if error message indicates payment already completed
+                      if (error.message && error.message.includes("already completed")) {
+                        // Refresh booking data to get updated status
+                        await fetchBooking();
+                        // Show user-friendly message
+                        alert("Payment has already been completed for this booking. The page will refresh to show the updated status.");
+                        return;
+                      }
+                      
                       alert(`Unable to process payment: ${error.message || "Please try again."}`);
                       setPaymentLoading(false);
                     }

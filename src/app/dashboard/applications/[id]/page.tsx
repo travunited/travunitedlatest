@@ -496,6 +496,23 @@ export default function ApplicationDetailPage() {
 
                       if (!response.ok) {
                         const error = await response.json();
+                        
+                        // Handle case where payment is already completed
+                        if (response.status === 409 && error.alreadyPaid) {
+                          // Refresh application data to get updated status
+                          await fetchApplication();
+                          
+                          // Redirect to thank you page if provided
+                          if (error.redirectUrl) {
+                            router.push(error.redirectUrl);
+                            return;
+                          }
+                          
+                          // Otherwise show success message
+                          alert("Payment has already been completed for this application.");
+                          return;
+                        }
+                        
                         throw new Error(error.error || "Failed to create payment order");
                       }
 
@@ -563,6 +580,16 @@ export default function ApplicationDetailPage() {
                       razorpay.open();
                     } catch (error: any) {
                       console.error("Payment error:", error);
+                      
+                      // Check if error message indicates payment already completed
+                      if (error.message && error.message.includes("already completed")) {
+                        // Refresh application data to get updated status
+                        await fetchApplication();
+                        // Show user-friendly message
+                        alert("Payment has already been completed for this application. The page will refresh to show the updated status.");
+                        return;
+                      }
+                      
                       alert(`Unable to process payment: ${error.message || "Please try again."}`);
                       setPaymentLoading(false);
                     }
