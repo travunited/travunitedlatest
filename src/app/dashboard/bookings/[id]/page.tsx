@@ -264,11 +264,24 @@ export default function BookingDetailPage() {
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
               <h2 className="text-xl font-bold text-neutral-900 mb-4">Travellers</h2>
               <div className="space-y-2">
-                {booking.travellers.map((t, index) => (
-                  <div key={index} className="text-neutral-700">
-                    {index + 1}. {t.traveller.firstName} {t.traveller.lastName}
-                  </div>
-                ))}
+                {booking.travellers && booking.travellers.length > 0 ? (
+                  booking.travellers.map((t, index) => {
+                    if (!t?.traveller) {
+                      return (
+                        <div key={index} className="text-neutral-700">
+                          {index + 1}. Traveller {index + 1}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={index} className="text-neutral-700">
+                        {index + 1}. {t.traveller.firstName || ""} {t.traveller.lastName || ""}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-neutral-600">No travellers added yet.</p>
+                )}
               </div>
             </div>
 
