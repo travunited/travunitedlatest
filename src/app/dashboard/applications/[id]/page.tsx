@@ -223,12 +223,13 @@ export default function ApplicationDetailPage() {
                 <div className="space-y-2 mb-4">
                   {rejectedDocuments.map((doc) => {
                     const travellerName = doc.traveller
-                      ? `${doc.traveller.firstName} ${doc.traveller.lastName}`
+                      ? `${doc.traveller.firstName || ""} ${doc.traveller.lastName || ""}`.trim() || "Traveller"
                       : "Primary Traveller";
+                    const showTravellerName = application.travellers && application.travellers.length > 1 && travellerName;
                     return (
                       <div key={doc.id} className="text-sm text-red-800">
                         <span className="font-medium">
-                          {doc.documentType} {application.travellers.length > 1 ? `– ${travellerName}` : ""}
+                          {doc.documentType}{showTravellerName ? ` – ${travellerName}` : ""}
                         </span>
                         {doc.rejectionReason && (
                           <span className="ml-2">– &ldquo;{doc.rejectionReason}&rdquo;</span>
@@ -293,11 +294,24 @@ export default function ApplicationDetailPage() {
             <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
               <h2 className="text-xl font-bold text-neutral-900 mb-4">Travellers</h2>
               <div className="space-y-2">
-                {application.travellers.map((t, index) => (
-                  <div key={index} className="text-neutral-700">
-                    {index + 1}. {t.traveller.firstName} {t.traveller.lastName}
-                  </div>
-                ))}
+                {application.travellers && application.travellers.length > 0 ? (
+                  application.travellers.map((t, index) => {
+                    if (!t?.traveller) {
+                      return (
+                        <div key={index} className="text-neutral-700">
+                          {index + 1}. Traveller {index + 1}
+                        </div>
+                      );
+                    }
+                    return (
+                      <div key={index} className="text-neutral-700">
+                        {index + 1}. {t.traveller.firstName || ""} {t.traveller.lastName || ""}
+                      </div>
+                    );
+                  })
+                ) : (
+                  <p className="text-neutral-600">No travellers added yet.</p>
+                )}
               </div>
             </div>
 
@@ -309,8 +323,9 @@ export default function ApplicationDetailPage() {
                   {application.documents.map((doc) => {
                     const StatusIcon = getDocumentStatusIcon(doc.status);
                     const travellerName = doc.traveller
-                      ? `${doc.traveller.firstName} ${doc.traveller.lastName}`
+                      ? `${doc.traveller.firstName || ""} ${doc.traveller.lastName || ""}`.trim() || null
                       : null;
+                    const showTravellerName = travellerName && application.travellers && application.travellers.length > 1;
                     return (
                       <div
                         key={doc.id}
@@ -328,7 +343,7 @@ export default function ApplicationDetailPage() {
                             <div className="flex-1">
                               <div className="font-medium text-neutral-900 mb-1">
                                 {doc.documentType}
-                                {travellerName && application.travellers.length > 1 && (
+                                {showTravellerName && (
                                   <span className="text-neutral-600 font-normal ml-2">
                                     – {travellerName}
                                   </span>

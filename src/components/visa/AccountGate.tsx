@@ -228,9 +228,9 @@ export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectU
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-neutral-900">
-                  {showOtpVerification ? "Verify Your Email" : mode === "signup" ? "Create Account" : "Login"}
-                </h2>
+              <h2 className="text-2xl font-bold text-neutral-900">
+                {showOtpVerification ? "Verify Your Email" : mode === "signup" ? "Create Account" : "Login"}
+              </h2>
                 {mode === "signup" && !showOtpVerification && (
                   <p className="text-sm text-neutral-600 mt-1">
                     Create your account to continue with your application

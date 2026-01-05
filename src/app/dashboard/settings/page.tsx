@@ -28,6 +28,10 @@ export default function AccountSettingsPage() {
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [showOtpForm, setShowOtpForm] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
 
   useEffect(() => {
     if (session?.user) {
@@ -56,22 +60,91 @@ export default function AccountSettingsPage() {
   };
 
   const handleVerifyEmail = async () => {
-    setLoading(true);
+    // Redirect to verify-email page if email exists
+    if (session?.user?.email && !session.user.email.includes("@user.travunited")) {
+      router.push(`/verify-email?email=${encodeURIComponent(session.user.email)}&redirect=${encodeURIComponent("/dashboard/settings")}`);
+      return;
+    }
+    
+    // If no email, show error
+    setError("Please add your email address first.");
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOtpLoading(true);
     setError("");
+
+    if (otp.length !== 6) {
+      setError("Please enter a valid 6-digit OTP");
+      setOtpLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch("/api/auth/verify-email", {
-        method: "POST",
-      });
-      if (response.ok) {
-        setEmailVerified(true);
-        setSuccess("Email verified successfully!");
-      } else {
-        setError("Failed to verify email. Please try again.");
+      const email = session?.user?.email;
+      if (!email || email.includes("@user.travunited")) {
+        setError("Invalid email address");
+        setOtpLoading(false);
+        return;
       }
-    } catch (error) {
+
+      const response = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "OTP verification failed");
+      } else {
+        setEmailVerified(true);
+        setShowOtpForm(false);
+        setOtp("");
+        setSuccess("Email verified successfully!");
+        // Refresh session to get updated verification status
+        router.refresh();
+      }
+    } catch (err) {
       setError("An error occurred. Please try again.");
     } finally {
-      setLoading(false);
+      setOtpLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setResendLoading(true);
+    setError("");
+
+    try {
+      const email = session?.user?.email;
+      if (!email || email.includes("@user.travunited")) {
+        setError("Invalid email address");
+        setResendLoading(false);
+        return;
+      }
+
+      const response = await fetch("/api/auth/resend-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || "Failed to resend OTP");
+      } else {
+        setSuccess("OTP sent successfully! Please check your email.");
+        setOtp("");
+        setTimeout(() => setSuccess(""), 3000);
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -143,13 +216,25 @@ export default function AccountSettingsPage() {
         }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        setSuccess("Profile updated successfully!");
+        if (data.otpSent) {
+          setSuccess("Profile updated successfully! Please check your email for verification OTP.");
+          setShowOtpForm(true);
+          // Reset email verified status since new email needs verification
+          setEmailVerified(false);
+        } else {
+          setSuccess("Profile updated successfully!");
+        }
         setIsEditingProfile(false);
-        // Refresh session to show new data
-        router.refresh();
+        // Refresh session to show new data and check verification status
+        await router.refresh();
+        // Wait a bit for session to update, then check verification
+        setTimeout(() => {
+          checkEmailVerification();
+        }, 500);
       } else {
-        const data = await response.json();
         setError(data.error || "Failed to update profile");
       }
     } catch (error) {
@@ -421,23 +506,74 @@ export default function AccountSettingsPage() {
         </div>
 
         {/* Email Verification Notice */}
-        {!emailVerified && (
+        {!emailVerified && !session?.user?.email?.includes("@user.travunited") && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 mb-6">
             <div className="flex items-start space-x-3">
               <AlertCircle className="text-yellow-600 flex-shrink-0 mt-0.5" size={20} />
-              <div>
+              <div className="flex-1">
                 <h3 className="font-semibold text-yellow-900 mb-1">Email Not Verified</h3>
                 <p className="text-sm text-yellow-700 mb-3">
                   Your email address hasn&rsquo;t been verified yet. Email verification is optional and won&rsquo;t block payments,
                   but we recommend verifying your email for account security.
                 </p>
-                <button
-                  onClick={handleVerifyEmail}
-                  disabled={loading}
-                  className="text-sm bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50"
-                >
-                  {loading ? "Verifying..." : "Verify Email Now"}
-                </button>
+                {!showOtpForm ? (
+                  <button
+                    onClick={handleVerifyEmail}
+                    disabled={loading}
+                    className="text-sm bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50"
+                  >
+                    Verify Email Now
+                  </button>
+                ) : (
+                  <motion.form
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    onSubmit={handleVerifyOtp}
+                    className="space-y-3"
+                  >
+                    <div>
+                      <label className="block text-sm font-medium text-yellow-900 mb-1">
+                        Enter 6-digit OTP sent to {session?.user?.email}
+                      </label>
+                      <input
+                        type="text"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder="000000"
+                        maxLength={6}
+                        className="w-full px-3 py-2 border border-yellow-300 rounded-lg text-center text-lg tracking-widest"
+                      />
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        type="submit"
+                        disabled={otpLoading || otp.length !== 6}
+                        className="flex-1 text-sm bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {otpLoading ? "Verifying..." : "Verify OTP"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResendOtp}
+                        disabled={resendLoading}
+                        className="text-sm bg-yellow-100 text-yellow-700 px-4 py-2 rounded-lg hover:bg-yellow-200 transition-colors disabled:opacity-50"
+                      >
+                        {resendLoading ? "Sending..." : "Resend"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowOtpForm(false);
+                          setOtp("");
+                          setError("");
+                        }}
+                        className="text-sm text-yellow-700 px-4 py-2 rounded-lg hover:bg-yellow-100 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </motion.form>
+                )}
               </div>
             </div>
           </div>

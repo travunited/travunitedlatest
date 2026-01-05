@@ -54,16 +54,16 @@ export async function GET(req: Request) {
 
       searchPromises.push(
         prisma.visa.findMany({
-          where: visaWhere,
-          include: {
-            Country: {
-              select: {
-                id: true,
-                name: true,
-                code: true,
-              },
+        where: visaWhere,
+        include: {
+          Country: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
             },
           },
+        },
           take: limit,
           orderBy: [
             // Prioritize featured and recently updated
@@ -104,16 +104,16 @@ export async function GET(req: Request) {
 
       searchPromises.push(
         prisma.tour.findMany({
-          where: tourWhere,
-          include: {
-            Country: {
-              select: {
-                id: true,
-                name: true,
-                code: true,
-              },
+        where: tourWhere,
+        include: {
+          Country: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
             },
           },
+        },
           take: limit,
           orderBy: [
             // Prioritize featured and recently updated

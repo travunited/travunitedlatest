@@ -54,13 +54,13 @@ export function BlogClient({ posts }: { posts: BlogClientPost[] }) {
 
   const filteredPosts = useMemo(() => {
     return displayPosts.filter((post) => {
-      const matchesCategory = selectedCategory === "All" || post.category === selectedCategory;
-      const matchesSearch =
+    const matchesCategory = selectedCategory === "All" || post.category === selectedCategory;
+    const matchesSearch =
         !debouncedSearchQuery ||
         post.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
         (post.excerpt || "").toLowerCase().includes(debouncedSearchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
-    });
+    return matchesCategory && matchesSearch;
+  });
   }, [displayPosts, selectedCategory, debouncedSearchQuery]);
 
   return (

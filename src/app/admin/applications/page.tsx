@@ -122,7 +122,7 @@ function AdminApplicationsPageContent() {
   useEffect(() => {
     if (status === "unauthenticated") {
       try {
-        router.push("/login");
+      router.push("/login");
       } catch (error) {
         console.error("Router push failed, using window.location:", error);
         window.location.href = "/login";
@@ -133,20 +133,20 @@ function AdminApplicationsPageContent() {
       const isAdmin = session?.user?.role === "STAFF_ADMIN" || session?.user?.role === "SUPER_ADMIN";
       if (!isAdmin) {
         try {
-          router.push("/dashboard");
+        router.push("/dashboard");
         } catch (error) {
           console.error("Router push failed, using window.location:", error);
           window.location.href = "/dashboard";
         }
         return;
       }
-      const params = new URLSearchParams(window.location.search);
-      const urlStatus = params.get("status");
-      if (urlStatus) {
-        setStatusFilter(urlStatus);
-      }
-      fetchApplications();
-      fetchAdmins();
+        const params = new URLSearchParams(window.location.search);
+        const urlStatus = params.get("status");
+        if (urlStatus) {
+          setStatusFilter(urlStatus);
+        }
+        fetchApplications();
+        fetchAdmins();
     }
   }, [session, status, router, fetchApplications, fetchAdmins]);
 
