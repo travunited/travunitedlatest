@@ -20,7 +20,7 @@ export default function EditApplicationPage() {
       if (response.ok) {
         const data = await response.json();
         setApplication(data);
-        
+
         // Check if application can be edited (only DRAFT or PAYMENT_PENDING)
         const editableStatuses = ["DRAFT", "PAYMENT_PENDING"];
         if (!editableStatuses.includes(data.status)) {
@@ -35,36 +35,21 @@ export default function EditApplicationPage() {
           setLoading(false);
           return;
         }
-        
-        // Redirect to application form with edit mode
-        // Check if visa data is available
-        if (data.visa?.country?.code && data.visa?.slug) {
+
+        // Redirect to application form with edit mode using mapped properties
+        if (data.visa?.Country?.code && data.visa?.slug) {
+          const countryCode = data.visa.Country.code.toLowerCase();
+          const visaSlug = data.visa.slug;
+          router.push(`/apply/visa/${countryCode}/${visaSlug}?edit=${params.id}&applicationId=${params.id}`);
+        } else if (data.visa?.country?.code && data.visa?.slug) {
           const countryCode = data.visa.country.code.toLowerCase();
           const visaSlug = data.visa.slug;
           router.push(`/apply/visa/${countryCode}/${visaSlug}?edit=${params.id}&applicationId=${params.id}`);
-        } else if (data.visaId && data.visa) {
-          // If visa relation exists but country/slug missing, try to fetch visa details
-          try {
-            const visaResponse = await fetch(`/api/visas/${data.visaId}`);
-            if (visaResponse.ok) {
-              const visaData = await visaResponse.json();
-              if (visaData.country?.code && visaData.slug) {
-                const countryCode = visaData.country.code.toLowerCase();
-                router.push(`/apply/visa/${countryCode}/${visaData.slug}?edit=${params.id}&applicationId=${params.id}`);
-                return;
-              }
-            }
-          } catch (err) {
-            console.error("Error fetching visa details:", err);
-          }
-        }
-        
-        // Fallback to old format if visa relation is not loaded
-        if (data.country && data.visaType) {
-          // Normalize country code (handle both codes and names)
-          const countryCode = data.country.toLowerCase().replace(/\s+/g, "-");
-          const visaType = data.visaType.toLowerCase().replace(/\s+/g, "-");
-          router.push(`/apply/visa/${countryCode}/${visaType}?edit=${params.id}&applicationId=${params.id}`);
+        } else if (data.country && (data.visaType || data.slug || data.visa?.slug)) {
+          // Normalize country (handle both codes and names)
+          const country = data.country.toLowerCase().replace(/\s+/g, "-");
+          const visaSlug = (data.slug || data.visa?.slug || data.visaType || "").toLowerCase().replace(/\s+/g, "-");
+          router.push(`/apply/visa/${country}/${visaSlug}?edit=${params.id}&applicationId=${params.id}`);
         } else {
           setError("Unable to load application data. Please contact support if this issue persists.");
           setLoading(false);

@@ -22,9 +22,10 @@ export async function GET(
     const visa = await prisma.visa.findFirst({
       where: {
         slug,
-        Country: {
-          code: countryCode,
-        },
+        OR: [
+          { Country: { code: countryCode } },
+          { Country: { name: { equals: resolvedParams.country, mode: "insensitive" } } }
+        ],
         isActive: true,
       },
       include: {
