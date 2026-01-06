@@ -44,7 +44,7 @@ export async function generateMetadata({
 
   // If no image, use a default OG image
   if (!ogImage) {
-    ogImage = `${siteUrl}/og-default.jpg`; // You can create this default image
+    ogImage = `${siteUrl}/og-default.png`; // Professional brand default
   }
 
   const title = post.title;

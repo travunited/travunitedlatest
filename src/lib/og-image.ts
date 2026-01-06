@@ -16,10 +16,9 @@ export function getAbsoluteImageUrl(imageUrl: string | null | undefined, siteUrl
 
   // If it's a relative URL (starts with /), prepend the site URL
   if (trimmed.startsWith("/")) {
-    return `${siteUrl}${trimmed}`;
+    return `${siteUrl.replace(/\/$/, "")}${trimmed}`;
   }
 
   // Otherwise, prepend site URL with a slash
-  return `${siteUrl}/${trimmed}`;
+  return `${siteUrl.replace(/\/$/, "")}/${trimmed}`;
 }
-

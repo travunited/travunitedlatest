@@ -37,6 +37,12 @@ export async function GET(req: Request) {
             VisaDocumentRequirement: true,
           },
         },
+        Visa: {
+          include: {
+            Country: true,
+          }
+        },
+        VisaSubType: true,
         PromoCodeUsage: {
           include: {
             promoCode: true,

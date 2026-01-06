@@ -589,8 +589,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     if (formData.travelDate) {
       const travelDate = new Date(formData.travelDate);
       travelDate.setHours(0, 0, 0, 0);
-      if (travelDate < today) {
-        errors.travelDate = "Travel date cannot be in the past";
+      if (travelDate <= today) {
+        errors.travelDate = "Travel date must be after today";
       }
     }
 
@@ -919,6 +919,43 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         setShowAccountGate(true);
         return;
       }
+
+      // Check email verification (hard block - cannot proceed without verification)
+      if (emailVerified === false) {
+        const shouldVerify = confirm(
+          "Your email is not verified yet. You must verify your email before proceeding with the application.\n\nWould you like to verify your email now?"
+        );
+        if (shouldVerify) {
+          router.push(`/verify-email?email=${encodeURIComponent(session.user?.email || "")}&redirect=${encodeURIComponent(`/apply/visa/${params.country}/${params.type}?restored=true`)}`);
+        }
+        return; // Block proceeding
+      }
+
+      // If email verification status is unknown, check it
+      if (emailVerified === null && session?.user?.email) {
+        setLoading(true);
+        fetch("/api/auth/verify-email")
+          .then(res => res.json())
+          .then(data => {
+            setLoading(false);
+            if (!data.emailVerified) {
+              setEmailVerified(false);
+              const shouldVerify = confirm("Please verify your email before proceeding with the application.");
+              if (shouldVerify) {
+                router.push(`/verify-email?email=${encodeURIComponent(session.user?.email || "")}&redirect=${encodeURIComponent(`/apply/visa/${params.country}/${params.type}?restored=true`)}`);
+              }
+            } else {
+              setEmailVerified(true);
+              // If verified, proceed to next step
+              setCurrentStep(3);
+            }
+          })
+          .catch(() => {
+            setLoading(false);
+            alert("Unable to verify email status. Please try again.");
+          });
+        return;
+      }
     }
 
     if (currentStep === 3) {
@@ -1041,35 +1078,6 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       // Show account gate if not logged in
       setShowAccountGate(true);
       return;
-    }
-
-    // Check email verification (hard block - cannot submit without verification)
-    if (emailVerified === false) {
-      const shouldVerify = confirm(
-        "Your email is not verified yet. You must verify your email before submitting the application.\n\nWould you like to verify your email now?"
-      );
-      if (shouldVerify) {
-        router.push(`/verify-email?email=${encodeURIComponent(session.user?.email || "")}&redirect=${encodeURIComponent(`/apply/visa/${params.country}/${params.type}`)}`);
-      }
-      return; // Block submission
-    }
-
-    // If email verification status is unknown, check it
-    if (emailVerified === null && session?.user?.email) {
-      try {
-        const verifyResponse = await fetch("/api/auth/verify-email");
-        const verifyData = await verifyResponse.json();
-        if (!verifyData.emailVerified) {
-          alert("Please verify your email before submitting the application.");
-          router.push(`/verify-email?email=${encodeURIComponent(session.user?.email || "")}&redirect=${encodeURIComponent(`/apply/visa/${params.country}/${params.type}`)}`);
-          return;
-        }
-        setEmailVerified(true);
-      } catch (error) {
-        console.error("Error checking email verification:", error);
-        alert("Unable to verify email status. Please try again.");
-        return;
-      }
     }
 
     const travellersLength =
@@ -1601,7 +1609,12 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                       return newErrors;
                     });
                   }}
-                  min={new Date().toISOString().split("T")[0]}
+                  min={(() => {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    return tomorrow.toISOString().split("T")[0];
+                  })()}
+
                   className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 ${dateErrors.travelDate ? "border-red-500" : "border-neutral-300"
                     }`}
                 />

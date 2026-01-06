@@ -61,6 +61,11 @@ export async function generateMetadata({
     ogImage = getAbsoluteImageUrl(rawOgImage, siteUrl);
   }
 
+  // Fallback to a professional default if no image found
+  if (!ogImage) {
+    ogImage = `${siteUrl}/og-default.png`;
+  }
+
   // Get Twitter image
   let twitterImage: string | undefined;
   if (tour.twitterImage) {

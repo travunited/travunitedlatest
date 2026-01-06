@@ -608,8 +608,8 @@ export default function AccountSettingsPage() {
         )}
 
         {/* Danger Zone */}
-        <div className="bg-white rounded-2xl shadow-medium p-6 border border-red-200">
-          <h2 className="text-xl font-bold text-red-900 mb-2">Danger Zone</h2>
+        <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+          <h2 className="text-xl font-bold text-neutral-900 mb-2">Danger Zone</h2>
           <p className="text-sm text-neutral-600 mb-6">
             Once you delete your account, you will lose access to your dashboard and all your applications/bookings.
             This action cannot be undone.
@@ -618,7 +618,7 @@ export default function AccountSettingsPage() {
           {!showDeleteConfirm ? (
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="inline-flex items-center space-x-2 bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors"
+              className="inline-flex items-center space-x-2 bg-white border border-neutral-300 text-neutral-700 px-6 py-3 rounded-lg font-medium hover:bg-neutral-50 transition-colors"
             >
               <Trash2 size={18} />
               <span>Delete My Account</span>
@@ -637,7 +637,7 @@ export default function AccountSettingsPage() {
                   type="text"
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  className="w-full px-4 py-3 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   placeholder="DELETE"
                 />
               </div>
@@ -645,7 +645,7 @@ export default function AccountSettingsPage() {
                 <button
                   onClick={handleDeleteAccount}
                   disabled={loading || deleteConfirmText !== "DELETE"}
-                  className="bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  className="bg-white border border-red-200 text-red-600 px-6 py-3 rounded-lg font-medium hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 >
                   <Trash2 size={18} />
                   <span>{loading ? "Deleting..." : "Confirm Deletion"}</span>

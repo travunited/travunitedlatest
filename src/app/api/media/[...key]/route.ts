@@ -58,7 +58,7 @@ export async function GET(
     const webStream = readableToWebStream(object.stream);
     const headers = new Headers();
 
-    headers.set("Cache-Control", "private, max-age=60");
+    headers.set("Cache-Control", "public, max-age=86400, s-maxage=86400");
     headers.set("Content-Type", object.contentType || "application/octet-stream");
 
     if (object.contentLength) {
@@ -86,7 +86,7 @@ export async function GET(
       bucket: process.env.MINIO_BUCKET,
       stack: error.stack,
     });
-    
+
     // Return appropriate error response
     if (error.Code === "NoSuchKey" || error.code === "NoSuchKey") {
       return NextResponse.json(
@@ -94,7 +94,7 @@ export async function GET(
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json({ error: "Media unavailable" }, { status: 500 });
   }
 }

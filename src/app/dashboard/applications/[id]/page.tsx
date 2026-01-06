@@ -330,10 +330,10 @@ export default function ApplicationDetailPage() {
                       <div
                         key={doc.id}
                         className={`border rounded-lg p-4 ${doc.status === "REJECTED"
-                            ? "border-red-200 bg-red-50"
-                            : doc.status === "APPROVED"
-                              ? "border-green-200 bg-green-50"
-                              : "border-neutral-200"
+                          ? "border-red-200 bg-red-50"
+                          : doc.status === "APPROVED"
+                            ? "border-green-200 bg-green-50"
+                            : "border-neutral-200"
                           }`}
                       >
                         <div className="flex items-start justify-between">
@@ -371,10 +371,10 @@ export default function ApplicationDetailPage() {
                           <div className="flex items-center space-x-3 ml-4">
                             <span
                               className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${doc.status === "APPROVED"
-                                  ? "bg-green-100 text-green-700"
-                                  : doc.status === "REJECTED"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-yellow-100 text-yellow-700"
+                                ? "bg-green-100 text-green-700"
+                                : doc.status === "REJECTED"
+                                  ? "bg-red-100 text-red-700"
+                                  : "bg-yellow-100 text-yellow-700"
                                 }`}
                             >
                               <StatusIcon size={14} />
@@ -607,7 +607,7 @@ export default function ApplicationDetailPage() {
               <div className="space-y-3">
                 {canEdit && (
                   <Link
-                    href={`/apply/visa/${application.country}/${application.visaType}?edit=${application.id}`}
+                    href={`/dashboard/applications/${application.id}/edit`}
                     className="block w-full text-center border border-neutral-300 text-neutral-700 px-4 py-2 rounded-lg hover:bg-neutral-50 transition-colors"
                   >
                     Edit Application
