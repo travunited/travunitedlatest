@@ -242,7 +242,7 @@ export default function DashboardPage() {
         {nextSteps.length > 0 && (
           <div className="mb-8">
             <h2 className="text-xl font-bold text-neutral-900 mb-4">Next Important Steps</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               {nextSteps.map((step, index) => (
                 <Link
                   key={index}
@@ -256,7 +256,7 @@ export default function DashboardPage() {
                     <ArrowRight size={20} className="text-neutral-400" />
                   </div>
                   <h3 className="font-semibold text-neutral-900 mb-1">{step.title}</h3>
-                  <p className="text-sm text-neutral-600">{step.description}</p>
+                  <p className="text-sm text-neutral-600 line-clamp-2">{step.description}</p>
                 </Link>
               ))}
             </div>
@@ -264,39 +264,42 @@ export default function DashboardPage() {
         )}
 
         {/* Quick Links */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Link
-            href="/visas"
-            className="bg-white rounded-2xl p-6 shadow-medium hover:shadow-large transition-shadow border border-neutral-200 text-center"
-          >
-            <Plane size={32} className="text-primary-600 mx-auto mb-3" />
-            <h3 className="font-semibold text-neutral-900 mb-1">Apply for New Visa</h3>
-            <p className="text-sm text-neutral-600">Start a new visa application</p>
-          </Link>
-          <Link
-            href="/holidays"
-            className="bg-white rounded-2xl p-6 shadow-medium hover:shadow-large transition-shadow border border-neutral-200 text-center"
-          >
-            <Calendar size={32} className="text-primary-600 mx-auto mb-3" />
-            <h3 className="font-semibold text-neutral-900 mb-1">Book a Holiday</h3>
-            <p className="text-sm text-neutral-600">Explore holiday packages</p>
-          </Link>
-          <Link
-            href="/dashboard/travellers"
-            className="bg-white rounded-2xl p-6 shadow-medium hover:shadow-large transition-shadow border border-neutral-200 text-center"
-          >
-            <Users size={32} className="text-primary-600 mx-auto mb-3" />
-            <h3 className="font-semibold text-neutral-900 mb-1">Traveller Profiles</h3>
-            <p className="text-sm text-neutral-600">Manage traveller information</p>
-          </Link>
-          <Link
-            href="/help"
-            className="bg-white rounded-2xl p-6 shadow-medium hover:shadow-large transition-shadow border border-neutral-200 text-center"
-          >
-            <AlertCircle size={32} className="text-primary-600 mx-auto mb-3" />
-            <h3 className="font-semibold text-neutral-900 mb-1">Help / Support</h3>
-            <p className="text-sm text-neutral-600">Get assistance</p>
-          </Link>
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-neutral-900 mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Link
+              href="/visas"
+              className="bg-white rounded-2xl p-6 shadow-medium hover:shadow-large transition-shadow border border-neutral-200 text-center"
+            >
+              <Plane size={32} className="text-primary-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-neutral-900 mb-1">Apply for New Visa</h3>
+              <p className="text-sm text-neutral-600">Start a new visa application</p>
+            </Link>
+            <Link
+              href="/holidays"
+              className="bg-white rounded-2xl p-6 shadow-medium hover:shadow-large transition-shadow border border-neutral-200 text-center"
+            >
+              <Calendar size={32} className="text-primary-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-neutral-900 mb-1">Book a Holiday</h3>
+              <p className="text-sm text-neutral-600">Explore holiday packages</p>
+            </Link>
+            <Link
+              href="/dashboard/travellers"
+              className="bg-white rounded-2xl p-6 shadow-medium hover:shadow-large transition-shadow border border-neutral-200 text-center"
+            >
+              <Users size={32} className="text-primary-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-neutral-900 mb-1">Traveller Profiles</h3>
+              <p className="text-sm text-neutral-600">Manage traveller information</p>
+            </Link>
+            <Link
+              href="/help"
+              className="bg-white rounded-2xl p-6 shadow-medium hover:shadow-large transition-shadow border border-neutral-200 text-center"
+            >
+              <AlertCircle size={32} className="text-primary-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-neutral-900 mb-1">Help / Support</h3>
+              <p className="text-sm text-neutral-600">Get assistance</p>
+            </Link>
+          </div>
         </div>
 
         {/* Recent Activity Timeline */}
