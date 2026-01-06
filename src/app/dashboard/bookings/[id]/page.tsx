@@ -284,9 +284,9 @@ export default function BookingDetailPage() {
                       );
                     }
                     return (
-                      <div key={index} className="text-neutral-700">
+                  <div key={index} className="text-neutral-700">
                         {index + 1}. {t.traveller.firstName || ""} {t.traveller.lastName || ""}
-                      </div>
+                  </div>
                     );
                   })
                 ) : (

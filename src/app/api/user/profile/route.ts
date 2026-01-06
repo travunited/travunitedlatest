@@ -46,10 +46,10 @@ export async function PATCH(req: Request) {
             const hadPlaceholderEmail = currentUser.email?.includes("@user.travunited") || false;
 
             // Update user with new email and reset verification
-            const updatedUser = await prisma.user.update({
-                where: { id: session.user.id },
-                data: {
-                    ...(validatedData.name && { name: validatedData.name }),
+        const updatedUser = await prisma.user.update({
+            where: { id: session.user.id },
+            data: {
+                ...(validatedData.name && { name: validatedData.name }),
                     email: normalizedEmail,
                     emailVerified: false, // Reset verification when email changes
                     registrationOtp: null,
@@ -104,18 +104,18 @@ export async function PATCH(req: Request) {
                 where: { id: session.user.id },
                 data: {
                     ...(validatedData.name && { name: validatedData.name }),
-                },
-            });
+            },
+        });
 
-            return NextResponse.json({
-                message: "Profile updated successfully",
-                user: {
-                    id: updatedUser.id,
-                    name: updatedUser.name,
-                    email: updatedUser.email,
-                    role: updatedUser.role,
-                },
-            });
+        return NextResponse.json({
+            message: "Profile updated successfully",
+            user: {
+                id: updatedUser.id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                role: updatedUser.role,
+            },
+        });
         }
     } catch (error: any) {
         if (error instanceof z.ZodError) {
