@@ -270,7 +270,9 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         }
 
         // Block VOA visas from application flow (VISA_FREE_ENTRY is allowed without payment)
-        if (data.visaMode === "VOA") {
+        // EXCEPT when in edit mode
+        const isEditMode = searchParams?.get("edit") || searchParams?.get("applicationId");
+        if (data.visaMode === "VOA" && !isEditMode) {
           redirecting = true;
           router.replace(`/visas/${params.country}/${params.type}`);
           return;
