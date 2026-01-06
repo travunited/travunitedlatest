@@ -3,7 +3,32 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getSignedDocumentUrl, getDocumentObject } from "@/lib/minio";
+import { Readable } from "stream";
+import path from "path";
 export const dynamic = "force-dynamic";
+
+function readableToWebStream(stream: Readable): ReadableStream<Uint8Array> {
+  const reader = stream;
+
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      reader.on("data", (chunk) => {
+        controller.enqueue(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+      });
+
+      reader.on("end", () => {
+        controller.close();
+      });
+
+      reader.on("error", (error) => {
+        controller.error(error);
+      });
+    },
+    cancel() {
+      reader.destroy();
+    },
+  });
+}
 
 
 
@@ -180,7 +205,7 @@ export async function GET(req: Request) {
           try {
             // Get file extension from the stored key
             const fileExtension = actualKey.split(".").pop()?.toLowerCase() || "pdf";
-            
+
             // Generate filename: CandidateName_Position.ext
             // Sanitize name and position to remove invalid filename characters
             const sanitizedName = careerApp.name
@@ -191,7 +216,7 @@ export async function GET(req: Request) {
               .replace(/[^a-zA-Z0-9\s-_]/g, "")
               .replace(/\s+/g, "_")
               .trim();
-            
+
             const downloadFilename = `${sanitizedName}_${sanitizedPosition}.${fileExtension}`;
 
             // Stream the file directly with proper Content-Disposition header
@@ -224,7 +249,7 @@ export async function GET(req: Request) {
             const headers = new Headers();
             headers.set("Content-Type", documentObject.contentType || "application/pdf");
             headers.set("Content-Disposition", `attachment; filename="${downloadFilename}"`);
-            
+
             if (documentObject.contentLength) {
               headers.set("Content-Length", documentObject.contentLength.toString());
             }
@@ -268,10 +293,32 @@ export async function GET(req: Request) {
     }
 
     try {
-      console.log("[Files API] Generating signed URL for key:", key, "ownerId:", ownerId);
-      const signedUrl = await getSignedDocumentUrl(key, 60);
-      console.log("[Files API] Signed URL generated successfully, length:", signedUrl.length);
-      return NextResponse.redirect(signedUrl);
+      const filenameParam = searchParams.get("filename");
+      console.log("[Files API] Proxying file download for key:", key, "ownerId:", ownerId);
+
+      const object = await getDocumentObject(key);
+      if (!object) {
+        console.error("[Files API] File object not found in storage for key:", key);
+        return NextResponse.json({ error: "File not found in storage" }, { status: 404 });
+      }
+
+      const webStream = readableToWebStream(object.stream);
+      const headers = new Headers();
+
+      headers.set("Cache-Control", "private, max-age=0, no-cache");
+      headers.set("Content-Type", object.contentType || "application/octet-stream");
+
+      if (object.contentLength) {
+        headers.set("Content-Length", object.contentLength.toString());
+      }
+
+      // Determine filename for download
+      const basename = path.basename(key);
+      const filename = filenameParam || basename || "download";
+      headers.set("Content-Disposition", `attachment; filename="${filename}"`);
+
+      console.log("[Files API] Streaming file successfully:", { key, filename, contentType: object.contentType });
+      return new NextResponse(webStream, { headers });
     } catch (minioError) {
       console.error("[Files API] Error generating signed URL for file:", key, minioError);
       const errorMessage = minioError instanceof Error ? minioError.message : String(minioError);

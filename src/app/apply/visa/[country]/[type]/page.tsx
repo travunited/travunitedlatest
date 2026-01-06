@@ -255,8 +255,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
 
         if (!response.ok) {
           if (response.status === 404) {
-          throw new Error("Visa not found");
-        }
+            throw new Error("Visa not found");
+          }
           throw new Error(`Failed to load visa: ${response.statusText}`);
         }
 
@@ -1255,7 +1255,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         if (error.name === "AbortError") {
           console.error("Document upload timed out:", doc.requirementId);
         } else {
-        console.error("Error uploading document:", error);
+          console.error("Error uploading document:", error);
         }
         // Continue with other documents even if one fails
       }
@@ -1334,7 +1334,11 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         order_id: orderId,
         prefill: {
           name: formData.primaryContact?.name || session.user?.name || "",
-          email: session.user?.email || formData.primaryContact?.email || "",
+          email: (formData.primaryContact?.email && !formData.primaryContact.email.includes("@user.travunited"))
+            ? formData.primaryContact.email
+            : (session.user?.email && !session.user.email.includes("@user.travunited"))
+              ? session.user.email
+              : formData.primaryContact?.email || "",
           contact: formData.primaryContact?.phone || "",
         },
         notes: {

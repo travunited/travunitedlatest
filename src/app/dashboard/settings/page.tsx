@@ -60,12 +60,12 @@ export default function AccountSettingsPage() {
   };
 
   const handleVerifyEmail = async () => {
-    // Redirect to verify-email page if email exists
-    if (session?.user?.email && !session.user.email.includes("@user.travunited")) {
-      router.push(`/verify-email?email=${encodeURIComponent(session.user.email)}&redirect=${encodeURIComponent("/dashboard/settings")}`);
+    const email = newEmail || session?.user?.email;
+    if (email && !email.includes("@user.travunited")) {
+      router.push(`/verify-email?email=${encodeURIComponent(email)}&redirect=${encodeURIComponent("/dashboard/settings")}`);
       return;
     }
-    
+
     // If no email, show error
     setError("Please add your email address first.");
   };
@@ -82,9 +82,9 @@ export default function AccountSettingsPage() {
     }
 
     try {
-      const email = session?.user?.email;
+      const email = newEmail || session?.user?.email;
       if (!email || email.includes("@user.travunited")) {
-        setError("Invalid email address");
+        setError("Invalid email address. Please provide a real email.");
         setOtpLoading(false);
         return;
       }
@@ -119,9 +119,9 @@ export default function AccountSettingsPage() {
     setError("");
 
     try {
-      const email = session?.user?.email;
+      const email = newEmail || session?.user?.email;
       if (!email || email.includes("@user.travunited")) {
-        setError("Invalid email address");
+        setError("Invalid email address. Please provide a real email.");
         setResendLoading(false);
         return;
       }
@@ -207,13 +207,15 @@ export default function AccountSettingsPage() {
     setLoading(true);
 
     try {
+      const payload: any = { name: newName };
+      if (newEmail && newEmail.trim() !== "") {
+        payload.email = newEmail;
+      }
+
       const response = await fetch("/api/user/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newName,
-          email: newEmail,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -533,7 +535,7 @@ export default function AccountSettingsPage() {
                   >
                     <div>
                       <label className="block text-sm font-medium text-yellow-900 mb-1">
-                        Enter 6-digit OTP sent to {session?.user?.email}
+                        Enter 6-digit OTP sent to {newEmail || session?.user?.email}
                       </label>
                       <input
                         type="text"

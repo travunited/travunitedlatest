@@ -329,13 +329,12 @@ export default function ApplicationDetailPage() {
                     return (
                       <div
                         key={doc.id}
-                        className={`border rounded-lg p-4 ${
-                          doc.status === "REJECTED"
+                        className={`border rounded-lg p-4 ${doc.status === "REJECTED"
                             ? "border-red-200 bg-red-50"
                             : doc.status === "APPROVED"
-                            ? "border-green-200 bg-green-50"
-                            : "border-neutral-200"
-                        }`}
+                              ? "border-green-200 bg-green-50"
+                              : "border-neutral-200"
+                          }`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start space-x-3 flex-1">
@@ -371,13 +370,12 @@ export default function ApplicationDetailPage() {
                           </div>
                           <div className="flex items-center space-x-3 ml-4">
                             <span
-                              className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-                                doc.status === "APPROVED"
+                              className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${doc.status === "APPROVED"
                                   ? "bg-green-100 text-green-700"
                                   : doc.status === "REJECTED"
-                                  ? "bg-red-100 text-red-700"
-                                  : "bg-yellow-100 text-yellow-700"
-                              }`}
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-yellow-100 text-yellow-700"
+                                }`}
                             >
                               <StatusIcon size={14} />
                               <span>{doc.status}</span>
@@ -392,20 +390,20 @@ export default function ApplicationDetailPage() {
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (!file) return;
-                                    
+
                                     // Validate file size (20MB max - matching API limit)
                                     if (file.size > 20 * 1024 * 1024) {
                                       alert("File size must be less than 20MB");
                                       return;
                                     }
-                                    
+
                                     // Validate file type
                                     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
                                     if (!allowedTypes.includes(file.type)) {
                                       alert("Only JPG, PNG, and PDF files are allowed");
                                       return;
                                     }
-                                    
+
                                     handleDocumentReupload(doc.id, file);
                                     // Reset input so same file can be selected again if needed
                                     e.target.value = "";
@@ -460,9 +458,8 @@ export default function ApplicationDetailPage() {
                   Your visa has been approved. You can download it from the link below.
                 </p>
                 <a
-                  href={`/api/files?key=${encodeURIComponent(application.visaDocumentUrl)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href={`/api/files?key=${encodeURIComponent(application.visaDocumentUrl)}&filename=${encodeURIComponent(`visa-${application.country.toLowerCase().replace(/\s+/g, "-")}-${application.visaType.toLowerCase().replace(/\s+/g, "-")}.pdf`)}`}
+                  download={`visa-${application.country.toLowerCase().replace(/\s+/g, "-")}.pdf`}
                   className="inline-flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
                 >
                   <Download size={20} />
@@ -496,23 +493,23 @@ export default function ApplicationDetailPage() {
 
                       if (!response.ok) {
                         const error = await response.json();
-                        
+
                         // Handle case where payment is already completed
                         if (response.status === 409 && error.alreadyPaid) {
                           // Refresh application data to get updated status
                           await fetchApplication();
-                          
+
                           // Redirect to thank you page if provided
                           if (error.redirectUrl) {
                             router.push(error.redirectUrl);
                             return;
                           }
-                          
+
                           // Otherwise show success message
                           alert("Payment has already been completed for this application.");
                           return;
                         }
-                        
+
                         throw new Error(error.error || "Failed to create payment order");
                       }
 
@@ -569,7 +566,7 @@ export default function ApplicationDetailPage() {
                       };
 
                       const razorpay = new window.Razorpay(options);
-                      
+
                       razorpay.on("payment.failed", (response: any) => {
                         console.error("Payment failed:", response);
                         setPaymentLoading(false);
@@ -580,7 +577,7 @@ export default function ApplicationDetailPage() {
                       razorpay.open();
                     } catch (error: any) {
                       console.error("Payment error:", error);
-                      
+
                       // Check if error message indicates payment already completed
                       if (error.message && error.message.includes("already completed")) {
                         // Refresh application data to get updated status
@@ -589,7 +586,7 @@ export default function ApplicationDetailPage() {
                         alert("Payment has already been completed for this application. The page will refresh to show the updated status.");
                         return;
                       }
-                      
+
                       alert(`Unable to process payment: ${error.message || "Please try again."}`);
                       setPaymentLoading(false);
                     }
@@ -626,7 +623,7 @@ export default function ApplicationDetailPage() {
                             "Accept": "application/pdf",
                           },
                         });
-                        
+
                         if (!response.ok) {
                           let errorMessage = "Failed to download invoice";
                           try {
@@ -637,12 +634,12 @@ export default function ApplicationDetailPage() {
                           }
                           throw new Error(errorMessage);
                         }
-                        
+
                         const blob = await response.blob();
                         if (!blob || blob.size === 0) {
                           throw new Error("Received empty file");
                         }
-                        
+
                         const url = window.URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url;
@@ -653,8 +650,8 @@ export default function ApplicationDetailPage() {
                         document.body.removeChild(a);
                       } catch (error) {
                         console.error("Error downloading invoice:", error);
-                        const errorMessage = error instanceof Error 
-                          ? error.message 
+                        const errorMessage = error instanceof Error
+                          ? error.message
                           : "Network error. Please check your connection and try again.";
                         alert(`Failed to download invoice: ${errorMessage}`);
                       }
