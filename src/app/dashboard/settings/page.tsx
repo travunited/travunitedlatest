@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
 export default function AccountSettingsPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
   const [emailVerified, setEmailVerified] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -104,8 +104,12 @@ export default function AccountSettingsPage() {
         setShowOtpForm(false);
         setOtp("");
         setSuccess("Email verified successfully!");
-        // Refresh session to get updated verification status
-        router.refresh();
+        // Update session to reflect verified status if needed
+        await update();
+        await router.refresh();
+        setTimeout(() => {
+          checkEmailVerification();
+        }, 500);
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -230,6 +234,13 @@ export default function AccountSettingsPage() {
           setSuccess("Profile updated successfully!");
         }
         setIsEditingProfile(false);
+
+        // Update the session with new data
+        await update({
+          name: newName,
+          email: newEmail || session?.user?.email
+        });
+
         // Refresh session to show new data and check verification status
         await router.refresh();
         // Wait a bit for session to update, then check verification

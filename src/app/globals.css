@@ -96,6 +96,7 @@ a {
 
 /* Smooth scroll */
 html {
+  font-size: 13px;
   scroll-behavior: smooth;
 }
 
