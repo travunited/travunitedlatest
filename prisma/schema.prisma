@@ -785,6 +785,7 @@ enum UserRole {
 }
 
 enum VisaMode {
+  E_VISA
   EVISA
   STICKER
   VOA

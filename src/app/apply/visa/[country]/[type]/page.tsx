@@ -2313,7 +2313,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         const baseVisaTotalAmount = visaPrice * Math.max(formData.travellers?.length ?? 1, 1);
         const visaDiscountAmount = appliedPromoCode ? appliedPromoCode.discountAmount / 100 : 0; // Convert from paise to rupees
         const visaTotalAmount = Math.max(0, baseVisaTotalAmount - visaDiscountAmount);
-        const isVisaFreeEntry = visaInfo?.visaMode === "VISA_FREE_ENTRY";
+        const isVisaFreeEntry = visaInfo?.visaMode === "VISA_FREE_ENTRY" || visaInfo?.visaMode === "E_VISA";
         const isFreeVisa = visaTotalAmount <= 0 || isVisaFreeEntry;
 
         return (
@@ -2371,9 +2371,11 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                   {isFreeVisa ? (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
                       <p className="text-green-700 font-medium">
-                        {isVisaFreeEntry
+                        {visaInfo?.visaMode === "VISA_FREE_ENTRY"
                           ? "This is a Visa-Free Entry destination — no payment required. Submit your application for record-keeping and travel preparation assistance."
-                          : "This visa application is free — no payment required. Click Submit Application to complete your submission."
+                          : visaInfo?.visaMode === "E_VISA"
+                            ? "This is an E-VISA with payment to be made at a later stage or in person — no online payment required. Submit your application to proceed."
+                            : "This visa application is free — no payment required. Click Submit Application to complete your submission."
                         }
                       </p>
                     </div>
