@@ -607,9 +607,9 @@ export default function AccountSettingsPage() {
           </div>
         )}
 
-        {/* Danger Zone */}
+        {/* Thinking of Leaving? */}
         <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-          <h2 className="text-xl font-bold text-neutral-900 mb-2">Danger Zone</h2>
+          <h2 className="text-xl font-bold text-neutral-900 mb-2">Thinking of Leaving?</h2>
           <p className="text-sm text-neutral-600 mb-6">
             Once you delete your account, you will lose access to your dashboard and all your applications/bookings.
             This action cannot be undone.

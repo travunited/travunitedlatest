@@ -4,7 +4,11 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, CheckCircle, User, FileText, CreditCard, Calendar, Upload, X, Eye, FileCheck } from "lucide-react";
+import {
+  ArrowRight, ArrowLeft, Mail, Phone, User, Trash2, CheckCircle, AlertCircle,
+  Shield, Lock, Globe, Users, FileText, CreditCard, Tag, Info, Calendar,
+  MapPin, Briefcase, Upload, X, Eye, FileCheck
+} from "lucide-react";
 import Link from "next/link";
 import { saveDraftToLocalStorage, getDraftFromLocalStorage, clearDraftFromLocalStorage, VisaDraft } from "@/lib/localStorage";
 import { loadRazorpayScript } from "@/lib/razorpay-client";
@@ -1941,143 +1945,254 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         const totalAmount = Math.max(0, baseTotalAmount - discountAmount);
         return (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-4">Review & Confirm</h2>
-            <p className="text-neutral-600 mb-6">
-              Please review all information carefully. You can go back to edit any section.
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-neutral-900">Review & Confirm</h2>
+                <p className="text-neutral-500 mt-1">Please review all information carefully before proceeding to payment.</p>
+              </div>
+              <div className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-sm font-medium border border-primary-100 flex items-center gap-1.5">
+                <Info size={14} />
+                Step 5 of 7
+              </div>
+            </div>
 
-            <div className="space-y-4">
-              {/* Visa Details */}
-              <div className="bg-neutral-50 rounded-lg p-4">
-                <h3 className="font-semibold mb-2">Visa Details</h3>
-                <p>{visaName}</p>
-                <p className="text-sm text-neutral-600">{params.country.toUpperCase()}</p>
-                {formData.selectedSubTypeId && visaInfo?.subTypes && (
-                  <p className="text-sm text-neutral-600">
-                    Subtype: {visaInfo.subTypes.find(st => st.id === formData.selectedSubTypeId)?.label || "N/A"}
-                  </p>
-                )}
-                {formData.travelDate && (
-                  <p className="text-sm text-neutral-600">Travel Date: {formatDate(formData.travelDate)}</p>
-                )}
+            <div className="grid gap-6">
+              {/* Visa Details Card */}
+              <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden group hover:border-primary-300 transition-colors">
+                <div className="bg-neutral-50 px-5 py-3 border-b border-neutral-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center">
+                      <Globe size={18} />
+                    </div>
+                    <h3 className="font-semibold text-neutral-900">Visa Requirements</h3>
+                  </div>
+                  <span className="text-xs font-bold text-primary-600 uppercase tracking-wider bg-white px-2 py-1 rounded border border-primary-100">
+                    {params.country.toUpperCase()}
+                  </span>
+                </div>
+                <div className="p-5 grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1">Visa Type</div>
+                    <div className="text-neutral-900 font-medium">{visaName}</div>
+                  </div>
+                  {formData.selectedSubTypeId && visaInfo?.subTypes && (
+                    <div>
+                      <div className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1">Subcategory</div>
+                      <div className="text-neutral-900 font-medium">
+                        {visaInfo.subTypes.find(st => st.id === formData.selectedSubTypeId)?.label || "N/A"}
+                      </div>
+                    </div>
+                  )}
+                  {formData.travelDate && (
+                    <div>
+                      <div className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1 flex items-center gap-1">
+                        <Calendar size={12} /> Travel Date
+                      </div>
+                      <div className="text-neutral-900 font-medium">{formatDate(formData.travelDate)}</div>
+                    </div>
+                  )}
+                  {formData.tripType && (
+                    <div>
+                      <div className="text-xs text-neutral-500 uppercase tracking-wider font-semibold mb-1 flex items-center gap-1">
+                        <Briefcase size={12} /> Purpose
+                      </div>
+                      <div className="text-neutral-900 font-medium capitalize">{formData.tripType}</div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Primary Contact */}
-              <div className="bg-neutral-50 rounded-lg p-4">
-                <h3 className="font-semibold mb-2">Primary Contact</h3>
-                <p>{formData.primaryContact?.name}</p>
-                <p className="text-sm text-neutral-600">{formData.primaryContact?.email}</p>
-                {formData.primaryContact?.phone && (
-                  <p className="text-sm text-neutral-600">{formData.primaryContact.phone}</p>
-                )}
+              {/* Primary Contact Card */}
+              <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden group hover:border-primary-300 transition-colors">
+                <div className="bg-neutral-50 px-5 py-3 border-b border-neutral-200">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                      <User size={18} />
+                    </div>
+                    <h3 className="font-semibold text-neutral-900">Primary Contact</h3>
+                  </div>
+                </div>
+                <div className="p-5 grid sm:grid-cols-3 gap-6">
+                  <div>
+                    <div className="text-xs text-neutral-500 font-semibold mb-1">Full Name</div>
+                    <div className="text-neutral-900 font-medium">{formData.primaryContact?.name}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-neutral-500 font-semibold mb-1">Email Address</div>
+                    <div className="text-neutral-900 font-medium truncate">{formData.primaryContact?.email}</div>
+                  </div>
+                  {formData.primaryContact?.phone && (
+                    <div>
+                      <div className="text-xs text-neutral-500 font-semibold mb-1">Mobile Number</div>
+                      <div className="text-neutral-900 font-medium">{formData.primaryContact.phone}</div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Travellers */}
-              <div className="bg-neutral-50 rounded-lg p-4">
-                <h3 className="font-semibold mb-2">Travellers</h3>
-                <p className="text-sm text-neutral-600 mb-2">
-                  {(formData.travellers || []).length} traveller(s)
-                </p>
-                {(formData.travellers || []).map((t, i) => (
-                  <p key={t.id} className="text-sm">
-                    {i + 1}. {t.firstName} {t.lastName}
-                  </p>
-                ))}
-              </div>
-
-              {/* Documents */}
-              <div className="bg-neutral-50 rounded-lg p-4">
-                <h3 className="font-semibold mb-2">Documents</h3>
-                {documentSummary.length > 0 ? (
-                  <div className="space-y-2">
-                    {documentSummary.map((doc) => (
-                      <div
-                        key={doc.key}
-                        className="bg-white border border-neutral-200 rounded-lg px-3 py-2"
-                      >
-                        <div className="font-medium text-sm">
-                          {doc.requirement?.name || doc.fileName}
+              {/* Travellers Card */}
+              <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden group hover:border-primary-300 transition-colors">
+                <div className="bg-neutral-50 px-5 py-3 border-b border-neutral-200 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
+                      <Users size={18} />
+                    </div>
+                    <h3 className="font-semibold text-neutral-900">Travellers</h3>
+                  </div>
+                  <span className="bg-green-100 text-green-700 px-2.5 py-0.5 rounded-full text-xs font-bold border border-green-200">
+                    {(formData.travellers || []).length} Traveller(s)
+                  </span>
+                </div>
+                <div className="p-5">
+                  <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {(formData.travellers || []).map((t, i) => (
+                      <div key={t.id} className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg border border-neutral-100 group-hover:bg-white transition-all">
+                        <div className="w-8 h-8 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-xs font-bold text-neutral-500">
+                          {i + 1}
                         </div>
-                        <div className="text-xs text-neutral-500">
-                          {doc.category || "Supporting document"}
-                          {doc.travellerLabel ? ` • ${doc.travellerLabel}` : ""}
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-neutral-900 truncate">
+                            {t.firstName} {t.lastName}
+                          </div>
+                          <div className="text-[10px] text-neutral-500 uppercase font-bold tracking-tight">
+                            {t.passportNumber}
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-sm text-neutral-600">
-                    Upload requirement documents in Step 4 to speed up verification.
-                  </p>
-                )}
+                </div>
               </div>
 
-              {/* Promo Code */}
-              {session && (
-                <div className="bg-white rounded-lg p-4 border border-neutral-200">
-                  <PromoCodeInput
-                    onApply={async (code) => {
-                      const baseAmount = visaPrice * ((formData.travellers || []).length || 1);
-                      // Convert to paise for API (multiply by 100)
-                      const baseAmountInPaise = Math.round(baseAmount * 100);
-                      const response = await fetch("/api/promo-codes/validate", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          code,
-                          amount: baseAmountInPaise,
-                          type: "visa",
-                          visaId: visaInfo?.id,
-                          countryId: visaInfo?.country?.id,
-                        }),
-                      });
-
-                      const result = await response.json();
-
-                      if (result.valid && result.promoCode) {
-                        setAppliedPromoCode({
-                          id: result.promoCode.id,
-                          code: result.promoCode.code,
-                          discountAmount: result.discountAmount || 0, // Already in paise
-                          message: result.message,
-                        });
-                      }
-
-                      return result;
-                    }}
-                    appliedCode={appliedPromoCode ? {
-                      code: appliedPromoCode.code,
-                      discountAmount: appliedPromoCode.discountAmount / 100, // Convert to rupees for display
-                      message: appliedPromoCode.message,
-                    } : null}
-                    onRemove={() => setAppliedPromoCode(null)}
-                  />
+              {/* Documents Summary Card */}
+              <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden">
+                <div className="bg-neutral-50 px-5 py-3 border-b border-neutral-200">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
+                      <FileText size={18} />
+                    </div>
+                    <h3 className="font-semibold text-neutral-900">Supporting Documents</h3>
+                  </div>
                 </div>
-              )}
+                <div className="p-5">
+                  {documentSummary.length > 0 ? (
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      {documentSummary.map((doc) => (
+                        <div
+                          key={doc.key}
+                          className="flex items-center gap-3 p-3 bg-white border border-neutral-200 rounded-lg hover:border-primary-300 transition-colors group"
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-400 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
+                            <FileText size={20} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-sm text-neutral-900 truncate">
+                              {doc.requirement?.name || doc.fileName}
+                            </div>
+                            <div className="text-[10px] text-neutral-500 font-bold uppercase tracking-tight flex items-center gap-1">
+                              {doc.category || "General"} {doc.travellerLabel && <>• <span className="text-primary-600">{doc.travellerLabel}</span></>}
+                            </div>
+                          </div>
+                          <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center bg-neutral-50 rounded-xl border border-dashed border-neutral-300">
+                      <div className="w-12 h-12 rounded-full bg-white border border-neutral-200 flex items-center justify-center mx-auto mb-3 text-neutral-400">
+                        <FileText size={20} />
+                      </div>
+                      <h4 className="text-sm font-semibold text-neutral-900 mb-1">No Documents Uploaded Yet</h4>
+                      <p className="text-xs text-neutral-500">
+                        Upload in Step 7 to accelerate your visa verification process.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-              {/* Price */}
-              <div className="bg-primary-50 rounded-lg p-4 border border-primary-200">
-                {discountAmount > 0 && (
-                  <div className="mb-3 pb-3 border-b border-primary-200">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-neutral-700">Subtotal</span>
-                      <span className="text-neutral-900">₹{baseTotalAmount.toLocaleString()}</span>
+              {/* Pricing & Promo Code Section */}
+              <div className="grid md:grid-cols-2 gap-6 mt-2">
+                {/* Promo Code Card */}
+                {session && (
+                  <div className="bg-white rounded-xl border border-neutral-200 shadow-sm p-5 h-full">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Tag size={18} className="text-primary-600" />
+                      <h3 className="font-semibold text-neutral-900">Have a Promo Code?</h3>
                     </div>
-                    <div className="flex justify-between items-center text-sm mt-2">
-                      <span className="text-green-700">Discount ({appliedPromoCode?.code})</span>
-                      <span className="text-green-700 font-medium">-₹{discountAmount.toLocaleString()}</span>
-                    </div>
+                    <PromoCodeInput
+                      onApply={async (code) => {
+                        const baseAmount = visaPrice * ((formData.travellers || []).length || 1);
+                        const baseAmountInPaise = Math.round(baseAmount * 100);
+                        const response = await fetch("/api/promo-codes/validate", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            code,
+                            amount: baseAmountInPaise,
+                            type: "visa",
+                            visaId: visaInfo?.id,
+                            countryId: visaInfo?.country?.id,
+                          }),
+                        });
+
+                        const result = await response.json();
+
+                        if (result.valid && result.promoCode) {
+                          setAppliedPromoCode({
+                            id: result.promoCode.id,
+                            code: result.promoCode.code,
+                            discountAmount: result.discountAmount || 0,
+                            message: result.message,
+                          });
+                        }
+
+                        return result;
+                      }}
+                      appliedCode={appliedPromoCode ? {
+                        code: appliedPromoCode.code,
+                        discountAmount: appliedPromoCode.discountAmount / 100,
+                        message: appliedPromoCode.message,
+                      } : null}
+                      onRemove={() => setAppliedPromoCode(null)}
+                    />
                   </div>
                 )}
-                <div className="flex justify-between items-center mb-2">
-                  <span className="font-semibold text-neutral-900">Total Amount</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold text-primary-600">
-                      ₹{totalAmount.toLocaleString()}
-                    </span>
-                    <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-semibold rounded whitespace-nowrap">
-                      Taxes & charges included
-                    </span>
+
+                {/* Final Price Card */}
+                <div className="bg-primary-600 rounded-xl shadow-lg p-6 h-full text-white relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <CreditCard size={120} />
+                  </div>
+
+                  <h3 className="text-primary-200 font-bold uppercase tracking-widest text-[10px] mb-6 flex items-center gap-2">
+                    <CreditCard size={14} /> Payment Overview
+                  </h3>
+
+                  <div className="space-y-4 relative z-10">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-primary-100">Application Fee ({(formData.travellers || []).length} × ₹{visaPrice.toLocaleString()})</span>
+                      <span className="font-semibold">₹{baseTotalAmount.toLocaleString()}</span>
+                    </div>
+
+                    {discountAmount > 0 && (
+                      <div className="flex justify-between items-center text-sm py-3 border-y border-primary-500/30">
+                        <span className="text-primary-100">Promo Discount ({appliedPromoCode?.code})</span>
+                        <span className="text-green-300 font-bold">-₹{discountAmount.toLocaleString()}</span>
+                      </div>
+                    )}
+
+                    <div className="pt-2">
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <p className="text-primary-100 text-sm font-medium">Grand Total</p>
+                          <p className="text-[10px] text-primary-200 mt-0.5 italic">Includes GST & Processing fees</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-3xl font-black">₹{totalAmount.toLocaleString()}</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
