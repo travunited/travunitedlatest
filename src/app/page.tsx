@@ -14,7 +14,7 @@ export const revalidate = 60; // Revalidate every 60 seconds
 export default async function Home() {
   // Parallelize all database queries for better performance
   const [featuredVisasResult, featuredToursResult, featuredBlogsResult] = await Promise.allSettled([
-    // Fetch featured visas (max 6)
+    // Fetch featured visas (max 8)
     prisma.visa.findMany({
       where: {
         isActive: true,
@@ -45,7 +45,7 @@ export default async function Home() {
       orderBy: {
         updatedAt: "desc",
       },
-      take: 6,
+      take: 8,
     }),
     // Fetch featured tours (max 8)
     prisma.tour.findMany({
