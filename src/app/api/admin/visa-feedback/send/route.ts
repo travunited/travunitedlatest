@@ -86,7 +86,6 @@ export async function GET(req: Request) {
 
     // Filter applications that were approved 24+ hours ago by checking AuditLog
     // This is more reliable than using updatedAt which can change for other reasons
-    const eligibleApplications = [];
     
     // Get application IDs for bulk AuditLog query
     const applicationIds = approvedApplications.map(app => app.id);
