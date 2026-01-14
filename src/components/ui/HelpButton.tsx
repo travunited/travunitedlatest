@@ -23,7 +23,11 @@ export function HelpButton() {
         whileTap={{ scale: 0.95 }}
         aria-label="Chat on WhatsApp"
       >
-        <MessageCircle size={24} />
+        <img 
+          src="/Agent Travi.svg" 
+          alt="Agent Travi" 
+          className="w-6 h-6"
+        />
       </motion.button>
 
       {/* Help Modal */}
