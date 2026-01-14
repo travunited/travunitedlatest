@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 // GET - List all templates for a country
 export async function GET(
   req: Request,
-  { params }: { params: { countryId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -23,7 +23,7 @@ export async function GET(
 
     const templates = await prisma.documentTemplate.findMany({
       where: {
-        countryId: params.countryId,
+        countryId: params.id,
       },
       orderBy: {
         sortOrder: "asc",
@@ -59,7 +59,7 @@ export async function GET(
 // POST - Create a new template
 export async function POST(
   req: Request,
-  { params }: { params: { countryId: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -72,7 +72,7 @@ export async function POST(
 
     // Verify country exists
     const country = await prisma.country.findUnique({
-      where: { id: params.countryId },
+      where: { id: params.id },
     });
 
     if (!country) {
@@ -119,14 +119,14 @@ export async function POST(
     const buffer = Buffer.from(arrayBuffer);
     const timestamp = Date.now();
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const key = `templates/${params.countryId}/${timestamp}-${sanitizedFileName}`;
+    const key = `templates/${params.id}/${timestamp}-${sanitizedFileName}`;
 
     await uploadVisaDocument(key, buffer, file.type);
 
     // Create template record
     const template = await prisma.documentTemplate.create({
       data: {
-        countryId: params.countryId,
+        countryId: params.id,
         name,
         description: description || null,
         fileKey: key,

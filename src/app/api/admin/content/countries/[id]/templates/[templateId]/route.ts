@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // PUT - Update a template
 export async function PUT(
   req: Request,
-  { params }: { params: { countryId: string; templateId: string } }
+  { params }: { params: { id: string; templateId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -26,7 +26,7 @@ export async function PUT(
     const existingTemplate = await prisma.documentTemplate.findFirst({
       where: {
         id: params.templateId,
-        countryId: params.countryId,
+        countryId: params.id,
       },
     });
 
@@ -58,7 +58,7 @@ export async function PUT(
 // DELETE - Delete a template
 export async function DELETE(
   req: Request,
-  { params }: { params: { countryId: string; templateId: string } }
+  { params }: { params: { id: string; templateId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -73,7 +73,7 @@ export async function DELETE(
     const existingTemplate = await prisma.documentTemplate.findFirst({
       where: {
         id: params.templateId,
-        countryId: params.countryId,
+        countryId: params.id,
       },
     });
 
