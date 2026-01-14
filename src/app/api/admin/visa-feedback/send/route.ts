@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendVisaFeedbackEmail } from "@/lib/email";
+import { AuditAction, AuditEntityType } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
@@ -66,16 +67,10 @@ export async function GET(req: Request) {
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    // Find approved visas that:
-    // 1. Status is APPROVED
-    // 2. Updated at least 24 hours ago (when it was approved)
-    // 3. feedbackEmailSentAt is null (not sent yet)
-    const eligibleApplications = await prisma.application.findMany({
+    // Find approved visas that haven't received feedback emails yet
+    const approvedApplications = await prisma.application.findMany({
       where: {
         status: "APPROVED",
-        updatedAt: {
-          lte: twentyFourHoursAgo,
-        },
         feedbackEmailSentAt: null,
       },
       include: {
@@ -86,8 +81,80 @@ export async function GET(req: Request) {
           },
         },
       },
-      take: 50, // Process in batches to avoid overload
+      take: 100, // Get more candidates, we'll filter by approval time
     });
+
+    // Filter applications that were approved 24+ hours ago by checking AuditLog
+    // This is more reliable than using updatedAt which can change for other reasons
+    const eligibleApplications = [];
+    
+    // Get application IDs for bulk AuditLog query
+    const applicationIds = approvedApplications.map(app => app.id);
+    
+    // Query all relevant audit logs in bulk for better performance
+    const approvalLogs = await prisma.auditLog.findMany({
+      where: {
+        entityType: AuditEntityType.APPLICATION,
+        entityId: { in: applicationIds },
+        OR: [
+          { action: AuditAction.APPROVE },
+          { action: AuditAction.STATUS_CHANGE },
+        ],
+      },
+      orderBy: {
+        timestamp: "desc",
+      },
+    });
+
+    // Group logs by application ID to find the most recent approval for each
+    const logsByApplication = new Map<string, typeof approvalLogs>();
+    for (const log of approvalLogs) {
+      if (!log.entityId) continue;
+      if (!logsByApplication.has(log.entityId)) {
+        logsByApplication.set(log.entityId, []);
+      }
+      logsByApplication.get(log.entityId)!.push(log);
+    }
+
+    // Filter applications that were approved 24+ hours ago
+    const eligibleApplications = [];
+    
+    for (const application of approvedApplications) {
+      const logs = logsByApplication.get(application.id) || [];
+      
+      // Find the most recent approval log
+      let approvalLog = null;
+      for (const log of logs) {
+        let isApproval = false;
+        if (log.action === AuditAction.APPROVE) {
+          isApproval = true;
+        } else if (log.action === AuditAction.STATUS_CHANGE) {
+          // Check metadata to see if newStatus is APPROVED
+          const metadata = log.metadata as any;
+          if (metadata?.newStatus === "APPROVED") {
+            isApproval = true;
+          }
+        }
+        
+        if (isApproval) {
+          approvalLog = log;
+          break; // Found the most recent approval
+        }
+      }
+
+      // Determine approval time
+      const approvalTime = approvalLog?.timestamp || application.updatedAt;
+      
+      // Only include if approved 24+ hours ago
+      if (approvalTime <= twentyFourHoursAgo) {
+        eligibleApplications.push(application);
+      }
+      
+      // Limit to 50 to avoid overload
+      if (eligibleApplications.length >= 50) {
+        break;
+      }
+    }
 
     let sentCount = 0;
     let errorCount = 0;

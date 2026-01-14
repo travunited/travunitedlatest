@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "@e965/xlsx";
-import { generatePDF } from "@/lib/pdf-export";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +30,7 @@ export async function GET(req: NextRequest) {
     const countryIds = searchParams.getAll("countryIds");
     const status = searchParams.get("status");
     const format = searchParams.get("format");
+    const selectedColumns = searchParams.getAll("selectedColumns");
 
     // Build filters
     const where: any = {};
@@ -115,54 +115,8 @@ export async function GET(req: NextRequest) {
       : 0;
 
     // Export handling
-    if (format === "pdf") {
-      const headers = ["Reference", "Date", "Country", "Visa Type", "Travellers", "Status", "Assigned To", "Amount (INR)"];
-      const rows = filteredApplications.slice(0, 200).map((app: any) => {
-        const year = new Date(app.createdAt).getFullYear();
-        const refSuffix = app.id.slice(-5).toUpperCase();
-        const referenceNumber = `TRV-${year}-${refSuffix}`;
-
-        return [
-          referenceNumber,
-          app.createdAt.toISOString().split("T")[0],
-          app.Visa?.Country?.name || app.country || "N/A",
-          app.visaType || "N/A",
-          app.ApplicationTraveller.length,
-          app.status,
-          app.User_Application_processedByIdToUser?.name || app.User_Application_processedByIdToUser?.email || "Unassigned",
-          app.totalAmount,
-        ];
-      });
-
-      const pdfBuffer = await generatePDF({
-        title: "Visa Applications Summary Report",
-        filters: {
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-          country: countryIds.length > 0 ? countryIds.join(", ") : undefined,
-          status: status || undefined,
-        },
-        summary: {
-          "Total Applications": filteredApplications.length,
-          "Paid Applications": paidCount,
-          "Conversion Rate": `${conversionRate.toFixed(1)}%`,
-          "Total Revenue": `₹${totalRevenue.toLocaleString()}`,
-        },
-        headers,
-        rows,
-        maxRows: 200,
-      });
-
-      return new NextResponse(pdfBuffer as any, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename=visa-applications-${new Date().toISOString().split("T")[0]}.pdf`,
-        },
-      });
-    }
-
     if (format === "xlsx" || format === "csv") {
-      const exportData = filteredApplications.map((app: any) => {
+      const allExportData = filteredApplications.map((app: any) => {
         const year = new Date(app.createdAt).getFullYear();
         const refSuffix = app.id.slice(-5).toUpperCase();
         const referenceNumber = `TRV-${year}-${refSuffix}`;
@@ -183,6 +137,20 @@ export async function GET(req: NextRequest) {
           "Customer Email": app.User_Application_userIdToUser.email || "N/A",
         };
       });
+
+      // Filter columns if selectedColumns is provided
+      let exportData = allExportData;
+      if (selectedColumns.length > 0) {
+        exportData = allExportData.map((row: any) => {
+          const filteredRow: any = {};
+          selectedColumns.forEach((col) => {
+            if (row[col] !== undefined) {
+              filteredRow[col] = row[col];
+            }
+          });
+          return filteredRow;
+        });
+      }
 
       if (format === "xlsx") {
         const ws = XLSX.utils.json_to_sheet(exportData);

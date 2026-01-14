@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "@e965/xlsx";
-import { generatePDF } from "@/lib/pdf-export";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +29,7 @@ export async function GET(req: NextRequest) {
     const dateTo = searchParams.get("dateTo");
     const status = searchParams.get("status");
     const format = searchParams.get("format");
+    const selectedColumns = searchParams.getAll("selectedColumns");
 
     // Build filters
     const where: any = {};
@@ -100,52 +100,8 @@ export async function GET(req: NextRequest) {
     const avgGroupSize = bookings.length > 0 ? totalTravellers / bookings.length : 0;
 
     // Export handling
-    if (format === "pdf") {
-      const headers = ["Reference", "Date", "Tour Name", "Country", "Travellers", "Status", "Amount (INR)"];
-      const rows = bookings.slice(0, 200).map((booking: any) => {
-        const year = new Date(booking.createdAt).getFullYear();
-        const refSuffix = booking.id.slice(-5).toUpperCase();
-        const referenceNumber = `TRB-${year}-${refSuffix}`;
-
-        return [
-          referenceNumber,
-          booking.createdAt.toISOString().split("T")[0],
-          booking.tourName || booking.Tour?.name || "N/A",
-          booking.Tour?.Country?.name || "N/A",
-          booking.BookingTraveller.length,
-          booking.status,
-          booking.totalAmount,
-        ];
-      });
-
-      const pdfBuffer = await generatePDF({
-        title: "Tour Bookings Summary Report",
-        filters: {
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-          status: status || undefined,
-        },
-        summary: {
-          "Total Bookings": bookings.length,
-          "Paid Bookings": paidCount,
-          "Total Revenue": `₹${totalRevenue.toLocaleString()}`,
-          "Avg Booking Value": `₹${Math.round(avgBookingValue).toLocaleString()}`,
-        },
-        headers,
-        rows,
-        maxRows: 200,
-      });
-
-      return new NextResponse(pdfBuffer as any, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename=tour-bookings-${new Date().toISOString().split("T")[0]}.pdf`,
-        },
-      });
-    }
-
     if (format === "xlsx" || format === "csv") {
-      const exportData = bookings.map((booking: any) => {
+      const allExportData = bookings.map((booking: any) => {
         const year = new Date(booking.createdAt).getFullYear();
         const refSuffix = booking.id.slice(-5).toUpperCase();
         const referenceNumber = `TRB-${year}-${refSuffix}`;
@@ -166,6 +122,20 @@ export async function GET(req: NextRequest) {
           "Travel Date": booking.travelDate ? new Date(booking.travelDate).toISOString().split("T")[0] : "N/A",
         };
       });
+
+      // Filter columns if selectedColumns is provided
+      let exportData = allExportData;
+      if (selectedColumns.length > 0) {
+        exportData = allExportData.map((row: any) => {
+          const filteredRow: any = {};
+          selectedColumns.forEach((col) => {
+            if (row[col] !== undefined) {
+              filteredRow[col] = row[col];
+            }
+          });
+          return filteredRow;
+        });
+      }
 
       if (format === "xlsx") {
         const ws = XLSX.utils.json_to_sheet(exportData);

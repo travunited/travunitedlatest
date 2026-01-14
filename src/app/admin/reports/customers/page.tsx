@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Download, FileDown, Users, DollarSign, FileText, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ReportFilterBar, ReportFilters } from "@/components/admin/ReportFilterBar";
+import { ColumnSelector } from "@/components/admin/ColumnSelector";
 import { buildExportUrl } from "@/lib/report-export";
 import { formatDate } from "@/lib/dateFormat";
 
@@ -36,6 +37,23 @@ export default function CustomerReportPage() {
   });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Define available columns for export
+  const availableColumns = [
+    { key: "Name", label: "Name" },
+    { key: "Email", label: "Email" },
+    { key: "Phone", label: "Phone" },
+    { key: "Visa Applications", label: "Visa Applications" },
+    { key: "Tour Bookings", label: "Tour Bookings" },
+    { key: "Total Lifetime Revenue (INR)", label: "Total Lifetime Revenue (INR)" },
+    { key: "Signup Date", label: "Signup Date" },
+    { key: "Last Activity", label: "Last Activity" },
+  ];
+
+  // Initialize selected columns with all columns
+  const [selectedColumns, setSelectedColumns] = useState<string[]>(
+    availableColumns.map((col) => col.key)
+  );
 
   // Memoize filter values to prevent infinite re-renders
   const dateFrom = filters.dateFrom;
@@ -97,7 +115,15 @@ export default function CustomerReportPage() {
 
   const handleExport = async (format: "xlsx" | "csv") => {
     try {
-      const url = buildExportUrl("/api/admin/reports/customers", filters, format);
+      if (selectedColumns.length === 0) {
+        alert("Please select at least one column to export.");
+        return;
+      }
+      const exportFilters = {
+        ...filters,
+        selectedColumns,
+      };
+      const url = buildExportUrl("/api/admin/reports/customers", exportFilters, format);
       // For CSV/XLSX, open in new tab (works for these formats)
       window.open(url, "_blank");
     } catch (error) {
@@ -136,7 +162,7 @@ export default function CustomerReportPage() {
         />
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
           <button
             onClick={() => fetchReport(true)}
             disabled={refreshing || loading}
@@ -145,16 +171,24 @@ export default function CustomerReportPage() {
             <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
             {refreshing ? "Refreshing..." : "Refresh"}
           </button>
+          <ColumnSelector
+            columns={availableColumns}
+            selectedColumns={selectedColumns}
+            onSelectionChange={setSelectedColumns}
+            label="Export Columns"
+          />
           <button
             onClick={() => handleExport("xlsx")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
+            disabled={selectedColumns.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
           >
             <FileDown size={16} />
             Export Excel
           </button>
           <button
             onClick={() => handleExport("csv")}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+            disabled={selectedColumns.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
           >
             <Download size={16} />
             Export CSV

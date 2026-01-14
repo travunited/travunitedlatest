@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "@e965/xlsx";
-import { generatePDF } from "@/lib/pdf-export";
 
 export const dynamic = "force-dynamic";
 
@@ -131,41 +130,6 @@ export async function GET(req: NextRequest) {
     }).sort((a, b) => b.totalApplications - a.totalApplications);
 
     // Export handling
-    if (format === "pdf") {
-      const headers = ["Country", "Applications", "Paid", "Revenue (INR)", "Avg Ticket Size (INR)", "Approval Rate (%)"];
-      const rows = countryData.map((c) => [
-        c.countryName,
-        c.totalApplications,
-        c.paidApplications,
-        c.totalRevenue,
-        Math.round(c.avgTicketSize),
-        c.approvalRate.toFixed(1),
-      ]);
-
-      const pdfBuffer = await generatePDF({
-        title: "Country-wise Visa Report",
-        filters: {
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-          country: countryIds.length > 0 ? countryIds.join(", ") : undefined,
-        },
-        summary: {
-          "Total Countries": countryData.length,
-          "Total Applications": countryData.reduce((sum, c) => sum + c.totalApplications, 0),
-          "Total Revenue": `₹${countryData.reduce((sum, c) => sum + c.totalRevenue, 0).toLocaleString()}`,
-        },
-        headers,
-        rows,
-      });
-
-      return new NextResponse(pdfBuffer as any, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename=visas-by-country-${new Date().toISOString().split("T")[0]}.pdf`,
-        },
-      });
-    }
-
     if (format === "xlsx" || format === "csv") {
       const exportData = countryData.map((country) => ({
         "Country": country.countryName,

@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "@e965/xlsx";
-import { generatePDF } from "@/lib/pdf-export";
 
 export const dynamic = "force-dynamic";
 
@@ -112,57 +111,6 @@ export async function GET(req: NextRequest) {
     const dailyData = Object.values(dailySummary).sort((a, b) => a.date.localeCompare(b.date));
 
     // Export handling
-    if (format === "pdf") {
-      try {
-        const headers = ["Date", "Transactions", "Visa Revenue (INR)", "Tour Revenue (INR)", "Total Revenue (INR)"];
-        const rows = dailyData.map((day) => [
-          day.date,
-          day.transactionCount,
-          day.visaRevenue,
-          day.tourRevenue,
-          day.totalRevenue,
-        ]);
-
-        const pdfBuffer = await generatePDF({
-          title: "Revenue Summary Report",
-          filters: {
-            dateFrom: dateFrom || undefined,
-            dateTo: dateTo || undefined,
-          },
-          summary: {
-            "Total Revenue": `₹${totalRevenue.toLocaleString()}`,
-            "Visa Revenue": `₹${visaRevenue.toLocaleString()}`,
-            "Tour Revenue": `₹${tourRevenue.toLocaleString()}`,
-            "Total Transactions": payments.length,
-          },
-          headers,
-          rows,
-        });
-
-        if (!pdfBuffer || pdfBuffer.length === 0) {
-          throw new Error("PDF buffer is empty");
-        }
-
-        return new NextResponse(pdfBuffer as any, {
-          headers: {
-            "Content-Type": "application/pdf",
-            "Content-Disposition": `attachment; filename=revenue-summary-${new Date().toISOString().split("T")[0]}.pdf`,
-          },
-        });
-      } catch (pdfError) {
-        console.error("Error generating PDF:", pdfError);
-        console.error("PDF error details:", pdfError instanceof Error ? pdfError.message : String(pdfError));
-        console.error("PDF error stack:", pdfError instanceof Error ? pdfError.stack : undefined);
-        return NextResponse.json(
-          {
-            error: "Failed to generate PDF",
-            message: pdfError instanceof Error ? pdfError.message : "Unknown error occurred during PDF generation"
-          },
-          { status: 500 }
-        );
-      }
-    }
-
     if (format === "xlsx" || format === "csv") {
       const exportData = dailyData.map((day) => ({
         Date: day.date,

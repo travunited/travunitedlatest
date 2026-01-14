@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/dateFormat";
 interface PaymentRow {
   id: string;
   date: string;
+  razorpayTransactionTime: string | null;
   paymentId: string | null;
   orderId: string | null;
   applicationId: string | null;
@@ -265,6 +266,7 @@ export default function PaymentsReportPage() {
                 <thead className="bg-neutral-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date & Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Razorpay Transaction Time</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Payment ID</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Type</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Customer</th>
@@ -277,6 +279,9 @@ export default function PaymentsReportPage() {
                     <tr key={payment.id} className="hover:bg-neutral-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900" suppressHydrationWarning>
                         {formatDate(payment.date)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600" suppressHydrationWarning>
+                        {payment.razorpayTransactionTime ? formatDate(payment.razorpayTransactionTime) : "N/A"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-600">
                         {payment.paymentId?.slice(0, 20) || "N/A"}

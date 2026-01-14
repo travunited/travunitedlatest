@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "@e965/xlsx";
-import { generatePDF } from "@/lib/pdf-export";
 
 export const dynamic = "force-dynamic";
 
@@ -72,42 +71,6 @@ export async function GET(req: NextRequest) {
     });
 
     // Export handling
-    if (format === "pdf") {
-      const headers = ["Timestamp", "Actor", "Action", "Entity Type", "Entity ID", "Description"];
-      const rows = auditLogs.slice(0, 500).map((log: any) => [
-        log.timestamp.toISOString(),
-        log.User?.name || log.User?.email || "System",
-        log.action,
-        log.entityType,
-        log.entityId || "N/A",
-        log.description.substring(0, 100), // Truncate long descriptions
-      ]);
-
-      const pdfBuffer = await generatePDF({
-        title: "Audit Log Export",
-        filters: {
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-          admin: adminId || undefined,
-          actionType: actionType || undefined,
-        },
-        summary: {
-          "Total Logs": auditLogs.length,
-          "By Admin": adminId ? "Filtered" : "All",
-        },
-        headers,
-        rows,
-        maxRows: 500,
-      });
-
-      return new NextResponse(pdfBuffer as any, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename=audit-log-${new Date().toISOString().split("T")[0]}.pdf`,
-        },
-      });
-    }
-
     if (format === "xlsx" || format === "csv") {
       const exportData = auditLogs.map((log: any) => ({
         "Timestamp": log.timestamp.toISOString(),

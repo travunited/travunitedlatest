@@ -4,7 +4,6 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Prisma, CorporateLeadStatus } from "@prisma/client";
 import * as XLSX from "@e965/xlsx";
-import { generatePDF } from "@/lib/pdf-export";
 
 export const dynamic = "force-dynamic";
 
@@ -74,59 +73,6 @@ export async function GET(req: NextRequest) {
     });
 
     // Export handling
-    if (format === "pdf") {
-      try {
-        const headers = ["Company Name", "Contact Person", "Email", "Phone", "Status", "Created Date"];
-        const rows = leads.map((lead) => [
-          lead.companyName,
-          lead.contactName,
-          lead.email,
-          lead.phone || "N/A",
-          lead.status,
-          lead.createdAt.toISOString().split("T")[0],
-        ]);
-
-        const pdfBuffer = await generatePDF({
-          title: "Corporate Leads Report",
-          filters: {
-            dateFrom: dateFrom || undefined,
-            dateTo: dateTo || undefined,
-            status: status || undefined,
-          },
-          summary: {
-            "Total Leads": leads.length,
-            "New": leads.filter((l) => l.status === "NEW").length,
-            "Converted": leads.filter((l) => l.status === "WON").length,
-          },
-          headers,
-          rows,
-        });
-
-        if (!pdfBuffer || pdfBuffer.length === 0) {
-          return NextResponse.json(
-            { error: "Failed to generate PDF: Generated PDF buffer is empty" },
-            { status: 500 }
-          );
-        }
-
-        return new NextResponse(pdfBuffer as any, {
-          headers: {
-            "Content-Type": "application/pdf",
-            "Content-Disposition": `attachment; filename=corporate-leads-${new Date().toISOString().split("T")[0]}.pdf`,
-          },
-        });
-      } catch (pdfError) {
-        console.error("PDF generation error:", pdfError);
-        return NextResponse.json(
-          { 
-            error: "Failed to generate PDF", 
-            details: pdfError instanceof Error ? pdfError.message : String(pdfError)
-          },
-          { status: 500 }
-        );
-      }
-    }
-
     if (format === "xlsx" || format === "csv") {
       const exportData = leads.map((lead) => ({
         "Company Name": lead.companyName,

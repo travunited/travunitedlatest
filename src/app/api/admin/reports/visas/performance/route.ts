@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "@e965/xlsx";
-import { generatePDF } from "@/lib/pdf-export";
 
 export const dynamic = "force-dynamic";
 
@@ -207,43 +206,6 @@ export async function GET(req: NextRequest) {
     }
 
     // Export handling
-    if (format === "pdf") {
-      const headers = ["Visa Type", "Country", "Applications", "Paid", "Revenue (INR)", "Avg Travellers", "Approval Rate (%)", "Refund Rate (%)"];
-      const rows = visaTypeData.map((v) => [
-        v.visaName,
-        v.countryName,
-        v.totalApplications,
-        v.paidApplications,
-        v.totalRevenue,
-        v.avgTravellers.toFixed(1),
-        v.approvalRate.toFixed(1),
-        v.refundRate.toFixed(1),
-      ]);
-
-      const pdfBuffer = await generatePDF({
-        title: "Visa Type Performance Report",
-        filters: {
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-          country: countryIds.length > 0 ? countryIds.join(", ") : undefined,
-        },
-        summary: {
-          "Total Visa Types": visaTypeData.length,
-          "Total Applications": visaTypeData.reduce((sum, v) => sum + v.totalApplications, 0),
-          "Total Revenue": `₹${visaTypeData.reduce((sum, v) => sum + v.totalRevenue, 0).toLocaleString()}`,
-        },
-        headers,
-        rows,
-      });
-
-      return new NextResponse(pdfBuffer as any, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename=visa-type-performance-${new Date().toISOString().split("T")[0]}.pdf`,
-        },
-      });
-    }
-
     if (format === "xlsx" || format === "csv") {
       const exportData = visaTypeData.map((visa) => ({
         "Visa Type": visa.visaName,

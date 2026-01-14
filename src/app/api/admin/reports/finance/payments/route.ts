@@ -3,9 +3,29 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "@e965/xlsx";
-import { generatePDF } from "@/lib/pdf-export";
+import { ensureRazorpayClient } from "@/lib/razorpay-server";
 
 export const dynamic = "force-dynamic";
+
+// Helper function to fetch Razorpay payment transaction time
+async function fetchRazorpayTransactionTime(razorpayPaymentId: string | null): Promise<string | null> {
+  if (!razorpayPaymentId) {
+    return null;
+  }
+
+  try {
+    const razorpay = ensureRazorpayClient();
+    const razorpayPayment = await razorpay.payments.fetch(razorpayPaymentId);
+    // Razorpay returns created_at as a Unix timestamp
+    if (razorpayPayment.created_at) {
+      return new Date(razorpayPayment.created_at * 1000).toISOString();
+    }
+    return null;
+  } catch (error) {
+    console.error(`Error fetching Razorpay transaction time for payment ${razorpayPaymentId}:`, error);
+    return null;
+  }
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -88,60 +108,33 @@ export async function GET(req: NextRequest) {
       filteredPayments = payments.filter((p) => p.bookingId);
     }
 
+    // Fetch Razorpay transaction times for payments with razorpayPaymentId
+    const paymentsWithTransactionTime = await Promise.all(
+      filteredPayments.map(async (payment: any) => {
+        const razorpayTransactionTime = await fetchRazorpayTransactionTime(payment.razorpayPaymentId);
+        return {
+          ...payment,
+          razorpayTransactionTime,
+        };
+      })
+    );
+
     // Calculate summary
     const summary = {
-      totalTransactions: filteredPayments.length,
-      successfulTransactions: filteredPayments.filter((p) => p.status === "COMPLETED").length,
-      failedTransactions: filteredPayments.filter((p) => p.status === "FAILED").length,
-      refundedTransactions: filteredPayments.filter((p) => p.status === "REFUNDED").length,
-      totalAmount: filteredPayments.filter((p) => p.status === "COMPLETED").reduce((sum, p) => sum + p.amount, 0),
-      visaAmount: filteredPayments.filter((p) => p.applicationId && p.status === "COMPLETED").reduce((sum, p) => sum + p.amount, 0),
-      tourAmount: filteredPayments.filter((p) => p.bookingId && p.status === "COMPLETED").reduce((sum, p) => sum + p.amount, 0),
+      totalTransactions: paymentsWithTransactionTime.length,
+      successfulTransactions: paymentsWithTransactionTime.filter((p) => p.status === "COMPLETED").length,
+      failedTransactions: paymentsWithTransactionTime.filter((p) => p.status === "FAILED").length,
+      refundedTransactions: paymentsWithTransactionTime.filter((p) => p.status === "REFUNDED").length,
+      totalAmount: paymentsWithTransactionTime.filter((p) => p.status === "COMPLETED").reduce((sum, p) => sum + p.amount, 0),
+      visaAmount: paymentsWithTransactionTime.filter((p) => p.applicationId && p.status === "COMPLETED").reduce((sum, p) => sum + p.amount, 0),
+      tourAmount: paymentsWithTransactionTime.filter((p) => p.bookingId && p.status === "COMPLETED").reduce((sum, p) => sum + p.amount, 0),
     };
 
     // Export handling
-    if (format === "pdf") {
-      const headers = ["Date & Time", "Payment ID", "Type", "Customer", "Status", "Amount (INR)"];
-      const rows = filteredPayments.slice(0, 200).map((payment: any) => [
-        payment.createdAt.toISOString(),
-        payment.razorpayPaymentId?.slice(0, 20) || "N/A",
-        payment.applicationId ? "Visa" : payment.bookingId ? "Tour" : "N/A",
-        payment.User.name || payment.User.email || "Customer",
-        payment.status,
-        payment.amount,
-      ]);
-
-      const pdfBuffer = await generatePDF({
-        title: "Payments & Refunds Report",
-        filters: {
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-          status: status || undefined,
-          type: type || undefined,
-        },
-        summary: {
-          "Total Transactions": summary.totalTransactions,
-          "Successful": summary.successfulTransactions,
-          "Failed": summary.failedTransactions,
-          "Refunded": summary.refundedTransactions,
-          "Total Amount": `₹${summary.totalAmount.toLocaleString()}`,
-        },
-        headers,
-        rows,
-        maxRows: 200,
-      });
-
-      return new NextResponse(pdfBuffer as any, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename=payments-report-${new Date().toISOString().split("T")[0]}.pdf`,
-        },
-      });
-    }
-
     if (format === "xlsx" || format === "csv") {
-      const exportData = filteredPayments.map((payment: any) => ({
+      const exportData = paymentsWithTransactionTime.map((payment: any) => ({
         "Date & Time": payment.createdAt.toISOString(),
+        "Razorpay Transaction Time": payment.razorpayTransactionTime || "N/A",
         "Payment ID": payment.razorpayPaymentId || "N/A",
         "Order ID": payment.razorpayOrderId || "N/A",
         "Application/Booking ID": payment.applicationId || payment.bookingId || "N/A",
@@ -191,13 +184,14 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const start = (page - 1) * limit;
     const end = start + limit;
-    const paginatedPayments = filteredPayments.slice(start, end);
+    const paginatedPayments = paymentsWithTransactionTime.slice(start, end);
 
     return NextResponse.json({
       summary,
       rows: paginatedPayments.map((p: any) => ({
         id: p.id,
         date: p.createdAt,
+        razorpayTransactionTime: p.razorpayTransactionTime,
         paymentId: p.razorpayPaymentId,
         orderId: p.razorpayOrderId,
         applicationId: p.applicationId,
@@ -215,8 +209,8 @@ export async function GET(req: NextRequest) {
       pagination: {
         page,
         limit,
-        total: filteredPayments.length,
-        totalPages: Math.ceil(filteredPayments.length / limit),
+        total: paymentsWithTransactionTime.length,
+        totalPages: Math.ceil(paymentsWithTransactionTime.length / limit),
       },
     });
   } catch (error) {

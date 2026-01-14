@@ -7,6 +7,7 @@ import { Download, FileDown, Calendar, TrendingUp, Users, FileText, RefreshCw } 
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ReportFilterBar, ReportFilters } from "@/components/admin/ReportFilterBar";
 import { ReportSkeleton } from "@/components/admin/ReportSkeleton";
+import { ColumnSelector } from "@/components/admin/ColumnSelector";
 import { buildExportUrl } from "@/lib/report-export";
 import { formatDate } from "@/lib/dateFormat";
 
@@ -50,6 +51,28 @@ export default function TourBookingsReportPage() {
   });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Define available columns for export
+  const availableColumns = [
+    { key: "Booking ID", label: "Booking ID" },
+    { key: "Reference Number", label: "Reference Number" },
+    { key: "Date", label: "Date" },
+    { key: "Tour Name", label: "Tour Name" },
+    { key: "Country", label: "Country" },
+    { key: "Number of Travellers", label: "Number of Travellers" },
+    { key: "Status", label: "Status" },
+    { key: "Payment Status", label: "Payment Status" },
+    { key: "Total Amount (INR)", label: "Total Amount (INR)" },
+    { key: "Amount Paid (INR)", label: "Amount Paid (INR)" },
+    { key: "Customer Name", label: "Customer Name" },
+    { key: "Customer Email", label: "Customer Email" },
+    { key: "Travel Date", label: "Travel Date" },
+  ];
+
+  // Initialize selected columns with all columns
+  const [selectedColumns, setSelectedColumns] = useState<string[]>(
+    availableColumns.map((col) => col.key)
+  );
 
   // Memoize filter values to prevent infinite re-renders
   const dateFrom = useMemo(() => filters.dateFrom, [filters.dateFrom]);
@@ -141,7 +164,15 @@ export default function TourBookingsReportPage() {
 
   const handleExport = async (format: "xlsx" | "csv") => {
     try {
-      const url = buildExportUrl("/api/admin/reports/tours/summary", filters, format);
+      if (selectedColumns.length === 0) {
+        alert("Please select at least one column to export.");
+        return;
+      }
+      const exportFilters = {
+        ...filters,
+        selectedColumns,
+      };
+      const url = buildExportUrl("/api/admin/reports/tours/summary", exportFilters, format);
       // For CSV/XLSX, open in new tab (works for these formats)
       window.open(url, "_blank");
     } catch (error) {
@@ -198,7 +229,7 @@ export default function TourBookingsReportPage() {
         />
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
           <button
             onClick={() => fetchReport(true)}
             disabled={refreshing || loading}
@@ -207,9 +238,15 @@ export default function TourBookingsReportPage() {
             <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
             {refreshing ? "Refreshing..." : "Refresh"}
           </button>
+          <ColumnSelector
+            columns={availableColumns}
+            selectedColumns={selectedColumns}
+            onSelectionChange={setSelectedColumns}
+            label="Export Columns"
+          />
           <button
             onClick={() => handleExport("xlsx")}
-            disabled={loading}
+            disabled={loading || selectedColumns.length === 0}
             className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
           >
             <FileDown size={16} />
@@ -217,7 +254,7 @@ export default function TourBookingsReportPage() {
           </button>
           <button
             onClick={() => handleExport("csv")}
-            disabled={loading}
+            disabled={loading || selectedColumns.length === 0}
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
           >
             <Download size={16} />

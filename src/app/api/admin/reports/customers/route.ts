@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "@e965/xlsx";
-import { generatePDF } from "@/lib/pdf-export";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +30,7 @@ export async function GET(req: NextRequest) {
     const minBookings = searchParams.get("minBookings");
     const minLifetimeValue = searchParams.get("minLifetimeValue");
     const format = searchParams.get("format");
+    const selectedColumns = searchParams.getAll("selectedColumns");
 
     // Get all customers with their applications and bookings
     const users = await prisma.user.findMany({
@@ -131,46 +131,8 @@ export async function GET(req: NextRequest) {
     filteredCustomers.sort((a, b) => b.totalLifetimeRevenue - a.totalLifetimeRevenue);
 
     // Export handling
-    if (format === "pdf") {
-      const headers = ["Name", "Email", "Phone", "Visa Apps", "Tour Bookings", "Lifetime Revenue (INR)", "Signup Date", "Last Activity"];
-      const rows = filteredCustomers.slice(0, 100).map((c) => [
-        c.name,
-        c.email || "N/A",
-        c.phone,
-        c.visaApplications,
-        c.tourBookings,
-        c.totalLifetimeRevenue,
-        c.createdAt.toISOString().split("T")[0],
-        c.lastActivity.toISOString().split("T")[0],
-      ]);
-
-      const pdfBuffer = await generatePDF({
-        title: "Customer Report",
-        filters: {
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-          minBookings: minBookings || undefined,
-          minLifetimeValue: minLifetimeValue || undefined,
-        },
-        summary: {
-          "Total Customers": filteredCustomers.length,
-          "Total Lifetime Revenue": `₹${filteredCustomers.reduce((sum, c) => sum + c.totalLifetimeRevenue, 0).toLocaleString()}`,
-        },
-        headers,
-        rows,
-        maxRows: 100,
-      });
-
-      return new NextResponse(pdfBuffer as any, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename=customer-report-${new Date().toISOString().split("T")[0]}.pdf`,
-        },
-      });
-    }
-
     if (format === "xlsx" || format === "csv") {
-      const exportData = filteredCustomers.map((customer) => ({
+      const allExportData = filteredCustomers.map((customer) => ({
         "Name": customer.name,
         "Email": customer.email || "N/A",
         "Phone": customer.phone,
@@ -180,6 +142,20 @@ export async function GET(req: NextRequest) {
         "Signup Date": customer.createdAt.toISOString().split("T")[0],
         "Last Activity": customer.lastActivity.toISOString().split("T")[0],
       }));
+
+      // Filter columns if selectedColumns is provided
+      let exportData = allExportData;
+      if (selectedColumns.length > 0) {
+        exportData = allExportData.map((row: any) => {
+          const filteredRow: any = {};
+          selectedColumns.forEach((col) => {
+            if (row[col] !== undefined) {
+              filteredRow[col] = row[col];
+            }
+          });
+          return filteredRow;
+        });
+      }
 
       if (format === "xlsx") {
         const ws = XLSX.utils.json_to_sheet(exportData);

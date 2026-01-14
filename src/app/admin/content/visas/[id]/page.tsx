@@ -92,6 +92,7 @@ const ENTRY_TYPE_OPTIONS = [
 const VISA_MODE_OPTIONS = [
   { value: "", label: "Not specified" },
   { value: "EVISA", label: "eVisa" },
+  { value: "E_VISA", label: "E-VISA" },
   { value: "STICKER", label: "Sticker" },
   { value: "VOA", label: "Visa on Arrival (VOA)" },
   { value: "VFS", label: "VFS Appointment" },

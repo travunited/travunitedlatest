@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, ArrowLeft, Mail, Phone, User, Trash2, CheckCircle, AlertCircle,
   Shield, Lock, Globe, Users, FileText, CreditCard, Tag, Info, Calendar,
-  MapPin, Briefcase, Upload, X, Eye, FileCheck
+  MapPin, Briefcase, Upload, X, Eye, FileCheck, Download
 } from "lucide-react";
 import Link from "next/link";
 import { saveDraftToLocalStorage, getDraftFromLocalStorage, clearDraftFromLocalStorage, VisaDraft } from "@/lib/localStorage";
@@ -107,6 +107,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     message?: string;
   } | null>(null);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
 
   const isFreeVisa = visaInfo?.priceInInr === 0;
 
@@ -289,6 +291,22 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           visaType: data.slug || params.type,
           visaId: data.id,
         }));
+
+        // Fetch templates for this country
+        if (data.country?.code) {
+          setTemplatesLoading(true);
+          try {
+            const templatesResponse = await fetch(`/api/countries/${data.country.code}/templates`);
+            if (templatesResponse.ok) {
+              const templatesData = await templatesResponse.json();
+              setTemplates(templatesData);
+            }
+          } catch (error) {
+            console.error("Failed to fetch templates:", error);
+          } finally {
+            setTemplatesLoading(false);
+          }
+        }
       } catch (error) {
         console.error("Failed to load visa:", error);
         if (isMounted && !redirecting) {
@@ -1296,8 +1314,48 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     const discountAmountInRupees = discountAmountInPaise / 100;
     const totalAmount = Math.max(0, baseTotalAmount - discountAmountInRupees);
 
+    // Check if this is E_VISA mode - skip payment gateway entirely
+    const isEVisaMode = visaInfo?.visaMode === "E_VISA";
+    const isVisaFreeEntry = visaInfo?.visaMode === "VISA_FREE_ENTRY";
+    const shouldSkipPayment = isEVisaMode || isVisaFreeEntry || totalAmount <= 0;
+
     setLoading(true);
     try {
+      // For E_VISA and VISA_FREE_ENTRY, create a free payment record and skip gateway
+      if (shouldSkipPayment) {
+        const response = await fetch("/api/payments/create-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            amount: 0, // Force 0 amount for E_VISA and VISA_FREE_ENTRY
+            applicationId: draftId,
+            promoCodeId: appliedPromoCode?.id,
+            discountAmount: discountAmountInPaise > 0 ? discountAmountInPaise : undefined,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          // Handle already paid case - redirect to thank you page
+          if (error.alreadyPaid && error.redirectUrl) {
+            setLoading(false);
+            setPaymentCompleted(true);
+            router.push(error.redirectUrl);
+            return;
+          }
+          throw new Error(error.error || "Unable to process application.");
+        }
+
+        const responseData = await response.json();
+
+        // Move to documents step
+        setLoading(false);
+        setPaymentCompleted(true);
+        setCurrentStep(7);
+        return;
+      }
+
+      // Normal payment flow for other visa modes
       const response = await fetch("/api/payments/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -2513,6 +2571,55 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+              )}
+
+              {/* Download Templates Section */}
+              {templates.length > 0 && (
+                <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+                  <h3 className="font-semibold text-lg mb-4 text-neutral-900 flex items-center gap-2">
+                    <FileText size={20} className="text-primary-600" />
+                    Download Templates
+                  </h3>
+                  <p className="text-sm text-neutral-600 mb-4">
+                    Download sample document templates to help you prepare your application.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {templates.map((template: any) => (
+                      <div
+                        key={template.id}
+                        className="bg-white border border-neutral-200 rounded-lg p-4 hover:border-primary-300 hover:bg-primary-50/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <FileText size={16} className="text-primary-600" />
+                              <h4 className="font-medium text-neutral-900 text-sm">{template.name}</h4>
+                            </div>
+                            {template.description && (
+                              <p className="text-xs text-neutral-600 mt-1">{template.description}</p>
+                            )}
+                            <div className="flex items-center gap-2 mt-2 text-xs text-neutral-500">
+                              <span>{template.fileName}</span>
+                              {template.fileSize && (
+                                <span>{(template.fileSize / 1024).toFixed(1)} KB</span>
+                              )}
+                            </div>
+                          </div>
+                          {template.downloadUrl && (
+                            <a
+                              href={template.downloadUrl}
+                              download={template.fileName}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-600 text-white text-xs font-medium rounded-lg hover:bg-primary-700 transition-colors flex-shrink-0"
+                            >
+                              <Download size={12} />
+                              Download
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

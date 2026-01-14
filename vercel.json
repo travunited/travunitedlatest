@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/admin/visa-feedback/send",
+      "schedule": "0 * * * *"
+    }
+  ]
+}

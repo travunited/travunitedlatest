@@ -14,6 +14,7 @@ import {
   MessageCircle,
   ShieldCheck,
   Calendar,
+  Download,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
@@ -27,6 +28,7 @@ import { SampleVisaPreview } from "@/components/visa/SampleVisaPreview";
 
 const visaModeLabels: Record<string, string> = {
   EVISA: "eVisa",
+  E_VISA: "E-VISA",
   STICKER: "Sticker",
   VOA: "Visa on Arrival",
   VFS: "VFS Appointment",
@@ -185,6 +187,34 @@ export default async function VisaDetailPage({
     (req: any) => req.scope === "PER_APPLICATION"
   );
 
+  // Fetch document templates for this country
+  const templates = await prisma.documentTemplate.findMany({
+    where: {
+      countryId: (visa as any).Country.id,
+      isActive: true,
+    },
+    orderBy: {
+      sortOrder: "asc",
+    },
+  });
+
+  // Generate download URLs for templates
+  const templatesWithUrls = await Promise.all(
+    templates.map(async (template) => {
+      const { getSignedDocumentUrl } = await import("@/lib/minio");
+      let downloadUrl = null;
+      try {
+        downloadUrl = await getSignedDocumentUrl(template.fileKey, 3600); // 1 hour expiry
+      } catch (error) {
+        console.error(`Error generating signed URL for template ${template.id}:`, error);
+      }
+      return {
+        ...template,
+        downloadUrl,
+      };
+    })
+  );
+
   const heroImageUrl = visa.heroImageUrl ? getMediaProxyUrl(visa.heroImageUrl) : null;
   const sampleVisaUrl = visa.sampleVisaImageUrl
     ? getMediaProxyUrl(visa.sampleVisaImageUrl)
@@ -196,7 +226,8 @@ export default async function VisaDetailPage({
   } as any);
   const stayTypeDisplay = formatEnumLabel(visa.stayType ?? null, stayTypeLabels);
 
-  // Check if this is an information-only visa (VOA or Visa Free Entry)
+  // Check if this is an information-only visa (VOA or Visa Free Entry - these don't allow applications)
+  // E_VISA is separate - it allows applications but skips payment
   const isInformationOnly = visa.visaMode === "VOA" || visa.visaMode === "VISA_FREE_ENTRY";
   // const isVisaFreeEntry = visa.visaMode === "VISA_FREE_ENTRY"; // redundant now if we group them, but useful if text differs slightly
 
@@ -318,6 +349,51 @@ export default async function VisaDetailPage({
                 )}
               </section>
 
+              {templatesWithUrls.length > 0 && (
+                <section className="space-y-4">
+                  <h2 className="text-2xl font-bold text-neutral-900">Download Templates</h2>
+                  <p className="text-sm text-neutral-600">
+                    Download sample document templates to help you prepare your application.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {templatesWithUrls.map((template: any) => (
+                      <div
+                        key={template.id}
+                        className="border border-neutral-200 rounded-lg p-4 hover:border-primary-300 hover:bg-primary-50/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <FileText size={18} className="text-primary-600" />
+                              <h3 className="font-medium text-neutral-900">{template.name}</h3>
+                            </div>
+                            {template.description && (
+                              <p className="text-sm text-neutral-600 mt-1">{template.description}</p>
+                            )}
+                            <div className="flex items-center gap-3 mt-2 text-xs text-neutral-500">
+                              <span>{template.fileName}</span>
+                              {template.fileSize && (
+                                <span>{(template.fileSize / 1024).toFixed(1)} KB</span>
+                              )}
+                            </div>
+                          </div>
+                          {template.downloadUrl && (
+                            <a
+                              href={template.downloadUrl}
+                              download={template.fileName}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-600 text-white text-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
+                            >
+                              <Download size={14} />
+                              Download
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               <section className="space-y-4">
                 <h2 className="text-2xl font-bold text-neutral-900">Eligibility</h2>
                 <p className="text-neutral-700 whitespace-pre-line">
@@ -398,7 +474,7 @@ export default async function VisaDetailPage({
             <aside className="lg:col-span-1">
               <div className="sticky top-24 bg-white rounded-2xl shadow-large p-6 border border-neutral-200 z-10">
                 {/* Information-only notice for VOA and Visa-Free Entry */}
-                {isInformationOnly && (
+                {(visa.visaMode === "VOA" || visa.visaMode === "VISA_FREE_ENTRY") && (
                   <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                     <div className="flex items-start gap-3">
                       <Info size={20} className="text-amber-600 mt-0.5 flex-shrink-0" />
@@ -406,6 +482,20 @@ export default async function VisaDetailPage({
                         <h3 className="font-semibold text-amber-900 mb-1">Information Only</h3>
                         <p className="text-sm text-amber-800">
                           This is an information-only page. No online application or payment is required or accepted on this platform for this entry type.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* E-VISA notice - allows applications but no online payment */}
+                {visa.visaMode === "E_VISA" && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Info size={20} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h3 className="font-semibold text-blue-900 mb-1">E-VISA Application</h3>
+                        <p className="text-sm text-blue-800">
+                          This is an E-VISA application. Payment will be processed at a later stage or in person. No online payment is required to submit your application.
                         </p>
                       </div>
                     </div>

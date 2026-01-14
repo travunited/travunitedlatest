@@ -25,6 +25,7 @@ export interface ReportFilters {
   paymentStatus?: string;
   type?: string;
   search?: string;
+  selectedColumns?: string[];
 }
 
 const DATE_PRESETS = [

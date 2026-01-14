@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "@e965/xlsx";
-import { generatePDF } from "@/lib/pdf-export";
 
 export const dynamic = "force-dynamic";
 
@@ -157,41 +156,6 @@ export async function GET(req: NextRequest) {
     adminData.sort((a, b) => b.applicationsAssigned - a.applicationsAssigned);
 
     // Export handling
-    if (format === "pdf") {
-      const headers = ["Admin", "Email", "Applications Assigned", "Applications Processed", "Avg Processing Time (hrs)", "Pending >7 Days", "Document Verifications"];
-      const rows = adminData.map((a) => [
-        a.name || "Admin",
-        a.email || "N/A",
-        a.applicationsAssigned,
-        a.applicationsProcessed,
-        a.avgProcessingTimeHours.toFixed(1),
-        a.pendingOver7Days,
-        a.documentVerifications,
-      ]);
-
-      const pdfBuffer = await generatePDF({
-        title: "Admin Performance Report",
-        filters: {
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-        },
-        summary: {
-          "Total Admins": adminData.length,
-          "Total Applications Assigned": adminData.reduce((sum, a) => sum + a.applicationsAssigned, 0),
-          "Total Applications Processed": adminData.reduce((sum, a) => sum + a.applicationsProcessed, 0),
-        },
-        headers,
-        rows,
-      });
-
-      return new NextResponse(pdfBuffer as any, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename=admin-performance-${new Date().toISOString().split("T")[0]}.pdf`,
-        },
-      });
-    }
-
     if (format === "xlsx" || format === "csv") {
       const exportData = adminData.map((admin) => ({
         "Admin Name": admin.name || "Admin",

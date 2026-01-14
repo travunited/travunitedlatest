@@ -80,14 +80,17 @@ export function SampleVisaPreview({ sampleVisaUrl }: SampleVisaPreviewProps) {
               </div>
 
               {/* Modal Content */}
-              <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-neutral-50">
-                <div className="relative w-full max-w-4xl">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={sampleVisaUrl}
-                    alt="Visa Sample"
-                    className="w-full h-auto rounded-lg shadow-lg object-contain"
-                  />
+              <div className="flex-1 overflow-auto p-6 bg-neutral-50">
+                <div className="flex justify-center">
+                  <div className="relative max-w-4xl w-full">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={sampleVisaUrl}
+                      alt="Visa Sample"
+                      className="w-full h-auto rounded-lg shadow-lg"
+                      style={{ display: "block", maxWidth: "100%", height: "auto" }}
+                    />
+                  </div>
                 </div>
               </div>
 

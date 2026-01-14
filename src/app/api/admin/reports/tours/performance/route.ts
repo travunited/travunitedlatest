@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "@e965/xlsx";
-import { generatePDF } from "@/lib/pdf-export";
 
 export const dynamic = "force-dynamic";
 
@@ -161,42 +160,6 @@ export async function GET(req: NextRequest) {
     }).sort((a, b) => b.totalBookings - a.totalBookings);
 
     // Export handling
-    if (format === "pdf") {
-      const headers = ["Tour Name", "Country", "Bookings", "Paid", "Revenue (INR)", "Avg Travellers", "Cancellation Rate (%)"];
-      const rows = tourData.map((t) => [
-        t.tourName,
-        t.countryName,
-        t.totalBookings,
-        t.paidBookings,
-        t.totalRevenue,
-        t.avgTravellers.toFixed(1),
-        t.cancellationRate.toFixed(1),
-      ]);
-
-      const pdfBuffer = await generatePDF({
-        title: "Tour Performance Report",
-        filters: {
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-          country: countryIds.length > 0 ? countryIds.join(", ") : undefined,
-        },
-        summary: {
-          "Total Tours": tourData.length,
-          "Total Bookings": tourData.reduce((sum, t) => sum + t.totalBookings, 0),
-          "Total Revenue": `₹${tourData.reduce((sum, t) => sum + t.totalRevenue, 0).toLocaleString()}`,
-        },
-        headers,
-        rows,
-      });
-
-      return new NextResponse(pdfBuffer as any, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename=tour-performance-${new Date().toISOString().split("T")[0]}.pdf`,
-        },
-      });
-    }
-
     if (format === "xlsx" || format === "csv") {
       const exportData = tourData.map((tour) => ({
         "Tour Name": tour.tourName,

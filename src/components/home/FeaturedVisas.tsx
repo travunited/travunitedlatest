@@ -26,6 +26,7 @@ type FeaturedVisa = {
 
 const visaModeLabels: Record<string, string> = {
   EVISA: "eVisa",
+  E_VISA: "E-VISA",
   STICKER: "Sticker",
   VOA: "Visa on Arrival",
   VFS: "VFS Appointment",

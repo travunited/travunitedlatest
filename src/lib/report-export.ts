@@ -52,6 +52,13 @@ export function buildExportUrl(baseUrl: string, filters: Record<string, any>, fo
     }
   });
   
+  // Handle selectedColumns separately to ensure proper array handling
+  if (filters.selectedColumns && Array.isArray(filters.selectedColumns) && filters.selectedColumns.length > 0) {
+    filters.selectedColumns.forEach((col: string) => {
+      params.append("selectedColumns", col);
+    });
+  }
+  
   params.append("format", format);
   return `${baseUrl}?${params.toString()}`;
 }

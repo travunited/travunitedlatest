@@ -266,6 +266,26 @@ model Country {
   updatedAt DateTime
   Tour      Tour[]
   Visa      Visa[]
+  DocumentTemplate DocumentTemplate[]
+}
+
+model DocumentTemplate {
+  id          String   @id @default(cuid())
+  countryId   String
+  name        String
+  description String?
+  fileKey     String   // S3/MinIO key for the template file
+  fileName    String   // Original filename
+  fileSize    Int?     // File size in bytes
+  mimeType    String?  // MIME type (e.g., application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document)
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  Country     Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  @@index([countryId])
+  @@index([isActive])
 }
 
 model CustomTourRequest {

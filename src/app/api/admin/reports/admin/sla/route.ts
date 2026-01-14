@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import * as XLSX from "@e965/xlsx";
-import { generatePDF } from "@/lib/pdf-export";
 
 export const dynamic = "force-dynamic";
 
@@ -137,41 +136,6 @@ export async function GET(req: NextRequest) {
       : 0;
 
     // Export handling
-    if (format === "pdf") {
-      const headers = ["Metric", "Value"];
-      const rows = [
-        ["Average Time to First Review (hours)", avgTimeToFirstReview.toFixed(1)],
-        ["Average Time to Decision (hours)", avgTimeToDecision.toFixed(1)],
-        ["Applications Not Touched > 24h", slaMetrics.slaBreaches.notTouched24h.toString()],
-        ["Applications Not Touched > 48h", slaMetrics.slaBreaches.notTouched48h.toString()],
-        ["Applications Not Decided > 48h (after payment)", slaMetrics.slaBreaches.notDecided48h.toString()],
-        ["Applications Not Decided > 72h (after payment)", slaMetrics.slaBreaches.notDecided72h.toString()],
-      ];
-
-      const pdfBuffer = await generatePDF({
-        title: "SLA & Turnaround Time Report",
-        filters: {
-          dateFrom: dateFrom || undefined,
-          dateTo: dateTo || undefined,
-          country: countryIds.length > 0 ? countryIds.join(", ") : undefined,
-        },
-        summary: {
-          "Total Applications": slaMetrics.totalApplications,
-          "Avg Time to First Review": `${avgTimeToFirstReview.toFixed(1)} hours`,
-          "Avg Time to Decision": `${avgTimeToDecision.toFixed(1)} hours`,
-        },
-        headers,
-        rows,
-      });
-
-      return new NextResponse(pdfBuffer as any, {
-        headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename=sla-turnaround-${new Date().toISOString().split("T")[0]}.pdf`,
-        },
-      });
-    }
-
     if (format === "xlsx" || format === "csv") {
       const exportData = [
         { "Metric": "Average Time to First Review (hours)", "Value": avgTimeToFirstReview.toFixed(1) },
