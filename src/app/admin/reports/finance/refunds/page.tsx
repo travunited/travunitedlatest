@@ -103,19 +103,6 @@ export default function RefundReportPage() {
         }
     };
 
-    if (loading && rows.length === 0) {
-        return (
-            <AdminLayout>
-                <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-                        <p className="mt-4 text-neutral-600">Loading refunds...</p>
-                    </div>
-                </div>
-            </AdminLayout>
-        );
-    }
-
     return (
         <AdminLayout>
             <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -164,57 +151,59 @@ export default function RefundReportPage() {
                     </div>
                 )}
 
-                <div className={loading ? "opacity-50 pointer-events-none" : ""}>
-                    <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
-
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-neutral-200">
-                                <thead className="bg-neutral-50">
+                <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
+                    <div className="overflow-x-auto relative min-h-[200px]">
+                        {loading && (
+                            <div className="absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                            </div>
+                        )}
+                        <table className="min-w-full divide-y divide-neutral-200">
+                            <thead className="bg-neutral-50">
+                                <tr>
+                                    {[
+                                        "Receipt Date", "Party Name", "Transaction ID", "Amount",
+                                        "Service Name", "Cancel Date", "Charges", "Refundable Amt",
+                                        "Refund Date", "Bank/UPI", "Refund Ref ID", "Status", "Sales Person"
+                                    ].map((h) => (
+                                        <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-neutral-200">
+                                {rows.length === 0 && !loading ? (
                                     <tr>
-                                        {[
-                                            "Receipt Date", "Party Name", "Transaction ID", "Amount",
-                                            "Service Name", "Cancel Date", "Charges", "Refundable Amt",
-                                            "Refund Date", "Bank/UPI", "Refund Ref ID", "Status", "Sales Person"
-                                        ].map((h) => (
-                                            <th key={h} className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">
-                                                {h}
-                                            </th>
-                                        ))}
+                                        <td colSpan={13} className="px-6 py-12 text-center text-neutral-500">
+                                            No refund records found for the selected period.
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-neutral-200">
-                                    {rows.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={13} className="px-6 py-12 text-center text-neutral-500">
-                                                No refund records found for the selected period.
+                                ) : (
+                                    rows.map((row, idx) => (
+                                        <tr key={idx} className="hover:bg-neutral-50">
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">{formatDate(row.paymentReceiptDateTime)}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">{row.partyName}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-500 font-mono text-xs">{row.transactionId}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">₹{row.amount.toLocaleString()}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">{row.paidForServiceName}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">{row.cancellationDate !== "N/A" ? formatDate(row.cancellationDate) : "-"}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-red-600">₹{row.cancellationCharges}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-700">₹{row.refundableAmount.toLocaleString()}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">{formatDate(row.refundDate)}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-500 text-xs">{row.partyBankDetails}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-500 font-mono text-xs">{row.refundRefId}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm">
+                                                <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                                                    {row.status}
+                                                </span>
                                             </td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">{row.salesPerson}</td>
                                         </tr>
-                                    ) : (
-                                        rows.map((row, idx) => (
-                                            <tr key={idx} className="hover:bg-neutral-50">
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">{formatDate(row.paymentReceiptDateTime)}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">{row.partyName}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-500 font-mono text-xs">{row.transactionId}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">₹{row.amount.toLocaleString()}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">{row.paidForServiceName}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">{row.cancellationDate !== "N/A" ? formatDate(row.cancellationDate) : "-"}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-red-600">₹{row.cancellationCharges}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-green-700">₹{row.refundableAmount.toLocaleString()}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">{formatDate(row.refundDate)}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-500 text-xs">{row.partyBankDetails}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-500 font-mono text-xs">{row.refundRefId}</td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm">
-                                                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
-                                                        {row.status}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">{row.salesPerson}</td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
