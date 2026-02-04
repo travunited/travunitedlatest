@@ -6,26 +6,8 @@ import { useRouter } from "next/navigation";
 import { Download, FileDown, Calendar, TrendingUp, Users, FileText, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ReportFilterBar, ReportFilters } from "@/components/admin/ReportFilterBar";
-import { ReportSkeleton } from "@/components/admin/ReportSkeleton";
 import { ColumnSelector } from "@/components/admin/ColumnSelector";
 import { buildExportUrl } from "@/lib/report-export";
-import { formatDate } from "@/lib/dateFormat";
-
-interface BookingRow {
-  id: string;
-  referenceNumber: string;
-  createdAt: string;
-  tourName: string | null;
-  country: string | null;
-  travellerCount: number;
-  status: string;
-  paymentStatus: string;
-  totalAmount: number;
-  amountPaid: number;
-  customerName: string | null;
-  customerEmail: string;
-  travelDate: string | null;
-}
 
 interface TourSummary {
   totalBookings: number;
@@ -43,7 +25,7 @@ export default function TourBookingsReportPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<TourSummary | null>(null);
-  const [bookings, setBookings] = useState<BookingRow[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
   const [filters, setFilters] = useState<ReportFilters>({
     dateFrom: "",
     dateTo: "",
@@ -52,42 +34,54 @@ export default function TourBookingsReportPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Define available columns for export
-  const availableColumns = [
+  // Define available columns for export (21 columns)
+  const availableColumns = useMemo(() => [
+    { key: "Sr No", label: "Sr No" },
     { key: "Booking ID", label: "Booking ID" },
-    { key: "Reference Number", label: "Reference Number" },
-    { key: "Date", label: "Date" },
-    { key: "Tour Name", label: "Tour Name" },
-    { key: "Country", label: "Country" },
-    { key: "Number of Travellers", label: "Number of Travellers" },
-    { key: "Status", label: "Status" },
-    { key: "Payment Status", label: "Payment Status" },
-    { key: "Total Amount (INR)", label: "Total Amount (INR)" },
-    { key: "Amount Paid (INR)", label: "Amount Paid (INR)" },
+    { key: "Lead Date", label: "Lead Date" },
+    { key: "Booking Date", label: "Booking Date" },
+    { key: "Travel Start Date", label: "Travel Start Date" },
+    { key: "Travel End Date", label: "Travel End Date" },
+    { key: "Sales Person Name", label: "Sales Person Name" },
+    { key: "Department", label: "Department" },
+    { key: "Tour Type", label: "Tour Type" },
+    { key: "Package Type", label: "Package Type" },
+    { key: "Package Name", label: "Package Name" },
+    { key: "Destination Country", label: "Destination Country" },
+    { key: "Destination City", label: "Destination City" },
+    { key: "No. of Nights", label: "No. of Nights" },
+    { key: "No. of Adults", label: "No. of Adults" },
+    { key: "No. of Children", label: "No. of Children" },
+    { key: "Customer Type (Indian / Foreign)", label: "Customer Type" },
     { key: "Customer Name", label: "Customer Name" },
-    { key: "Customer Email", label: "Customer Email" },
-    { key: "Travel Date", label: "Travel Date" },
-  ];
+    { key: "PAN Number (Mandatory – International)", label: "PAN Number" },
+    { key: "Mobile No", label: "Mobile No" },
+    { key: "Email ID", label: "Email ID" },
+    { key: "Status", label: "Status" }, // Helper for UI
+    { key: "Payment Status", label: "Payment Status" }, // Helper
+    { key: "Total Amount (INR)", label: "Amount" }, // Helper
+  ], []);
 
-  // Initialize selected columns with all columns
-  const [selectedColumns, setSelectedColumns] = useState<string[]>(
-    availableColumns.map((col) => col.key)
-  );
+  // Initialize selected columns with key columns for view
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([
+    "Sr No",
+    "Booking ID",
+    "Package Name",
+    "Travel Start Date",
+    "Customer Name",
+    "Status",
+    "Total Amount (INR)"
+  ]);
 
-  // Memoize filter values to prevent infinite re-renders
   const dateFrom = useMemo(() => filters.dateFrom, [filters.dateFrom]);
   const dateTo = useMemo(() => filters.dateTo, [filters.dateTo]);
   const filterStatus = useMemo(() => filters.status, [filters.status]);
 
-  // Use ref to prevent multiple simultaneous fetches
   const isFetchingRef = useRef(false);
   const mountedRef = useRef(true);
 
   const fetchReport = useCallback(async (showRefreshing = false) => {
-    // Prevent multiple simultaneous fetches
-    if (isFetchingRef.current) {
-      return;
-    }
+    if (isFetchingRef.current) return;
 
     isFetchingRef.current = true;
     if (showRefreshing) {
@@ -111,7 +105,6 @@ export default function TourBookingsReportPage() {
       }
       const data = await response.json();
 
-      // Only update state if component is still mounted
       if (mountedRef.current) {
         setSummary(data.summary);
         setBookings(data.rows || []);
@@ -131,7 +124,6 @@ export default function TourBookingsReportPage() {
     }
   }, [dateFrom, dateTo, filterStatus, page]);
 
-  // Handle authentication and authorization
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -146,16 +138,12 @@ export default function TourBookingsReportPage() {
     }
   }, [session?.user?.role, status, router]);
 
-  // Single useEffect to handle all data fetching
   useEffect(() => {
-    // Only fetch if authenticated and authorized
     if (status === "authenticated" && session?.user?.role === "SUPER_ADMIN") {
       fetchReport();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, session?.user?.role, dateFrom, dateTo, filterStatus, page]);
+  }, [status, session?.user?.role, dateFrom, dateTo, filterStatus, page, fetchReport]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       mountedRef.current = false;
@@ -164,16 +152,12 @@ export default function TourBookingsReportPage() {
 
   const handleExport = async (format: "xlsx" | "csv") => {
     try {
-      if (selectedColumns.length === 0) {
-        alert("Please select at least one column to export.");
-        return;
-      }
+      const columnsToExport = selectedColumns.length > 0 ? selectedColumns : availableColumns.map(c => c.key);
       const exportFilters = {
         ...filters,
-        selectedColumns,
+        selectedColumns: columnsToExport,
       };
       const url = buildExportUrl("/api/admin/reports/tours/summary", exportFilters, format);
-      // For CSV/XLSX, open in new tab (works for these formats)
       window.open(url, "_blank");
     } catch (error) {
       console.error("Export error:", error);
@@ -196,7 +180,6 @@ export default function TourBookingsReportPage() {
     }
   };
 
-  // Only show full-page loader on initial load
   const isInitialLoad = loading && !summary && !error;
 
   if (isInitialLoad) {
@@ -214,10 +197,10 @@ export default function TourBookingsReportPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-neutral-900">Tour Bookings Summary</h1>
-          <p className="text-neutral-600 mt-1">Overview of tour bookings and revenue</p>
+          <p className="text-neutral-600 mt-1">Operational view of tour bookings</p>
         </div>
 
         <ReportFilterBar
@@ -228,34 +211,33 @@ export default function TourBookingsReportPage() {
           showType={false}
         />
 
-        {/* Action Buttons */}
         <div className="flex items-center gap-3 mb-6 flex-wrap">
           <button
             onClick={() => fetchReport(true)}
             disabled={refreshing || loading}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
           >
             <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
             {refreshing ? "Refreshing..." : "Refresh"}
           </button>
+
           <ColumnSelector
             columns={availableColumns}
             selectedColumns={selectedColumns}
             onSelectionChange={setSelectedColumns}
-            label="Export Columns"
+            label="Select Columns"
           />
+
           <button
             onClick={() => handleExport("xlsx")}
-            disabled={loading || selectedColumns.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
           >
             <FileDown size={16} />
             Export Excel
           </button>
           <button
             onClick={() => handleExport("csv")}
-            disabled={loading || selectedColumns.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
           >
             <Download size={16} />
             Export CSV
@@ -264,71 +246,45 @@ export default function TourBookingsReportPage() {
 
         {error && !summary && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-red-800 font-semibold">Failed to Load Report</h3>
-                <p className="text-red-600 text-sm mt-1">{error}</p>
-              </div>
-              <button
-                onClick={() => fetchReport()}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700"
-              >
-                Try Again
-              </button>
-            </div>
+            <p className="text-red-600">{error}</p>
+            <button onClick={() => fetchReport()} className="mt-2 text-sm text-red-700 font-medium underline">Try Again</button>
           </div>
         )}
 
         <div className={loading && summary ? "opacity-50 pointer-events-none transition-opacity" : ""}>
           {summary && (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-neutral-600">Total Bookings</h3>
-                    <Calendar size={20} className="text-neutral-600" />
-                  </div>
-                  <p className="text-3xl font-bold text-neutral-900">{summary.totalBookings}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Total Bookings</h3>
+                  <Calendar size={20} className="text-neutral-600" />
                 </div>
-                <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-neutral-600">Paid Bookings</h3>
-                    <TrendingUp size={20} className="text-green-600" />
-                  </div>
-                  <p className="text-3xl font-bold text-green-700">{summary.paidBookings}</p>
-                </div>
-                <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-neutral-600">Total Revenue</h3>
-                    <TrendingUp size={20} className="text-blue-600" />
-                  </div>
-                  <p className="text-3xl font-bold text-blue-700">₹{summary.totalRevenue.toLocaleString()}</p>
-                </div>
-                <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-neutral-600">Avg Group Size</h3>
-                    <Users size={20} className="text-purple-600" />
-                  </div>
-                  <p className="text-3xl font-bold text-purple-700">{summary.avgGroupSize.toFixed(1)}</p>
-                </div>
+                <p className="text-3xl font-bold text-neutral-900">{summary.totalBookings}</p>
               </div>
-
-              {/* Status Breakdown */}
-              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200 mb-6">
-                <h3 className="text-lg font-semibold text-neutral-900 mb-4">Bookings by Status</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {Object.entries(summary.statusCounts).map(([status, count]) => (
-                    <div key={status} className="bg-neutral-50 rounded-lg p-4">
-                      <div className="text-sm text-neutral-600 mb-1">{status.replace(/_/g, " ")}</div>
-                      <div className="text-2xl font-bold text-neutral-900">{count}</div>
-                    </div>
-                  ))}
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Paid Bookings</h3>
+                  <TrendingUp size={20} className="text-green-600" />
                 </div>
+                <p className="text-3xl font-bold text-green-700">{summary.paidBookings}</p>
               </div>
-            </>
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Total Revenue</h3>
+                  <TrendingUp size={20} className="text-blue-600" />
+                </div>
+                <p className="text-3xl font-bold text-blue-700">₹{summary.totalRevenue.toLocaleString()}</p>
+              </div>
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Avg Group Size</h3>
+                  <Users size={20} className="text-purple-600" />
+                </div>
+                <p className="text-3xl font-bold text-purple-700">{summary.avgGroupSize.toFixed(1)}</p>
+              </div>
+            </div>
           )}
 
-          {/* Bookings Table */}
           <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
             <div className="p-6 border-b border-neutral-200">
               <h2 className="text-xl font-bold text-neutral-900">Bookings</h2>
@@ -337,48 +293,31 @@ export default function TourBookingsReportPage() {
               <table className="min-w-full divide-y divide-neutral-200">
                 <thead className="bg-neutral-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Reference</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Tour Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Country</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Travellers</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Payment</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Amount</th>
+                    {selectedColumns.map((colKey) => (
+                      <th key={colKey} className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">
+                        {availableColumns.find(c => c.key === colKey)?.label || colKey}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-neutral-200">
-                  {bookings.map((booking) => (
-                    <tr key={booking.id} className="hover:bg-neutral-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-medium text-neutral-900">
-                        {booking.referenceNumber}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900" suppressHydrationWarning>
-                        {formatDate(booking.createdAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
-                        {booking.tourName || "N/A"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                        {booking.country || "N/A"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                        {booking.travellerCount}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(booking.status)}`}>
-                          {booking.status.replace(/_/g, " ")}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${booking.paymentStatus === "Paid" ? "bg-green-100 text-green-700" : "bg-neutral-100 text-neutral-700"
-                          }`}>
-                          {booking.paymentStatus}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-neutral-900">
-                        ₹{booking.totalAmount.toLocaleString()}
-                      </td>
+                  {bookings.map((booking, idx) => (
+                    <tr key={idx} className="hover:bg-neutral-50">
+                      {selectedColumns.map((colKey) => (
+                        <td key={`${idx}-${colKey}`} className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                          {colKey === "Status" ? (
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(booking[colKey])}`}>
+                              {booking[colKey]}
+                            </span>
+                          ) : colKey === "Payment Status" ? (
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${booking[colKey] === "Paid" ? "bg-green-100 text-green-700" : "bg-neutral-100 text-neutral-700"}`}>
+                              {booking[colKey]}
+                            </span>
+                          ) : (
+                            booking[colKey]
+                          )}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
@@ -411,4 +350,3 @@ export default function TourBookingsReportPage() {
     </AdminLayout>
   );
 }
-

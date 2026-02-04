@@ -1,32 +1,27 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Download, FileDown, CreditCard, CheckCircle, XCircle, AlertCircle, FileText, RefreshCw } from "lucide-react";
+import { Download, FileDown, CreditCard, CheckCircle, XCircle, AlertCircle, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ReportFilterBar, ReportFilters } from "@/components/admin/ReportFilterBar";
-import { ReportSkeleton } from "@/components/admin/ReportSkeleton";
 import { buildExportUrl } from "@/lib/report-export";
 import { formatDate } from "@/lib/dateFormat";
 
 interface PaymentRow {
   id: string;
-  date: string;
-  razorpayTransactionTime: string | null;
-  paymentId: string | null;
-  orderId: string | null;
-  applicationId: string | null;
-  bookingId: string | null;
-  type: string;
-  customerName: string | null;
-  customerEmail: string;
-  status: string;
+  receiptDate: string;
+  particulars: string;
+  transactionId: string;
   amount: number;
+  modeOfPayment: string;
+  receivedBankName: string;
   currency: string;
-  country: string | null;
-  visaType: string | null;
-  tourName: string | null;
+  payingPartyName: string;
+  receiptVoucherNo: string;
+  salesPerson: string;
+  status: string; // Used for styling
 }
 
 interface PaymentSummary {
@@ -55,11 +50,15 @@ export default function PaymentsReportPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Memoize filter values to prevent infinite re-renders
+  // Memoize filter values
   const dateFrom = useMemo(() => filters.dateFrom, [filters.dateFrom]);
   const dateTo = useMemo(() => filters.dateTo, [filters.dateTo]);
   const filterStatus = useMemo(() => filters.status, [filters.status]);
   const filterType = useMemo(() => filters.type, [filters.type]);
+
+  // Track if component has mounted
+  const hasMountedRef = useRef(false);
+  const isInitialMountRef = useRef(true);
 
   const fetchReport = useCallback(async (showRefreshing = false) => {
     if (showRefreshing) {
@@ -106,23 +105,26 @@ export default function PaymentsReportPage() {
         router.push("/admin");
         return;
       }
+      hasMountedRef.current = true;
+      isInitialMountRef.current = false;
       fetchReport();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.role, status]);
+  }, [session?.user?.role, status, router, fetchReport]);
 
   // Refetch when filters or page change
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.role === "SUPER_ADMIN") {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (hasMountedRef.current && status === "authenticated" && session?.user?.role === "SUPER_ADMIN") {
       fetchReport();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateFrom, dateTo, filterStatus, filterType, page]);
+  }, [dateFrom, dateTo, filterStatus, filterType, page, status, session?.user?.role, fetchReport]);
 
   const handleExport = async (format: "xlsx" | "csv") => {
     try {
       const url = buildExportUrl("/api/admin/reports/finance/payments", filters, format);
-      // For CSV/XLSX, open in new tab (works for these formats)
       window.open(url, "_blank");
     } catch (error) {
       console.error("Export error:", error);
@@ -143,10 +145,7 @@ export default function PaymentsReportPage() {
     }
   };
 
-  // Only show full-page loader on initial load
-  const isInitialLoad = loading && !summary && !error;
-
-  if (isInitialLoad) {
+  if (loading && !summary && !error) {
     return (
       <AdminLayout>
         <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
@@ -163,8 +162,8 @@ export default function PaymentsReportPage() {
     <AdminLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-neutral-900">Payments & Refunds Report</h1>
-          <p className="text-neutral-600 mt-1">Detailed transaction-level report for finance and legal</p>
+          <h1 className="text-3xl font-bold text-neutral-900">Payment Receipt Report</h1>
+          <p className="text-neutral-600 mt-1">Detailed transaction-level report</p>
         </div>
 
         <ReportFilterBar
@@ -220,7 +219,6 @@ export default function PaymentsReportPage() {
           </div>
         )}
 
-        {/* Main Content */}
         <div className={loading && summary ? "opacity-50 pointer-events-none transition-opacity" : ""}>
           {summary && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -256,54 +254,51 @@ export default function PaymentsReportPage() {
             </div>
           )}
 
-          {/* Payments Table */}
+          {/* Payment Receipts Table */}
           <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
             <div className="p-6 border-b border-neutral-200">
-              <h2 className="text-xl font-bold text-neutral-900">Payment Transactions</h2>
+              <h2 className="text-xl font-bold text-neutral-900">Payment Receipts</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-neutral-200">
                 <thead className="bg-neutral-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date & Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Razorpay Transaction Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Payment ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Customer</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Sl No</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Receipt Date & Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Particulars</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Transaction Id / UTR</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Mode of Payment</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Received Bank Name</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Currency</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Paying Party</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Receipt Voucher No</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Sales Person</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-neutral-200">
-                  {payments.map((payment) => (
+                  {payments.map((payment, index) => (
                     <tr key={payment.id} className="hover:bg-neutral-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{(page - 1) * 50 + index + 1}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900" suppressHydrationWarning>
-                        {formatDate(payment.date)}
+                        {formatDate(payment.receiptDate)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-600" suppressHydrationWarning>
-                        {payment.razorpayTransactionTime ? formatDate(payment.razorpayTransactionTime) : "N/A"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-600">
-                        {payment.paymentId?.slice(0, 20) || "N/A"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${payment.type === "Visa" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
-                          }`}>
-                          {payment.type}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="font-medium text-neutral-900">{payment.customerName || "N/A"}</div>
-                        <div className="text-neutral-500">{payment.customerEmail}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(payment.status)}`}>
-                          {payment.status}
-                        </span>
-                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{payment.particulars}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-neutral-600 text-xs">{payment.transactionId}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-neutral-900">
                         ₹{payment.amount.toLocaleString()}
+                        <div className={`text-xs mt-1 ${payment.status === "COMPLETED" ? "text-green-600" :
+                            payment.status === "FAILED" ? "text-red-600" : "text-orange-600"
+                          }`}>
+                          {payment.status}
+                        </div>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{payment.modeOfPayment}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{payment.receivedBankName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{payment.currency}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 font-medium">{payment.payingPartyName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{payment.receiptVoucherNo.substring(0, 8)}...</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{payment.salesPerson}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -333,6 +328,6 @@ export default function PaymentsReportPage() {
           </div>
         </div>
       </div>
-    </AdminLayout >
+    </AdminLayout>
   );
 }

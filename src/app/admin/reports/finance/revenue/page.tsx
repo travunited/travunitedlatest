@@ -21,10 +21,19 @@ interface RevenueSummary {
 
 interface DailyData {
   date: string;
-  visaRevenue: number;
-  tourRevenue: number;
+  totalTransactions: number;
+  visaTransactions: number;
+  packageTransactions: number;
+  ticketTransactions: number;
+  otherServiceTransactions: number;
   totalRevenue: number;
-  transactionCount: number;
+  revenueFromCustomers: number;
+  revenueFromAgents: number;
+  revenueFromCorporates: number;
+  revenueFromSalesPerson: number;
+  highestRevenueService: string;
+  highestRevenueSource: string;
+  remarks: string;
 }
 
 export default function RevenueReportPage() {
@@ -138,10 +147,10 @@ export default function RevenueReportPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-neutral-900">Revenue Summary</h1>
-          <p className="text-neutral-600 mt-1">High-level revenue overview for accounting and management</p>
+          <p className="text-neutral-600 mt-1">Detailed revenue breakdown by source and service</p>
         </div>
 
         <ReportFilterBar
@@ -235,29 +244,55 @@ export default function RevenueReportPage() {
           {/* Daily Summary Table */}
           <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
             <div className="p-6 border-b border-neutral-200">
-              <h2 className="text-xl font-bold text-neutral-900">Daily Revenue Summary</h2>
+              <h2 className="text-xl font-bold text-neutral-900">Revenue Breakdowns</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-neutral-200">
                 <thead className="bg-neutral-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Transactions</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Visa Revenue</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Tour Revenue</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Total Revenue</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Sr No</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Period Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Total Transactions</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Visa Transactions</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Package Transactions</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Ticket Transactions</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Other Service</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Total Revenue (₹)</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Avg Rev / Txn</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Rev from Customers</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Rev from Agents</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Rev from Corporates</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Rev from Sales</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Highest Revenue Service</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Highest Revenue Source</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">Remarks</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-neutral-200">
-                  {dailyData.map((day) => (
+                  {dailyData.map((day, index) => (
                     <tr key={day.date} className="hover:bg-neutral-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900" suppressHydrationWarning>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-500">{index + 1}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-neutral-900" suppressHydrationWarning>
                         {new Date(day.date).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{day.transactionCount}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-700 font-medium">₹{day.visaRevenue.toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-medium">₹{day.tourRevenue.toLocaleString()}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-neutral-900">₹{day.totalRevenue.toLocaleString()}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-900">Daily</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-900 font-bold">{day.totalTransactions}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-900">{day.visaTransactions}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-900">{day.packageTransactions}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-500">{day.ticketTransactions}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-500">{day.otherServiceTransactions}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-green-700">₹{day.totalRevenue.toLocaleString()}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-900">
+                        ₹{day.totalTransactions > 0 ? Math.round(day.totalRevenue / day.totalTransactions).toLocaleString() : 0}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-900">₹{day.revenueFromCustomers.toLocaleString()}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-500">₹{day.revenueFromAgents.toLocaleString()}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-500">₹{day.revenueFromCorporates.toLocaleString()}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-900 font-medium">₹{day.revenueFromSalesPerson.toLocaleString()}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-900">{day.highestRevenueService}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-900">{day.highestRevenueSource}</td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-neutral-500 italic">{day.remarks || "-"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -269,4 +304,3 @@ export default function RevenueReportPage() {
     </AdminLayout>
   );
 }
-

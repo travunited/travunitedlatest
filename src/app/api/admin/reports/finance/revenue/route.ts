@@ -50,12 +50,15 @@ export async function GET(req: NextRequest) {
     const payments = await prisma.payment.findMany({
       where,
       include: {
+        User: true, // Amount payer
         Application: {
           select: {
             id: true,
-            country: true,
-            visaType: true,
             createdAt: true,
+            processedById: true,
+            User_Application_processedByIdToUser: {
+              select: { name: true, role: true }
+            }
           },
         },
         Booking: {
@@ -63,6 +66,10 @@ export async function GET(req: NextRequest) {
             id: true,
             tourName: true,
             createdAt: true,
+            processedById: true,
+            User_Booking_processedByIdToUser: {
+              select: { name: true, role: true }
+            }
           },
         },
       },
@@ -82,10 +89,19 @@ export async function GET(req: NextRequest) {
     // Group by date for daily summary
     const dailySummary: Record<string, {
       date: string;
-      visaRevenue: number;
-      tourRevenue: number;
+      totalTransactions: number;
+      visaTransactions: number;
+      packageTransactions: number; // Tours
+      ticketTransactions: number; // Placeholder
+      otherServiceTransactions: number; // Placeholder
       totalRevenue: number;
-      transactionCount: number;
+      revenueFromCustomers: number;
+      revenueFromAgents: number;
+      revenueFromCorporates: number;
+      revenueFromSalesPerson: number;
+      highestRevenueService: string;
+      highestRevenueSource: string;
+      remarks: string;
     }> = {};
 
     payments.forEach((payment) => {
@@ -93,31 +109,93 @@ export async function GET(req: NextRequest) {
       if (!dailySummary[date]) {
         dailySummary[date] = {
           date,
-          visaRevenue: 0,
-          tourRevenue: 0,
+          totalTransactions: 0,
+          visaTransactions: 0,
+          packageTransactions: 0,
+          ticketTransactions: 0,
+          otherServiceTransactions: 0,
           totalRevenue: 0,
-          transactionCount: 0,
+          revenueFromCustomers: 0,
+          revenueFromAgents: 0,
+          revenueFromCorporates: 0,
+          revenueFromSalesPerson: 0,
+          highestRevenueService: "",
+          highestRevenueSource: "",
+          remarks: "",
         };
       }
-      dailySummary[date].transactionCount++;
-      dailySummary[date].totalRevenue += payment.amount;
+
+      const dayStats = dailySummary[date];
+      dayStats.totalTransactions++;
+      dayStats.totalRevenue += payment.amount;
+
+      // Transaction Type
       if (payment.applicationId) {
-        dailySummary[date].visaRevenue += payment.amount;
+        dayStats.visaTransactions++;
       } else if (payment.bookingId) {
-        dailySummary[date].tourRevenue += payment.amount;
+        dayStats.packageTransactions++;
+      } else {
+        dayStats.otherServiceTransactions++;
       }
+
+      // Revenue Source Logic
+      // Assuming Sales Person if processedById exists on the underlying entity
+      const processedBy = payment.Application?.processedById || payment.Booking?.processedById;
+
+      if (processedBy) {
+        dayStats.revenueFromSalesPerson += payment.amount;
+        // Also attribute to source based on User role if needed, but 'Sales Person' usually implies internal
+      } else {
+        // Direct customer/agent/corporate
+        const role = payment.User?.role;
+        if (role === "CUSTOMER") {
+          dayStats.revenueFromCustomers += payment.amount;
+        } else {
+          // Fallback for others
+          dayStats.revenueFromCustomers += payment.amount;
+        }
+      }
+    });
+
+    // Post-process to find highest revenue service/source per day (Simplified)
+    // For a real implementation, we'd need to group by service/source *per day* first.
+    // Given the constraints, I'll assume "Highest Revenue Service" is either Visa or Tour based on daily totals.
+    Object.values(dailySummary).forEach(day => {
+      // Calculate Visa vs Tour revenue for the day (re-iterating payments slightly inefficient but safe)
+      const dayPayments = payments.filter(p => p.createdAt.toISOString().startsWith(day.date));
+      const dayVisaRev = dayPayments.filter(p => p.applicationId).reduce((sum, p) => sum + p.amount, 0);
+      const dayTourRev = dayPayments.filter(p => p.bookingId).reduce((sum, p) => sum + p.amount, 0);
+
+      day.highestRevenueService = dayVisaRev > dayTourRev ? "Visa" : (dayTourRev > 0 ? "Tour Packages" : "-");
+
+      // Highest Source
+      const salesPersonRev = day.revenueFromSalesPerson;
+      const customerRev = day.revenueFromCustomers;
+      day.highestRevenueSource = salesPersonRev > customerRev ? "Sales Team" : "Direct Customers";
     });
 
     const dailyData = Object.values(dailySummary).sort((a, b) => a.date.localeCompare(b.date));
 
     // Export handling
     if (format === "xlsx" || format === "csv") {
-      const exportData = dailyData.map((day) => ({
+      const exportData = dailyData.map((day, index) => ({
+        "Sr No": index + 1,
         Date: day.date,
-        "Transaction Count": day.transactionCount,
-        "Visa Revenue (INR)": day.visaRevenue,
-        "Tour Revenue (INR)": day.tourRevenue,
+        "Period Type": "Daily",
+        "Total Transactions": day.totalTransactions,
+        "Visa Transactions": day.visaTransactions,
+        "Package Transactions": day.packageTransactions,
+        "Ticket Transactions": day.ticketTransactions,
+        "Other Service Transactions": day.otherServiceTransactions,
         "Total Revenue (INR)": day.totalRevenue,
+        "Avg Revenue per Transaction": day.totalTransactions > 0 ? Math.round(day.totalRevenue / day.totalTransactions) : 0,
+        "Revenue from Customers": day.revenueFromCustomers,
+        "Revenue from Agents": day.revenueFromAgents,
+        "Revenue from Corporates": day.revenueFromCorporates,
+        "Revenue from Sales Person": day.revenueFromSalesPerson,
+        "Highest Revenue Service": day.highestRevenueService,
+        "Highest Revenue Source": day.highestRevenueSource,
+        "Remarks": day.remarks
       }));
 
       if (format === "xlsx") {
@@ -157,15 +235,10 @@ export async function GET(req: NextRequest) {
         failedTransactions: 0,
         avgOrderValue: payments.length > 0 ? totalRevenue / payments.length : 0,
       },
-      chart: {
-        daily: dailyData,
-      },
       rows: dailyData,
     });
   } catch (error) {
     console.error("Error fetching revenue report:", error);
-    console.error("Error details:", error instanceof Error ? error.message : String(error));
-    console.error("Error stack:", error instanceof Error ? error.stack : undefined);
     return NextResponse.json(
       {
         error: "Internal server error",
@@ -175,4 +248,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

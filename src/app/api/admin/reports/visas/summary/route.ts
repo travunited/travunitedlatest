@@ -59,12 +59,16 @@ export async function GET(req: NextRequest) {
           select: {
             name: true,
             email: true,
+            phone: true,
           },
         },
         ApplicationTraveller: {
           include: {
             Traveller: true,
           },
+          orderBy: {
+            createdAt: 'asc' // Assume first traveller is primary
+          }
         },
         Payment: {
           where: {
@@ -80,8 +84,12 @@ export async function GET(req: NextRequest) {
         Visa: {
           include: {
             Country: true,
+            VisaSubType: true, // For checking sub types
+            entryType: true,
           },
         },
+        VisaSubType: true, // Directly included relation
+        documents: true, // For document check
       },
       orderBy: {
         createdAt: "desc",
@@ -96,6 +104,19 @@ export async function GET(req: NextRequest) {
         return countryId && countryIds.includes(countryId);
       });
     }
+
+    // Helper to calculate days diff
+    const daysDiff = (d1: Date, d2: Date) => {
+      const diffTime = Math.abs(d2.getTime() - d1.getTime());
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    };
+
+    // Helper to parse numeric SLA from string (e.g. "5-7 days")
+    const parseSlaTarget = (processingTime: string | null): number | null => {
+      if (!processingTime) return null;
+      const match = processingTime.match(/(\d+)/);
+      return match ? parseInt(match[0]) : null;
+    };
 
     // Calculate summary
     const statusCounts: Record<string, number> = {};
@@ -114,34 +135,78 @@ export async function GET(req: NextRequest) {
       ? (paidCount / filteredApplications.length) * 100
       : 0;
 
+    // Data Transformation for Rows
+    const transformedRows = filteredApplications.map((app: any, index: number) => {
+      const year = new Date(app.createdAt).getFullYear();
+      const refSuffix = app.id.slice(-5).toUpperCase();
+      const referenceNumber = `TRV-${year}-${refSuffix}`;
+
+      const primaryTraveller = app.ApplicationTraveller[0]?.Traveller;
+      const nationality = primaryTraveller?.nationality || "N/A";
+      const isIndian = nationality.toLowerCase() === "indian" || nationality.toLowerCase() === "india";
+      const customerType = isIndian ? "Indian" : "Foreign";
+
+      // Determine completion date based on status
+      const isCompleted = ["APPROVED", "REJECTED", "COMPLETED"].includes(app.status);
+      const completionDate = isCompleted ? app.updatedAt : null;
+
+      const tat = completionDate ? daysDiff(new Date(app.createdAt), new Date(completionDate)) : null;
+      const slaTargetDays = parseSlaTarget(app.Visa?.processingTime);
+
+      let slaStatus = "Pending";
+      if (isCompleted && tat !== null && slaTargetDays !== null) {
+        slaStatus = tat <= slaTargetDays ? "Met" : "Breached";
+      } else if (!isCompleted && slaTargetDays !== null) {
+        // Check if currently breached
+        const currentRun = daysDiff(new Date(app.createdAt), new Date());
+        if (currentRun > slaTargetDays) slaStatus = "Breached (Ongoing)";
+      }
+
+      return {
+        "Sr No": index + 1,
+        "Application ID": app.id, // Using internal ID as Application ID
+        "Reference Number": referenceNumber,
+        "Lead Date": app.createdAt.toISOString().split("T")[0],
+        "Booking Date": app.createdAt.toISOString().split("T")[0], // Assuming creation is booking
+        "Sales Person Name": app.User_Application_processedByIdToUser?.name || "System",
+        "Department": "Visa Operations",
+        "Customer Type (Indian / Foreign)": customerType,
+        "Customer Name": app.User_Application_userIdToUser.name || "N/A",
+        "Mobile No": app.User_Application_userIdToUser.phone || "N/A",
+        "Email ID": app.User_Application_userIdToUser.email || "N/A",
+        "Passport No": primaryTraveller?.passportNumber || "N/A",
+        "Nationality": nationality,
+        "Visa Country": app.Visa?.Country?.name || app.country || "N/A",
+        "Visa Category": app.Visa?.category || "Tourist", // Defaulting to Tourist if not set
+        "Visa Sub Type": app.VisaSubType?.label || app.visaType || "Standard",
+        "Entry Type": app.Visa?.entryTypeLegacy || "Single",
+        "Processing Mode": "Standard", // Placeholder or derived from Visa mode
+        "Lead Source": "Website", // Default
+        "Processing Executive": app.User_Application_processedByIdToUser?.name || "Unassigned",
+        "Vendor / Embassy / VFS": "-", // Not tracked
+        "Current Status": app.status,
+        "Case Stage": app.status, // Proxy
+        "Documents Collected (Y/N)": app.documents.length > 0 ? "Y" : "N",
+        "Missing Documents": "-",
+        "Submission Date": "-", // Needs separate tracking field
+        "Appointment / Biometrics Date": "-", // Needs separate tracking field
+        "Decision / Completion Date": completionDate ? completionDate.toISOString().split("T")[0] : "-",
+        "TAT (Days)": tat !== null ? tat : "-",
+        "SLA Target (Days)": slaTargetDays || "-",
+        "SLA Status (Met / Breached)": slaStatus,
+        "Visa Outcome (Approved / Rejected / Pending)": app.status,
+        "Visa Validity From": "-", // Need specific field
+        "Visa Validity To": "-", // Need specific field
+        "Remarks": app.notes || "-"
+      };
+    });
+
     // Export handling
     if (format === "xlsx" || format === "csv") {
-      const allExportData = filteredApplications.map((app: any) => {
-        const year = new Date(app.createdAt).getFullYear();
-        const refSuffix = app.id.slice(-5).toUpperCase();
-        const referenceNumber = `TRV-${year}-${refSuffix}`;
-
-        return {
-          "Application ID": app.id,
-          "Reference Number": referenceNumber,
-          "Created Date": app.createdAt.toISOString().split("T")[0],
-          "Country": app.Visa?.Country?.name || app.country || "N/A",
-          "Visa Type": app.visaType || "N/A",
-          "Number of Travellers": app.ApplicationTraveller.length,
-          "Status": app.status,
-          "Assigned Admin": app.User_Application_processedByIdToUser?.name || app.User_Application_processedByIdToUser?.email || "Unassigned",
-          "Payment Status": app.Payment.length > 0 ? "Paid" : "Unpaid",
-          "Total Amount (INR)": app.totalAmount,
-          "Amount Paid (INR)": app.Payment.reduce((sum: number, p: any) => sum + p.amount, 0),
-          "Customer Name": app.User_Application_userIdToUser.name || "N/A",
-          "Customer Email": app.User_Application_userIdToUser.email || "N/A",
-        };
-      });
-
       // Filter columns if selectedColumns is provided
-      let exportData = allExportData;
+      let exportData = transformedRows;
       if (selectedColumns.length > 0) {
-        exportData = allExportData.map((row: any) => {
+        exportData = transformedRows.map((row: any) => {
           const filteredRow: any = {};
           selectedColumns.forEach((col) => {
             if (row[col] !== undefined) {
@@ -167,7 +232,7 @@ export async function GET(req: NextRequest) {
         // CSV
         const csv = [
           Object.keys(exportData[0] || {}).join(","),
-          ...exportData.map((row) =>
+          ...exportData.map((row: any) =>
             Object.values(row).map((v) => {
               const str = String(v);
               return str.includes(",") || str.includes('"') ? `"${str.replace(/"/g, '""')}"` : str;
@@ -188,7 +253,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const start = (page - 1) * limit;
     const end = start + limit;
-    const paginatedApplications = filteredApplications.slice(start, end);
+    const paginatedRows = transformedRows.slice(start, end);
 
     return NextResponse.json({
       summary: {
@@ -198,37 +263,14 @@ export async function GET(req: NextRequest) {
         conversionRate,
         totalRevenue,
       },
-      chart: {
-        daily: [], // Can be added for daily breakdown
-        statusBreakdown: Object.entries(statusCounts).map(([status, count]) => ({ status, count })),
-      },
-      rows: paginatedApplications.map((app: any) => {
-        const year = new Date(app.createdAt).getFullYear();
-        const refSuffix = app.id.slice(-5).toUpperCase();
-        const referenceNumber = `TRV-${year}-${refSuffix}`;
-
-        return {
-          id: app.id,
-          referenceNumber,
-          createdAt: app.createdAt,
-          country: app.Visa?.Country?.name || app.country,
-          visaType: app.visaType,
-          travellerCount: app.ApplicationTraveller.length,
-          status: app.status,
-          assignedAdmin: app.User_Application_processedByIdToUser?.name || app.User_Application_processedByIdToUser?.email,
-          paymentStatus: app.Payment.length > 0 ? "Paid" : "Unpaid",
-          totalAmount: app.totalAmount,
-          amountPaid: app.Payment.reduce((sum: number, p: any) => sum + p.amount, 0),
-          customerName: app.User_Application_userIdToUser.name,
-          customerEmail: app.User_Application_userIdToUser.email || "N/A",
-          travelDate: app.travelDate,
-        };
-      }), pagination: {
+      rows: paginatedRows,
+      pagination: {
         page,
         limit,
         total: filteredApplications.length,
         totalPages: Math.ceil(filteredApplications.length / limit),
       },
+      availableColumns: Object.keys(transformedRows[0] || {})
     });
   } catch (error) {
     console.error("Error fetching visa applications report:", error);
@@ -238,4 +280,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

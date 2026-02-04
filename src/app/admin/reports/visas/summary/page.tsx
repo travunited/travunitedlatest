@@ -3,29 +3,11 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Download, FileDown, FileText, TrendingUp, CheckCircle, XCircle, Clock, FileText as FileTextIcon, RefreshCw } from "lucide-react";
+import { Download, FileDown, FileText, TrendingUp, CheckCircle, XCircle, Clock, RefreshCw } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { ReportFilterBar, ReportFilters } from "@/components/admin/ReportFilterBar";
-import { ReportSkeleton } from "@/components/admin/ReportSkeleton";
 import { ColumnSelector } from "@/components/admin/ColumnSelector";
 import { buildExportUrl } from "@/lib/report-export";
-import { formatDate } from "@/lib/dateFormat";
-
-interface ApplicationRow {
-  id: string;
-  referenceNumber: string;
-  createdAt: string;
-  country: string | null;
-  visaType: string | null;
-  travellerCount: number;
-  status: string;
-  assignedAdmin: string | null;
-  paymentStatus: string;
-  totalAmount: number;
-  amountPaid: number;
-  customerName: string | null;
-  customerEmail: string;
-}
 
 interface VisaSummary {
   totalApplications: number;
@@ -42,7 +24,7 @@ export default function VisaApplicationsReportPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<VisaSummary | null>(null);
-  const [applications, setApplications] = useState<ApplicationRow[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
   const [countries, setCountries] = useState<Array<{ id: string; name: string }>>([]);
   const [filters, setFilters] = useState<ReportFilters>({
     dateFrom: "",
@@ -52,29 +34,58 @@ export default function VisaApplicationsReportPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Define available columns for export
-  const availableColumns = [
+  // Define available columns for export (all 34 columns)
+  const availableColumns = useMemo(() => [
+    { key: "Sr No", label: "Sr No" },
     { key: "Application ID", label: "Application ID" },
     { key: "Reference Number", label: "Reference Number" },
-    { key: "Created Date", label: "Created Date" },
-    { key: "Country", label: "Country" },
-    { key: "Visa Type", label: "Visa Type" },
-    { key: "Number of Travellers", label: "Number of Travellers" },
-    { key: "Status", label: "Status" },
-    { key: "Assigned Admin", label: "Assigned Admin" },
-    { key: "Payment Status", label: "Payment Status" },
-    { key: "Total Amount (INR)", label: "Total Amount (INR)" },
-    { key: "Amount Paid (INR)", label: "Amount Paid (INR)" },
+    { key: "Lead Date", label: "Lead Date" },
+    { key: "Booking Date", label: "Booking Date" },
+    { key: "Sales Person Name", label: "Sales Person Name" },
+    { key: "Department", label: "Department" },
+    { key: "Customer Type (Indian / Foreign)", label: "Customer Type" },
     { key: "Customer Name", label: "Customer Name" },
-    { key: "Customer Email", label: "Customer Email" },
-  ];
+    { key: "Mobile No", label: "Mobile No" },
+    { key: "Email ID", label: "Email ID" },
+    { key: "Passport No", label: "Passport No" },
+    { key: "Nationality", label: "Nationality" },
+    { key: "Visa Country", label: "Visa Country" },
+    { key: "Visa Category", label: "Visa Category" },
+    { key: "Visa Sub Type", label: "Visa Sub Type" },
+    { key: "Entry Type", label: "Entry Type" },
+    { key: "Processing Mode", label: "Processing Mode" },
+    { key: "Lead Source", label: "Lead Source" },
+    { key: "Processing Executive", label: "Processing Executive" },
+    { key: "Vendor / Embassy / VFS", label: "Vendor / Embassy / VFS" },
+    { key: "Current Status", label: "Current Status" },
+    { key: "Case Stage", label: "Case Stage" },
+    { key: "Documents Collected (Y/N)", label: "Documents Collected" },
+    { key: "Missing Documents", label: "Missing Documents" },
+    { key: "Submission Date", label: "Submission Date" },
+    { key: "Appointment / Biometrics Date", label: "Appointment Date" },
+    { key: "Decision / Completion Date", label: "Completion Date" },
+    { key: "TAT (Days)", label: "TAT (Days)" },
+    { key: "SLA Target (Days)", label: "SLA Target" },
+    { key: "SLA Status (Met / Breached)", label: "SLA Status" },
+    { key: "Visa Outcome (Approved / Rejected / Pending)", label: "Visa Outcome" },
+    { key: "Visa Validity From", label: "Visa Validity From" },
+    { key: "Visa Validity To", label: "Visa Validity To" },
+    { key: "Remarks", label: "Remarks" },
+  ], []);
 
-  // Initialize selected columns with all columns
-  const [selectedColumns, setSelectedColumns] = useState<string[]>(
-    availableColumns.map((col) => col.key)
-  );
+  // Initialize selected columns with a sensible subset for UI view
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([
+    "Sr No",
+    "Reference Number",
+    "Lead Date",
+    "Customer Name",
+    "Visa Country",
+    "Visa Sub Type",
+    "Current Status",
+    "TAT (Days)",
+    "SLA Status (Met / Breached)"
+  ]);
 
-  // Memoize filter values to prevent infinite re-renders
   const dateFrom = useMemo(() => filters.dateFrom, [filters.dateFrom]);
   const dateTo = useMemo(() => filters.dateTo, [filters.dateTo]);
   const filterStatus = useMemo(() => filters.status, [filters.status]);
@@ -85,7 +96,6 @@ export default function VisaApplicationsReportPage() {
       const response = await fetch("/api/admin/content/countries");
       if (response.ok) {
         const data = await response.json();
-        // Filter out invalid entries and ensure name exists
         if (Array.isArray(data)) {
           setCountries(data
             .filter((c: any) => c && c.id && c.name)
@@ -138,7 +148,6 @@ export default function VisaApplicationsReportPage() {
     fetchCountries();
   }, [fetchCountries]);
 
-  // Fetch report when authenticated
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
@@ -152,29 +161,28 @@ export default function VisaApplicationsReportPage() {
       }
       fetchReport();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.role, status]);
+  }, [session?.user?.role, status, router, fetchReport]);
 
-  // Refetch when filters or page change
   useEffect(() => {
     if (status === "authenticated" && session?.user?.role === "SUPER_ADMIN") {
       fetchReport();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateFrom, dateTo, filterStatus, countryIds, page]);
+  }, [dateFrom, dateTo, filterStatus, countryIds, page, status, session?.user?.role, fetchReport]);
 
   const handleExport = async (format: "xlsx" | "csv") => {
     try {
-      if (selectedColumns.length === 0) {
-        alert("Please select at least one column to export.");
-        return;
-      }
+      // Using all available columns available in the API definition for default export if simply clicking export. 
+      // However, to respect the "Column Selector", we pass the selected columns. 
+      // If user wants ALL columns, they should check "Select All" in the selector.
+
+      const columnsToExport = selectedColumns.length > 0 ? selectedColumns : availableColumns.map(c => c.key);
+
       const exportFilters = {
         ...filters,
-        selectedColumns,
+        selectedColumns: columnsToExport,
       };
+
       const url = buildExportUrl("/api/admin/reports/visas/summary", exportFilters, format);
-      // For CSV/XLSX, open in new tab (works for these formats)
       window.open(url, "_blank");
     } catch (error) {
       console.error("Export error:", error);
@@ -197,7 +205,6 @@ export default function VisaApplicationsReportPage() {
     }
   };
 
-  // Only show full-page loader on initial load
   const isInitialLoad = loading && !summary && !error;
 
   if (isInitialLoad) {
@@ -215,10 +222,10 @@ export default function VisaApplicationsReportPage() {
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[95%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-neutral-900">Visa Applications Summary</h1>
-          <p className="text-neutral-600 mt-1">Ops+management overview of visa applications</p>
+          <p className="text-neutral-600 mt-1">Detailed operational report</p>
         </div>
 
         <ReportFilterBar
@@ -230,34 +237,33 @@ export default function VisaApplicationsReportPage() {
           countries={countries}
         />
 
-        {/* Action Buttons */}
         <div className="flex items-center gap-3 mb-6 flex-wrap">
           <button
             onClick={() => fetchReport(true)}
             disabled={refreshing || loading}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50"
           >
             <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
             {refreshing ? "Refreshing..." : "Refresh"}
           </button>
+
           <ColumnSelector
             columns={availableColumns}
             selectedColumns={selectedColumns}
             onSelectionChange={setSelectedColumns}
-            label="Export Columns"
+            label="Select Columns"
           />
+
           <button
             onClick={() => handleExport("xlsx")}
-            disabled={loading || selectedColumns.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700"
           >
             <FileDown size={16} />
             Export Excel
           </button>
           <button
             onClick={() => handleExport("csv")}
-            disabled={loading || selectedColumns.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
           >
             <Download size={16} />
             Export CSV
@@ -266,71 +272,45 @@ export default function VisaApplicationsReportPage() {
 
         {error && !summary && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-red-800 font-semibold">Failed to Load Report</h3>
-                <p className="text-red-600 text-sm mt-1">{error}</p>
-              </div>
-              <button
-                onClick={() => fetchReport()}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700"
-              >
-                Try Again
-              </button>
-            </div>
+            <p className="text-red-600">{error}</p>
+            <button onClick={() => fetchReport()} className="mt-2 text-sm text-red-700 font-medium underline">Try Again</button>
           </div>
         )}
 
         <div className={loading && summary ? "opacity-50 pointer-events-none transition-opacity" : ""}>
           {summary && (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-neutral-600">Total Applications</h3>
-                    <FileText size={20} className="text-neutral-600" />
-                  </div>
-                  <p className="text-3xl font-bold text-neutral-900">{summary.totalApplications}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Total Applications</h3>
+                  <FileText size={20} className="text-neutral-600" />
                 </div>
-                <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-neutral-600">Paid Applications</h3>
-                    <CheckCircle size={20} className="text-green-600" />
-                  </div>
-                  <p className="text-3xl font-bold text-green-700">{summary.paidApplications}</p>
-                </div>
-                <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-neutral-600">Conversion Rate</h3>
-                    <TrendingUp size={20} className="text-primary-600" />
-                  </div>
-                  <p className="text-3xl font-bold text-primary-700">{summary.conversionRate.toFixed(1)}%</p>
-                </div>
-                <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-sm font-medium text-neutral-600">Total Revenue</h3>
-                    <FileText size={20} className="text-blue-600" />
-                  </div>
-                  <p className="text-3xl font-bold text-blue-700">₹{summary.totalRevenue.toLocaleString()}</p>
-                </div>
+                <p className="text-3xl font-bold text-neutral-900">{summary.totalApplications}</p>
               </div>
-
-              {/* Status Breakdown */}
-              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200 mb-6">
-                <h3 className="text-lg font-semibold text-neutral-900 mb-4">Applications by Status</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {Object.entries(summary.statusCounts).map(([status, count]) => (
-                    <div key={status} className="bg-neutral-50 rounded-lg p-4">
-                      <div className="text-sm text-neutral-600 mb-1">{status.replace(/_/g, " ")}</div>
-                      <div className="text-2xl font-bold text-neutral-900">{count}</div>
-                    </div>
-                  ))}
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Paid Applications</h3>
+                  <CheckCircle size={20} className="text-green-600" />
                 </div>
+                <p className="text-3xl font-bold text-green-700">{summary.paidApplications}</p>
               </div>
-            </>
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Conversion Rate</h3>
+                  <TrendingUp size={20} className="text-primary-600" />
+                </div>
+                <p className="text-3xl font-bold text-primary-700">{summary.conversionRate.toFixed(1)}%</p>
+              </div>
+              <div className="bg-white rounded-2xl shadow-medium p-6 border border-neutral-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-medium text-neutral-600">Total Revenue</h3>
+                  <FileText size={20} className="text-blue-600" />
+                </div>
+                <p className="text-3xl font-bold text-blue-700">₹{summary.totalRevenue.toLocaleString()}</p>
+              </div>
+            </div>
           )}
 
-          {/* Applications Table */}
           <div className="bg-white rounded-2xl shadow-medium border border-neutral-200 overflow-hidden">
             <div className="p-6 border-b border-neutral-200">
               <h2 className="text-xl font-bold text-neutral-900">Applications</h2>
@@ -339,49 +319,27 @@ export default function VisaApplicationsReportPage() {
               <table className="min-w-full divide-y divide-neutral-200">
                 <thead className="bg-neutral-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Reference</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Country / Visa</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Travellers</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Assigned To</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Payment</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Amount</th>
+                    {selectedColumns.map((colKey) => (
+                      <th key={colKey} className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider whitespace-nowrap">
+                        {availableColumns.find(c => c.key === colKey)?.label || colKey}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-neutral-200">
-                  {applications.map((app) => (
-                    <tr key={app.id} className="hover:bg-neutral-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-medium text-neutral-900">
-                        {app.referenceNumber}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900" suppressHydrationWarning>
-                        {formatDate(app.createdAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="font-medium text-neutral-900">{app.country || "N/A"}</div>
-                        <div className="text-neutral-500">{app.visaType || "N/A"}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                        {app.travellerCount}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(app.status)}`}>
-                          {app.status.replace(/_/g, " ")}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                        {app.assignedAdmin || "Unassigned"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${app.paymentStatus === "Paid" ? "bg-green-100 text-green-700" : "bg-neutral-100 text-neutral-700"
-                          }`}>
-                          {app.paymentStatus}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-neutral-900">
-                        ₹{app.totalAmount.toLocaleString()}
-                      </td>
+                  {applications.map((app, idx) => (
+                    <tr key={idx} className="hover:bg-neutral-50">
+                      {selectedColumns.map((colKey) => (
+                        <td key={`${idx}-${colKey}`} className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                          {colKey === "Current Status" || colKey === "Visa Outcome (Approved / Rejected / Pending)" ? (
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(app[colKey])}`}>
+                              {app[colKey]}
+                            </span>
+                          ) : (
+                            app[colKey]
+                          )}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
@@ -414,4 +372,3 @@ export default function VisaApplicationsReportPage() {
     </AdminLayout>
   );
 }
-

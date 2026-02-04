@@ -79,6 +79,7 @@ export async function GET(req: NextRequest) {
           select: {
             name: true,
             email: true,
+            role: true,
           },
         },
         Application: {
@@ -86,12 +87,20 @@ export async function GET(req: NextRequest) {
             id: true,
             country: true,
             visaType: true,
+            processedById: true,
+            User_Application_processedByIdToUser: {
+              select: { name: true, email: true }
+            }
           },
         },
         Booking: {
           select: {
             id: true,
             tourName: true,
+            processedById: true,
+            User_Booking_processedByIdToUser: {
+              select: { name: true, email: true }
+            }
           },
         },
       },
@@ -111,10 +120,28 @@ export async function GET(req: NextRequest) {
     // Fetch Razorpay transaction times for payments with razorpayPaymentId
     const paymentsWithTransactionTime = await Promise.all(
       filteredPayments.map(async (payment: any) => {
-        const razorpayTransactionTime = await fetchRazorpayTransactionTime(payment.razorpayPaymentId);
+        let razorpayTransactionTime = null;
+        if (payment.razorpayPaymentId) {
+          razorpayTransactionTime = await fetchRazorpayTransactionTime(payment.razorpayPaymentId);
+        }
+
+        // Derive Fields
+        const particulars = payment.Application
+          ? `${payment.Application.country || ""} ${payment.Application.visaType || ""} Visa`
+          : (payment.Booking ? `${payment.Booking.tourName} Package` : "Other Service");
+
+        const salesPerson = payment.Application?.User_Application_processedByIdToUser?.name
+          || payment.Booking?.User_Booking_processedByIdToUser?.name
+          || "System / Self-Serve";
+
         return {
           ...payment,
           razorpayTransactionTime,
+          particulars,
+          salesPerson,
+          receivedBankName: "Online Payment Gateway", // Placeholder
+          modeOfPayment: payment.razorpayPaymentId ? "Razorpay" : "Manual", // Simplified logic
+          receiptVoucherNo: payment.id, // Using internal ID as voucher No
         };
       })
     );
@@ -133,37 +160,38 @@ export async function GET(req: NextRequest) {
     // Export handling
     if (format === "xlsx" || format === "csv") {
       const exportData = paymentsWithTransactionTime.map((payment: any) => ({
-        "Date & Time": payment.createdAt.toISOString(),
-        "Razorpay Transaction Time": payment.razorpayTransactionTime || "N/A",
-        "Payment ID": payment.razorpayPaymentId || "N/A",
-        "Order ID": payment.razorpayOrderId || "N/A",
-        "Application/Booking ID": payment.applicationId || payment.bookingId || "N/A",
-        "Type": payment.applicationId ? "Visa" : payment.bookingId ? "Tour" : "N/A",
-        "Customer Name": payment.User.name || "Customer",
-        "Customer Email": payment.User.email || "N/A",
-        "Payment Status": payment.status,
-        "Amount (INR)": payment.amount,
-        "Currency": payment.currency,
-        "Country": payment.Application?.country || "N/A",
-        "Visa Type / Tour": payment.Application?.visaType || payment.Booking?.tourName || "N/A",
+        "Sl No": payment.id, // Or index if mapping in loop
+        "Receipt Date & Time": payment.createdAt.toISOString(),
+        "Particulars": payment.particulars,
+        "Transaction Id/ UTR / Ref Id": payment.razorpayPaymentId || "N/A",
+        "Amount": payment.amount,
+        "Mode of Payment Receipt": payment.modeOfPayment,
+        "Received Bank Name": payment.receivedBankName,
+        "Curency Type": payment.currency,
+        "Paying Party name": payment.User?.name || "Customer",
+        "Receipt Voucher No": payment.receiptVoucherNo,
+        "Sales Person": payment.salesPerson
       }));
 
+      // Fix Sl No to be index-based for export
+      const indexedExportData = exportData.map((row, index) => ({ ...row, "Sl No": index + 1 }));
+
       if (format === "xlsx") {
-        const ws = XLSX.utils.json_to_sheet(exportData);
+        const ws = XLSX.utils.json_to_sheet(indexedExportData);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Payments");
+        XLSX.utils.book_append_sheet(wb, ws, "Payment Receipt Report");
         const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
         return new NextResponse(buffer, {
           headers: {
             "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "Content-Disposition": `attachment; filename=payments-report-${new Date().toISOString().split("T")[0]}.xlsx`,
+            "Content-Disposition": `attachment; filename=payment-receipt-report-${new Date().toISOString().split("T")[0]}.xlsx`,
           },
         });
       } else {
         // CSV
         const csv = [
-          Object.keys(exportData[0] || {}).join(","),
-          ...exportData.map((row) =>
+          Object.keys(indexedExportData[0] || {}).join(","),
+          ...indexedExportData.map((row) =>
             Object.values(row).map((v) => {
               const str = String(v);
               return str.includes(",") || str.includes('"') ? `"${str.replace(/"/g, '""')}"` : str;
@@ -173,7 +201,7 @@ export async function GET(req: NextRequest) {
         return new NextResponse(csv, {
           headers: {
             "Content-Type": "text/csv",
-            "Content-Disposition": `attachment; filename=payments-report-${new Date().toISOString().split("T")[0]}.csv`,
+            "Content-Disposition": `attachment; filename=payment-receipt-report-${new Date().toISOString().split("T")[0]}.csv`,
           },
         });
       }
@@ -190,21 +218,17 @@ export async function GET(req: NextRequest) {
       summary,
       rows: paginatedPayments.map((p: any) => ({
         id: p.id,
-        date: p.createdAt,
-        razorpayTransactionTime: p.razorpayTransactionTime,
-        paymentId: p.razorpayPaymentId,
-        orderId: p.razorpayOrderId,
-        applicationId: p.applicationId,
-        bookingId: p.bookingId,
-        type: p.applicationId ? "Visa" : p.bookingId ? "Tour" : "Other",
-        customerName: p.User.name || "Customer",
-        customerEmail: p.User.email || "N/A",
-        status: p.status,
+        receiptDate: p.createdAt,
+        particulars: p.particulars,
+        transactionId: p.razorpayPaymentId || "N/A",
         amount: p.amount,
+        modeOfPayment: p.modeOfPayment,
+        receivedBankName: p.receivedBankName,
         currency: p.currency,
-        country: p.Application?.country,
-        visaType: p.Application?.visaType,
-        tourName: p.Booking?.tourName,
+        payingPartyName: p.User?.name || "Customer",
+        receiptVoucherNo: p.receiptVoucherNo,
+        salesPerson: p.salesPerson,
+        status: p.status // Keeping status for UI styling
       })),
       pagination: {
         page,
@@ -221,4 +245,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

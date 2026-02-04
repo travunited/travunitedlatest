@@ -12,8 +12,9 @@ const REPORT_CATEGORIES = [
     title: "Finance",
     icon: DollarSign,
     reports: [
-      { name: "Revenue Summary", href: "/admin/reports/finance/revenue", description: "High-level revenue overview for accounting" },
-      { name: "Payments & Refunds", href: "/admin/reports/finance/payments", description: "Detailed transaction-level report" },
+      { name: "Revenue Summary", href: "/admin/reports/finance/revenue", description: "Comprehensive revenue breakdown by source" },
+      { name: "Payments & Refunds", href: "/admin/reports/finance/payments", description: "Detailed payment and transaction logs" },
+      { name: "Cancel & Refund Report", href: "/admin/reports/finance/refunds", description: "Cancellations and processed refunds" },
     ],
   },
   {
@@ -45,6 +46,7 @@ const REPORT_CATEGORIES = [
     title: "Admin & Ops",
     icon: Shield,
     reports: [
+      { name: "Performance Overview", href: "/admin/reports/performance/overview", description: "Comprehensive performance metrics across all entities" },
       { name: "Admin Performance", href: "/admin/reports/admin/performance", description: "Per admin workload and KPIs" },
       { name: "SLA & Turnaround Time", href: "/admin/reports/admin/sla", description: "Service quality and SLA compliance" },
     ],
@@ -71,7 +73,7 @@ export default function ReportsOverviewPage() {
       router.replace("/login");
       return;
     }
-    
+
     if (status === "authenticated") {
       const isSuperAdmin = userRole === "SUPER_ADMIN";
       if (!isSuperAdmin) {

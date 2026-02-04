@@ -31,6 +31,7 @@ import {
   Mail,
   ChevronLeft,
   Tag,
+  AlertCircle,
 } from "lucide-react";
 
 const BASE_MENU_ITEMS = [
@@ -101,6 +102,7 @@ const REPORTS_MENU_ITEMS = [
   { label: "Overview", href: "/admin/reports", icon: BarChart3 },
   { label: "Revenue Summary", href: "/admin/reports/finance/revenue", icon: DollarSign },
   { label: "Payments & Refunds", href: "/admin/reports/finance/payments", icon: FileText },
+  { label: "Cancel & Refund Report", href: "/admin/reports/finance/refunds", icon: AlertCircle },
   { label: "Visa Applications", href: "/admin/reports/visas/summary", icon: FileText },
   { label: "Country-wise Visas", href: "/admin/reports/visas/by-country", icon: Globe },
   { label: "Visa Type Performance", href: "/admin/reports/visas/performance", icon: TrendingUp },
@@ -108,6 +110,7 @@ const REPORTS_MENU_ITEMS = [
   { label: "Tour Performance", href: "/admin/reports/tours/performance", icon: BarChart3 },
   { label: "Customers", href: "/admin/reports/customers", icon: Users },
   { label: "Corporate Leads", href: "/admin/reports/corporate", icon: Users },
+  { label: "Performance Overview", href: "/admin/reports/performance/overview", icon: BarChart3 },
   { label: "Admin Performance", href: "/admin/reports/admin/performance", icon: Shield },
   { label: "SLA & Turnaround", href: "/admin/reports/admin/sla", icon: Clock },
   { label: "Audit Log", href: "/admin/reports/system/audit", icon: FileSearch },
