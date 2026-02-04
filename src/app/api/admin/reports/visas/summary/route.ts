@@ -85,7 +85,6 @@ export async function GET(req: NextRequest) {
           include: {
             Country: true,
             VisaSubType: true, // For checking sub types
-            entryType: true,
           },
         },
         VisaSubType: true, // Directly included relation
