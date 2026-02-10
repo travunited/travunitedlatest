@@ -98,7 +98,7 @@ export async function generateMetadata({
     },
   });
 
-  if (!visa || (visa as any).Country.code.toLowerCase() !== params.country) {
+  if (!visa || (visa as any).Country?.code?.toLowerCase() !== params.country) {
     return {};
   }
 
@@ -120,7 +120,7 @@ export async function generateMetadata({
   }
 
   const title = visa.metaTitle || visa.name;
-  const description = visa.metaDescription || visa.subtitle || visa.overview?.substring(0, 160) || `Apply for ${visa.name} - ${(visa as any).Country.name} visa services`;
+  const description = visa.metaDescription || visa.subtitle || visa.overview?.substring(0, 160) || `Apply for ${visa.name} - ${(visa as any).Country?.name || "Travunited"} visa services`;
 
   return {
     title,
@@ -178,7 +178,7 @@ export default async function VisaDetailPage({
     },
   });
 
-  if (!visa || (visa as any).Country.code.toLowerCase() !== params.country) {
+  if (!visa || (visa as any).Country?.code?.toLowerCase() !== params.country) {
     notFound();
   }
 
@@ -239,7 +239,7 @@ export default async function VisaDetailPage({
       <div className="min-h-screen bg-white">
         <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <BackToVisasButton countryCode={params.country} countryName={(visa as any).Country.name} />
+            <BackToVisasButton countryCode={params.country} countryName={(visa as any).Country?.name || params.country} />
             <h1 className="text-3xl md:text-4xl font-bold mb-2">{visa.name}</h1>
             <p className="text-lg text-white/90">{visa.subtitle}</p>
             <p className="text-sm text-white/80 mt-3 flex flex-wrap gap-4">
