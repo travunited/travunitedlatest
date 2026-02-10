@@ -228,9 +228,9 @@ export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectU
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-              <h2 className="text-2xl font-bold text-neutral-900">
-                {showOtpVerification ? "Verify Your Email" : mode === "signup" ? "Create Account" : "Login"}
-              </h2>
+                <h2 className="text-2xl font-bold text-neutral-900">
+                  {showOtpVerification ? "Verify Your Email" : mode === "signup" ? "Create Account" : "Login"}
+                </h2>
                 {mode === "signup" && !showOtpVerification && (
                   <p className="text-sm text-neutral-600 mt-1">
                     Create your account to continue with your application
@@ -249,7 +249,7 @@ export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectU
               <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                   <p className="text-sm text-blue-800">
-                    We've sent a 6-digit verification code to <strong>{formData.email}</strong>.
+                    We&apos;ve sent a 6-digit verification code to <strong>{formData.email}</strong>.
                     Please enter it below to verify your email.
                   </p>
                 </div>
@@ -332,8 +332,8 @@ export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectU
                       setError("");
                     }}
                     className={`flex-1 py-2 text-sm font-medium ${mode === "signup"
-                        ? "text-primary-600 border-b-2 border-primary-600"
-                        : "text-neutral-600 hover:text-neutral-900"
+                      ? "text-primary-600 border-b-2 border-primary-600"
+                      : "text-neutral-600 hover:text-neutral-900"
                       }`}
                   >
                     Sign Up
@@ -344,8 +344,8 @@ export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectU
                       setError("");
                     }}
                     className={`flex-1 py-2 text-sm font-medium ${mode === "login"
-                        ? "text-primary-600 border-b-2 border-primary-600"
-                        : "text-neutral-600 hover:text-neutral-900"
+                      ? "text-primary-600 border-b-2 border-primary-600"
+                      : "text-neutral-600 hover:text-neutral-900"
                       }`}
                   >
                     Login
