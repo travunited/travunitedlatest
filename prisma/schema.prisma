@@ -266,12 +266,12 @@ model Country {
   updatedAt DateTime
   Tour      Tour[]
   Visa      Visa[]
-  DocumentTemplate DocumentTemplate[]
+
 }
 
 model DocumentTemplate {
   id          String   @id @default(cuid())
-  countryId   String
+  visaId      String
   name        String
   description String?
   fileKey     String   // S3/MinIO key for the template file
@@ -282,9 +282,9 @@ model DocumentTemplate {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  Country     Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  Visa        Visa     @relation(fields: [visaId], references: [id], onDelete: Cascade)
 
-  @@index([countryId])
+  @@index([visaId])
   @@index([isActive])
 }
 
@@ -650,6 +650,7 @@ model Visa {
   VisaDocumentRequirement VisaDocumentRequirement[]
   VisaFaq                 VisaFaq[]
   VisaSubType             VisaSubType[]
+  DocumentTemplate        DocumentTemplate[]
 }
 
 model VisaDocumentRequirement {

@@ -13,6 +13,11 @@ import {
   Sparkles,
   RefreshCw,
   CheckCircle,
+  FileText,
+  Download,
+  Edit2,
+  Upload,
+  X,
 } from "lucide-react";
 
 import { AdminLayout } from "@/components/admin/AdminLayout";
@@ -67,6 +72,19 @@ interface FaqState {
   question: string;
   answer: string;
   sortOrder: number;
+}
+
+
+interface DocumentTemplate {
+  id: string;
+  name: string;
+  description: string | null;
+  fileKey: string;
+  fileName: string;
+  fileSize: number | null;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
 }
 
 interface CountryOption {
@@ -193,6 +211,12 @@ export default function AdminVisaEditorPage() {
   const [heroImageUploadError, setHeroImageUploadError] = useState<string | null>(null);
   const [sampleVisaImageUploading, setSampleVisaImageUploading] = useState(false);
   const [sampleVisaImageUploadError, setSampleVisaImageUploadError] = useState<string | null>(null);
+
+  // Template Management State
+  const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<DocumentTemplate | null>(null);
 
   // Form persistence - save form state to localStorage
   const formPersistenceKey = `visa-editor-${params.id}`;
@@ -632,6 +656,28 @@ export default function AdminVisaEditorPage() {
       setLoading(false);
     }
   }, [session, status, router, isNew, params.id, cloneSourceId, fetchVisa, fetchCountries]);
+
+  const fetchTemplates = useCallback(async () => {
+    if (isNew) return;
+    try {
+      setLoadingTemplates(true);
+      const response = await fetch(`/api/admin/content/visas/${params.id}/templates`);
+      if (response.ok) {
+        const data = await response.json();
+        setTemplates(data);
+      }
+    } catch (error) {
+      console.error("Failed to load templates", error);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  }, [params.id, isNew]);
+
+  useEffect(() => {
+    if (!isNew) {
+      fetchTemplates();
+    }
+  }, [fetchTemplates, isNew]);
 
   const handleRequirementChange = useCallback((
     uidValue: string,
@@ -1173,30 +1219,30 @@ export default function AdminVisaEditorPage() {
                     />
                   </div>
                 </div>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-neutral-700">
-                        Stay Duration
-                      </label>
-                      <TextInput
-                        value={formData.stayDuration}
-                        onChange={(value) => updateFormField("stayDuration", value)}
-                        placeholder="e.g. 30 Days"
-                      />
-                      <p className="text-xs text-neutral-500 mt-1">Duration allowed to stay</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-neutral-700">
-                        Validity
-                      </label>
-                      <TextInput
-                        value={formData.validity}
-                        onChange={(value) => updateFormField("validity", value)}
-                        placeholder="e.g. 60 days from issue"
-                      />
-                      <p className="text-xs text-neutral-500 mt-1">Validity period from date of issue</p>
-                    </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700">
+                      Stay Duration
+                    </label>
+                    <TextInput
+                      value={formData.stayDuration}
+                      onChange={(value) => updateFormField("stayDuration", value)}
+                      placeholder="e.g. 30 Days"
+                    />
+                    <p className="text-xs text-neutral-500 mt-1">Duration allowed to stay</p>
                   </div>
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700">
+                      Validity
+                    </label>
+                    <TextInput
+                      value={formData.validity}
+                      onChange={(value) => updateFormField("validity", value)}
+                      placeholder="e.g. 60 days from issue"
+                    />
+                    <p className="text-xs text-neutral-500 mt-1">Validity period from date of issue</p>
+                  </div>
+                </div>
 
               </div>
             )}
@@ -1621,6 +1667,196 @@ export default function AdminVisaEditorPage() {
           </form>
         </div>
       </div>
+      {showTemplateModal && (
+        <TemplateModal
+          visaId={params.id}
+          template={editingTemplate}
+          onClose={() => setShowTemplateModal(false)}
+          onSave={() => {
+            setShowTemplateModal(false);
+            fetchTemplates();
+          }}
+        />
+      )}
     </AdminLayout>
+  );
+}
+
+function TemplateModal({
+  visaId,
+  template,
+  onClose,
+  onSave,
+}: {
+  visaId: string;
+  template: DocumentTemplate | null;
+  onClose: () => void;
+  onSave: () => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: template?.name || "",
+    description: template?.description || "",
+    sortOrder: template?.sortOrder || 0,
+    isActive: template?.isActive ?? true,
+  });
+  const [file, setFile] = useState<File | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (template) {
+        // Update
+        const res = await fetch(
+          `/api/admin/content/visas/${visaId}/templates/${template.id}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(formData),
+          }
+        );
+        if (!res.ok) throw new Error("Failed to update");
+      } else {
+        // Create
+        if (!file) {
+          alert("Please select a file");
+          setLoading(false);
+          return;
+        }
+
+        const data = new FormData();
+        data.append("file", file);
+        data.append("name", formData.name);
+        if (formData.description) data.append("description", formData.description);
+        data.append("sortOrder", String(formData.sortOrder));
+
+        const res = await fetch(`/api/admin/content/visas/${visaId}/templates`, {
+          method: "POST",
+          body: data,
+        });
+        if (!res.ok) throw new Error("Failed to create");
+      }
+
+      onSave();
+    } catch (error) {
+      console.error(error);
+      alert("Error saving template");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden animate-scale-in">
+        <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
+          <h3 className="font-semibold text-lg text-neutral-900">
+            {template ? "Edit Template" : "Upload Template"}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 p-2 rounded-lg transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Display Name *
+            </label>
+            <TextInput
+              value={formData.name}
+              onChange={(value) => setFormData({ ...formData, name: value })}
+              placeholder="e.g., Visa Application Form"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              Description
+            </label>
+            <TextInput
+              value={formData.description}
+              onChange={(value) => setFormData({ ...formData, description: value })}
+              placeholder="Brief description for the user"
+            />
+          </div>
+
+          {!template && (
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
+                Document File *
+              </label>
+              <div className="border border-dashed border-neutral-300 rounded-lg p-6 hover:bg-neutral-50 transition-colors text-center">
+                <input
+                  type="file"
+                  id="template-file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                />
+                <label
+                  htmlFor="template-file"
+                  className="cursor-pointer flex flex-col items-center gap-2"
+                >
+                  <div className="p-3 bg-primary-50 text-primary-600 rounded-full">
+                    <Upload size={20} />
+                  </div>
+                  <div className="text-sm font-medium text-neutral-700">
+                    {file ? file.name : "Click to upload file"}
+                  </div>
+                  <div className="text-xs text-neutral-500">
+                    PDF, DOC, DOCX up to 20MB
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
+                Sort Order
+              </label>
+              <NumberInput
+                value={formData.sortOrder}
+                onChange={(value) => setFormData({ ...formData, sortOrder: value || 0 })}
+                placeholder="0"
+              />
+            </div>
+            <div className="flex items-center h-full pt-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <CheckboxInput
+                  checked={formData.isActive}
+                  onChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                />
+                <span className="text-sm font-medium text-neutral-700">Active</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-100 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {loading && <Loader2 size={16} className="animate-spin" />}
+              {template ? "Save Changes" : "Upload Template"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }

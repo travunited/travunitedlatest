@@ -187,10 +187,10 @@ export default async function VisaDetailPage({
     (req: any) => req.scope === "PER_APPLICATION"
   );
 
-  // Fetch document templates for this country
+  // Fetch document templates for this VISA
   const templates = await prisma.documentTemplate.findMany({
     where: {
-      countryId: (visa as any).Country.id,
+      visaId: visa.id,
       isActive: true,
     },
     orderBy: {
