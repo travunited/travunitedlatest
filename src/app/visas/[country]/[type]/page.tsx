@@ -67,16 +67,19 @@ const buildEntrySummary = (visa: {
   entryTypeLegacy?: string | null;
   subTypes?: Array<{ label: string; code?: string | null }> | null;
 }) => {
-  // If subtypes exist, show them
-  if (visa.subTypes && visa.subTypes.length > 0) {
+  // If subtypes exist and is an array, show them
+  if (Array.isArray(visa.subTypes) && visa.subTypes.length > 0) {
     return visa.subTypes.map(st => st.label).join(", ");
   }
   // Fallback to legacy label
   if (visa.visaSubTypeLabel) return visa.visaSubTypeLabel;
+
   const entryLabel = formatEnumLabel(visa.entryType ?? null, entryTypeLabels);
   const stayLabel = formatEnumLabel(visa.stayType ?? null, stayTypeLabels);
   const parts = [entryLabel, stayLabel].filter(Boolean);
+
   if (parts.length) return parts.join(" • ");
+
   return visa.entryTypeLegacy || "Flexible Entry";
 };
 
