@@ -1831,6 +1831,7 @@ function TemplateModal({
         data.append("name", formData.name);
         if (formData.description) data.append("description", formData.description);
         data.append("sortOrder", String(formData.sortOrder));
+        data.append("isActive", String(formData.isActive));
 
         const res = await fetch(`/api/admin/content/visas/${visaId}/templates`, {
           method: "POST",

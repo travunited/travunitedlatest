@@ -88,6 +88,9 @@ export async function POST(
         const description = formData.get("description") as string | null;
         const sortOrder = parseInt(formData.get("sortOrder") as string) || 0;
 
+        const isActiveRaw = formData.get("isActive");
+        const isActive = isActiveRaw === null ? true : isActiveRaw === "true";
+
         if (!file || !name) {
             return NextResponse.json(
                 { error: "File and name are required" },
@@ -138,7 +141,7 @@ export async function POST(
                 fileSize: file.size,
                 mimeType: file.type,
                 sortOrder,
-                isActive: true,
+                isActive,
             },
         });
 
