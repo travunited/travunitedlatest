@@ -1271,95 +1271,195 @@ export default function AdminVisaEditorPage() {
             )}
 
             {activeTab === "documents" && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-neutral-900">Document Requirements</h3>
-                    <p className="text-sm text-neutral-500">
-                      These drive the visa detail page and Step 4 of the application flow.
-                    </p>
+              <>
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-neutral-900">Document Requirements</h3>
+                      <p className="text-sm text-neutral-500">
+                        These drive the visa detail page and Step 4 of the application flow.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={addRequirement}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-lg font-medium"
+                    >
+                      <Plus size={16} /> Add Requirement
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={addRequirement}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-lg font-medium"
-                  >
-                    <Plus size={16} /> Add Requirement
-                  </button>
+                  <div className="space-y-4">
+                    {requirements.length === 0 && (
+                      <div className="border border-dashed border-neutral-200 rounded-xl p-6 text-center text-neutral-500">
+                        No documents yet. Add at least passport + photo to start.
+                      </div>
+                    )}
+                    {requirements.map((req, index) => (
+                      <div
+                        key={req.uid}
+                        className="border border-neutral-200 rounded-xl p-4 space-y-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-semibold text-neutral-500">
+                            Requirement #{index + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeRequirement(req.uid)}
+                            className="text-red-500 hover:text-red-600"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-3">
+                          <TextInput
+                            value={req.name}
+                            onChange={(value) => handleRequirementChange(req.uid, "name", value)}
+                            placeholder="Passport first & last page"
+                            className="border border-neutral-300 rounded-lg"
+                          />
+                          <SelectInput
+                            value={req.scope}
+                            onChange={(value) => handleRequirementChange(req.uid, "scope", value as DocScope)}
+                            className="border border-neutral-300 rounded-lg"
+                          >
+                            {SCOPE_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </SelectInput>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-3">
+                          <TextInput
+                            value={req.category}
+                            onChange={(value) => handleRequirementChange(req.uid, "category", value)}
+                            placeholder="Category (e.g., Identity)"
+                            className="border border-neutral-300 rounded-lg"
+                          />
+                          <NumberInput
+                            value={req.sortOrder}
+                            onChange={(value) => handleRequirementChange(req.uid, "sortOrder", value ?? 0)}
+                            className="border border-neutral-300 rounded-lg"
+                            placeholder="Sort"
+                          />
+                          <label className="inline-flex items-center gap-2 px-3 py-2 border border-neutral-200 rounded-lg">
+                            <CheckboxInput
+                              checked={req.isRequired}
+                              onChange={(checked) => handleRequirementChange(req.uid, "isRequired", checked)}
+                            />
+                            <span className="text-sm text-neutral-700">Required</span>
+                          </label>
+                        </div>
+                        <TextareaInput
+                          value={req.description}
+                          onChange={(value) => handleRequirementChange(req.uid, "description", value)}
+                          placeholder="Extra instructions (file format, DPI, etc.)"
+                          className="w-full border border-neutral-300 rounded-lg"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  {requirements.length === 0 && (
+
+                <div className="pt-6 border-t border-neutral-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-neutral-900">Downloadable Templates</h3>
+                      <p className="text-sm text-neutral-500">
+                        Upload sample documents (PDF, DOCX) for applicants to download.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingTemplate(null);
+                        setShowTemplateModal(true);
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-lg font-medium"
+                    >
+                      <Plus size={16} /> Upload Template
+                    </button>
+                  </div>
+
+                  {loadingTemplates ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="animate-spin mx-auto text-neutral-400" size={24} />
+                      <p className="text-sm text-neutral-500 mt-2">Loading templates...</p>
+                    </div>
+                  ) : templates.length === 0 ? (
                     <div className="border border-dashed border-neutral-200 rounded-xl p-6 text-center text-neutral-500">
-                      No documents yet. Add at least passport + photo to start.
+                      No templates uploaded yet.
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {templates.map((template) => (
+                        <div
+                          key={template.id}
+                          className="border border-neutral-200 rounded-xl p-4 flex items-center justify-between group hover:border-primary-200 transition-colors"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 bg-primary-50 text-primary-600 rounded-lg">
+                              <FileText size={20} />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-neutral-900">{template.name}</h4>
+                              {template.description && (
+                                <p className="text-sm text-neutral-500">{template.description}</p>
+                              )}
+                              <div className="flex items-center gap-3 mt-1 text-xs text-neutral-400">
+                                <span>{template.fileName}</span>
+                                {template.fileSize && (
+                                  <span>• {(template.fileSize / 1024).toFixed(1)} KB</span>
+                                )}
+                                <span className={template.isActive ? "text-green-600" : "text-neutral-400"}>
+                                  • {template.isActive ? "Active" : "Inactive"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingTemplate(template);
+                                setShowTemplateModal(true);
+                              }}
+                              className="p-2 text-neutral-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                              title="Edit"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (!confirm("Are you sure you want to delete this template?")) return;
+                                try {
+                                  const res = await fetch(
+                                    `/api/admin/content/visas/${params.id}/templates/${template.id}`,
+                                    { method: "DELETE" }
+                                  );
+                                  if (res.ok) {
+                                    fetchTemplates();
+                                  } else {
+                                    alert("Failed to delete template");
+                                  }
+                                } catch (e) {
+                                  alert("Error deleting template");
+                                }
+                              }}
+                              className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Delete"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
-                  {requirements.map((req, index) => (
-                    <div
-                      key={req.uid}
-                      className="border border-neutral-200 rounded-xl p-4 space-y-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-neutral-500">
-                          Requirement #{index + 1}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeRequirement(req.uid)}
-                          className="text-red-500 hover:text-red-600"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                      <div className="grid md:grid-cols-2 gap-3">
-                        <TextInput
-                          value={req.name}
-                          onChange={(value) => handleRequirementChange(req.uid, "name", value)}
-                          placeholder="Passport first & last page"
-                          className="border border-neutral-300 rounded-lg"
-                        />
-                        <SelectInput
-                          value={req.scope}
-                          onChange={(value) => handleRequirementChange(req.uid, "scope", value as DocScope)}
-                          className="border border-neutral-300 rounded-lg"
-                        >
-                          {SCOPE_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </SelectInput>
-                      </div>
-                      <div className="grid md:grid-cols-3 gap-3">
-                        <TextInput
-                          value={req.category}
-                          onChange={(value) => handleRequirementChange(req.uid, "category", value)}
-                          placeholder="Category (e.g., Identity)"
-                          className="border border-neutral-300 rounded-lg"
-                        />
-                        <NumberInput
-                          value={req.sortOrder}
-                          onChange={(value) => handleRequirementChange(req.uid, "sortOrder", value ?? 0)}
-                          className="border border-neutral-300 rounded-lg"
-                          placeholder="Sort"
-                        />
-                        <label className="inline-flex items-center gap-2 px-3 py-2 border border-neutral-200 rounded-lg">
-                          <CheckboxInput
-                            checked={req.isRequired}
-                            onChange={(checked) => handleRequirementChange(req.uid, "isRequired", checked)}
-                          />
-                          <span className="text-sm text-neutral-700">Required</span>
-                        </label>
-                      </div>
-                      <TextareaInput
-                        value={req.description}
-                        onChange={(value) => handleRequirementChange(req.uid, "description", value)}
-                        placeholder="Extra instructions (file format, DPI, etc.)"
-                        className="w-full border border-neutral-300 rounded-lg"
-                      />
-                    </div>
-                  ))}
                 </div>
-              </div>
+              </>
             )}
 
             {activeTab === "faqs" && (
