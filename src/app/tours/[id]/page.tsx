@@ -8,6 +8,8 @@ export default async function TourRedirectPage({
 }: {
   params: Promise<{ id: string }> | { id: string };
 }) {
+  let destination = "/holidays";
+
   try {
     // Handle both sync and async params (Next.js 15+ uses async params)
     const resolvedParams = await Promise.resolve(params);
@@ -20,23 +22,21 @@ export default async function TourRedirectPage({
         OR: [
           { isActive: true },
           { status: "active" },
-          { status: null },
+          { status: null }, // Handle legacy null status
         ],
       },
       select: { slug: true },
     });
 
     if (tour?.slug) {
-      // Redirect to the holidays route with the correct slug
-      redirect(`/holidays/${encodeURIComponent(tour.slug)}`);
-    } else {
-      // If tour not found, redirect to holidays listing
-      redirect("/holidays");
+      destination = `/holidays/${encodeURIComponent(tour.slug)}`;
     }
   } catch (error) {
-    console.error("Error in tour redirect:", error);
-    // On error, redirect to holidays listing
-    redirect("/holidays");
+    console.error("Error in tour redirect logic:", error);
+    // On error, we'll fall back to default destination "/holidays"
   }
+
+  // Redirect outside try-catch to allow NEXT_REDIRECT to work
+  redirect(destination);
 }
 
