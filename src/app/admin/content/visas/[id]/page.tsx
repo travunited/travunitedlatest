@@ -1122,7 +1122,7 @@ export default function AdminVisaEditorPage() {
                       placeholder="Single Entry eVisa – Short Stay"
                     />
                     <p className="text-xs text-neutral-500 mt-1">
-                      Optional: Enter a custom subtype label (e.g., "Single Entry eVisa – Short Stay")
+                      Optional: Enter a custom subtype label (e.g., &quot;Single Entry eVisa – Short Stay&quot;)
                     </p>
                   </div>
                 </div>
