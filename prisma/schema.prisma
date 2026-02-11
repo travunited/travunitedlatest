@@ -271,7 +271,7 @@ model Country {
 
 model DocumentTemplate {
   id          String   @id @default(cuid())
-  visaId      String
+  visaId      String?
   name        String
   description String?
   fileKey     String   // S3/MinIO key for the template file
@@ -282,7 +282,7 @@ model DocumentTemplate {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  Visa        Visa     @relation(fields: [visaId], references: [id], onDelete: Cascade)
+  Visa        Visa?    @relation(fields: [visaId], references: [id], onDelete: Cascade)
 
   @@index([visaId])
   @@index([isActive])
