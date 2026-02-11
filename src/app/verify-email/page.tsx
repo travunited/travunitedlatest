@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -28,7 +28,7 @@ function VerifyEmailContent() {
     }
   }, [session, sessionStatus]);
 
-  const checkEmailVerification = async () => {
+  const checkEmailVerification = useCallback(async () => {
     try {
       const response = await fetch("/api/auth/verify-email");
       if (response.ok) {
@@ -44,7 +44,14 @@ function VerifyEmailContent() {
     } catch (error) {
       console.error("Error checking email verification:", error);
     }
-  };
+  }, [router, redirectUrl]);
+
+  useEffect(() => {
+    // Check if email is already verified
+    if (session?.user?.email && sessionStatus === "authenticated") {
+      checkEmailVerification();
+    }
+  }, [session, sessionStatus, checkEmailVerification]);
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,7 +187,7 @@ function VerifyEmailContent() {
               Verify Your Email
             </h1>
             <p className="text-neutral-600">
-              We've sent a 6-digit verification code to
+              We&apos;ve sent a 6-digit verification code to
             </p>
             <p className="text-neutral-900 font-medium mt-1">{email}</p>
           </div>
@@ -188,7 +195,7 @@ function VerifyEmailContent() {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-blue-800">
               <strong>You can continue filling your application</strong> while we verify your email.
-              Once verified, you'll be able to submit your application.
+              Once verified, you&apos;ll be able to submit your application.
             </p>
           </div>
 

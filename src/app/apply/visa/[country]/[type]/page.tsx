@@ -63,23 +63,7 @@ const steps = [
 ];
 
 export default function VisaApplicationPage({ params }: { params: { country: string; type: string } }) {
-  // Validate params early
-  if (!params?.country || !params?.type) {
-    return (
-      <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-large p-8 text-center">
-          <h1 className="text-2xl font-bold text-neutral-900 mb-2">Invalid Visa Application</h1>
-          <p className="text-neutral-600 mb-6">The visa application link is invalid. Please select a visa from the visa page.</p>
-          <Link
-            href="/visas"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
-          >
-            Go to Visas
-          </Link>
-        </div>
-      </div>
-    );
-  }
+
 
   const { data: session } = useSession();
   const router = useRouter();
@@ -2727,6 +2711,24 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         return null;
     }
   };
+
+  // Validate params early
+  if (!params?.country || !params?.type) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-large p-8 text-center">
+          <h1 className="text-2xl font-bold text-neutral-900 mb-2">Invalid Visa Application</h1>
+          <p className="text-neutral-600 mb-6">The visa application link is invalid. Please select a visa from the visa page.</p>
+          <Link
+            href="/visas"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
+          >
+            Go to Visas
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-neutral-50">
