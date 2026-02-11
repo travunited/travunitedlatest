@@ -19,7 +19,7 @@ export async function uploadVisaDocument(
   contentType: string
 ) {
   const command = new PutObjectCommand({
-    Bucket: process.env.MINIO_BUCKET!,
+    Bucket: process.env.MINIO_BUCKET || "visa-documents",
     Key: key,
     Body: body,
     ContentType: contentType,

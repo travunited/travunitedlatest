@@ -133,26 +133,58 @@ export async function POST(
         // Store under templates/visa-id/... to keep organized
         const key = `templates/visas/${id}/${timestamp}-${sanitizedFileName}`;
 
-        await uploadVisaDocument(key, buffer, file.type);
+        // Check MinIO config
+        if (!process.env.MINIO_ENDPOINT || !process.env.MINIO_ACCESS_KEY || !process.env.MINIO_SECRET_KEY) {
+            console.error("MinIO configuration missing");
+            // Don't expose this to client unless admin
+            // return NextResponse.json({ error: "Storage configuration invalid" }, { status: 500 });
+        }
+
+        // Upload file to MinIO
+        try {
+            console.log(`[Template Upload] Uploading to MinIO: ${key}`);
+            await uploadVisaDocument(key, buffer, file.type);
+            console.log(`[Template Upload] Upload successful`);
+        } catch (uploadError: any) {
+            console.error("Error uploading to MinIO:", uploadError);
+            return NextResponse.json(
+                {
+                    error: "Failed to upload file to storage",
+                    message: uploadError.message || "Storage upload failed"
+                },
+                { status: 502 } // Bad Gateway for upstream storage failure
+            );
+        }
 
         // Create template record
-        const template = await prisma.documentTemplate.create({
-            data: {
-                visaId: id,
-                name,
-                description: description || null,
-                fileKey: key,
-                fileName: file.name,
-                fileSize: file.size,
-                mimeType: file.type,
-                sortOrder,
-                isActive,
-            },
-        });
+        try {
+            const template = await prisma.documentTemplate.create({
+                data: {
+                    visaId: id,
+                    name,
+                    description: description || null,
+                    fileKey: key,
+                    fileName: file.name,
+                    fileSize: file.size,
+                    mimeType: file.type,
+                    sortOrder,
+                    isActive,
+                },
+            });
+            return NextResponse.json(template, { status: 201 });
+        } catch (dbError: any) {
+            console.error("Error creating database record:", dbError);
+            return NextResponse.json(
+                {
+                    error: "Failed to save template to database",
+                    message: dbError.message || "Database operation failed"
+                },
+                { status: 500 }
+            );
+        }
 
-        return NextResponse.json(template, { status: 201 });
     } catch (error: any) {
-        console.error("Error creating template:", error);
+        console.error("Unexpected error in template creation:", error);
         return NextResponse.json(
             { error: "Internal server error", message: error.message },
             { status: 500 }

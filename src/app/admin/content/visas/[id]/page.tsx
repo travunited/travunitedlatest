@@ -1839,7 +1839,8 @@ function TemplateModal({
         });
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.error || "Failed to create");
+          // Prefer 'message' for detailed server errors, fallback to 'error'
+          throw new Error(errorData.message || errorData.error || "Failed to create");
         }
       }
 
