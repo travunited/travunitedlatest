@@ -1837,13 +1837,16 @@ function TemplateModal({
           method: "POST",
           body: data,
         });
-        if (!res.ok) throw new Error("Failed to create");
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.error || "Failed to create");
+        }
       }
 
       onSave();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("Error saving template");
+      alert(error.message || "Error saving template");
     } finally {
       setLoading(false);
     }

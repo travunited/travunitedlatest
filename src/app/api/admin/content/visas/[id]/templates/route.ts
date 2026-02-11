@@ -13,9 +13,10 @@ export const dynamic = "force-dynamic";
 // GET - List all templates for a VISA
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
     try {
+        const { id } = await Promise.resolve(params);
         const session = await getServerSession(authOptions);
         const isAdmin =
             session?.user?.role === "STAFF_ADMIN" || session?.user?.role === "SUPER_ADMIN";
@@ -26,7 +27,7 @@ export async function GET(
 
         const templates = await prisma.documentTemplate.findMany({
             where: {
-                visaId: params.id,
+                visaId: id,
             },
             orderBy: {
                 sortOrder: "asc",
@@ -62,9 +63,10 @@ export async function GET(
 // POST - Create a new template for a VISA
 export async function POST(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
     try {
+        const { id } = await Promise.resolve(params);
         const session = await getServerSession(authOptions);
         const isAdmin =
             session?.user?.role === "STAFF_ADMIN" || session?.user?.role === "SUPER_ADMIN";
@@ -75,7 +77,7 @@ export async function POST(
 
         // Verify VISA exists
         const visa = await prisma.visa.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!visa) {
@@ -98,6 +100,8 @@ export async function POST(
             );
         }
 
+        console.log(`[Template Upload] Processing file: ${file.name}, Size: ${file.size}, Type: ${file.type}`);
+
         // Validate file size (max 20MB)
         if (file.size > 20 * 1024 * 1024) {
             return NextResponse.json(
@@ -114,8 +118,9 @@ export async function POST(
         ];
 
         if (!allowedTypes.includes(file.type)) {
+            console.error(`[Template Upload] Invalid file type: ${file.type}`);
             return NextResponse.json(
-                { error: "Only PDF, DOC, and DOCX files are allowed" },
+                { error: `Invalid file type: ${file.type}. Only PDF, DOC, and DOCX files are allowed.` },
                 { status: 400 }
             );
         }
@@ -126,14 +131,14 @@ export async function POST(
         const timestamp = Date.now();
         const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
         // Store under templates/visa-id/... to keep organized
-        const key = `templates/visas/${params.id}/${timestamp}-${sanitizedFileName}`;
+        const key = `templates/visas/${id}/${timestamp}-${sanitizedFileName}`;
 
         await uploadVisaDocument(key, buffer, file.type);
 
         // Create template record
         const template = await prisma.documentTemplate.create({
             data: {
-                visaId: params.id,
+                visaId: id,
                 name,
                 description: description || null,
                 fileKey: key,

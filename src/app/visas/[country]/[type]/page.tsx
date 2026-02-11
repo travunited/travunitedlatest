@@ -86,24 +86,29 @@ const buildEntrySummary = (visa: {
 export async function generateMetadata({
   params,
 }: {
-  params: { country: string; type: string };
+  params: Promise<{ country: string; type: string }> | { country: string; type: string };
 }): Promise<Metadata> {
+  // Handle both sync and async params
+  const resolvedParams = await Promise.resolve(params);
   // Decode URL-encoded slug
-  const decodedSlug = decodeURIComponent(params.type);
+  const decodedSlug = decodeURIComponent(resolvedParams.type);
 
   const visa = await prisma.visa.findFirst({
     where: { slug: decodedSlug },
     include: {
       Country: true,
+      VisaSubType: true,
+      VisaDocumentRequirement: true,
+      VisaFaq: true,
     },
   });
 
-  if (!visa || (visa as any).Country?.code?.toLowerCase() !== params.country) {
+  if (!visa || (visa as any).Country?.code?.toLowerCase() !== resolvedParams.country) {
     return {};
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://travunited.com";
-  const pageUrl = `${siteUrl}/visas/${params.country}/${visa.slug}`;
+  const pageUrl = `${siteUrl}/visas/${resolvedParams.country}/${visa.slug}`;
 
   // Get OG image - use hero image, fallback to a default
   let ogImage: string | undefined;
@@ -156,11 +161,15 @@ export default async function VisaDetailPage({
   params,
   searchParams,
 }: {
-  params: { country: string; type: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  params: Promise<{ country: string; type: string }> | { country: string; type: string };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }> | { [key: string]: string | string[] | undefined };
 }) {
+  // Handle both sync and async params and searchParams
+  const resolvedParams = await Promise.resolve(params);
+  const resolvedSearchParams = await Promise.resolve(searchParams);
+
   // Decode URL-encoded slug
-  const decodedSlug = decodeURIComponent(params.type);
+  const decodedSlug = decodeURIComponent(resolvedParams.type);
 
   const visa = await prisma.visa.findFirst({
     where: { slug: decodedSlug },
@@ -178,7 +187,7 @@ export default async function VisaDetailPage({
     },
   });
 
-  if (!visa || (visa as any).Country?.code?.toLowerCase() !== params.country) {
+  if (!visa || (visa as any).Country?.code?.toLowerCase() !== resolvedParams.country) {
     notFound();
   }
 
@@ -235,11 +244,11 @@ export default async function VisaDetailPage({
   // const isVisaFreeEntry = visa.visaMode === "VISA_FREE_ENTRY"; // redundant now if we group them, but useful if text differs slightly
 
   return (
-    <VisaDetailClient searchParams={searchParams}>
+    <VisaDetailClient searchParams={resolvedSearchParams}>
       <div className="min-h-screen bg-white">
         <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <BackToVisasButton countryCode={params.country} countryName={(visa as any).Country?.name || params.country} />
+            <BackToVisasButton countryCode={resolvedParams.country} countryName={(visa as any).Country?.name || resolvedParams.country} />
             <h1 className="text-3xl md:text-4xl font-bold mb-2">{visa.name}</h1>
             <p className="text-lg text-white/90">{visa.subtitle}</p>
             <p className="text-sm text-white/80 mt-3 flex flex-wrap gap-4">
@@ -571,7 +580,7 @@ export default async function VisaDetailPage({
                         Have questions about this visa? Our experts are here to assist you.
                       </p>
                       <Link
-                        href={`/help?subject=${encodeURIComponent(`Visa Inquiry: ${visa.name} (${params.country.toUpperCase()})`)}&message=${encodeURIComponent(`I have questions about the ${visa.name} visa for ${params.country.toUpperCase()}. Please provide more information.\n\nVisa Details:\n- Visa Type: ${visa.name}\n- Country: ${params.country.toUpperCase()}`)}`}
+                        href={`/help?subject=${encodeURIComponent(`Visa Inquiry: ${visa.name} (${resolvedParams.country.toUpperCase()})`)}&message=${encodeURIComponent(`I have questions about the ${visa.name} visa for ${resolvedParams.country.toUpperCase()}. Please provide more information.\n\nVisa Details:\n- Visa Type: ${visa.name}\n- Country: ${resolvedParams.country.toUpperCase()}`)}`}
                         className="inline-flex items-center text-sm font-medium text-blue-700 hover:text-blue-900 underline"
                       >
                         <span>Get Expert Assistance</span>
@@ -586,7 +595,7 @@ export default async function VisaDetailPage({
                   <InformationOnlyCTAs />
                 ) : (
                   <Link
-                    href={`/apply/visa/${params.country}/${visa.slug}`}
+                    href={`/apply/visa/${resolvedParams.country}/${visa.slug}`}
                     className="w-full bg-primary-600 text-white px-6 py-4 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2 mb-4"
                   >
                     <span>Apply for this Visa</span>
@@ -597,7 +606,7 @@ export default async function VisaDetailPage({
                 {/* Share Button */}
                 <div className="mb-4">
                   <ShareButton
-                    url={`/visas/${params.country}/${visa.slug}`}
+                    url={`/visas/${resolvedParams.country}/${visa.slug}`}
                     title={visa.name}
                     description={visa.subtitle || visa.overview?.substring(0, 160)}
                     image={heroImageUrl || undefined}
