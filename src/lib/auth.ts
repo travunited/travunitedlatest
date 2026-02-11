@@ -128,7 +128,7 @@ export const authOptions: NextAuthOptions = {
           }
 
           // Verification is valid, now find or create the user
-          let user = await prisma.user.findUnique({
+          let user = await prisma.user.findFirst({
             where: { phone: mobile },
           });
 
