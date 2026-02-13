@@ -228,6 +228,22 @@ model CareerApplication {
   @@index([status])
 }
 
+model Career {
+  id          String   @id @default(cuid())
+  title       String
+  location    String
+  type        String // Full-time, Part-time, Contract, etc.
+  department  String
+  description String? // Optional detailed description
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
 model ContactMessage {
   id        String   @id
   name      String?
@@ -266,7 +282,6 @@ model Country {
   updatedAt DateTime
   Tour      Tour[]
   Visa      Visa[]
-
 }
 
 model DocumentTemplate {
@@ -274,10 +289,10 @@ model DocumentTemplate {
   visaId      String?
   name        String
   description String?
-  fileKey     String   // S3/MinIO key for the template file
-  fileName    String   // Original filename
-  fileSize    Int?     // File size in bytes
-  mimeType    String?  // MIME type (e.g., application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document)
+  fileKey     String // S3/MinIO key for the template file
+  fileName    String // Original filename
+  fileSize    Int? // File size in bytes
+  mimeType    String? // MIME type (e.g., application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document)
   sortOrder   Int      @default(0)
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -443,87 +458,87 @@ model TeamMember {
 }
 
 model Tour {
-  id                   String      @id
-  name                 String
-  destination          String
-  duration             String
-  price                Int
-  description          String?
-  itinerary            String?
-  inclusions           String?
-  exclusions           String?
-  imageUrl             String?
-  isActive             Boolean     @default(true)
-  advancePercentage    Int?
-  createdAt            DateTime    @default(now())
-  updatedAt            DateTime
-  allowAdvance         Boolean     @default(false)
-  basePriceInInr       Int?
-  countryId            String?
-  galleryImageUrls     String?
-  heroImageUrl         String?
-  importantNotes       String?
-  isFeatured           Boolean     @default(false)
-  metaDescription      String?
-  metaTitle            String?
-  overview             String?
-  slug                 String?     @unique
-  subtitle             String?
-  availableDates       String?
-  bestFor              String?
-  bookingDeadline      DateTime?
-  bookingPolicies      String?
-  cancellationTerms    String?
-  canonicalUrl         String?
-  categoryId           String?
-  citiesCovered        String?
-  currency             String?     @default("INR")
-  customizationOptions String?
-  destinationCountry   String?
-  destinationState     String?
-  difficultyLevel      String?
-  durationDays         Int?
-  durationNights       Int?
-  featuredImage        String?
-  groupSizeMax         Int?
-  groupSizeMin         Int?
-  highlights           String?
-  hotelCategories      String?
-  images               String?
-  maximumTravelers     Int?
-  metaKeywords         String?
-  minimumTravelers     Int?
-  ogDescription        String?
-  ogImage              String?
-  ogTitle              String?
-  originalPrice        Int?
-  packageType          String?
-  primaryDestination   String?
-  region               String?
-  regionTags           String?
-  seasonalPricing      String?
-  shortDescription     String?
-  status               String?     @default("active")
-  themes               String?
-  tourSubType          String?
-  tourType             String?
-  twitterDescription   String?
-  twitterImage         String?
-  twitterTitle         String?
-  requiresPassport     Boolean     @default(false)
-  childPricingType     String?
-  childPricingValue    Int?
-  childAgeLimit        Int?        @default(12)
-  requiredDocuments    Json?
-  amenities            String?
-  showAmenities        Boolean     @default(false)
-  mapLogisticsImageUrl String?
-  optionalActivities   String?
-  showOptionalActivities Boolean   @default(false)
-  Booking              Booking[]
-  Country              Country?    @relation(fields: [countryId], references: [id])
-  TourAddOn            TourAddOn[]
-  TourDay              TourDay[]
+  id                     String      @id
+  name                   String
+  destination            String
+  duration               String
+  price                  Int
+  description            String?
+  itinerary              String?
+  inclusions             String?
+  exclusions             String?
+  imageUrl               String?
+  isActive               Boolean     @default(true)
+  advancePercentage      Int?
+  createdAt              DateTime    @default(now())
+  updatedAt              DateTime
+  allowAdvance           Boolean     @default(false)
+  basePriceInInr         Int?
+  countryId              String?
+  galleryImageUrls       String?
+  heroImageUrl           String?
+  importantNotes         String?
+  isFeatured             Boolean     @default(false)
+  metaDescription        String?
+  metaTitle              String?
+  overview               String?
+  slug                   String?     @unique
+  subtitle               String?
+  availableDates         String?
+  bestFor                String?
+  bookingDeadline        DateTime?
+  bookingPolicies        String?
+  cancellationTerms      String?
+  canonicalUrl           String?
+  categoryId             String?
+  citiesCovered          String?
+  currency               String?     @default("INR")
+  customizationOptions   String?
+  destinationCountry     String?
+  destinationState       String?
+  difficultyLevel        String?
+  durationDays           Int?
+  durationNights         Int?
+  featuredImage          String?
+  groupSizeMax           Int?
+  groupSizeMin           Int?
+  highlights             String?
+  hotelCategories        String?
+  images                 String?
+  maximumTravelers       Int?
+  metaKeywords           String?
+  minimumTravelers       Int?
+  ogDescription          String?
+  ogImage                String?
+  ogTitle                String?
+  originalPrice          Int?
+  packageType            String?
+  primaryDestination     String?
+  region                 String?
+  regionTags             String?
+  seasonalPricing        String?
+  shortDescription       String?
+  status                 String?     @default("active")
+  themes                 String?
+  tourSubType            String?
+  tourType               String?
+  twitterDescription     String?
+  twitterImage           String?
+  twitterTitle           String?
+  requiresPassport       Boolean     @default(false)
+  childPricingType       String?
+  childPricingValue      Int?
+  childAgeLimit          Int?        @default(12)
+  requiredDocuments      Json?
+  amenities              String?
+  showAmenities          Boolean     @default(false)
+  mapLogisticsImageUrl   String?
+  optionalActivities     String?
+  showOptionalActivities Boolean     @default(false)
+  Booking                Booking[]
+  Country                Country?    @relation(fields: [countryId], references: [id])
+  TourAddOn              TourAddOn[]
+  TourDay                TourDay[]
 }
 
 model TourAddOn {
@@ -574,27 +589,27 @@ model Traveller {
 }
 
 model User {
-  id                                          String          @id @default(cuid())
+  id                                          String           @id @default(cuid())
   name                                        String?
-  email                                       String?         @unique
+  email                                       String?          @unique
   phone                                       String?
-  phoneVerified                               Boolean         @default(false)
+  phoneVerified                               Boolean          @default(false)
   passwordHash                                String?
-  role                                        UserRole        @default(CUSTOMER)
-  isActive                                    Boolean         @default(true)
-  emailVerified                               Boolean         @default(false)
+  role                                        UserRole         @default(CUSTOMER)
+  isActive                                    Boolean          @default(true)
+  emailVerified                               Boolean          @default(false)
   emailVerifiedAt                             DateTime?
-  passwordResetToken                          String?         @unique
+  passwordResetToken                          String?          @unique
   passwordResetExpires                        DateTime?
   registrationOtp                             String?
   registrationOtpExpires                      DateTime?
-  createdAt                                   DateTime        @default(now())
-  updatedAt                                   DateTime        @updatedAt
-  Application_Application_processedByIdToUser Application[]   @relation("Application_processedByIdToUser")
-  Application_Application_userIdToUser        Application[]   @relation("Application_userIdToUser")
+  createdAt                                   DateTime         @default(now())
+  updatedAt                                   DateTime         @updatedAt
+  Application_Application_processedByIdToUser Application[]    @relation("Application_processedByIdToUser")
+  Application_Application_userIdToUser        Application[]    @relation("Application_userIdToUser")
   AuditLog                                    AuditLog[]
-  Booking_Booking_processedByIdToUser         Booking[]       @relation("Booking_processedByIdToUser")
-  Booking_Booking_userIdToUser                Booking[]       @relation("Booking_userIdToUser")
+  Booking_Booking_processedByIdToUser         Booking[]        @relation("Booking_processedByIdToUser")
+  Booking_Booking_userIdToUser                Booking[]        @relation("Booking_userIdToUser")
   PasswordReset                               PasswordReset[]
   Payment                                     Payment[]
   Review                                      Review[]
@@ -656,18 +671,18 @@ model Visa {
 }
 
 model VisaDocumentRequirement {
-  id                  String                @id
-  visaId              String
-  name                String
-  description         String?
-  scope               DocScope
-  isRequired          Boolean               @default(true)
-  category            String?
-  sortOrder           Int                   @default(0)
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime
-  Document            Document[]
-  Visa                Visa                  @relation(fields: [visaId], references: [id])
+  id          String     @id
+  visaId      String
+  name        String
+  description String?
+  scope       DocScope
+  isRequired  Boolean    @default(true)
+  category    String?
+  sortOrder   Int        @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime
+  Document    Document[]
+  Visa        Visa       @relation(fields: [visaId], references: [id])
 }
 
 model VisaFaq {

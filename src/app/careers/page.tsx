@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Briefcase, MapPin, Clock, X, Upload, FileText, CheckCircle, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,6 +18,8 @@ export default function CareersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [openPositions, setOpenPositions] = useState<Position[]>([]);
+  const [loadingPositions, setLoadingPositions] = useState(true);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -32,26 +34,25 @@ export default function CareersPage() {
     resume: null as File | null,
   });
 
-  const openPositions: Position[] = [
-    {
-      title: "Visa Consultant",
-      location: "Udupi, Karnataka / Remote",
-      type: "Full-time",
-      department: "Operations",
-    },
-    {
-      title: "Customer Support Executive",
-      location: "Udupi, Karnataka",
-      type: "Full-time",
-      department: "Customer Service",
-    },
-    {
-      title: "Travel Content Writer",
-      location: "Remote",
-      type: "Part-time / Contract",
-      department: "Marketing",
-    },
-  ];
+  // Fetch positions from API
+  useEffect(() => {
+    const fetchPositions = async () => {
+      try {
+        setLoadingPositions(true);
+        const response = await fetch("/api/careers/positions");
+        if (response.ok) {
+          const data = await response.json();
+          setOpenPositions(data);
+        }
+      } catch (error) {
+        console.error("Error fetching positions:", error);
+      } finally {
+        setLoadingPositions(false);
+      }
+    };
+
+    fetchPositions();
+  }, []);
 
   const handleApplyClick = (position: Position) => {
     setSelectedPosition(position);
@@ -92,7 +93,7 @@ export default function CareersPage() {
       ];
       const fileExtension = formData.resume.name.split(".").pop()?.toLowerCase() || "";
       const allowedExtensions = ["pdf", "doc", "docx"];
-      
+
       // Check both MIME type and file extension (some browsers don't set MIME type correctly)
       if (!allowedTypes.includes(formData.resume.type) && !allowedExtensions.includes(fileExtension)) {
         newErrors.resume = "Resume must be PDF, DOC, or DOCX";
@@ -295,7 +296,7 @@ export default function CareersPage() {
         <section className="bg-primary-50 rounded-2xl p-8">
           <h2 className="text-2xl font-bold text-neutral-900 mb-4">Don&apos;t See a Match?</h2>
           <p className="text-neutral-700 mb-6">
-            We&apos;re always looking for talented individuals to join our team. Send us your resume and 
+            We&apos;re always looking for talented individuals to join our team. Send us your resume and
             we&apos;ll keep you in mind for future opportunities.
           </p>
           <button
@@ -366,9 +367,8 @@ export default function CareersPage() {
                               type="text"
                               value={formData.name}
                               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                                errors.name ? "border-red-300" : "border-neutral-300"
-                              }`}
+                              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.name ? "border-red-300" : "border-neutral-300"
+                                }`}
                               required
                             />
                             {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name}</p>}
@@ -382,9 +382,8 @@ export default function CareersPage() {
                               type="email"
                               value={formData.email}
                               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                                errors.email ? "border-red-300" : "border-neutral-300"
-                              }`}
+                              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.email ? "border-red-300" : "border-neutral-300"
+                                }`}
                               required
                             />
                             {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
@@ -398,9 +397,8 @@ export default function CareersPage() {
                               type="tel"
                               value={formData.phone}
                               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                                errors.phone ? "border-red-300" : "border-neutral-300"
-                              }`}
+                              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.phone ? "border-red-300" : "border-neutral-300"
+                                }`}
                               required
                             />
                             {errors.phone && <p className="text-red-600 text-sm mt-1">{errors.phone}</p>}
@@ -431,9 +429,8 @@ export default function CareersPage() {
                             <select
                               value={formData.positionTitle}
                               onChange={(e) => setFormData({ ...formData, positionTitle: e.target.value })}
-                              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                                errors.positionTitle ? "border-red-300" : "border-neutral-300"
-                              }`}
+                              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.positionTitle ? "border-red-300" : "border-neutral-300"
+                                }`}
                               required
                             >
                               <option value="">Select Position</option>
