@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -42,82 +42,66 @@ export async function GET(req: Request) {
       }
     }
 
-    // Count by status
-    const statusCounts = await prisma.application.groupBy({
-      by: ["status"],
+    // Fetch all applications with related data
+    const applications = await prisma.application.findMany({
       where,
-      _count: {
-        id: true,
-      },
-    });
-
-    const statusCountsMap: Record<string, number> = {};
-    statusCounts.forEach((item) => {
-      statusCountsMap[item.status] = item._count.id;
-    });
-
-    // Top countries
-    const topCountries = await prisma.application.groupBy({
-      by: ["country"],
-      where: {
-        ...where,
-        country: { not: null },
-      },
-      _count: {
-        id: true,
-      },
-      orderBy: {
-        _count: {
-          id: "desc",
+      include: {
+        User_Application_userIdToUser: true,
+        Visa: {
+          include: {
+            Country: true,
+          },
+        },
+        VisaSubType: true,
+        ApplicationTraveller: {
+          include: {
+            Traveller: true,
+          },
+          take: 1,
+        },
+        Payment: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
         },
       },
-      take: 10,
+      orderBy: { createdAt: "desc" },
     });
-
-    // Conversion stats
-    const allApplications = await prisma.application.findMany({
-      where,
-      select: {
-        status: true,
-      },
-    });
-
-    const started = allApplications.length;
-    const paid = allApplications.filter((app) =>
-      ["SUBMITTED", "IN_PROCESS", "APPROVED", "REJECTED"].includes(app.status)
-    ).length;
-    const approved = allApplications.filter((app) => app.status === "APPROVED").length;
-    const conversionRate = started > 0 ? (approved / started) * 100 : 0;
-
-    const report = {
-      statusCounts: statusCountsMap,
-      topCountries: topCountries.map((item) => ({
-        country: item.country || "Unknown",
-        count: item._count.id,
-      })),
-      conversion: {
-        started,
-        paid,
-        approved,
-        conversionRate,
-      },
-    };
 
     if (format === "csv") {
-      // Generate CSV
-      let csv = "Status,Count\n";
-      Object.entries(statusCountsMap).forEach(([status, count]) => {
-        csv += `${status},${count}\n`;
+      // Generate CSV with requested columns
+      let csv = "Application ID,Lead Date,Custom Type,Customer Name,Mobile Number,Email ID,Passport Number,Nationality,Visa Country,Visa Category,Visa Sub Type,Entry Type,Payment Mode\n";
+
+      applications.forEach((app) => {
+        const user = app.User_Application_userIdToUser;
+        const visa = app.Visa;
+        const visaSubType = app.VisaSubType;
+        const traveller = app.ApplicationTraveller[0]?.Traveller;
+        const payment = app.Payment[0];
+
+        const applicationId = app.id || "";
+        const leadDate = app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "";
+        const customType = app.visaType || visa?.category || "";
+        const customerName = user?.name || "";
+        const mobileNumber = user?.phone || "";
+        const emailId = user?.email || "";
+        const passportNumber = traveller?.passportNumber || "";
+        const nationality = app.country || "";
+        const visaCountry = visa?.Country?.name || app.country || "";
+        const visaCategory = visa?.category || "";
+        const visaSubTypeLabel = visaSubType?.label || "";
+        const entryType = visa?.entryType || visa?.entryTypeLegacy || "";
+        const paymentMode = payment?.method || "";
+
+        // Escape CSV values
+        const escapeCsv = (val: string) => {
+          if (val.includes(",") || val.includes('"') || val.includes("\n")) {
+            return `"${val.replace(/"/g, '""')}"`;
+          }
+          return val;
+        };
+
+        csv += `${escapeCsv(applicationId)},${escapeCsv(leadDate)},${escapeCsv(customType)},${escapeCsv(customerName)},${escapeCsv(mobileNumber)},${escapeCsv(emailId)},${escapeCsv(passportNumber)},${escapeCsv(nationality)},${escapeCsv(visaCountry)},${escapeCsv(visaCategory)},${escapeCsv(visaSubTypeLabel)},${escapeCsv(entryType)},${escapeCsv(paymentMode)}\n`;
       });
-      csv += "\nTop Countries\nCountry,Count\n";
-      topCountries.forEach((item) => {
-        csv += `${item.country || "Unknown"},${item._count.id}\n`;
-      });
-      csv += "\nConversion\nMetric,Value\n";
-      csv += `Started,${started}\n`;
-      csv += `Paid,${paid}\n`;
-      csv += `Approved,${approved}\n`;
-      csv += `Conversion Rate,${conversionRate.toFixed(2)}%\n`;
 
       return new NextResponse(csv, {
         headers: {
@@ -127,7 +111,32 @@ export async function GET(req: Request) {
       });
     }
 
-    return NextResponse.json(report);
+    // Return JSON format with application details
+    const report = applications.map((app) => {
+      const user = app.User_Application_userIdToUser;
+      const visa = app.Visa;
+      const visaSubType = app.VisaSubType;
+      const traveller = app.ApplicationTraveller[0]?.Traveller;
+      const payment = app.Payment[0];
+
+      return {
+        applicationId: app.id,
+        leadDate: app.createdAt,
+        customType: app.visaType || visa?.category || "",
+        customerName: user?.name || "",
+        mobileNumber: user?.phone || "",
+        emailId: user?.email || "",
+        passportNumber: traveller?.passportNumber || "",
+        nationality: app.country || "",
+        visaCountry: visa?.Country?.name || app.country || "",
+        visaCategory: visa?.category || "",
+        visaSubType: visaSubType?.label || "",
+        entryType: visa?.entryType || visa?.entryTypeLegacy || "",
+        paymentMode: payment?.method || "",
+      };
+    });
+
+    return NextResponse.json({ applications: report });
   } catch (error) {
     console.error("Error generating visa report:", error);
     return NextResponse.json(

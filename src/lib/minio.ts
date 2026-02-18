@@ -29,10 +29,15 @@ export async function uploadVisaDocument(
   return key;
 }
 
-export async function getSignedDocumentUrl(key: string, expiresInSeconds = 60) {
+export async function getSignedDocumentUrl(
+  key: string,
+  expiresInSeconds = 60,
+  responseContentDisposition?: string
+) {
   const command = new GetObjectCommand({
     Bucket: process.env.MINIO_BUCKET!,
     Key: key,
+    ResponseContentDisposition: responseContentDisposition,
   });
 
   return getSignedUrl(s3, command, { expiresIn: expiresInSeconds });

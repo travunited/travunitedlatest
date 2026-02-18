@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -42,54 +42,76 @@ export async function GET(req: Request) {
       }
     }
 
-    // Get bookings with payments
+    // Fetch all bookings with related data
     const bookings = await prisma.booking.findMany({
       where,
       include: {
-        // Note: Payment relation doesn't exist, so we'll calculate from booking amounts
-        // In production, join with Payment table
+        User_Booking_userIdToUser: true,
+        Tour: true,
+        BookingTraveller: {
+          include: {
+            Traveller: true,
+          },
+        },
+        Payment: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
       },
+      orderBy: { createdAt: "desc" },
     });
-
-    // Group by tour
-    const tourMap = new Map<string, {
-      tourName: string;
-      bookings: number;
-      revenue: number;
-      fullPayment: number;
-      advancePayment: number;
-    }>();
-
-    bookings.forEach((booking) => {
-      const tourName = booking.tourName || "Unknown";
-      const existing = tourMap.get(tourName) || {
-        tourName,
-        bookings: 0,
-        revenue: 0,
-        fullPayment: 0,
-        advancePayment: 0,
-      };
-
-      existing.bookings += 1;
-      existing.revenue += booking.totalAmount;
-
-      // For now, assume all bookings are full payment
-      // In production, check Payment records to determine full vs advance
-      if (booking.status === "COMPLETED" || booking.status === "CONFIRMED") {
-        existing.fullPayment += booking.totalAmount;
-      } else {
-        existing.advancePayment += booking.totalAmount;
-      }
-
-      tourMap.set(tourName, existing);
-    });
-
-    const tours = Array.from(tourMap.values()).sort((a, b) => b.revenue - a.revenue);
 
     if (format === "csv") {
-      let csv = "Tour Name,Bookings,Revenue,Full Payment,Advance Payment\n";
-      tours.forEach((tour) => {
-        csv += `${tour.tourName},${tour.bookings},${tour.revenue},${tour.fullPayment},${tour.advancePayment}\n`;
+      // Generate CSV with requested columns
+      let csv = "Number of Children,Customer Type,Customer Name,PAN Number,Mobile No,Email ID,Booking Status,Package Inclusions,Visa Included,Flight Included,Hotel Category,Transport Included,Meal Plan,Confirmation Date,Cancellation Date,Payment Status,Payment Mode,Document Collected\n";
+
+      bookings.forEach((booking) => {
+        const user = booking.User_Booking_userIdToUser;
+        const tour = booking.Tour;
+        const payment = booking.Payment[0];
+        const travellers = booking.BookingTraveller;
+
+        // Calculate number of children (age < 12)
+        const numberOfChildren = travellers.filter(t => t.age && t.age < 12).length;
+
+        // Determine customer type (Indian / Foreign)
+        const firstTraveller = travellers[0];
+        const nationality = firstTraveller?.nationality || "";
+        const customerType = nationality.toLowerCase().includes("india") || nationality.toLowerCase() === "in" ? "Indian" : "Foreign";
+
+        const customerName = user?.name || "";
+        const panNumber = firstTraveller?.panNumber || "";
+        const mobileNo = user?.phone || "";
+        const emailId = user?.email || "";
+        const bookingStatus = booking.status || "";
+        const packageInclusions = tour?.inclusions || "";
+
+        // Parse inclusions for specific items
+        const inclusionsLower = packageInclusions.toLowerCase();
+        const visaIncluded = tour?.requiresPassport || inclusionsLower.includes("visa") ? "Y" : "N";
+        const flightIncluded = inclusionsLower.includes("flight") || inclusionsLower.includes("airfare") ? "Y" : "N";
+        const hotelCategory = tour?.hotelCategories || "";
+        const transportIncluded = inclusionsLower.includes("transport") || inclusionsLower.includes("transfer") ? "Y" : "N";
+        const mealPlan = booking.foodPreference || "";
+
+        // Confirmation and cancellation dates
+        const confirmationDate = booking.status === "CONFIRMED" || booking.status === "COMPLETED" ? new Date(booking.updatedAt).toLocaleDateString() : "";
+        const cancellationDate = booking.status === "CANCELLED" ? new Date(booking.updatedAt).toLocaleDateString() : "";
+
+        const paymentStatus = payment?.status || "";
+        const paymentMode = payment?.method || "";
+        const documentCollected = booking.documents ? "Y" : "N";
+
+        // Escape CSV values
+        const escapeCsv = (val: string | number) => {
+          const strVal = String(val);
+          if (strVal.includes(",") || strVal.includes('"') || strVal.includes("\n")) {
+            return `"${strVal.replace(/"/g, '""')}"`;
+          }
+          return strVal;
+        };
+
+        csv += `${numberOfChildren},${escapeCsv(customerType)},${escapeCsv(customerName)},${escapeCsv(panNumber)},${escapeCsv(mobileNo)},${escapeCsv(emailId)},${escapeCsv(bookingStatus)},${escapeCsv(packageInclusions)},${visaIncluded},${flightIncluded},${escapeCsv(hotelCategory)},${transportIncluded},${escapeCsv(mealPlan)},${escapeCsv(confirmationDate)},${escapeCsv(cancellationDate)},${escapeCsv(paymentStatus)},${escapeCsv(paymentMode)},${documentCollected}\n`;
       });
 
       return new NextResponse(csv, {
@@ -100,7 +122,44 @@ export async function GET(req: Request) {
       });
     }
 
-    return NextResponse.json({ tours });
+    // Return JSON format with booking details
+    const report = bookings.map((booking) => {
+      const user = booking.User_Booking_userIdToUser;
+      const tour = booking.Tour;
+      const payment = booking.Payment[0];
+      const travellers = booking.BookingTraveller;
+
+      const numberOfChildren = travellers.filter(t => t.age && t.age < 12).length;
+      const firstTraveller = travellers[0];
+      const nationality = firstTraveller?.nationality || "";
+      const customerType = nationality.toLowerCase().includes("india") || nationality.toLowerCase() === "in" ? "Indian" : "Foreign";
+
+      const packageInclusions = tour?.inclusions || "";
+      const inclusionsLower = packageInclusions.toLowerCase();
+
+      return {
+        numberOfChildren,
+        customerType,
+        customerName: user?.name || "",
+        panNumber: firstTraveller?.panNumber || "",
+        mobileNo: user?.phone || "",
+        emailId: user?.email || "",
+        bookingStatus: booking.status || "",
+        packageInclusions,
+        visaIncluded: tour?.requiresPassport || inclusionsLower.includes("visa") ? "Y" : "N",
+        flightIncluded: inclusionsLower.includes("flight") || inclusionsLower.includes("airfare") ? "Y" : "N",
+        hotelCategory: tour?.hotelCategories || "",
+        transportIncluded: inclusionsLower.includes("transport") || inclusionsLower.includes("transfer") ? "Y" : "N",
+        mealPlan: booking.foodPreference || "",
+        confirmationDate: booking.status === "CONFIRMED" || booking.status === "COMPLETED" ? booking.updatedAt : null,
+        cancellationDate: booking.status === "CANCELLED" ? booking.updatedAt : null,
+        paymentStatus: payment?.status || "",
+        paymentMode: payment?.method || "",
+        documentCollected: booking.documents ? "Y" : "N",
+      };
+    });
+
+    return NextResponse.json({ bookings: report });
   } catch (error) {
     console.error("Error generating tour report:", error);
     return NextResponse.json(

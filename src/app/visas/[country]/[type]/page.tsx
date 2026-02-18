@@ -216,7 +216,16 @@ export default async function VisaDetailPage({
       const { getSignedDocumentUrl } = await import("@/lib/minio");
       let downloadUrl = null;
       try {
-        downloadUrl = await getSignedDocumentUrl(template.fileKey, 3600); // 1 hour expiry
+        // Force download behavior by setting Content-Disposition
+        // We use the filename from the template record, escaping quotes just in case
+        const filename = template.fileName.replace(/"/g, '\\"');
+        const contentDisposition = `attachment; filename="${filename}"`;
+
+        downloadUrl = await getSignedDocumentUrl(
+          template.fileKey,
+          3600, // 1 hour expiry
+          contentDisposition
+        );
       } catch (error) {
         console.error(`Error generating signed URL for template ${template.id}:`, error);
       }
