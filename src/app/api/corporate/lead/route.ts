@@ -35,7 +35,7 @@ export async function POST(req: Request) {
         email: data.email,
         phone: data.phone,
         message: data.message,
-        gstNumber: data.gstNumber || null,
+        gstNumber: data.gstNumber && data.gstNumber.trim() !== "" ? data.gstNumber : null,
         status: "NEW",
       },
     });

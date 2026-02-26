@@ -320,7 +320,7 @@ export default function AdminVisaEditorPage() {
     } catch (error) {
       console.error("Error auto-saving draft:", error);
     }
-  }, [formPersistenceKey, combinedFormState, isInitialized]);
+  }, [formPersistenceKey, combinedFormState, isInitialized, isNew]);
 
   // Debounced auto-save on form changes
   useEffect(() => {
@@ -499,122 +499,125 @@ export default function AdminVisaEditorPage() {
     }
   }, []);
 
-  const hydrateFromVisa = (data: any, isClone = false) => {
-    // Check if there's a draft to merge with server data
-    const draftKey = `admin-form-${formPersistenceKey}`;
-    let draftData: any = null;
-    let shouldUseDraft = false;
+  const hydrateFromVisa = useCallback(
+    (data: any, isClone = false) => {
+      // Check if there's a draft to merge with server data
+      const draftKey = `admin-form-${formPersistenceKey}`;
+      let draftData: any = null;
+      let shouldUseDraft = false;
 
-    // Only check drafts for existing visas, not new ones
-    if (!isNew) {
-      try {
-        const stored = localStorage.getItem(draftKey);
-        if (stored) {
-          draftData = JSON.parse(stored);
-          const draftSavedAt = draftData._savedAt;
-          // If draft exists and is recent (within 7 days), merge it with server data
-          if (draftSavedAt && Date.now() - draftSavedAt < 7 * 24 * 60 * 60 * 1000) {
-            shouldUseDraft = true;
-            console.log("Found draft to merge with server data for existing visa");
+      // Only check drafts for existing visas, not new ones
+      if (!isNew) {
+        try {
+          const stored = localStorage.getItem(draftKey);
+          if (stored) {
+            draftData = JSON.parse(stored);
+            const draftSavedAt = draftData._savedAt;
+            // If draft exists and is recent (within 7 days), merge it with server data
+            if (draftSavedAt && Date.now() - draftSavedAt < 7 * 24 * 60 * 60 * 1000) {
+              shouldUseDraft = true;
+              console.log("Found draft to merge with server data for existing visa");
+            }
           }
+        } catch (error) {
+          console.error("Error checking draft:", error);
         }
-      } catch (error) {
-        console.error("Error checking draft:", error);
       }
-    }
 
-    isRestoringRef.current = true;
+      isRestoringRef.current = true;
 
-    // Base form data from server
-    const baseFormData = {
-      countryId: data.countryId,
-      name: isClone ? `${data.name} Copy` : data.name,
-      slug: isClone ? `${data.slug}-copy` : data.slug,
-      subtitle: data.subtitle || "",
-      category: data.category || "TOURIST",
-      isActive: isClone ? false : data.isActive,
-      isFeatured: isClone ? false : data.isFeatured,
-      priceInInr: data.priceInInr,
-      processingTime: data.processingTime || "",
-      stayDuration: data.stayDuration || "",
-      validity: data.validity || "",
-      entryType: data.entryType || "",
-      entryTypeLegacy: data.entryTypeLegacy || "",
-      visaMode: data.visaMode || "EVISA",
-      stayType: data.stayType || "",
-      visaSubTypeLabel: data.visaSubTypeLabel || "",
-      overview: data.overview || "",
-      eligibility: data.eligibility || "",
-      importantNotes: data.importantNotes || "",
-      rejectionReasons: data.rejectionReasons || "",
-      whyTravunited: data.whyTravunited || "",
-      statistics: data.statistics || "",
-      heroImageUrl: data.heroImageUrl || "",
-      metaTitle: data.metaTitle || "",
-      metaDescription: data.metaDescription || "",
-      sampleVisaImageUrl: data.sampleVisaImageUrl || "",
-      currency: data.currency || "INR",
-    };
+      // Base form data from server
+      const baseFormData = {
+        countryId: data.countryId,
+        name: isClone ? `${data.name} Copy` : data.name,
+        slug: isClone ? `${data.slug}-copy` : data.slug,
+        subtitle: data.subtitle || "",
+        category: data.category || "TOURIST",
+        isActive: isClone ? false : data.isActive,
+        isFeatured: isClone ? false : data.isFeatured,
+        priceInInr: data.priceInInr,
+        processingTime: data.processingTime || "",
+        stayDuration: data.stayDuration || "",
+        validity: data.validity || "",
+        entryType: data.entryType || "",
+        entryTypeLegacy: data.entryTypeLegacy || "",
+        visaMode: data.visaMode || "EVISA",
+        stayType: data.stayType || "",
+        visaSubTypeLabel: data.visaSubTypeLabel || "",
+        overview: data.overview || "",
+        eligibility: data.eligibility || "",
+        importantNotes: data.importantNotes || "",
+        rejectionReasons: data.rejectionReasons || "",
+        whyTravunited: data.whyTravunited || "",
+        statistics: data.statistics || "",
+        heroImageUrl: data.heroImageUrl || "",
+        metaTitle: data.metaTitle || "",
+        metaDescription: data.metaDescription || "",
+        sampleVisaImageUrl: data.sampleVisaImageUrl || "",
+        currency: data.currency || "INR",
+      };
 
-    // Merge draft with server data (draft takes precedence for user edits)
-    if (shouldUseDraft && draftData?.formData) {
-      console.log("Merging draft with server data");
-      setFormData({ ...baseFormData, ...draftData.formData });
-    } else {
-      setFormData(baseFormData);
-    }
+      // Merge draft with server data (draft takes precedence for user edits)
+      if (shouldUseDraft && draftData?.formData) {
+        console.log("Merging draft with server data");
+        setFormData({ ...baseFormData, ...draftData.formData });
+      } else {
+        setFormData(baseFormData);
+      }
 
-    // Use draft arrays if they exist and have content, otherwise use server data
-    if (shouldUseDraft && draftData?.requirements && Array.isArray(draftData.requirements) && draftData.requirements.length > 0) {
-      console.log("Using draft requirements");
-      setRequirements(draftData.requirements);
-    } else {
-      setRequirements(
-        (data.requirements || []).map((req: any, index: number) => ({
-          uid: uid(),
-          name: req.name,
-          scope: req.scope,
-          isRequired: req.isRequired,
-          category: req.category || "",
-          description: req.description || "",
-          sortOrder: req.sortOrder ?? index,
-        }))
-      );
-    }
+      // Use draft arrays if they exist and have content, otherwise use server data
+      if (shouldUseDraft && draftData?.requirements && Array.isArray(draftData.requirements) && draftData.requirements.length > 0) {
+        console.log("Using draft requirements");
+        setRequirements(draftData.requirements);
+      } else {
+        setRequirements(
+          (data.requirements || []).map((req: any, index: number) => ({
+            uid: uid(),
+            name: req.name,
+            scope: req.scope,
+            isRequired: req.isRequired,
+            category: req.category || "",
+            description: req.description || "",
+            sortOrder: req.sortOrder ?? index,
+          }))
+        );
+      }
 
-    if (shouldUseDraft && draftData?.faqs && Array.isArray(draftData.faqs) && draftData.faqs.length > 0) {
-      console.log("Using draft faqs");
-      setFaqs(draftData.faqs);
-    } else {
-      setFaqs(
-        (data.faqs || []).map((faq: any, index: number) => ({
-          uid: uid(),
-          category: faq.category || "",
-          question: faq.question || "",
-          answer: faq.answer || "",
-          sortOrder: faq.sortOrder ?? index,
-        }))
-      );
-    }
+      if (shouldUseDraft && draftData?.faqs && Array.isArray(draftData.faqs) && draftData.faqs.length > 0) {
+        console.log("Using draft faqs");
+        setFaqs(draftData.faqs);
+      } else {
+        setFaqs(
+          (data.faqs || []).map((faq: any, index: number) => ({
+            uid: uid(),
+            category: faq.category || "",
+            question: faq.question || "",
+            answer: faq.answer || "",
+            sortOrder: faq.sortOrder ?? index,
+          }))
+        );
+      }
 
 
-    // Restore UI state from draft if available
-    if (shouldUseDraft) {
-      if (draftData?.activeTab) setActiveTab(draftData.activeTab);
-      if (draftData?.heroImageMode) setHeroImageMode(draftData.heroImageMode);
-      if (draftData?.sampleVisaImageMode) setSampleVisaImageMode(draftData.sampleVisaImageMode);
+      // Restore UI state from draft if available
+      if (shouldUseDraft) {
+        if (draftData?.activeTab) setActiveTab(draftData.activeTab);
+        if (draftData?.heroImageMode) setHeroImageMode(draftData.heroImageMode);
+        if (draftData?.sampleVisaImageMode) setSampleVisaImageMode(draftData.sampleVisaImageMode);
 
-      // Show notification that draft was restored
-      setShowDraftSaved(true);
-      setTimeout(() => setShowDraftSaved(false), 3000);
-    }
+        // Show notification that draft was restored
+        setShowDraftSaved(true);
+        setTimeout(() => setShowDraftSaved(false), 3000);
+      }
 
-    // Reset restoring flag and mark as initialized after state updates settle
-    setTimeout(() => {
-      isRestoringRef.current = false;
-      setIsInitialized(true);
-    }, 200);
-  };
+      // Reset restoring flag and mark as initialized after state updates settle
+      setTimeout(() => {
+        isRestoringRef.current = false;
+        setIsInitialized(true);
+      }, 200);
+    },
+    [isNew, formPersistenceKey]
+  );
 
   const fetchVisa = useCallback(
     async (targetId: string, clone = false) => {
@@ -633,7 +636,7 @@ export default function AdminVisaEditorPage() {
         setLoading(false);
       }
     },
-    [router]
+    [router, hydrateFromVisa]
   );
 
   useEffect(() => {
