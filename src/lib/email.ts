@@ -163,8 +163,8 @@ async function loadEmailTemplates(forceReload = false): Promise<Record<string, s
 
 function getEmailTemplate(templateKey: string, customTemplate?: string): string {
   // Use custom template if provided, otherwise use default
-  return customTemplate && customTemplate.trim() 
-    ? customTemplate 
+  return customTemplate && customTemplate.trim()
+    ? customTemplate
     : getDefaultEmailTemplate(templateKey);
 }
 
@@ -219,10 +219,10 @@ function stripHtml(html: string): string {
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   const startTime = Date.now();
   lastEmailError = null;
-  
+
   // Convert recipients to array for processing
   const recipients = Array.isArray(options.to) ? options.to : [options.to];
-  
+
   // Check if any recipients are inactive (bounced/complained emails)
   // Skip sending to inactive users to prevent bounces (unless bypassActiveCheck is true)
   const activeRecipients: string[] = [];
@@ -233,12 +233,12 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
         activeRecipients.push(recipient);
         continue;
       }
-      
+
       const user = await prisma.user.findUnique({
         where: { email: recipient.toLowerCase() },
         select: { isActive: true },
       });
-      
+
       // Only send to active users (inactive users may have bounced/complained)
       if (!user || user.isActive) {
         activeRecipients.push(recipient);
@@ -250,22 +250,22 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       activeRecipients.push(recipient);
     }
   }
-  
+
   // If no active recipients, skip sending
   if (activeRecipients.length === 0) {
     console.log(`[Email] No active recipients, skipping email send`);
     return false;
   }
-  
+
   // Update options with active recipients only
   const finalOptions = {
     ...options,
     to: activeRecipients.length === 1 ? activeRecipients[0] : activeRecipients,
   };
-  
+
   // Use AWS SDK for email sending
   console.log("[Email] Using AWS SDK provider for email sending");
-  
+
   // Load config with timeout to prevent delays
   let config: EmailConfig;
   try {
@@ -283,7 +283,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     lastEmailError = `Failed to load email configuration: ${errorMessage}`;
     return false;
   }
-  
+
   // Check if AWS credentials are configured
   if (!config.awsAccessKeyId || !config.awsSecretAccessKey || !config.awsRegion) {
     const message = "Email credentials not configured. Set AWS credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION) in environment variables.";
@@ -295,7 +295,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     });
     return false;
   }
-  
+
   const sesClient = await getSESClient(
     config.awsAccessKeyId,
     config.awsSecretAccessKey,
@@ -327,7 +327,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     lastEmailError = message;
     return false;
   }
-  
+
   console.log("[Email] Sending email", {
     to: activeRecipients.join(", "),
     from,
@@ -348,7 +348,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 
     // Prepare email parameters for AWS SES
     const textContent = finalOptions.text || stripHtml(finalOptions.html);
-    
+
     const emailParams = {
       Source: from,
       Destination: {
@@ -386,11 +386,11 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     // Add timeout to AWS SES API call to prevent long delays
     const sendCommand = new SendEmailCommand(emailParams);
     const sendPromise = sesClient.send(sendCommand);
-    
+
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error("AWS SES API timeout after 15 seconds")), 15000);
     });
-    
+
     const result = await Promise.race([sendPromise, timeoutPromise]);
     const duration = Date.now() - startTime;
 
@@ -408,7 +408,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     const duration = Date.now() - startTime;
     let message = "Unknown error sending email via AWS SES";
     let errorCode = "UNKNOWN";
-    
+
     if (error instanceof Error) {
       message = error.message;
       // Extract AWS error code if available
@@ -419,7 +419,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
         errorCode = (error as any).Code;
       }
     }
-    
+
     console.error("[Email] ❌ Failed to send email via AWS SES:", {
       error: message,
       errorCode,
@@ -477,25 +477,25 @@ export async function sendWelcomeEmail(
   const template = getEmailTemplate("welcomeEmail", templates.emailWelcome);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     name: name || "",
     email,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
     dashboardUrl: `${baseUrl}/dashboard`,
   };
-  
+
   let html = replaceTemplateVariables(template, variables);
-  
+
   // Fix name formatting - replaceTemplateVariables adds ", Name" if name exists
   if (name) {
     html = html.replace(/{companyName}, {name}!/g, `${variables.companyName}, ${name}!`);
   } else {
     html = html.replace(/{companyName}{name}!/g, `${variables.companyName}!`);
   }
-  
+
   const subject = "Welcome to Travunited!";
-  
+
   return sendUserEmail({ to: email, role, subject, html, category: "general" });
 }
 
@@ -514,7 +514,7 @@ export async function sendPasswordResetEmail(
     });
 
     const subject = "Reset Your Travunited Password";
-    
+
     // Ensure resetLink is a valid URL
     if (!resetLink || !resetLink.startsWith("http")) {
       const error = `Invalid reset link format: ${resetLink}`;
@@ -522,7 +522,7 @@ export async function sendPasswordResetEmail(
       lastEmailError = error;
       return false;
     }
-    
+
     // Escape resetLink for HTML to prevent XSS (but keep original for text version)
     const escapedResetLink = resetLink
       .replace(/&/g, "&amp;")
@@ -530,7 +530,7 @@ export async function sendPasswordResetEmail(
       .replace(/'/g, "&#39;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
-    
+
     // Professional email template with proper reset link
     const html = `
 <!DOCTYPE html>
@@ -645,7 +645,7 @@ The Travunited Team`;
       category: "general",
       bypassActiveCheck: true, // Always send password reset emails, even to inactive users
     });
-    
+
     if (result) {
       console.log("[Password Reset Email] ✅ Email sent successfully", {
         email,
@@ -661,7 +661,7 @@ The Travunited Team`;
         timestamp: new Date().toISOString(),
       });
     }
-    
+
     return result;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -714,22 +714,22 @@ export async function sendRegistrationOTPEmail(
       name: name || "not provided",
       role: role || "not provided",
     });
-    
+
     const subject = "Verify Your Email - Travunited";
-    
+
     // Load templates and ensure we have a valid template
     let template: string;
     try {
       const templates = await loadEmailTemplates();
       const loadedTemplate = getEmailTemplate("registrationOTPEmail", (templates as any).emailRegistrationOTP || "");
-      
+
       console.log("[Email] Registration OTP template loaded", {
         hasTemplate: !!loadedTemplate,
         templateLength: loadedTemplate?.length || 0,
         hasCustomTemplate: !!(templates as any).emailRegistrationOTP,
         customTemplateLength: (templates as any).emailRegistrationOTP?.length || 0,
       });
-      
+
       // If template is empty or invalid, force use default
       if (!loadedTemplate || !loadedTemplate.trim()) {
         console.warn("[Email] Custom template is empty, using fallback template", {
@@ -745,7 +745,7 @@ export async function sendRegistrationOTPEmail(
       });
       template = FALLBACK_REGISTRATION_OTP_TEMPLATE;
     }
-    
+
     // Final safety check - if still empty, use hardcoded fallback
     if (!template || !template.trim()) {
       console.error("[Email] ❌ Registration OTP template is still empty after fallback, using hardcoded fallback", {
@@ -753,7 +753,7 @@ export async function sendRegistrationOTPEmail(
       });
       template = FALLBACK_REGISTRATION_OTP_TEMPLATE;
     }
-    
+
     const config = await loadEmailConfig();
     const variables: EmailTemplateVariables = {
       otp,
@@ -761,21 +761,21 @@ export async function sendRegistrationOTPEmail(
       email,
       companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
     };
-    
+
     let html = replaceTemplateVariables(template, variables);
-    
+
     // Fix name formatting
     if (name) {
       html = html.replace(/{name}/g, ` ${name}`);
     } else {
       html = html.replace(/Hi{name}/g, "Hi");
     }
-    
+
     console.log("[Email] Registration OTP HTML generated", {
       htmlLength: html?.length || 0,
       hasHtml: !!html && html.trim().length > 0,
     });
-    
+
     if (!html || !html.trim()) {
       console.error("[Email] ❌ Generated HTML for Registration OTP is empty", {
         templateLength: template.length,
@@ -783,7 +783,7 @@ export async function sendRegistrationOTPEmail(
       });
       return false;
     }
-    
+
     // Registration OTP emails should ALWAYS go to the user's actual email address
     // Bypass active check since user is not yet verified
     console.log("[Email] Calling sendEmail for Registration OTP", {
@@ -793,7 +793,7 @@ export async function sendRegistrationOTPEmail(
       bypassActiveCheck: true,
       htmlLength: html.length,
     });
-    
+
     const result = await sendEmail({
       to: email,
       subject,
@@ -801,13 +801,13 @@ export async function sendRegistrationOTPEmail(
       category: "general",
       bypassActiveCheck: true, // Always send registration emails, even if user is inactive
     });
-    
+
     console.log("[Email] sendEmail result for Registration OTP", {
       success: result,
       email,
       lastError: result ? null : getLastEmailError(),
     });
-    
+
     return result;
   } catch (error) {
     console.error("[Email] ❌ Exception in sendRegistrationOTPEmail:", {
@@ -831,22 +831,22 @@ export async function sendPasswordResetOTPEmail(
       otpLength: otp.length,
       role: role || "not provided",
     });
-    
+
     const subject = "Your Password Reset OTP";
-    
+
     // Load templates and ensure we have a valid template
     let template: string;
     try {
       const templates = await loadEmailTemplates();
       const loadedTemplate = getEmailTemplate("passwordResetOTPEmail", templates.emailPasswordResetOTP);
-      
+
       console.log("[Email] Password Reset OTP template loaded", {
         hasTemplate: !!loadedTemplate,
         templateLength: loadedTemplate?.length || 0,
         hasCustomTemplate: !!templates.emailPasswordResetOTP,
         customTemplateLength: templates.emailPasswordResetOTP?.length || 0,
       });
-      
+
       // If template is empty or invalid, force use default
       if (!loadedTemplate || !loadedTemplate.trim()) {
         console.warn("[Email] Custom template is empty, forcing default template", {
@@ -862,7 +862,7 @@ export async function sendPasswordResetOTPEmail(
       });
       template = getDefaultEmailTemplate("passwordResetOTPEmail");
     }
-    
+
     // Final safety check - if still empty, use hardcoded fallback
     if (!template || !template.trim()) {
       console.error("[Email] ❌ Password Reset OTP template is still empty after fallback, using hardcoded fallback", {
@@ -870,20 +870,20 @@ export async function sendPasswordResetOTPEmail(
       });
       template = FALLBACK_OTP_TEMPLATE;
     }
-    
+
     const variables: EmailTemplateVariables = {
       otp,
       companyName: "Travunited",
     };
-    
+
     const html = replaceTemplateVariables(template, variables);
-    
+
     console.log("[Email] Password Reset OTP HTML generated", {
       htmlLength: html?.length || 0,
       hasHtml: !!html && html.trim().length > 0,
       templateUsed: template.substring(0, 50) + "...", // First 50 chars for debugging
     });
-    
+
     if (!html || !html.trim()) {
       console.error("[Email] ❌ Generated HTML for Password Reset OTP is empty", {
         templateLength: template.length,
@@ -892,7 +892,7 @@ export async function sendPasswordResetOTPEmail(
       });
       return false;
     }
-    
+
     // Password reset OTP emails should ALWAYS go to the user's actual email address
     // Bypass active check to ensure password reset emails are sent even if user is inactive
     console.log("[Email] Calling sendEmail for Password Reset OTP", {
@@ -902,7 +902,7 @@ export async function sendPasswordResetOTPEmail(
       bypassActiveCheck: true,
       htmlLength: html.length,
     });
-    
+
     const result = await sendEmail({
       to: email,
       subject,
@@ -910,13 +910,13 @@ export async function sendPasswordResetOTPEmail(
       category: "general",
       bypassActiveCheck: true, // Always send password reset emails, even to inactive users
     });
-    
+
     console.log("[Email] sendEmail result for Password Reset OTP", {
       success: result,
       email,
       lastError: result ? null : getLastEmailError(),
     });
-    
+
     return result;
   } catch (error) {
     console.error("[Email] ❌ Exception in sendPasswordResetOTPEmail:", {
@@ -943,7 +943,7 @@ export async function sendVisaPaymentSuccessEmail(
   const template = getEmailTemplate("visaPaymentSuccessEmail", templates.emailVisaPaymentSuccess);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     applicationId,
@@ -956,10 +956,10 @@ export async function sendVisaPaymentSuccessEmail(
     promoCode: promoCode || undefined,
     discountAmount: discountAmount || undefined,
   };
-  
+
   const html = replaceTemplateVariables(template, variables);
   const subject = `Payment Successful - Upload Documents to Complete Application`;
-  
+
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
 
@@ -976,7 +976,7 @@ export async function sendVisaPaymentFailedEmail(
   const template = getEmailTemplate("visaPaymentFailedEmail", templates.emailVisaPaymentFailed);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     applicationId,
@@ -987,7 +987,7 @@ export async function sendVisaPaymentFailedEmail(
     applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   const html = replaceTemplateVariables(template, variables);
   const subject = `Payment Failed - ${country} ${visaType}`;
 
@@ -1006,7 +1006,7 @@ export async function sendVisaStatusUpdateEmail(
   const template = getEmailTemplate("visaStatusUpdateEmail", templates.emailVisaStatusUpdate);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     applicationId,
@@ -1016,10 +1016,10 @@ export async function sendVisaStatusUpdateEmail(
     applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   const html = replaceTemplateVariables(template, variables);
   const subject = `Status Update - ${country} ${visaType}`;
-  
+
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
 
@@ -1035,7 +1035,7 @@ export async function sendVisaDocumentRejectedEmail(
   const template = getEmailTemplate("visaDocumentRejectedEmail", templates.emailVisaDocumentRejected);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     applicationId,
@@ -1048,10 +1048,10 @@ export async function sendVisaDocumentRejectedEmail(
     applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   const html = replaceTemplateVariables(template, variables);
   const subject = `Documents Need Re-upload - ${country} ${visaType}`;
-  
+
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
 
@@ -1066,7 +1066,7 @@ export async function sendVisaApprovedEmail(
   const template = getEmailTemplate("visaApprovedEmail", templates.emailVisaApproved);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     applicationId,
@@ -1075,10 +1075,10 @@ export async function sendVisaApprovedEmail(
     applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   const html = replaceTemplateVariables(template, variables);
   const subject = `Visa Approved! - ${country} ${visaType}`;
-  
+
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
 
@@ -1094,7 +1094,7 @@ export async function sendVisaFeedbackEmail(
   const template = getEmailTemplate("visaFeedbackEmail", (templates as any).emailVisaFeedback || "");
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     applicationId,
@@ -1104,10 +1104,10 @@ export async function sendVisaFeedbackEmail(
     applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   const html = replaceTemplateVariables(template, variables);
   const subject = `We'd Love Your Feedback - ${country} ${visaType}`;
-  
+
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
 
@@ -1123,7 +1123,7 @@ export async function sendVisaRejectedEmail(
   const template = getEmailTemplate("visaRejectedEmail", templates.emailVisaRejected);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     applicationId,
@@ -1133,10 +1133,10 @@ export async function sendVisaRejectedEmail(
     applicationUrl: `${baseUrl}/dashboard/applications/${applicationId}`,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   const html = replaceTemplateVariables(template, variables);
   const subject = `Visa Application Update - ${country} ${visaType}`;
-  
+
   return sendUserEmail({ to: email, role, subject, html, category: "visa" });
 }
 
@@ -1155,7 +1155,7 @@ export async function sendTourPaymentSuccessEmail(
   const template = getEmailTemplate("tourPaymentSuccessEmail", templates.emailTourPaymentSuccess);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     bookingId,
@@ -1168,10 +1168,10 @@ export async function sendTourPaymentSuccessEmail(
     promoCode: promoCode || undefined,
     discountAmount: discountAmount || undefined,
   };
-  
+
   const html = replaceTemplateVariables(template, variables);
   const subject = `Payment Successful - ${tourName}`;
-  
+
   return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
 
@@ -1187,7 +1187,7 @@ export async function sendTourPaymentFailedEmail(
   const template = getEmailTemplate("tourPaymentFailedEmail", templates.emailTourPaymentFailed);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     bookingId,
@@ -1197,7 +1197,7 @@ export async function sendTourPaymentFailedEmail(
     bookingUrl: `${baseUrl}/dashboard/bookings/${bookingId}`,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   const html = replaceTemplateVariables(template, variables);
   const subject = `Payment Failed - ${tourName}`;
 
@@ -1214,7 +1214,7 @@ export async function sendTourConfirmedEmail(
   const template = getEmailTemplate("tourConfirmedEmail", templates.emailTourConfirmed);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     bookingId,
@@ -1222,10 +1222,10 @@ export async function sendTourConfirmedEmail(
     bookingUrl: `${baseUrl}/dashboard/bookings/${bookingId}`,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   const html = replaceTemplateVariables(template, variables);
   const subject = `Tour Confirmed! - ${tourName}`;
-  
+
   return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
 
@@ -1241,7 +1241,7 @@ export async function sendTourPaymentReminderEmail(
   const template = getEmailTemplate("tourPaymentReminderEmail", templates.emailTourPaymentReminder);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     bookingId,
@@ -1251,10 +1251,10 @@ export async function sendTourPaymentReminderEmail(
     bookingUrl: `${baseUrl}/dashboard/bookings/${bookingId}`,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   const html = replaceTemplateVariables(template, variables);
   const subject = `Payment Reminder - ${tourName}`;
-  
+
   return sendUserEmail({ to: email, role, subject, html, category: "tours" });
 }
 
@@ -1269,7 +1269,7 @@ export async function sendTourStatusUpdateEmail(
   const template = getEmailTemplate("tourStatusUpdateEmail", templates.emailTourStatusUpdate);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     bookingId,
@@ -1278,7 +1278,7 @@ export async function sendTourStatusUpdateEmail(
     bookingUrl: `${baseUrl}/dashboard/bookings/${bookingId}`,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   const html = replaceTemplateVariables(template, variables);
   const subject = `Tour Status Update - ${tourName}`;
 
@@ -1295,7 +1295,7 @@ export async function sendTourVouchersReadyEmail(
   const template = getEmailTemplate("tourVouchersReadyEmail", templates.emailTourVouchersReady);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     bookingId,
@@ -1303,7 +1303,7 @@ export async function sendTourVouchersReadyEmail(
     bookingUrl: `${baseUrl}/dashboard/bookings/${bookingId}`,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   const html = replaceTemplateVariables(template, variables);
   const subject = `Your Vouchers Are Ready - ${tourName}`;
 
@@ -1319,16 +1319,16 @@ export async function sendEmailVerificationEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("emailVerificationEmail", templates.emailVerification);
   const config = await loadEmailConfig();
-  
+
   const variables: EmailTemplateVariables = {
     email,
     name: name || "",
     verificationLink,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   let html = replaceTemplateVariables(template, variables);
-  
+
   // Fix name formatting - if name exists, it will be ", Name", otherwise empty
   if (name) {
     // Name is already formatted with comma in replaceTemplateVariables
@@ -1336,11 +1336,11 @@ export async function sendEmailVerificationEmail(
   } else {
     html = html.replace(/Hi{name}/g, "Hi");
   }
-  
+
   // Replace companyName placeholder again after name processing
   html = html.replace(/{companyName}/g, variables.companyName || "Travunited");
   const subject = "Verify Your Travunited Email";
-  
+
   return sendUserEmail({ to: email, role, subject, html, category: "general" });
 }
 
@@ -1354,6 +1354,7 @@ export async function sendCorporateLeadAdminEmail(
     email: string;
     phone: string | null;
     message: string | null;
+    gstNumber?: string | null;
     createdAt: Date;
   }
 ) {
@@ -1364,19 +1365,20 @@ export async function sendCorporateLeadAdminEmail(
   const template = getEmailTemplate("corporateLeadAdminEmail", templates.emailCorporateLeadAdmin);
   const config = await loadEmailConfig();
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-  
+
   const variables: EmailTemplateVariables = {
     email: leadData.email,
     companyNameLead: leadData.companyName,
     contactName: leadData.contactName,
     message: leadData.message || "",
+    gstNumber: leadData.gstNumber || "Not provided",
     createdAt: leadData.createdAt,
     dashboardUrl: `${baseUrl}/admin/corporate-leads`,
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   let html = replaceTemplateVariables(template, variables);
-  
+
   // Handle conditional message section
   if (leadData.message) {
     const messageSection = `<div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
@@ -1409,7 +1411,7 @@ export async function sendCorporateLeadConfirmationEmail(
   const templates = await loadEmailTemplates();
   const template = getEmailTemplate("corporateLeadConfirmationEmail", templates.emailCorporateLeadConfirmation);
   const config = await loadEmailConfig();
-  
+
   const variables: EmailTemplateVariables = {
     email: userEmail,
     companyNameLead: companyName,
@@ -1418,9 +1420,9 @@ export async function sendCorporateLeadConfirmationEmail(
     supportPhone: "+91 63603 92398",
     companyName: config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited",
   };
-  
+
   let html = replaceTemplateVariables(template, variables);
-  
+
   // Handle conditional support phone section
   if (variables.supportPhone) {
     const phoneSection = `<li><strong>Phone:</strong> <a href="tel:${variables.supportPhone}">${variables.supportPhone}</a></li>`;
@@ -1454,7 +1456,7 @@ export async function sendCareerApplicationStatusEmail(
     const template = getEmailTemplate("careerApplicationStatusEmail", templates.emailCareerApplicationStatus);
     const config = await loadEmailConfig();
     const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.in";
-    
+
     // Status-specific messages
     const statusMessages: Record<string, { subject: string; message: string; color: string }> = {
       NEW: {
@@ -1502,7 +1504,7 @@ export async function sendCareerApplicationStatusEmail(
     };
 
     let html = replaceTemplateVariables(template, variables);
-    
+
     // Handle conditional next steps section for shortlisted candidates
     if (status === "SHORTLISTED") {
       const nextStepsSection = `<p style="background: #ecfdf5; padding: 15px; border-radius: 5px; border-left: 4px solid #10b981; margin: 20px 0;">
@@ -1545,10 +1547,10 @@ export async function sendAdminWelcomeEmail(
   const templates = await loadEmailTemplates();
   let template = getEmailTemplate("adminWelcomeEmail", templates.emailAdminWelcome);
   const config = await loadEmailConfig();
-  
+
   const roleDisplay = role === "SUPER_ADMIN" ? "Super Admin" : "Staff Admin";
   const companyName = config.emailFromGeneral?.match(/<(.+)>/)?.[1] || "Travunited";
-  
+
   const variables: EmailTemplateVariables = {
     email,
     name,
@@ -1557,10 +1559,10 @@ export async function sendAdminWelcomeEmail(
     loginUrl,
     companyName,
   };
-  
+
   // Handle conditional password section
   let html = replaceTemplateVariables(template, variables);
-  
+
   if (tempPassword) {
     const passwordSection = `<div style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; padding: 15px; margin: 20px 0;">
       <h3 style="margin-top: 0; color: #856404;">Your Temporary Password</h3>

@@ -18,6 +18,7 @@ const leadSchema = z.object({
   email: z.string().email(),
   phone: z.string().min(6),
   message: z.string().min(10),
+  gstNumber: z.string().optional().or(z.literal("")),
 });
 
 export async function POST(req: Request) {
@@ -34,6 +35,7 @@ export async function POST(req: Request) {
         email: data.email,
         phone: data.phone,
         message: data.message,
+        gstNumber: data.gstNumber || null,
         status: "NEW",
       },
     });
@@ -47,6 +49,7 @@ export async function POST(req: Request) {
       metadata: {
         contactName: lead.contactName,
         email: lead.email,
+        gstNumber: lead.gstNumber,
       },
     });
 
@@ -69,7 +72,7 @@ export async function POST(req: Request) {
         {
           type: "ADMIN_CORPORATE_LEAD_NEW",
           title: "New corporate lead",
-          message: `New corporate lead from ${lead.companyName}. Contact: ${lead.contactName} (${lead.email})`,
+          message: `New corporate lead from ${lead.companyName}${lead.gstNumber ? ` (GST: ${lead.gstNumber})` : ""}. Contact: ${lead.contactName} (${lead.email})`,
           link: `/admin/corporate-leads`,
           data: {
             leadId: lead.id,
@@ -90,6 +93,7 @@ export async function POST(req: Request) {
         email: lead.email,
         phone: lead.phone,
         message: lead.message,
+        gstNumber: lead.gstNumber,
         createdAt: lead.createdAt,
       });
     } catch (emailError) {

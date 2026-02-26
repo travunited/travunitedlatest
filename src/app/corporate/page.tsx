@@ -10,6 +10,7 @@ export default function CorporatePage() {
     contactPerson: "",
     email: "",
     phone: "",
+    gstNumber: "",
     message: "",
   });
   const [submitted, setSubmitted] = useState(false);
@@ -35,6 +36,7 @@ export default function CorporatePage() {
           contactPerson: "",
           email: "",
           phone: "",
+          gstNumber: "",
           message: "",
         });
       } else {
@@ -204,6 +206,21 @@ export default function CorporatePage() {
                       placeholder="+91 1234567890"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    GST Number (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.gstNumber}
+                    onChange={(e) =>
+                      setFormData({ ...formData, gstNumber: e.target.value })
+                    }
+                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="22AAAAA0000A1Z5"
+                  />
                 </div>
 
                 <div>

@@ -7,7 +7,7 @@ export interface EmailTemplateVariables {
   // User variables
   name?: string;
   email?: string;
-  
+
   // Application variables
   applicationId?: string;
   country?: string;
@@ -17,17 +17,17 @@ export interface EmailTemplateVariables {
   reason?: string;
   promoCode?: string;
   discountAmount?: number;
-  
+
   // Booking variables
   bookingId?: string;
   tourName?: string;
   pendingBalance?: number;
   dueDate?: string;
   isAdvance?: boolean;
-  
+
   // Document variables
   rejectedDocs?: Array<{ type: string; reason: string; documentId?: string }>;
-  
+
   // Link variables
   resetLink?: string;
   verificationLink?: string;
@@ -36,26 +36,27 @@ export interface EmailTemplateVariables {
   documentsUrl?: string;
   bookingUrl?: string;
   googleReviewUrl?: string;
-  
+
   // OTP variables
   otp?: string;
-  
+
   // Company variables
   companyName?: string;
   supportEmail?: string;
   supportPhone?: string;
-  
+
   // Corporate lead variables
   companyNameLead?: string;
   contactName?: string;
   message?: string;
+  gstNumber?: string;
   createdAt?: Date;
-  
+
   // Admin variables
   role?: string;
   tempPassword?: string;
   loginUrl?: string;
-  
+
   // Career application variables
   positionTitle?: string;
   statusColor?: string;
@@ -73,10 +74,10 @@ export function replaceTemplateVariables(
   variables: EmailTemplateVariables
 ): string {
   if (!template) return template;
-  
+
   let result = template;
   const baseUrl = process.env.NEXTAUTH_URL || "https://travunited.com";
-  
+
   // Replace common variables
   const replacements: Record<string, string> = {
     "{name}": variables.name || "",
@@ -111,17 +112,18 @@ export function replaceTemplateVariables(
     "{tempPassword}": variables.tempPassword || "",
     "{loginUrl}": variables.loginUrl || `${baseUrl}/admin/login`,
     "{otp}": variables.otp || "",
+    "{gstNumber}": variables.gstNumber || "",
     "{positionTitle}": variables.positionTitle || "",
     "{statusColor}": variables.statusColor || "#6b7280",
     "{statusMessage}": variables.statusMessage || "",
     "{nextStepsSection}": variables.nextStepsSection || "",
   };
-  
+
   // Replace all variables
   for (const [key, value] of Object.entries(replacements)) {
     result = result.replace(new RegExp(key.replace(/[{}]/g, "\\$&"), "g"), value);
   }
-  
+
   // Handle conditional sections
   // {reason} - only show if reason exists
   if (variables.reason) {
@@ -129,32 +131,32 @@ export function replaceTemplateVariables(
   } else {
     result = result.replace(/{reason}/g, "");
   }
-  
+
   // {promoCode} - only show if promo code exists
   if (variables.promoCode && variables.discountAmount) {
     result = result.replace(/{promoCode}/g, `<p style="color: #059669;"><strong>Promo Code Applied:</strong> ${variables.promoCode} - You saved ${variables.discountAmount}</p>`);
   } else {
     result = result.replace(/{promoCode}/g, "");
   }
-  
+
   // {pendingBalance} - only show if pendingBalance exists
   if (variables.pendingBalance !== undefined && variables.pendingBalance !== null) {
     result = result.replace(/{pendingBalance}/g, `<p><strong>Pending Balance:</strong> ₹${variables.pendingBalance.toLocaleString()}</p>`);
   } else {
     result = result.replace(/{pendingBalance}/g, "");
   }
-  
+
   // {dueDate} - only show if dueDate exists
   if (variables.dueDate) {
     result = result.replace(/{dueDate}/g, `<p><strong>Due Date:</strong> ${variables.dueDate}</p>`);
   } else {
     result = result.replace(/{dueDate}/g, "");
   }
-  
+
   // {tempPasswordSection} - handled in sendAdminWelcomeEmail function
   // {messageSection} - handled in sendCorporateLeadAdminEmail function
   // {supportPhoneSection} - handled in sendCorporateLeadConfirmationEmail function
-  
+
   // Handle rejected documents list
   if (variables.rejectedDocs && variables.rejectedDocs.length > 0) {
     const docsList = variables.rejectedDocs
@@ -169,7 +171,7 @@ export function replaceTemplateVariables(
   } else {
     result = result.replace(/{rejectedDocsList}/g, "");
   }
-  
+
   // Handle date formatting
   if (variables.createdAt) {
     const date = new Date(variables.createdAt);
@@ -180,14 +182,14 @@ export function replaceTemplateVariables(
     });
     result = result.replace(/{createdAt}/g, formattedDate);
   }
-  
+
   // Handle name formatting - add comma and space if name exists
   if (variables.name) {
     result = result.replace(/{name}/g, `, ${variables.name}`);
   } else {
     result = result.replace(/{name}/g, "");
   }
-  
+
   return result;
 }
 
@@ -499,6 +501,10 @@ export function getDefaultEmailTemplate(templateKey: string): string {
         <td style="padding: 8px 0;"><a href="mailto:{email}">{email}</a></td>
       </tr>
       <tr>
+        <td style="padding: 8px 0; font-weight: bold;">GST Number:</td>
+        <td style="padding: 8px 0;">{gstNumber}</td>
+      </tr>
+      <tr>
         <td style="padding: 8px 0; font-weight: bold;">Submitted:</td>
         <td style="padding: 8px 0;">{createdAt}</td>
       </tr>
@@ -558,7 +564,7 @@ export function getDefaultEmailTemplate(templateKey: string): string {
   </div>
 </div>`,
   };
-  
+
   return defaults[templateKey] || "";
 }
 

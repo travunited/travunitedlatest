@@ -265,6 +265,7 @@ model CorporateLead {
   email         String
   phone         String?
   message       String?
+  gstNumber     String?
   status        CorporateLeadStatus @default(NEW)
   createdAt     DateTime            @default(now())
   updatedAt     DateTime
