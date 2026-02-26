@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
+import crypto from "crypto";
 import { revalidatePath } from "next/cache";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -204,10 +205,10 @@ export async function PUT(
       ? body.processingTime
       : existingVisa.processingTime;
     const stayDuration = (body.stayDuration !== undefined && body.stayDuration !== null)
-        ? body.stayDuration
+      ? body.stayDuration
       : existingVisa.stayDuration;
     const validity = (body.validity !== undefined && body.validity !== null)
-        ? body.validity
+      ? body.validity
       : existingVisa.validity;
     // Handle entryTypeLegacy separately - it's a free-form text field
     const entryTypeLegacy = (body.entryTypeLegacy !== undefined && body.entryTypeLegacy !== null && typeof body.entryTypeLegacy === "string" && body.entryTypeLegacy.trim() !== "")

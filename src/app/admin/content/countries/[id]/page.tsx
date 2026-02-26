@@ -274,7 +274,7 @@ export default function AdminCountryDetailPage() {
               <div>
                 <h2 className="text-xl font-bold text-neutral-900">Document Templates</h2>
                 <p className="text-sm text-neutral-500 mt-1">
-                  Upload sample document templates for applicants to download. These appear after the "Documents Required" section.
+                  Upload sample document templates for applicants to download. These appear after the &quot;Documents Required&quot; section.
                 </p>
               </div>
               <button
