@@ -136,9 +136,9 @@ export async function POST(req: Request) {
       where: { email },
     });
 
-    if (existingUser) {
+    if (existingUser && (existingUser.role === "SUPER_ADMIN" || existingUser.role === "STAFF_ADMIN")) {
       return NextResponse.json(
-        { error: "Email already exists" },
+        { error: "An admin with this email already exists" },
         { status: 400 }
       );
     }
@@ -161,18 +161,32 @@ export async function POST(req: Request) {
       tempPassword = password;
     }
 
-    // Create admin user
-    const admin = await prisma.user.create({
-      data: {
-        id: crypto.randomUUID(),
-        updatedAt: new Date(),
-        name,
-        email,
-        passwordHash,
-        role: role === "SUPER_ADMIN" ? "SUPER_ADMIN" : "STAFF_ADMIN",
-        isActive: true,
-      },
-    });
+    // Create or upgrade admin user
+    let admin;
+    if (existingUser) {
+      admin = await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          updatedAt: new Date(),
+          name,
+          passwordHash,
+          role: role === "SUPER_ADMIN" ? "SUPER_ADMIN" : "STAFF_ADMIN",
+          isActive: true,
+        },
+      });
+    } else {
+      admin = await prisma.user.create({
+        data: {
+          id: crypto.randomUUID(),
+          updatedAt: new Date(),
+          name,
+          email,
+          passwordHash,
+          role: role === "SUPER_ADMIN" ? "SUPER_ADMIN" : "STAFF_ADMIN",
+          isActive: true,
+        },
+      });
+    }
 
     // Notify super admin about new admin creation
     const superAdmins = await prisma.user.findMany({
@@ -232,10 +246,10 @@ export async function POST(req: Request) {
         ? "Admin created successfully. Welcome email with temporary password has been sent."
         : "Admin created successfully. Welcome email has been sent.",
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating admin:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: error?.message || "Internal server error" },
       { status: 500 }
     );
   }

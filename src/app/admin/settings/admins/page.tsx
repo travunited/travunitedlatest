@@ -99,10 +99,11 @@ export default function AdminManagementPage() {
         await fetchAdmins();
         alert("Admin created successfully");
       } else {
-        alert("Failed to create admin");
+        const errorData = await response.json().catch(() => null);
+        alert(errorData?.error || "Failed to create admin");
       }
-    } catch (error) {
-      alert("An error occurred");
+    } catch (error: any) {
+      alert(error?.message || "An error occurred");
     }
   };
 
@@ -247,20 +248,18 @@ export default function AdminManagementPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          admin.role === "SUPER_ADMIN" 
-                            ? "bg-purple-100 text-purple-700" 
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${admin.role === "SUPER_ADMIN"
+                            ? "bg-purple-100 text-purple-700"
                             : "bg-blue-100 text-blue-700"
-                        }`}>
+                          }`}>
                           {admin.role === "SUPER_ADMIN" ? "Super Admin" : "Staff Admin"}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          admin.isActive
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${admin.isActive
                             ? "bg-green-100 text-green-700"
                             : "bg-red-100 text-red-700"
-                        }`}>
+                          }`}>
                           {admin.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
@@ -426,11 +425,10 @@ export default function AdminManagementPage() {
                   </button>
                   <button
                     onClick={() => handleToggleStatus(selectedAdmin.id, selectedAdmin.isActive)}
-                    className={`w-full px-4 py-2 rounded-lg font-medium ${
-                      selectedAdmin.isActive
+                    className={`w-full px-4 py-2 rounded-lg font-medium ${selectedAdmin.isActive
                         ? "bg-red-100 text-red-700 hover:bg-red-200"
                         : "bg-green-100 text-green-700 hover:bg-green-200"
-                    }`}
+                      }`}
                   >
                     {selectedAdmin.isActive ? "Deactivate" : "Reactivate"} Admin
                   </button>
