@@ -40,10 +40,11 @@ export default function CorporatePage() {
           message: "",
         });
       } else {
-        setError("Failed to submit. Please try again or contact us directly.");
+        const errorData = await response.json().catch(() => null);
+        setError(errorData?.error || "Failed to submit. Please try again or contact us directly.");
       }
-    } catch (err) {
-      setError("An error occurred. Please contact us directly at corporate@travunited.com");
+    } catch (err: any) {
+      setError(err?.message || "An error occurred. Please contact us directly at corporate@travunited.com");
     } finally {
       setLoading(false);
     }

@@ -119,15 +119,16 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     if (error instanceof z.ZodError) {
+      const errorMessage = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
       return NextResponse.json(
-        { error: "Invalid input", details: error.errors },
+        { error: `Validation error: ${errorMessage}` },
         { status: 400 }
       );
     }
 
     console.error("Error submitting corporate lead:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 }
     );
   }
