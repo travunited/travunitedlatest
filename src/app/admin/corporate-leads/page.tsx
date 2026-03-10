@@ -14,6 +14,7 @@ interface CorporateLead {
   contactName: string;
   email: string;
   phone: string | null;
+  gstNumber: string | null;
   message: string | null;
   status: string;
   createdAt: string;
@@ -171,6 +172,9 @@ function AdminCorporateLeadsPageContent() {
                     Phone
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
+                    GST Number
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-medium text-neutral-700 uppercase tracking-wider">
@@ -184,7 +188,7 @@ function AdminCorporateLeadsPageContent() {
               <tbody className="bg-white divide-y divide-neutral-200">
                 {leads.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-12 text-center text-neutral-500">
+                    <td colSpan={8} className="px-6 py-12 text-center text-neutral-500">
                       No corporate leads found
                     </td>
                   </tr>
@@ -202,6 +206,9 @@ function AdminCorporateLeadsPageContent() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-neutral-900">{lead.phone || "N/A"}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-neutral-900">{lead.gstNumber || "N/A"}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(lead.status)}`}>

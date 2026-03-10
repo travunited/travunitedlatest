@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Mail, Phone, Building2, Calendar, User, Save } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, Calendar, User, Save, FileText } from "lucide-react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { formatDate } from "@/lib/dateFormat";
 
@@ -14,6 +14,7 @@ interface CorporateLead {
   contactName: string;
   email: string;
   phone: string | null;
+  gstNumber: string | null;
   message: string | null;
   status: string;
   internalNotes: string | null;
@@ -199,6 +200,15 @@ export default function AdminCorporateLeadDetailPage() {
                       <span>Phone</span>
                     </div>
                     <div className="font-medium text-neutral-900">{lead.phone}</div>
+                  </div>
+                )}
+                {lead.gstNumber && (
+                  <div>
+                    <div className="flex items-center space-x-2 text-sm text-neutral-600 mb-1">
+                      <FileText size={16} />
+                      <span>GST Number</span>
+                    </div>
+                    <div className="font-medium text-neutral-900">{lead.gstNumber}</div>
                   </div>
                 )}
                 <div>

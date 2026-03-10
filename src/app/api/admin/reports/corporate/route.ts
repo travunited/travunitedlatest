@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: "Unauthorized" },
@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
         { contactName: { contains: search, mode: "insensitive" } },
         { email: { contains: search, mode: "insensitive" } },
         { phone: { contains: search, mode: "insensitive" } },
+        { gstNumber: { contains: search, mode: "insensitive" } },
       ];
     }
 
@@ -79,6 +80,7 @@ export async function GET(req: NextRequest) {
         "Contact Person": lead.contactName,
         "Email": lead.email,
         "Phone": lead.phone || "N/A",
+        "GST Number": lead.gstNumber || "N/A",
         "Message": lead.message || "N/A",
         "Status": lead.status,
         "Created Date": lead.createdAt.toISOString().split("T")[0],

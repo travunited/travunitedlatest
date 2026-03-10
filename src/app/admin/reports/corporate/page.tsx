@@ -16,6 +16,7 @@ interface CorporateLead {
   contactName: string;
   email: string;
   phone: string | null;
+  gstNumber: string | null;
   message: string | null;
   status: string;
   createdAt: string;
@@ -261,6 +262,7 @@ export default function CorporateLeadsPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Contact</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Email</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Phone</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">GST Number</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Created</th>
                   </tr>
@@ -272,6 +274,7 @@ export default function CorporateLeadsPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{lead.contactName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{lead.email}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{lead.phone || "N/A"}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">{lead.gstNumber || "N/A"}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(lead.status)}`}>
                           {lead.status.replace(/_/g, " ")}
