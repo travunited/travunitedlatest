@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { getMediaProxyUrl } from "@/lib/media";
 import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
@@ -35,6 +35,13 @@ export function ImageWithFallback({
     return proxiedUrl || fallbackSrc;
   });
   const [hasError, setHasError] = useState(false);
+
+  // Update imageSrc when src or fallbackSrc changes
+  useEffect(() => {
+    const proxiedUrl = getMediaProxyUrl(src);
+    setImageSrc(proxiedUrl || fallbackSrc);
+    setHasError(false); // Reset error state on new src
+  }, [src, fallbackSrc]);
 
   const handleError = () => {
     if (!hasError && imageSrc !== fallbackSrc) {

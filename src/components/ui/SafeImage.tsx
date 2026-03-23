@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { getMediaProxyUrl } from "@/lib/media";
 
@@ -36,6 +36,13 @@ export function SafeImage({
     const proxiedUrl = getMediaProxyUrl(src);
     return proxiedUrl || fallbackSrc;
   });
+
+  // Update currentSrc when src or fallbackSrc changes
+  useEffect(() => {
+    const proxiedUrl = getMediaProxyUrl(src);
+    setCurrentSrc(proxiedUrl || fallbackSrc);
+    setImageError(false); // Reset error state on new src
+  }, [src, fallbackSrc]);
 
   const handleError = () => {
     if (!imageError && currentSrc !== fallbackSrc) {

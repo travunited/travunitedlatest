@@ -38,6 +38,14 @@ export function RobustImage({
   });
   const [useUnoptimized, setUseUnoptimized] = useState(false);
 
+  // Update imageSrc when src or fallbackSrc changes
+  useEffect(() => {
+    const proxiedUrl = getMediaProxyUrl(src);
+    setImageSrc(proxiedUrl || fallbackSrc);
+    setImageError(false);
+    setUseUnoptimized(false); // Re-evaluate optimization for new source
+  }, [src, fallbackSrc]);
+
   // Check if URL is external and should use unoptimized
   useEffect(() => {
     if (imageSrc && !imageSrc.startsWith("/") && !imageSrc.includes("/api/media")) {

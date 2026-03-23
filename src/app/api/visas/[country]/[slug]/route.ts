@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getSignedDocumentUrl } from "@/lib/minio";
+import { buildMediaDownloadUrlFromKey } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
 
@@ -94,14 +95,10 @@ export async function GET(
         return await Promise.all(
           ((visa as any).DocumentTemplate || []).map(async (template: any) => {
             let downloadUrl = null;
-            if (session?.user) {
-              try {
-                const filename = (template.fileName || 'template').replace(/"/g, '\\"');
-                const contentDisposition = `attachment; filename="${filename}"`;
-                downloadUrl = await getSignedDocumentUrl(template.fileKey, 3600, contentDisposition);
-              } catch (error) {
-                console.error(`Error signing URL for template ${template.id}`, error);
-              }
+            try {
+              downloadUrl = buildMediaDownloadUrlFromKey(template.fileKey, template.fileName || "template");
+            } catch (error) {
+              console.error(`Error generating proxy URL for template ${template.id}`, error);
             }
             return {
               id: template.id,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { FileText, Download, Lock } from "lucide-react";
 import Link from "next/link";
@@ -18,13 +19,53 @@ interface TemplateListProps {
     templates: Template[];
 }
 
-export function TemplateList({ templates }: TemplateListProps) {
-    const { data: session } = useSession();
+export function TemplateList({ templates: initialTemplates }: TemplateListProps) {
+    const { data: session, status } = useSession();
     const pathname = usePathname();
+    const [templates, setTemplates] = useState<Template[]>(initialTemplates);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+
+    // Initial sync
+    useEffect(() => {
+        setTemplates(initialTemplates);
+    }, [initialTemplates]);
+
+    // Re-fetch signed URLs if session becomes active but URLs are missing
+    useEffect(() => {
+        const needsRefresh = templates.some((t: Template) => !t.downloadUrl);
+        
+        if (session && needsRefresh && !isRefreshing) {
+            const refreshUrls = async () => {
+                setIsRefreshing(true);
+                try {
+                    // Extract country and type from pathname /visas/[country]/[type]
+                    const parts = pathname.split('/').filter(Boolean);
+                    if (parts.length >= 3 && parts[0] === 'visas') {
+                        const country = parts[1];
+                        const type = parts[2];
+                        
+                        const response = await fetch(`/api/visas/${country}/${type}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.templates) {
+                                setTemplates(data.templates);
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error("Failed to refresh template URLs:", error);
+                } finally {
+                    setIsRefreshing(false);
+                }
+            };
+            
+            refreshUrls();
+        }
+    }, [session, templates, pathname, isRefreshing]);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {templates.map((template) => (
+            {templates.map((template: Template) => (
                 <div
                     key={template.id}
                     className="border border-neutral-200 rounded-lg p-4 hover:border-primary-300 hover:bg-primary-50/50 transition-colors"

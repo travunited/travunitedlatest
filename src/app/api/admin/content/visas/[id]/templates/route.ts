@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { uploadVisaDocument } from "@/lib/minio";
-import { getSignedDocumentUrl } from "@/lib/minio";
+import { buildMediaDownloadUrlFromKey } from "@/lib/media";
 
 // Use runtime = 'nodejs' to support standard API route features if needed,
 // but usually not strictly required unless using Node-specific APIs not in Edge.
@@ -38,11 +38,7 @@ export async function GET(
         const templatesWithUrls = await Promise.all(
             templates.map(async (template) => {
                 let downloadUrl = null;
-                try {
-                    downloadUrl = await getSignedDocumentUrl(template.fileKey, 3600); // 1 hour expiry
-                } catch (error) {
-                    console.error(`Error generating signed URL for template ${template.id}:`, error);
-                }
+                downloadUrl = buildMediaDownloadUrlFromKey(template.fileKey, template.fileName || "template");
                 return {
                     ...template,
                     downloadUrl,
