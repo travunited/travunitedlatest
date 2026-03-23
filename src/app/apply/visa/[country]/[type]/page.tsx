@@ -276,20 +276,9 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           visaId: data.id,
         }));
 
-        // Fetch templates for this country
-        if (data.country?.code) {
-          setTemplatesLoading(true);
-          try {
-            const templatesResponse = await fetch(`/api/countries/${data.country.code}/templates`);
-            if (templatesResponse.ok) {
-              const templatesData = await templatesResponse.json();
-              setTemplates(templatesData);
-            }
-          } catch (error) {
-            console.error("Failed to fetch templates:", error);
-          } finally {
-            setTemplatesLoading(false);
-          }
+        // Use templates from visa data if available
+        if ((data as any).templates) {
+          setTemplates((data as any).templates);
         }
       } catch (error) {
         console.error("Failed to load visa:", error);
@@ -311,7 +300,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       isMounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params?.country, params?.type, router]);
+  }, [params?.country, params?.type, router, session?.user?.id]);
 
   // Check email verification status if logged in
   useEffect(() => {

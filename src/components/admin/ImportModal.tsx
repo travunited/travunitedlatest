@@ -52,7 +52,13 @@ export function ImportModal({
   if (!isOpen) return null;
 
   const handleDownloadTemplate = (format: "csv" | "xlsx") => {
-    window.open(`/api/admin/content/${entityType}/template?format=${format}`, "_blank");
+    const url = `/api/admin/content/${entityType}/template?format=${format}`;
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${entityType}-template.${format}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

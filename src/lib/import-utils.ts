@@ -123,14 +123,18 @@ export function generateCSVTemplate(headers: string[], exampleRows?: any[]): str
   const csv = [headers.join(",")];
   if (exampleRows) {
     exampleRows.forEach((row) => {
-      csv.push(headers.map((h) => {
-        const val = row[h] || "";
-        // Escape commas and quotes
-        if (val.includes(",") || val.includes('"')) {
-          return `"${val.replace(/"/g, '""')}"`;
-        }
-        return val;
-      }).join(","));
+      csv.push(
+        headers
+          .map((header) => {
+            const val = row[header];
+            const valStr = val !== null && val !== undefined ? String(val) : "";
+            if (valStr.includes(",") || valStr.includes('"') || valStr.includes("\n")) {
+              return `"${valStr.replace(/"/g, '""')}"`;
+            }
+            return valStr;
+          })
+          .join(",")
+      );
     });
   }
   return csv.join("\n");

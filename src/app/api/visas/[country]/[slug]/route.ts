@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { getSignedDocumentUrl } from "@/lib/minio";
+
 export const dynamic = "force-dynamic";
 
 
@@ -37,6 +41,10 @@ export async function GET(
           orderBy: { sortOrder: "asc" },
         },
         VisaSubType: {
+          orderBy: { sortOrder: "asc" },
+        },
+        DocumentTemplate: {
+          where: { isActive: true },
           orderBy: { sortOrder: "asc" },
         },
       },
@@ -81,6 +89,31 @@ export async function GET(
       requirements: (visa as any).VisaDocumentRequirement,
       faqs: (visa as any).VisaFaq,
       subTypes: (visa as any).VisaSubType,
+      templates: await (async () => {
+        const session = await getServerSession(authOptions);
+        return await Promise.all(
+          ((visa as any).DocumentTemplate || []).map(async (template: any) => {
+            let downloadUrl = null;
+            if (session?.user) {
+              try {
+                const filename = (template.fileName || 'template').replace(/"/g, '\\"');
+                const contentDisposition = `attachment; filename="${filename}"`;
+                downloadUrl = await getSignedDocumentUrl(template.fileKey, 3600, contentDisposition);
+              } catch (error) {
+                console.error(`Error signing URL for template ${template.id}`, error);
+              }
+            }
+            return {
+              id: template.id,
+              name: template.name,
+              description: template.description,
+              fileName: template.fileName || "template",
+              fileSize: template.fileSize || 0,
+              downloadUrl
+            };
+          })
+        );
+      })(),
     });
   } catch (error) {
     console.error("[VisaDetailAPI] Fetch failed", error);
