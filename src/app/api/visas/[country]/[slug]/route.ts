@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { getSignedDocumentUrl } from "@/lib/minio";
 import { buildMediaDownloadUrlFromKey } from "@/lib/media";
 
 export const dynamic = "force-dynamic";
@@ -91,7 +88,6 @@ export async function GET(
       faqs: (visa as any).VisaFaq,
       subTypes: (visa as any).VisaSubType,
       templates: await (async () => {
-        const session = await getServerSession(authOptions);
         return await Promise.all(
           ((visa as any).DocumentTemplate || []).map(async (template: any) => {
             let downloadUrl = null;

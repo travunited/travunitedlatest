@@ -19,7 +19,7 @@ import {
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getMediaProxyUrl } from "@/lib/media";
+import { getMediaProxyUrl, buildMediaDownloadUrlFromKey } from "@/lib/media";
 import { getAbsoluteImageUrl } from "@/lib/og-image";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 import { ShareButton } from "@/components/sharing/ShareButton";
@@ -220,23 +220,10 @@ export default async function VisaDetailPage({
     templates.map(async (template) => {
       let downloadUrl = null;
 
-      // Only generate signed URL if user is authenticated
-      if (session?.user) {
-        const { getSignedDocumentUrl } = await import("@/lib/minio");
-        try {
-          // Force download behavior by setting Content-Disposition
-          // We use the filename from the template record, escaping quotes just in case
-          const filename = template.fileName.replace(/"/g, '\\"');
-          const contentDisposition = `attachment; filename="${filename}"`;
-
-          downloadUrl = await getSignedDocumentUrl(
-            template.fileKey,
-            3600, // 1 hour expiry
-            contentDisposition
-          );
-        } catch (error) {
-          console.error(`Error generating signed URL for template ${template.id}:`, error);
-        }
+      try {
+        downloadUrl = buildMediaDownloadUrlFromKey(template.fileKey, template.fileName);
+      } catch (error) {
+        console.error(`Error generating proxy URL for template ${template.id}:`, error);
       }
 
       // Return a clean object to avoid serialization issues (no Date objects)
