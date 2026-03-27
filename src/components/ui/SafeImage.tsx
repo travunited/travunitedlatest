@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { getMediaProxyUrl } from "@/lib/media";
+import { shouldUseUnoptimizedImage } from "@/lib/image-helpers";
 
 interface SafeImageProps {
   src?: string | null;
@@ -31,24 +32,29 @@ export function SafeImage({
   fallbackSrc = DEFAULT_FALLBACK,
   onError,
 }: SafeImageProps) {
-  const [imageError, setImageError] = useState(false);
   const [currentSrc, setCurrentSrc] = useState(() => {
     const proxiedUrl = getMediaProxyUrl(src);
     return proxiedUrl || fallbackSrc;
   });
+  const [errorCount, setErrorCount] = useState(0);
 
   // Update currentSrc when src or fallbackSrc changes
   useEffect(() => {
     const proxiedUrl = getMediaProxyUrl(src);
     setCurrentSrc(proxiedUrl || fallbackSrc);
-    setImageError(false); // Reset error state on new src
+    setErrorCount(0);
   }, [src, fallbackSrc]);
 
   const handleError = () => {
-    if (!imageError && currentSrc !== fallbackSrc) {
-      setImageError(true);
+    if (errorCount === 0 && currentSrc !== fallbackSrc) {
+      // First failure: try custom fallback
+      setErrorCount(1);
       setCurrentSrc(fallbackSrc);
       onError?.();
+    } else if (errorCount === 1 && currentSrc !== DEFAULT_FALLBACK) {
+      // Second failure: use default fallback
+      setErrorCount(2);
+      setCurrentSrc(DEFAULT_FALLBACK);
     }
   };
 
@@ -65,7 +71,7 @@ export function SafeImage({
         className={className}
         sizes={sizes}
         priority={priority}
-        unoptimized={imageError || currentSrc === fallbackSrc}
+        unoptimized={shouldUseUnoptimizedImage(currentSrc)}
         onError={handleError}
       />
     );
@@ -80,7 +86,7 @@ export function SafeImage({
       className={className}
       sizes={sizes}
       priority={priority}
-      unoptimized={imageError || currentSrc === fallbackSrc}
+      unoptimized={shouldUseUnoptimizedImage(currentSrc)}
       onError={handleError}
     />
   );

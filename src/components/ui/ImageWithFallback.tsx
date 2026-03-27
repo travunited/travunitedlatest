@@ -34,23 +34,29 @@ export function ImageWithFallback({
     const proxiedUrl = getMediaProxyUrl(src);
     return proxiedUrl || fallbackSrc;
   });
-  const [hasError, setHasError] = useState(false);
+  const [errorCount, setErrorCount] = useState(0);
 
   // Update imageSrc when src or fallbackSrc changes
   useEffect(() => {
     const proxiedUrl = getMediaProxyUrl(src);
     setImageSrc(proxiedUrl || fallbackSrc);
-    setHasError(false); // Reset error state on new src
+    setErrorCount(0);
   }, [src, fallbackSrc]);
 
   const handleError = () => {
-    if (!hasError && imageSrc !== fallbackSrc) {
-      setHasError(true);
+    if (errorCount === 0 && imageSrc !== fallbackSrc) {
+      // First failure: try custom fallback
+      setErrorCount(1);
       setImageSrc(fallbackSrc);
+    } else if (errorCount === 1 && imageSrc !== DEFAULT_FALLBACK) {
+      // Second failure: use default fallback
+      setErrorCount(2);
+      setImageSrc(DEFAULT_FALLBACK);
     }
   };
 
-  const useUnoptimized = shouldUseUnoptimizedImage(src) || true;
+  // Compute based on the currently displayed src, not the original prop
+  const useUnoptimized = shouldUseUnoptimizedImage(imageSrc);
 
   if (fill) {
     return (
