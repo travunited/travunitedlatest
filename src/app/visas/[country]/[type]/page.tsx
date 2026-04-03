@@ -322,9 +322,10 @@ export default async function VisaDetailPage({
 
               <section className="space-y-4">
                 <h2 className="text-2xl font-bold text-neutral-900">Overview</h2>
-                <p className="text-neutral-700 leading-relaxed whitespace-pre-line">
-                  {visa.overview}
-                </p>
+                <RichTextRenderer 
+                  text={visa.overview}
+                  className="text-neutral-700 leading-relaxed"
+                />
               </section>
 
               <section className="grid lg:grid-cols-2 gap-6">
@@ -386,9 +387,10 @@ export default async function VisaDetailPage({
 
               <section className="space-y-4">
                 <h2 className="text-2xl font-bold text-neutral-900">Eligibility</h2>
-                <p className="text-neutral-700 whitespace-pre-line">
-                  {visa.eligibility}
-                </p>
+                <RichTextRenderer 
+                  text={visa.eligibility}
+                  className="text-neutral-700 leading-relaxed"
+                />
               </section>
 
               {sampleVisaUrl && (
@@ -411,9 +413,10 @@ export default async function VisaDetailPage({
                   <h2 className="text-2xl font-bold text-neutral-900">Important Notes</h2>
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                     {visa.importantNotes && (
-                      <p className="text-neutral-700 whitespace-pre-line">
-                        {visa.importantNotes}
-                      </p>
+                      <RichTextRenderer 
+                        text={visa.importantNotes}
+                        className="text-neutral-700 leading-relaxed"
+                      />
                     )}
                     {isInformationOnly && (
                       <div className={`p-3 bg-white rounded border border-amber-300 ${visa.importantNotes ? 'mt-4' : ''}`}>
@@ -431,9 +434,10 @@ export default async function VisaDetailPage({
               {visa.rejectionReasons && (
                 <section className="space-y-4">
                   <h2 className="text-2xl font-bold text-neutral-900">Rejection Reasons</h2>
-                  <p className="text-neutral-700 whitespace-pre-line">
-                    {visa.rejectionReasons}
-                  </p>
+                  <RichTextRenderer 
+                    text={visa.rejectionReasons}
+                    className="text-neutral-700 leading-relaxed"
+                  />
                 </section>
               )}
 
@@ -667,24 +671,28 @@ function RichTextRenderer({ text, className = "" }: { text: string | null | unde
   return (
     <div className={`space-y-1.5 ${className}`}>
       {lines.map((line, idx) => {
-        // Match bullet points (•, -, *)
-        const bulletMatch = line.match(/^([\-\*\•])\s+(.*)/);
+        // Match bullet points (•, -, *) with optional leading spaces
+        const bulletMatch = line.match(/^(\s*)([\-\*\•])\s+(.*)/);
         if (bulletMatch) {
           return (
             <div key={idx} className="flex items-start">
-              <span className="mr-2 flex-shrink-0 text-neutral-500 mt-[0.4rem] leading-none text-xs">{bulletMatch[1] === '-' || bulletMatch[1] === '*' ? '•' : bulletMatch[1]}</span>
-              <span className="flex-1">{bulletMatch[2]}</span>
+              <span className="w-5 flex-shrink-0 text-neutral-500 mt-[0.55rem] leading-none text-[10px] text-center">
+                {bulletMatch[2] === '-' || bulletMatch[2] === '*' ? '●' : bulletMatch[2]}
+              </span>
+              <span className="flex-1">{bulletMatch[3]}</span>
             </div>
           );
         }
         
-        // Match numbered lists (1. , 2. )
-        const numberMatch = line.match(/^(\d+\.)\s+(.*)/);
+        // Match numbered lists (1. , 2. ) with optional leading spaces
+        const numberMatch = line.match(/^(\s*)(\d+\.)\s+(.*)/);
         if (numberMatch) {
           return (
             <div key={idx} className="flex items-start">
-              <span className="mr-2 flex-shrink-0 text-neutral-900 font-medium min-w-[1.25rem]">{numberMatch[1]}</span>
-              <span className="flex-1">{numberMatch[2]}</span>
+              <span className="w-8 flex-shrink-0 text-neutral-900 font-semibold text-sm mt-0.5 text-right pr-2">
+                {numberMatch[2]}
+              </span>
+              <span className="flex-1">{numberMatch[3]}</span>
             </div>
           );
         }
