@@ -8,6 +8,7 @@ import { HelpButton } from "@/components/ui/HelpButton";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
+import { Clarity } from "@/components/analytics/Clarity";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { ChunkErrorHandler } from "@/components/ChunkErrorHandler";
 import { ContentProtection } from "@/components/layout/ContentProtection";
@@ -48,6 +49,7 @@ export default function RootLayout({
         <ChunkErrorHandler />
         <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
         <MetaPixel pixelId={process.env.NEXT_PUBLIC_META_PIXEL_ID} />
+        <Clarity clarityId="w58yhbqxes" />
         <ContentProtection />
         <SessionProvider>
           <ScrollToTop />
