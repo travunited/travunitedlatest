@@ -328,17 +328,17 @@ export default async function VisaDetailPage({
               </section>
 
               <section className="grid lg:grid-cols-2 gap-6">
-                <div className="border border-neutral-200 rounded-2xl p-6 space-y-3">
+                <div className="border border-neutral-200 rounded-2xl p-6 flex flex-col justify-center space-y-3">
                   <h3 className="text-xl font-semibold text-neutral-900">
                     Why Travunited
                   </h3>
-                  <p className="text-neutral-700 whitespace-pre-line">
+                  <p className="text-neutral-700 whitespace-pre-line leading-relaxed text-justify">
                     {visa.whyTravunited || "Expert guidance throughout the journey."}
                   </p>
                 </div>
-                <div className="border border-neutral-200 rounded-2xl p-6 space-y-3">
+                <div className="border border-neutral-200 rounded-2xl p-6 flex flex-col justify-center space-y-3">
                   <h3 className="text-xl font-semibold text-neutral-900">Stats</h3>
-                  <p className="text-neutral-700 whitespace-pre-line">
+                  <p className="text-neutral-700 whitespace-pre-line leading-relaxed text-justify">
                     {visa.statistics || "High approval rate with proactive follow-ups."}
                   </p>
                 </div>
