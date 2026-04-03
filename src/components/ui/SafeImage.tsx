@@ -18,7 +18,7 @@ interface SafeImageProps {
   onError?: () => void;
 }
 
-const DEFAULT_FALLBACK = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&q=80";
+const DEFAULT_FALLBACK = "https://static.vecteezy.com/system/resources/previews/032/252/548/large_2x/the-most-beautiful-places-in-the-world-ai-generated-free-photo.jpg";
 
 export function SafeImage({
   src,
