@@ -332,15 +332,17 @@ export default async function VisaDetailPage({
                   <h3 className="text-xl font-semibold text-neutral-900">
                     Why Travunited
                   </h3>
-                  <p className="text-neutral-700 whitespace-pre-line leading-relaxed text-justify">
-                    {visa.whyTravunited || "Expert guidance throughout the journey."}
-                  </p>
+                  <RichTextRenderer 
+                    text={visa.whyTravunited || "Expert guidance throughout the journey."}
+                    className="text-neutral-700 leading-relaxed text-justify"
+                  />
                 </div>
                 <div className="border border-neutral-200 rounded-2xl p-6 flex flex-col justify-center space-y-3">
                   <h3 className="text-xl font-semibold text-neutral-900">Stats</h3>
-                  <p className="text-neutral-700 whitespace-pre-line leading-relaxed text-justify">
-                    {visa.statistics || "High approval rate with proactive follow-ups."}
-                  </p>
+                  <RichTextRenderer 
+                    text={visa.statistics || "High approval rate with proactive follow-ups."}
+                    className="text-neutral-700 leading-relaxed text-justify"
+                  />
                 </div>
               </section>
 
@@ -654,6 +656,45 @@ function RequirementCard({
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+function RichTextRenderer({ text, className = "" }: { text: string | null | undefined; className?: string }) {
+  if (!text) return null;
+  const lines = text.split('\n');
+  
+  return (
+    <div className={`space-y-1.5 ${className}`}>
+      {lines.map((line, idx) => {
+        // Match bullet points (•, -, *)
+        const bulletMatch = line.match(/^([\-\*\•])\s+(.*)/);
+        if (bulletMatch) {
+          return (
+            <div key={idx} className="flex items-start">
+              <span className="mr-2 flex-shrink-0 text-neutral-500 mt-[0.4rem] leading-none text-xs">{bulletMatch[1] === '-' || bulletMatch[1] === '*' ? '•' : bulletMatch[1]}</span>
+              <span className="flex-1">{bulletMatch[2]}</span>
+            </div>
+          );
+        }
+        
+        // Match numbered lists (1. , 2. )
+        const numberMatch = line.match(/^(\d+\.)\s+(.*)/);
+        if (numberMatch) {
+          return (
+            <div key={idx} className="flex items-start">
+              <span className="mr-2 flex-shrink-0 text-neutral-900 font-medium min-w-[1.25rem]">{numberMatch[1]}</span>
+              <span className="flex-1">{numberMatch[2]}</span>
+            </div>
+          );
+        }
+        
+        if (line.trim() === '') {
+          return <div key={idx} className="h-1"></div>;
+        }
+        
+        return <p key={idx}>{line}</p>;
+      })}
     </div>
   );
 }
