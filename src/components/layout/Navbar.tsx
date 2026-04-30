@@ -189,18 +189,19 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Mobile drawer */}
+        {/* Mobile drawer — opacity animation avoids iOS height-animation touch-target bug.
+            No overflow-y-auto wrapper: that caused the iOS "first tap activates scroll
+            container, second tap fires click" double-tap issue. */}
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: "auto" }}
-              exit={{ height: 0 }}
-              transition={{ duration: 0.2, ease: "easeInOut" }}
-              className="md:hidden bg-white border-t border-neutral-200 overflow-hidden"
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.15 }}
+              className="md:hidden bg-white border-t border-neutral-200 shadow-lg"
             >
-              {/* Scrollable content — caps at 80vh so menu never covers full screen */}
-              <div className="overflow-y-auto max-h-[80vh] px-4 py-3 divide-y divide-neutral-100">
+              <div className="px-4 py-3 divide-y divide-neutral-100">
 
                 {/* Nav links */}
                 <div className="pb-3 space-y-1">
@@ -208,10 +209,10 @@ export function Navbar() {
                     <Link
                       key={href}
                       href={href}
-                      className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl hover:bg-neutral-50 active:bg-neutral-100 transition-colors"
+                      className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
                       onClick={close}
                     >
-                      <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
+                      <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
                         <Icon size={18} className="text-neutral-600" />
                       </span>
                       {label}
@@ -225,17 +226,17 @@ export function Navbar() {
                     <div className="space-y-1">
                       {/* User identity row */}
                       <div className="flex items-center gap-3 px-3 py-2 mb-1">
-                        <span className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                        <span className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center shrink-0 pointer-events-none">
                           <User size={18} className="text-primary-600" />
                         </span>
-                        <div className="min-w-0">
+                        <div className="min-w-0 pointer-events-none">
                           <p className="text-sm font-semibold text-neutral-900 truncate">
                             {session.user?.name || "My Account"}
                           </p>
                           <p className="text-xs text-neutral-500 truncate">{session.user?.email}</p>
                         </div>
                         {isAdmin && (
-                          <span className="ml-auto shrink-0 text-xs font-medium bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span className="ml-auto shrink-0 text-xs font-medium bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full flex items-center gap-1 pointer-events-none">
                             <Shield size={11} /> Admin
                           </span>
                         )}
@@ -243,10 +244,10 @@ export function Navbar() {
 
                       <Link
                         href="/dashboard"
-                        className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl hover:bg-neutral-50 active:bg-neutral-100 transition-colors"
+                        className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
                         onClick={close}
                       >
-                        <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
+                        <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
                           <LayoutDashboard size={18} className="text-neutral-600" />
                         </span>
                         Dashboard
@@ -255,10 +256,10 @@ export function Navbar() {
                       {isAdmin && (
                         <Link
                           href="/admin"
-                          className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl hover:bg-neutral-50 active:bg-neutral-100 transition-colors"
+                          className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
                           onClick={close}
                         >
-                          <span className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0">
+                          <span className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0 pointer-events-none">
                             <Shield size={18} className="text-primary-600" />
                           </span>
                           Admin Panel
@@ -267,9 +268,9 @@ export function Navbar() {
 
                       <button
                         onClick={() => { signOut({ callbackUrl: "/" }); close(); }}
-                        className="w-full flex items-center gap-3 text-red-600 font-medium py-3 px-3 rounded-xl hover:bg-red-50 active:bg-red-100 transition-colors"
+                        className="w-full flex items-center gap-3 text-red-600 font-medium py-3 px-3 rounded-xl active:bg-red-100 transition-colors cursor-pointer"
                       >
-                        <span className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                        <span className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0 pointer-events-none">
                           <LogOut size={18} className="text-red-500" />
                         </span>
                         Sign Out
@@ -279,14 +280,14 @@ export function Navbar() {
                     <div className="flex flex-col gap-2 pt-1">
                       <Link
                         href="/login"
-                        className="flex items-center justify-center py-3 px-6 rounded-xl border border-neutral-200 text-neutral-700 font-medium hover:bg-neutral-50 active:bg-neutral-100 transition-colors"
+                        className="flex items-center justify-center py-3 px-6 rounded-xl border border-neutral-200 text-neutral-700 font-medium active:bg-neutral-100 transition-colors cursor-pointer"
                         onClick={close}
                       >
                         Login
                       </Link>
                       <Link
                         href="/signup"
-                        className="flex items-center justify-center py-3 px-6 rounded-xl bg-primary-600 text-white font-medium hover:bg-primary-700 active:bg-primary-800 transition-colors"
+                        className="flex items-center justify-center py-3 px-6 rounded-xl bg-primary-600 text-white font-medium active:bg-primary-800 transition-colors cursor-pointer"
                         onClick={close}
                       >
                         Sign Up — It&apos;s Free
@@ -307,10 +308,10 @@ export function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.15 }}
             className="fixed inset-0 z-40 bg-black/30 md:hidden"
             aria-hidden="true"
-            onClick={close}
+            onPointerDown={close}
           />
         )}
       </AnimatePresence>
