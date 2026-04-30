@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import { Menu, X, User, LogOut, Shield, Home, FileText, Plane, BookOpen, Building2, HelpCircle, LayoutDashboard } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,18 +12,42 @@ import { Logo } from "@/components/ui/Logo";
 
 export function Navbar() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
+  const scrollYRef = useRef(0);
 
   const isAdmin = session?.user?.role === "STAFF_ADMIN" || session?.user?.role === "SUPER_ADMIN";
 
-  const close = () => setIsOpen(false);
+  const close = useCallback(() => setIsOpen(false), []);
 
-  // Lock body scroll when mobile menu is open
+  // Auto-close on route change (back button, router.push, Link clicks)
   useEffect(() => {
-    document.body.style.overflow = isOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    close();
+  }, [pathname, close]);
+
+  // iOS-safe scroll lock: position:fixed preserves scroll position on iOS Safari
+  useEffect(() => {
+    if (isOpen) {
+      scrollYRef.current = window.scrollY;
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollYRef.current}px`;
+      document.body.style.width = "100%";
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      window.scrollTo(0, scrollYRef.current);
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+    };
   }, [isOpen]);
 
   // Close on outside tap (pointerdown fires on touch + mouse)
@@ -33,7 +58,7 @@ export function Navbar() {
     };
     document.addEventListener("pointerdown", handler);
     return () => document.removeEventListener("pointerdown", handler);
-  }, [isOpen]);
+  }, [isOpen, close]);
 
   // Close desktop user menu on outside click
   useEffect(() => {
@@ -168,12 +193,11 @@ export function Navbar() {
         <AnimatePresence>
           {isOpen && (
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.22, ease: "easeInOut" }}
-              style={{ overflow: "hidden" }}
-              className="md:hidden bg-white border-t border-neutral-200"
+              initial={{ height: 0 }}
+              animate={{ height: "auto" }}
+              exit={{ height: 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="md:hidden bg-white border-t border-neutral-200 overflow-hidden"
             >
               {/* Scrollable content — caps at 80vh so menu never covers full screen */}
               <div className="overflow-y-auto max-h-[80vh] px-4 py-3 divide-y divide-neutral-100">
