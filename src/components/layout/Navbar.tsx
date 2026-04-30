@@ -16,7 +16,6 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
-  const scrollYRef = useRef(0);
 
   const isAdmin = session?.user?.role === "STAFF_ADMIN" || session?.user?.role === "SUPER_ADMIN";
 
@@ -27,26 +26,16 @@ export function Navbar() {
     close();
   }, [pathname, close]);
 
-  // iOS-safe scroll lock: position:fixed preserves scroll position on iOS Safari
+  // Scroll lock: overflow:hidden on html avoids the iOS position:fixed body bug
+  // (position:fixed causes iOS to report wrong touch coordinates on fixed children)
   useEffect(() => {
     if (isOpen) {
-      scrollYRef.current = window.scrollY;
-      document.body.style.overflow = "hidden";
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollYRef.current}px`;
-      document.body.style.width = "100%";
+      document.documentElement.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      window.scrollTo(0, scrollYRef.current);
+      document.documentElement.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
+      document.documentElement.style.overflow = "";
     };
   }, [isOpen]);
 
@@ -309,9 +298,8 @@ export function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-40 bg-black/30 md:hidden"
+            className="fixed inset-0 z-40 bg-black/30 md:hidden pointer-events-none"
             aria-hidden="true"
-            onPointerDown={close}
           />
         )}
       </AnimatePresence>
