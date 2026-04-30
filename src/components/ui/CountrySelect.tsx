@@ -166,7 +166,7 @@ export function CountrySelect({
                         <button
                             type="button"
                             onClick={handleClear}
-                            className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                            className="min-h-[36px] min-w-[36px] flex items-center justify-center hover:bg-neutral-100 rounded transition-colors"
                             aria-label="Clear selection"
                         >
                             <X size={14} className="text-neutral-400" />

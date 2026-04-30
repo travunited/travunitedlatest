@@ -157,7 +157,7 @@ export function NotificationBell() {
             fetchNotifications();
           }
         }}
-        className="relative p-2 text-neutral-700 hover:text-primary-600 transition-colors"
+        className="relative min-h-[44px] min-w-[44px] flex items-center justify-center text-neutral-700 hover:text-primary-600 transition-colors"
         aria-label="Notifications"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -219,7 +219,7 @@ export function NotificationBell() {
                   )}
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="p-1 hover:bg-neutral-100 rounded transition-colors"
+                    className="min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-100 rounded transition-colors"
                   >
                     <X size={16} className="text-neutral-500" />
                   </button>

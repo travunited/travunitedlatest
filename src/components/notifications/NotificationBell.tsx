@@ -63,7 +63,7 @@ export function NotificationBell() {
 
   // Close dropdown when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: PointerEvent) => {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
@@ -73,11 +73,11 @@ export function NotificationBell() {
     };
 
     if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("pointerdown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("pointerdown", handleClickOutside);
     };
   }, [isOpen]);
 
@@ -209,7 +209,7 @@ export function NotificationBell() {
                               e.stopPropagation();
                               markAsRead(notification.id);
                             }}
-                            className="p-1 hover:bg-neutral-200 rounded"
+                            className="min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-200 rounded"
                             aria-label="Mark as read"
                           >
                             <Check size={14} className="text-neutral-600" />

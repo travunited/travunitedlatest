@@ -56,7 +56,7 @@ export function HelpButton() {
                 </h3>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-1 rounded-lg hover:bg-neutral-100 transition-colors"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg hover:bg-neutral-100 transition-colors"
                 >
                   <X size={20} className="text-neutral-600" />
                 </button>

@@ -122,7 +122,7 @@ export function NotificationBell() {
             fetchNotifications();
           }
         }}
-        className="relative p-2 text-neutral-700 hover:text-primary-600 transition-colors"
+        className="relative min-h-[44px] min-w-[44px] flex items-center justify-center text-neutral-700 hover:text-primary-600 transition-colors"
         aria-label="Notifications"
       >
         <Bell size={20} />
@@ -221,7 +221,7 @@ export function NotificationBell() {
                           {!notification.readAt && (
                             <button
                               onClick={() => markAsRead(notification.id)}
-                              className="ml-2 p-1 text-neutral-400 hover:text-primary-600 transition-colors"
+                              className="ml-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-neutral-400 hover:text-primary-600 transition-colors"
                               aria-label="Mark as read"
                             >
                               <Check size={16} />

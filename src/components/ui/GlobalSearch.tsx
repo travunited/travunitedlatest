@@ -30,15 +30,15 @@ export function GlobalSearch() {
 
   // Close on outside click
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: PointerEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      document.addEventListener("pointerdown", handleClickOutside);
+      return () => document.removeEventListener("pointerdown", handleClickOutside);
     }
   }, [isOpen]);
 
@@ -223,7 +223,7 @@ export function GlobalSearch() {
               setIsOpen(false);
               setResults([]);
             }}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+            className="absolute right-2 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] flex items-center justify-center text-neutral-400 hover:text-neutral-600 transition-colors"
             type="button"
           >
             <X size={18} />
