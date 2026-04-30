@@ -13,72 +13,36 @@ export function ContentProtection() {
   useEffect(() => {
     if (!isProtectedRoute) return;
 
-    // Disable right-click context menu
-    const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
-      return false;
-    };
-
-    // Disable text selection (but allow in form inputs)
-    const handleSelectStart = (e: Event) => {
-      const target = e.target as HTMLElement;
-      // Allow selection in form inputs, textareas, and contenteditable elements
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable ||
-        target.closest("input, textarea, [contenteditable='true']")
-      ) {
-        return true;
-      }
-      e.preventDefault();
-      return false;
-    };
-
-    // Disable drag and drop
+    // Disable drag and drop of images/content
     const handleDragStart = (e: DragEvent) => {
       e.preventDefault();
       return false;
     };
 
-    // Disable keyboard shortcuts
+    // Disable desktop keyboard shortcuts (Ctrl+C, Ctrl+A, etc.)
+    // NOTE: only runs on non-touch devices to avoid blocking mobile taps
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Disable Ctrl+C, Ctrl+A, Ctrl+S, Ctrl+P, Ctrl+U, Ctrl+Shift+I, F12
       if (
         (e.ctrlKey || e.metaKey) &&
-        (e.key === "c" ||
-          e.key === "C" ||
-          e.key === "a" ||
-          e.key === "A" ||
-          e.key === "s" ||
-          e.key === "S" ||
-          e.key === "p" ||
-          e.key === "P" ||
-          e.key === "u" ||
-          e.key === "U" ||
+        (e.key === "c" || e.key === "C" ||
+          e.key === "a" || e.key === "A" ||
+          e.key === "s" || e.key === "S" ||
+          e.key === "p" || e.key === "P" ||
+          e.key === "u" || e.key === "U" ||
           (e.shiftKey && (e.key === "I" || e.key === "i")))
       ) {
         e.preventDefault();
         return false;
       }
-
-      // Disable F12 (Developer Tools)
       if (e.key === "F12") {
-        e.preventDefault();
-        return false;
-      }
-
-      // Disable Ctrl+Shift+C (Chrome DevTools)
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === "c" || e.key === "C")) {
         e.preventDefault();
         return false;
       }
     };
 
-    // Disable copy event
+    // Disable copy from non-input elements (desktop only)
     const handleCopy = (e: ClipboardEvent) => {
       const target = e.target as HTMLElement;
-      // Allow copying from form inputs
       if (
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
@@ -87,30 +51,21 @@ export function ContentProtection() {
       ) {
         return true;
       }
-
       e.preventDefault();
       e.clipboardData?.setData("text/plain", "");
-
-      // Show warning message
       setShowWarning(true);
       setTimeout(() => setShowWarning(false), 2000);
-
-      return false;
-    };
-
-    // Disable cut event
-    const handleCut = (e: ClipboardEvent) => {
-      e.preventDefault();
       return false;
     };
 
     // Add event listeners
-    document.addEventListener("contextmenu", handleContextMenu);
-    document.addEventListener("selectstart", handleSelectStart);
+    // IMPORTANT: contextmenu and selectstart are intentionally NOT registered here.
+    // On iOS/Android, calling preventDefault() on contextmenu blocks the subsequent
+    // click event — taps feel like "selections" instead of navigating. The CSS
+    // user-select:none + -webkit-touch-callout:none already handles mobile protection.
     document.addEventListener("dragstart", handleDragStart);
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("copy", handleCopy);
-    document.addEventListener("cut", handleCut);
 
     // Add CSS to prevent text selection
     const style = document.createElement("style");
@@ -164,14 +119,10 @@ export function ContentProtection() {
 
     // Cleanup
     return () => {
-      document.removeEventListener("contextmenu", handleContextMenu);
-      document.removeEventListener("selectstart", handleSelectStart);
       document.removeEventListener("dragstart", handleDragStart);
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("copy", handleCopy);
-      document.removeEventListener("cut", handleCut);
 
-      // Remove style element
       const styleElement = document.getElementById("content-protection-styles");
       if (styleElement) {
         document.head.removeChild(styleElement);
@@ -179,26 +130,10 @@ export function ContentProtection() {
     };
   }, [isProtectedRoute]);
 
-  // Add overlay to prevent image dragging (only on protected routes)
   if (!isProtectedRoute) return null;
 
   return (
     <>
-      {/* Invisible overlay to prevent dragging */}
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          zIndex: 999999,
-          pointerEvents: "none",
-          background: "transparent",
-        }}
-        onContextMenu={(e) => e.preventDefault()}
-        onDragStart={(e) => e.preventDefault()}
-      />
 
       {/* Warning message when copy is attempted */}
       {showWarning && (
