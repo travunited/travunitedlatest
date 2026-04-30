@@ -36,8 +36,11 @@
   box-sizing: border-box;
   padding: 0;
   margin: 0;
-  /* Remove the gray/blue tap flash on every element on iOS and Android */
+  /* Remove the gray/blue tap flash on every touchable element */
   -webkit-tap-highlight-color: transparent;
+  /* Eliminate 300ms tap delay everywhere — allows panning/zoom, blocks
+     double-tap-to-zoom and vendor gestures that cause tap hesitation */
+  touch-action: manipulation;
 }
 
 html,
@@ -61,15 +64,8 @@ a {
   text-decoration: none;
 }
 
-/* Eliminate 300ms tap delay on all interactive elements */
-button, a, [role="button"], input, select, textarea, label,
-nav, [role="navigation"], [role="menu"], [role="menuitem"],
-[role="listbox"], [role="option"], [role="tab"] {
-  touch-action: manipulation;
-}
-
 /* Prevent text selection and iOS long-press callout on tappable elements —
-   this stops "selection mode" from firing instead of a click on mobile */
+   stops "selection mode" from firing instead of a click on mobile */
 button, a, [role="button"],
 nav, [role="navigation"], [role="menu"], [role="menuitem"],
 [role="listbox"], [role="option"], [role="tab"], label {

@@ -103,7 +103,7 @@ export function BlogClient({ posts }: { posts: BlogClientPost[] }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: index * 0.1 }}
             whileHover={{ y: -4 }}
-            className="group"
+            className="group select-none"
           >
             <Link href={`/blog/${post.id}`}>
               <div className="bg-white rounded-2xl shadow-medium hover:shadow-large transition-shadow duration-300 overflow-hidden border border-neutral-200">
