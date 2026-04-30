@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Terms & Conditions – Travunited",
+  description: "Read the terms and conditions governing use of Travunited's visa and travel services.",
+  robots: { index: false, follow: false },
+};
 
 export default function TermsPage() {
   return (

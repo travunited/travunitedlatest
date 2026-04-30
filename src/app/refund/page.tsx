@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, XCircle, Clock } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Refund & Cancellation Policy – Travunited",
+  description: "Understand Travunited's refund and cancellation policy for visa and holiday bookings.",
+  robots: { index: false, follow: false },
+};
 
 export default function RefundPage() {
   return (

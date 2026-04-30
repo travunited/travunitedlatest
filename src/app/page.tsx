@@ -1,4 +1,26 @@
+import type { Metadata } from "next";
 import { Hero } from "@/components/home/Hero";
+
+export const metadata: Metadata = {
+  title: "Travunited – Visa Services & Holiday Packages for Indians",
+  description:
+    "Apply for visas to 50+ countries online. Explore curated holiday packages designed for Indian travellers. Trusted by thousands for seamless travel experiences.",
+  openGraph: {
+    title: "Travunited – Visa Services & Holiday Packages for Indians",
+    description:
+      "Apply for visas to 50+ countries online. Explore curated holiday packages designed for Indian travellers.",
+    url: "https://travunited.in",
+    siteName: "Travunited",
+    images: [{ url: "https://travunited.in/og-default.png", width: 1200, height: 630 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Travunited – Visa Services & Holiday Packages for Indians",
+    description: "Apply for visas to 50+ countries online. Explore curated holiday packages designed for Indian travellers.",
+    images: ["https://travunited.in/og-default.png"],
+  },
+};
 import { FeaturedVisas } from "@/components/home/FeaturedVisas";
 import { FeaturedTours } from "@/components/home/FeaturedTours";
 import { WhyTravunited } from "@/components/home/WhyTravunited";

@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy – Travunited",
+  description: "Learn how Travunited collects, uses and protects your personal data.",
+  robots: { index: false, follow: false },
+};
 
 export default function PrivacyPage() {
   return (

@@ -1,5 +1,6 @@
 "use server";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Clock, CheckCircle, Info, ArrowRight, Calendar, ShieldCheck, MapPin, Zap } from "lucide-react";
@@ -53,6 +54,36 @@ const buildEntrySummary = (visa: any) => {
   if (parts.length) return parts.join(" • ");
   return visa.entryTypeLegacy || "Flexible Entry";
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { country: string };
+}): Promise<Metadata> {
+  const code = params.country.toUpperCase();
+  const country = await prisma.country.findUnique({
+    where: { code },
+    select: { name: true },
+  });
+  const countryName = country?.name ?? code;
+  return {
+    title: `${countryName} Visa – Requirements, Documents & Apply Online`,
+    description: `Apply for a ${countryName} visa online with Travunited. View entry types, processing times, document requirements and competitive prices for Indian passport holders.`,
+    openGraph: {
+      title: `${countryName} Visa – Apply Online with Travunited`,
+      description: `Visa options for ${countryName} – entry types, fees, documents and fast processing for Indians.`,
+      url: `https://travunited.in/visas/${params.country}`,
+      siteName: "Travunited",
+      images: [{ url: "https://travunited.in/og-default.png", width: 1200, height: 630 }],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${countryName} Visa – Apply Online with Travunited`,
+      description: `Visa options for ${countryName} – entry types, fees, documents and fast processing for Indians.`,
+    },
+  };
+}
 
 export default async function CountryVisasPage({
   params,

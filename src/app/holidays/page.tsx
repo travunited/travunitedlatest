@@ -1,4 +1,26 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+
+export const metadata: Metadata = {
+  title: "Holiday Packages from India – Travunited",
+  description:
+    "Discover handpicked holiday packages and group tours from India. Beach getaways, cultural escapes, adventure trips and more — all with visa assistance included.",
+  openGraph: {
+    title: "Holiday Packages from India – Travunited",
+    description:
+      "Handpicked holiday packages and group tours with visa assistance for Indian travellers.",
+    url: "https://travunited.in/holidays",
+    siteName: "Travunited",
+    images: [{ url: "https://travunited.in/og-default.png", width: 1200, height: 630 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Holiday Packages from India – Travunited",
+    description: "Handpicked holiday packages with visa assistance for Indian travellers.",
+    images: ["https://travunited.in/og-default.png"],
+  },
+};
 import { getMediaProxyUrl } from "@/lib/media";
 import HolidaysGridClient from "./HolidaysGridClient";
 import { Prisma } from "@prisma/client";

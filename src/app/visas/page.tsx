@@ -1,10 +1,31 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+
+export const metadata: Metadata = {
+  title: "Visa Services for 50+ Countries – Travunited",
+  description:
+    "Browse visa options for 50+ countries including UAE, UK, USA, Schengen, Thailand and more. Fast processing, expert guidance, and competitive prices for Indian travellers.",
+  openGraph: {
+    title: "Visa Services for 50+ Countries – Travunited",
+    description:
+      "Browse visa options for 50+ countries. Fast processing and expert guidance for Indian travellers.",
+    url: "https://travunited.in/visas",
+    siteName: "Travunited",
+    images: [{ url: "https://travunited.in/og-default.png", width: 1200, height: 630 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Visa Services for 50+ Countries – Travunited",
+    description: "Browse visa options for 50+ countries. Fast processing and expert guidance.",
+    images: ["https://travunited.in/og-default.png"],
+  },
+};
 import VisasGridClient from "./VisasGridClient";
 import { getMediaProxyUrl } from "@/lib/media";
 import { getCountryFlagUrl } from "@/lib/flags";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 3600;
 
 export default async function VisasPage() {
   const countries = await prisma.country.findMany({

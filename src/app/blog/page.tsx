@@ -1,4 +1,25 @@
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+
+export const metadata: Metadata = {
+  title: "Travel Blog – Visa Tips, Destination Guides & Travel Advice",
+  description:
+    "Expert travel tips, visa guides, destination reviews and packing advice from the Travunited team. Stay informed before your next international trip.",
+  openGraph: {
+    title: "Travel Blog – Visa Tips, Destination Guides & Travel Advice",
+    description: "Expert travel tips, visa guides and destination reviews from Travunited.",
+    url: "https://travunited.in/blog",
+    siteName: "Travunited",
+    images: [{ url: "https://travunited.in/og-default.png", width: 1200, height: 630 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Travel Blog – Visa Tips, Destination Guides & Travel Advice",
+    description: "Expert travel tips, visa guides and destination reviews from Travunited.",
+    images: ["https://travunited.in/og-default.png"],
+  },
+};
 import { BlogClient } from "./BlogClient";
 import { getMediaProxyUrl } from "@/lib/media";
 import { Prisma } from "@prisma/client";

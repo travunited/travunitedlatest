@@ -93,6 +93,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   const [paymentCompleted, setPaymentCompleted] = useState(false);
   const [templates, setTemplates] = useState<any[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [stepError, setStepError] = useState<string | null>(null);
+  const [stepErrorAction, setStepErrorAction] = useState<{ label: string; href: string } | null>(null);
 
   const isFreeVisa = visaInfo?.priceInInr === 0;
 
@@ -881,11 +883,15 @@ export default function VisaApplicationPage({ params }: { params: { country: str
   };
 
   const nextStep = () => {
+    // Clear any previous step error when the user tries to advance
+    setStepError(null);
+    setStepErrorAction(null);
+
     // Validation before proceeding
     if (currentStep === 1) {
       // Validate subtype selection if subtypes exist
       if (visaInfo?.subTypes && visaInfo.subTypes.length > 0 && !formData.selectedSubTypeId) {
-        alert("Please select a visa subtype to continue");
+        setStepError("Please select a visa subtype to continue.");
         return;
       }
     }
@@ -919,13 +925,10 @@ export default function VisaApplicationPage({ params }: { params: { country: str
 
       // Check email verification (hard block - cannot proceed without verification)
       if (emailVerified === false) {
-        const shouldVerify = confirm(
-          "Your email is not verified yet. You must verify your email before proceeding with the application.\n\nWould you like to verify your email now?"
-        );
-        if (shouldVerify) {
-          router.push(`/verify-email?email=${encodeURIComponent(session.user?.email || "")}&redirect=${encodeURIComponent(`/apply/visa/${params.country}/${params.type}?restored=true`)}`);
-        }
-        return; // Block proceeding
+        const verifyUrl = `/verify-email?email=${encodeURIComponent(session.user?.email || "")}&redirect=${encodeURIComponent(`/apply/visa/${params.country}/${params.type}?restored=true`)}`;
+        setStepError("Your email is not verified. Please verify your email to continue with the application.");
+        setStepErrorAction({ label: "Verify Email Now", href: verifyUrl });
+        return;
       }
 
       // If email verification status is unknown, check it
@@ -937,19 +940,18 @@ export default function VisaApplicationPage({ params }: { params: { country: str
             setLoading(false);
             if (!data.emailVerified) {
               setEmailVerified(false);
-              const shouldVerify = confirm("Please verify your email before proceeding with the application.");
-              if (shouldVerify) {
-                router.push(`/verify-email?email=${encodeURIComponent(session.user?.email || "")}&redirect=${encodeURIComponent(`/apply/visa/${params.country}/${params.type}?restored=true`)}`);
-              }
+              const verifyUrl = `/verify-email?email=${encodeURIComponent(session.user?.email || "")}&redirect=${encodeURIComponent(`/apply/visa/${params.country}/${params.type}?restored=true`)}`;
+              setStepError("Please verify your email before proceeding with the application.");
+              setStepErrorAction({ label: "Verify Email Now", href: verifyUrl });
             } else {
               setEmailVerified(true);
-              // If verified, proceed to next step
               setCurrentStep(3);
             }
           })
           .catch(() => {
             setLoading(false);
-            alert("Unable to verify email status. Please try again.");
+            setStepError("Unable to check email verification status. Please try again.");
+            setStepErrorAction(null);
           });
         return;
       }
@@ -957,7 +959,8 @@ export default function VisaApplicationPage({ params }: { params: { country: str
 
     if (currentStep === 3) {
       if (!formData.travellers || formData.travellers.length === 0) {
-        alert("Please add at least one traveller");
+        setStepError("Please add at least one traveller to continue.");
+        setStepErrorAction(null);
         return;
       }
       // Validate all travellers have required fields
@@ -965,13 +968,15 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         if (!traveller.firstName || !traveller.lastName || !traveller.dateOfBirth ||
           !traveller.gender || !traveller.passportNumber || !traveller.passportIssueDate ||
           !traveller.passportExpiryDate || !traveller.nationality) {
-          alert("Please fill in all required fields for all travellers");
+          setStepError("Please fill in all required fields for every traveller before continuing.");
+          setStepErrorAction(null);
           return;
         }
 
         // Validate all dates before proceeding
         if (!validateDates()) {
-          alert("Please fix the date errors before proceeding");
+          setStepError("Please fix the date errors highlighted above before continuing.");
+          setStepErrorAction(null);
           return;
         }
       }
@@ -1183,6 +1188,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
     travellerIdMap?: string[]
   ) => {
     if (!formData.documents) return;
+    const failedDocs: string[] = [];
 
     const resolvedMap =
       travellerIdMap && travellerIdMap.length
@@ -1252,29 +1258,36 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
           console.error("Error uploading document:", errorData.error || "Upload failed");
-          // Continue with other documents even if one fails
-        } else {
-          console.log("Document uploaded successfully:", doc.requirementId);
+          failedDocs.push(doc.requirementId);
         }
       } catch (error: any) {
         if (error.name === "AbortError") {
           console.error("Document upload timed out:", doc.requirementId);
+          failedDocs.push(doc.requirementId);
         } else {
           console.error("Error uploading document:", error);
+          failedDocs.push(doc.requirementId);
         }
-        // Continue with other documents even if one fails
       }
+    }
+    if (failedDocs.length > 0) {
+      setStepError(
+        `${failedDocs.length} document${failedDocs.length > 1 ? "s" : ""} failed to upload. Please reupload them before finishing your application.`
+      );
+      setStepErrorAction(null);
     }
   };
 
   const handleVisaPayment = async () => {
     if (!draftId) {
-      alert("Application reference not found. Please restart the payment step.");
+      setStepError("Application reference not found. Please restart the payment step.");
+      setStepErrorAction(null);
       return;
     }
 
     if (!session?.user?.email) {
-      alert("Please login to continue.");
+      setStepError("Please log in to continue with payment.");
+      setStepErrorAction(null);
       return;
     }
 
@@ -2804,6 +2817,31 @@ export default function VisaApplicationPage({ params }: { params: { country: str
           </div>
         </div>
 
+        {/* Inline step error banner */}
+        {stepError && (
+          <div className="mb-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <span className="mt-0.5 shrink-0 text-red-500">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12A5 5 0 1 1 8 3a5 5 0 0 1 0 10zm-.75-7.25a.75.75 0 1 1 1.5 0v3a.75.75 0 0 1-1.5 0v-3zm.75 5.5a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5z"/></svg>
+            </span>
+            <span className="flex-1">{stepError}</span>
+            {stepErrorAction && (
+              <a
+                href={stepErrorAction.href}
+                className="ml-2 shrink-0 rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+              >
+                {stepErrorAction.label}
+              </a>
+            )}
+            <button
+              onClick={() => { setStepError(null); setStepErrorAction(null); }}
+              className="ml-1 shrink-0 text-red-400 hover:text-red-600"
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {/* Step Content */}
         <div className="bg-white rounded-2xl shadow-medium p-5 sm:p-8 mb-6">
           <AnimatePresence mode="wait">
@@ -2852,9 +2890,12 @@ export default function VisaApplicationPage({ params }: { params: { country: str
             <button
               onClick={() => {
                 if (!termsAccepted) {
-                  alert("Please accept the Terms & Conditions to proceed");
+                  setStepError("Please accept the Terms & Conditions to proceed.");
+                  setStepErrorAction(null);
                   return;
                 }
+                setStepError(null);
+                setStepErrorAction(null);
                 setCurrentStep(6);
               }}
               disabled={!termsAccepted}

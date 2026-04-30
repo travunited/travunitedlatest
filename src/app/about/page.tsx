@@ -1,4 +1,25 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "About Travunited – Trusted Visa & Travel Experts",
+  description:
+    "Learn about Travunited's mission to simplify travel for Indian families and professionals. Discover our story, values and the team behind your seamless travel experience.",
+  openGraph: {
+    title: "About Travunited – Trusted Visa & Travel Experts",
+    description: "Learn about our mission to simplify travel for Indian families and professionals.",
+    url: "https://travunited.in/about",
+    siteName: "Travunited",
+    images: [{ url: "https://travunited.in/og-default.png", width: 1200, height: 630 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About Travunited – Trusted Visa & Travel Experts",
+    description: "Learn about our mission to simplify travel for Indian families and professionals.",
+    images: ["https://travunited.in/og-default.png"],
+  },
+};
 import { ArrowLeft, Users, Globe, Award, Heart } from "lucide-react";
 
 export default function AboutPage() {

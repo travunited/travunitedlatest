@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
@@ -24,6 +24,12 @@ function getBaseUrl(): string {
   }
 }
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(getBaseUrl()),
   title: "Travunited - Visas & Holidays, Seamlessly Managed",
@@ -46,6 +52,26 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Travunited",
+              url: "https://travunited.in",
+              logo: "https://travunited.in/logo.png",
+              description: "Premium visa services and holiday packages for Indian travellers.",
+              contactPoint: {
+                "@type": "ContactPoint",
+                telephone: "+91-XXXXXXXXXX",
+                contactType: "customer support",
+                areaServed: "IN",
+                availableLanguage: "English",
+              },
+            }),
+          }}
+        />
         <ChunkErrorHandler />
         <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
         <MetaPixel pixelId={process.env.NEXT_PUBLIC_META_PIXEL_ID} />
