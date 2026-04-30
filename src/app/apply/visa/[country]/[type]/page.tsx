@@ -2779,42 +2779,57 @@ export default function VisaApplicationPage({ params }: { params: { country: str
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Progress Steps */}
         <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-4 sm:gap-0">
+          {/* Always horizontal row */}
+          <div className="flex items-start">
             {steps.map((step, index) => {
               const Icon = step.icon;
               const isActive = currentStep === step.id;
               const isCompleted = currentStep > step.id;
 
               return (
-                <div key={step.id} className="flex items-center flex-1 min-w-[160px]">
-                  <div className="flex flex-col items-center flex-1">
+                <div key={step.id} className="flex items-start flex-1 min-w-0">
+                  {/* Step: icon + label */}
+                  <div className="flex flex-col items-center flex-shrink-0 w-10 sm:w-14">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${isCompleted
-                        ? "bg-green-500 text-white"
-                        : isActive
-                          ? "bg-primary-600 text-white"
-                          : "bg-neutral-200 text-neutral-600"
-                        }`}
+                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors ${
+                        isCompleted
+                          ? "bg-green-500 text-white"
+                          : isActive
+                            ? "bg-primary-600 text-white"
+                            : "bg-neutral-200 text-neutral-500"
+                      }`}
                     >
-                      {isCompleted ? <CheckCircle size={20} /> : <Icon size={20} />}
+                      {isCompleted ? <CheckCircle size={15} /> : <Icon size={15} />}
                     </div>
+                    {/* Label: hidden on mobile unless active */}
                     <span
-                      className={`mt-2 text-xs font-medium text-center ${isActive ? "text-primary-600" : "text-neutral-600"
-                        }`}
+                      className={`mt-1 text-[9px] sm:text-[11px] font-medium text-center leading-tight px-0.5 ${
+                        isActive
+                          ? "text-primary-600"
+                          : isCompleted
+                            ? "text-green-600"
+                            : "text-neutral-400"
+                      } ${isActive || isCompleted ? "block" : "hidden sm:block"}`}
                     >
                       {step.name}
                     </span>
                   </div>
+
+                  {/* Connector line (not after last step) */}
                   {index < steps.length - 1 && (
-                    <div
-                      className={`h-1 flex-1 mx-2 ${isCompleted ? "bg-green-500" : "bg-neutral-200"
-                        } hidden sm:block`}
+                    <div className="flex-1 h-0.5 mt-4 sm:mt-5 mx-0.5 sm:mx-1 rounded-full transition-colors"
+                      style={{ backgroundColor: isCompleted ? "#22c55e" : "#e5e7eb" }}
                     />
                   )}
                 </div>
               );
             })}
           </div>
+
+          {/* Current step label on mobile (shows below the row) */}
+          <p className="sm:hidden mt-3 text-xs text-center text-neutral-500">
+            Step {currentStep} of {steps.length} — <span className="font-semibold text-primary-600">{steps[currentStep - 1]?.name}</span>
+          </p>
         </div>
 
         {/* Inline step error banner */}
