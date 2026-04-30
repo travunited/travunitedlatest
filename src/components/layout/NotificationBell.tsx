@@ -137,7 +137,7 @@ export function NotificationBell() {
         {isOpen && (
           <>
             <div
-              className="fixed inset-0 z-40 cursor-pointer"
+              className="fixed inset-0 z-40"
               onPointerDown={() => setIsOpen(false)}
             />
             <motion.div

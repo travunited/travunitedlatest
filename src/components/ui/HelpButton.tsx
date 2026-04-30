@@ -40,7 +40,7 @@ export function HelpButton() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onPointerDown={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/50 z-50 cursor-pointer"
+              className="fixed inset-0 bg-black/50 z-50"
             />
 
             {/* Modal */}

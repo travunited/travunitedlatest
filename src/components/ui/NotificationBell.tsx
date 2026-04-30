@@ -183,7 +183,7 @@ export function NotificationBell() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onPointerDown={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/20 z-40 cursor-pointer"
+              className="fixed inset-0 bg-black/20 z-40"
             />
 
             {/* Dropdown */}

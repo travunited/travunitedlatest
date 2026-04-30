@@ -146,7 +146,7 @@ export function ShareButton({ url, title, description = "", image, variant = "fu
                   e.stopPropagation();
                   setIsOpen(false);
                 }}
-                className="fixed inset-0 z-40 cursor-pointer"
+                className="fixed inset-0 z-40"
               />
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -264,7 +264,7 @@ export function ShareButton({ url, title, description = "", image, variant = "fu
                 e.stopPropagation();
                 setIsOpen(false);
               }}
-              className="fixed inset-0 z-40 cursor-pointer"
+              className="fixed inset-0 z-40"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: -10 }}
