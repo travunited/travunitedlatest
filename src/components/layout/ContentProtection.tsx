@@ -134,26 +134,23 @@ export function ContentProtection() {
         pointer-events: auto !important;
       }
       
-      a, button, input, textarea, select, [contenteditable="true"] {
-        -webkit-user-select: auto !important;
-        -moz-user-select: auto !important;
-        -ms-user-select: auto !important;
-        user-select: auto !important;
+      /* Links and buttons must NOT be text-selectable — taps should fire clicks */
+      a, button, [role="button"], label,
+      nav, [role="navigation"], [role="menu"], [role="menuitem"] {
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        -webkit-touch-callout: none !important;
       }
-      
+
       /* Allow selection in form inputs and textareas */
-      input[type="text"],
-      input[type="email"],
-      input[type="password"],
-      input[type="number"],
-      input[type="tel"],
-      input[type="url"],
-      input[type="search"],
-      textarea {
+      input, textarea, select, [contenteditable="true"] {
         -webkit-user-select: text !important;
         -moz-user-select: text !important;
         -ms-user-select: text !important;
         user-select: text !important;
+        -webkit-touch-callout: default !important;
       }
     `;
 
