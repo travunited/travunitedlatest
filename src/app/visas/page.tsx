@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
@@ -74,7 +75,9 @@ export default async function VisasPage() {
         </div>
       </div>
 
-      <VisasGridClient countries={formatted} />
+      <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-16 text-center text-neutral-500">Loading visas…</div>}>
+        <VisasGridClient countries={formatted} />
+      </Suspense>
     </div>
   );
 }
