@@ -306,7 +306,7 @@ export default function NotificationsPage() {
           </div>
 
           {/* Filters */}
-          <div className="px-6 py-4 border-b border-neutral-200 flex items-center space-x-4 overflow-x-auto">
+          <div className="px-6 py-4 border-b border-neutral-200 flex items-center space-x-4 overflow-x-auto" style={{ touchAction: "pan-x" }}>
             <div className="flex items-center space-x-2 flex-shrink-0">
               <Filter size={16} className="text-neutral-500" />
               <span className="text-sm font-medium text-neutral-700">Filter:</span>

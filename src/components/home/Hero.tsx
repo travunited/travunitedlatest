@@ -315,7 +315,7 @@ export function Hero() {
                   className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
                 />
                 {showSuggestions && destinationSuggestions.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg max-h-60 overflow-auto" style={{ touchAction: "pan-y" }}>
                     {destinationSuggestions.map((suggestion, index) => (
                       <button
                         key={index}

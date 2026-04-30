@@ -81,9 +81,28 @@ input, textarea, select, [contenteditable="true"] {
   -webkit-touch-callout: default;
 }
 
-/* Active state tap feedback */
-button:active, a:active, [role="button"]:active {
-  opacity: 0.85;
+/* Scrollable containers — restore pan-y so scrolling still works,
+   while keeping the tap-immediately behaviour from the * rule */
+[class*="overflow-y"],
+[class*="overflow-x"],
+[style*="overflow"] {
+  touch-action: pan-y;
+}
+
+/* Active state tap feedback — strong enough to feel on mobile.
+   Covers buttons, links, and divs that use onClick (notification rows, cards). */
+button:active, a:active, [role="button"]:active,
+[role="option"]:active, [role="menuitem"]:active, [role="tab"]:active {
+  opacity: 0.65;
+}
+
+/* On touch devices, darken any button/link on press so it always feels
+   responsive regardless of whether the designer added an active: class. */
+@media (hover: none) and (pointer: coarse) {
+  button:active, a:active, [role="button"]:active {
+    filter: brightness(0.88);
+    opacity: 1;
+  }
 }
 
 @layer utilities {

@@ -77,7 +77,7 @@ export function BlogClient({ posts }: { posts: BlogClientPost[] }) {
               className="w-full pl-12 pr-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             />
           </div>
-          <div className="flex gap-2 overflow-x-auto">
+          <div className="flex gap-2 overflow-x-auto" style={{ touchAction: "pan-x" }}>
             {categories.map((category) => (
               <button
                 key={category}

@@ -173,8 +173,8 @@ export function NotificationBell() {
                     {notifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`p-4 hover:bg-neutral-50 transition-colors ${
-                          !notification.readAt ? "bg-blue-50/50" : ""
+                        className={`p-4 transition-colors ${
+                          !notification.readAt ? "bg-blue-50/50 active:bg-blue-100" : "hover:bg-neutral-50 active:bg-neutral-100"
                         }`}
                       >
                         <div className="flex items-start justify-between">

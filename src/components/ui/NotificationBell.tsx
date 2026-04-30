@@ -246,8 +246,8 @@ export function NotificationBell() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className={`p-4 hover:bg-neutral-50 cursor-pointer transition-colors ${
-                          !notification.readAt ? "bg-blue-50/50 border-l-4 border-primary-500" : ""
+                        className={`p-4 cursor-pointer transition-colors active:bg-neutral-100 ${
+                          !notification.readAt ? "bg-blue-50/50 border-l-4 border-primary-500 active:bg-blue-100" : "hover:bg-neutral-50"
                         }`}
                         onClick={() => handleNotificationClick(notification)}
                       >

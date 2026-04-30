@@ -218,7 +218,7 @@ export function CountrySelect({
                                     role="option"
                                     aria-selected={value === country.demonym}
                                     onClick={() => handleSelect(country)}
-                                    onMouseEnter={() => setHighlightedIndex(index)}
+                                    onPointerEnter={() => setHighlightedIndex(index)}
                                     className={`px-4 py-2 text-sm cursor-pointer transition-colors ${highlightedIndex === index
                                             ? "bg-primary-50"
                                             : value === country.demonym
