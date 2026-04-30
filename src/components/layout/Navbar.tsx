@@ -26,19 +26,6 @@ export function Navbar() {
     close();
   }, [pathname, close]);
 
-  // Scroll lock: overflow:hidden on html avoids the iOS position:fixed body bug
-  // (position:fixed causes iOS to report wrong touch coordinates on fixed children)
-  useEffect(() => {
-    if (isOpen) {
-      document.documentElement.style.overflow = "hidden";
-    } else {
-      document.documentElement.style.overflow = "";
-    }
-    return () => {
-      document.documentElement.style.overflow = "";
-    };
-  }, [isOpen]);
-
   // Close on outside tap (pointerdown fires on touch + mouse)
   useEffect(() => {
     if (!isOpen) return;

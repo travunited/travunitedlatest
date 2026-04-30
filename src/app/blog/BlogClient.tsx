@@ -82,7 +82,7 @@ export function BlogClient({ posts }: { posts: BlogClientPost[] }) {
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
+                className={`px-4 py-2 min-h-[44px] rounded-lg font-medium whitespace-nowrap transition-colors ${
                   selectedCategory === category
                     ? "bg-primary-600 text-white"
                     : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"

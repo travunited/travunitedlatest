@@ -81,12 +81,13 @@ input, textarea, select, [contenteditable="true"] {
   -webkit-touch-callout: default;
 }
 
-/* Scrollable containers — restore pan-y so scrolling still works,
-   while keeping the tap-immediately behaviour from the * rule */
-[class*="overflow-y"],
-[class*="overflow-x"],
-[style*="overflow"] {
+/* Scrollable containers — correct axis per scroll direction so iOS
+   doesn't mistake a tap for a failed pan on the wrong axis */
+[class*="overflow-y"] {
   touch-action: pan-y;
+}
+[class*="overflow-x"] {
+  touch-action: pan-x;
 }
 
 /* Active state tap feedback — strong enough to feel on mobile.

@@ -141,12 +141,12 @@ export function ShareButton({ url, title, description = "", image, variant = "fu
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={(e) => {
+                onPointerDown={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   setIsOpen(false);
                 }}
-                className="fixed inset-0 z-40"
+                className="fixed inset-0 z-40 cursor-pointer"
               />
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: -10 }}
@@ -259,12 +259,12 @@ export function ShareButton({ url, title, description = "", image, variant = "fu
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={(e) => {
+              onPointerDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setIsOpen(false);
               }}
-              className="fixed inset-0 z-40"
+              className="fixed inset-0 z-40 cursor-pointer"
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: -10 }}

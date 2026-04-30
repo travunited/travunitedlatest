@@ -318,7 +318,7 @@ export default function NotificationsPage() {
                   setFilter(f);
                   setPage(1);
                 }}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+                className={`px-4 py-2 min-h-[44px] text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                   filter === f
                     ? "bg-primary-600 text-white"
                     : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
@@ -332,7 +332,7 @@ export default function NotificationsPage() {
                 setUnreadOnly(!unreadOnly);
                 setPage(1);
               }}
-              className={`ml-auto px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+              className={`ml-auto px-4 py-2 min-h-[44px] text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                 unreadOnly
                   ? "bg-primary-600 text-white"
                   : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
@@ -373,10 +373,11 @@ export default function NotificationsPage() {
                       key={notification.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`p-6 hover:bg-neutral-50 transition-colors cursor-pointer ${
+                      className={`p-6 hover:bg-neutral-50 active:bg-neutral-100 transition-colors cursor-pointer ${
                         !notification.readAt ? "bg-blue-50/30" : ""
                       } ${selectedIds.has(notification.id) ? "bg-primary-50" : ""}`}
                       onClick={() => handleNotificationClick(notification)}
+                      style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <div className="flex items-start space-x-4">
                         {isSelectMode && (

@@ -458,7 +458,7 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
               <div className="flex flex-wrap gap-2 items-center pt-2 border-t border-neutral-100 lg:border-none lg:pt-0">
                 <button
                   onClick={() => setOnlyFeatured((prev: boolean) => !prev)}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${onlyFeatured
+                  className={`inline-flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-full text-xs font-medium transition-colors ${onlyFeatured
                       ? "bg-primary-600 text-white"
                       : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
                     }`}
@@ -468,7 +468,7 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
                 </button>
                 <button
                   onClick={() => setOnlyAdvance((prev: boolean) => !prev)}
-                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${onlyAdvance
+                  className={`inline-flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-full text-xs font-medium transition-colors ${onlyAdvance
                       ? "bg-primary-600 text-white"
                       : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
                     }`}
@@ -479,7 +479,7 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
                 {hasActiveFilters && (
                   <button
                     onClick={clearFilters}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors"
+                    className="inline-flex items-center gap-2 px-3 py-2.5 min-h-[44px] rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 hover:bg-neutral-200 transition-colors"
                   >
                     <X size={12} />
                     Clear All
@@ -610,7 +610,7 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
                       <button
                         key={theme}
                         onClick={() => toggleTheme(theme)}
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${selectedThemes.includes(theme)
+                        className={`inline-flex items-center gap-1 px-3 py-2.5 min-h-[44px] rounded-full text-sm font-medium transition-colors ${selectedThemes.includes(theme)
                             ? "bg-primary-600 text-white"
                             : "bg-neutral-100 text-neutral-700 hover:bg-neutral-200"
                           }`}

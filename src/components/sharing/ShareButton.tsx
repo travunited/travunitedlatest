@@ -202,8 +202,8 @@ export function ShareButton({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-black/20 z-40"
+              onPointerDown={() => setIsOpen(false)}
+              className="fixed inset-0 bg-black/20 z-40 cursor-pointer"
             />
 
             {/* Share Menu */}
