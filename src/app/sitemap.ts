@@ -43,7 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       };
     });
     // Country-level pages
-    for (const [code, date] of countryPages.entries()) {
+    for (const [code, date] of Array.from(countryPages.entries())) {
       visaPages.push({
         url: `${BASE_URL}/visas/${code}`,
         lastModified: date,
