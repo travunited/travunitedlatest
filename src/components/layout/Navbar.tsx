@@ -19,32 +19,43 @@ export function Navbar() {
 
   const isAdmin = session?.user?.role === "STAFF_ADMIN" || session?.user?.role === "SUPER_ADMIN";
 
-  const close = useCallback(() => setIsOpen(false), []);
+  const close = useCallback(() => {
+    // Delay closing slightly to ensure iOS tap events and Next.js route transitions complete gracefully
+    setTimeout(() => setIsOpen(false), 150);
+  }, []);
 
   // Auto-close on route change (back button, router.push, Link clicks)
   useEffect(() => {
     close();
   }, [pathname, close]);
 
-  // Close on outside tap (pointerdown fires on touch + mouse)
+  // Close on outside tap
   useEffect(() => {
     if (!isOpen) return;
-    const handler = (e: PointerEvent) => {
+    const handler = (e: MouseEvent | TouchEvent) => {
       if (navRef.current && !navRef.current.contains(e.target as Node)) close();
     };
-    document.addEventListener("pointerdown", handler);
-    return () => document.removeEventListener("pointerdown", handler);
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
   }, [isOpen, close]);
 
   // Close desktop user menu on outside click
   useEffect(() => {
     if (!isUserMenuOpen) return;
-    const handler = (e: PointerEvent) => {
+    const handler = (e: MouseEvent | TouchEvent) => {
       const el = document.getElementById("user-menu-desktop");
       if (el && !el.contains(e.target as Node)) setIsUserMenuOpen(false);
     };
-    document.addEventListener("pointerdown", handler);
-    return () => document.removeEventListener("pointerdown", handler);
+    document.addEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
   }, [isUserMenuOpen]);
 
   const navLinks: { href: string; label: string; icon: LucideIcon }[] = [
@@ -184,7 +195,7 @@ export function Navbar() {
                 <Link
                   key={href}
                   href={href}
-                  className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
+                  className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer touch-manipulation"
                   onClick={close}
                 >
                   <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
@@ -219,7 +230,7 @@ export function Navbar() {
 
                   <Link
                     href="/dashboard"
-                    className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
+                    className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer touch-manipulation"
                     onClick={close}
                   >
                     <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
@@ -231,7 +242,7 @@ export function Navbar() {
                   {isAdmin && (
                     <Link
                       href="/admin"
-                      className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
+                      className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer touch-manipulation"
                       onClick={close}
                     >
                       <span className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0 pointer-events-none">
@@ -255,14 +266,14 @@ export function Navbar() {
                 <div className="flex flex-col gap-2 pt-1">
                   <Link
                     href="/login"
-                    className="flex items-center justify-center py-3 px-6 rounded-xl border border-neutral-200 text-neutral-700 font-medium active:bg-neutral-100 transition-colors cursor-pointer"
+                    className="flex items-center justify-center py-3 px-6 rounded-xl border border-neutral-200 text-neutral-700 font-medium active:bg-neutral-100 transition-colors cursor-pointer touch-manipulation"
                     onClick={close}
                   >
                     Login
                   </Link>
                   <Link
                     href="/signup"
-                    className="flex items-center justify-center py-3 px-6 rounded-xl bg-primary-600 text-white font-medium active:bg-primary-800 transition-colors cursor-pointer"
+                    className="flex items-center justify-center py-3 px-6 rounded-xl bg-primary-600 text-white font-medium active:bg-primary-800 transition-colors cursor-pointer touch-manipulation"
                     onClick={close}
                   >
                     Sign Up — It&apos;s Free
