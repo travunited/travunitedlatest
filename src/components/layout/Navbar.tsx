@@ -166,13 +166,13 @@ export function Navbar() {
         </div>
 
         {/* Mobile drawer — CSS-only transition, always in DOM.
-            Framer Motion JS-driven styles inside position:fixed interfere with
-            iOS Safari's touch hit-test system; pure CSS opacity+pointer-events
-            avoids that entirely. No overflow-y-auto: that caused the iOS
-            "first tap activates scroll container, second tap fires click" bug. */}
+            max-h-0 + overflow-hidden collapses it to zero height when closed so it
+            doesn't extend the fixed nav and cover page content invisibly.
+            max-h-[100dvh] gives enough room to expand; transition-all animates both
+            height and opacity together. No overflow-y-auto: causes iOS double-tap bug. */}
         <div
-          className={`md:hidden bg-white border-t border-neutral-200 shadow-lg transition-opacity duration-150 ${
-            isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          className={`md:hidden bg-white border-t border-neutral-200 shadow-lg overflow-hidden transition-all duration-200 ${
+            isOpen ? "max-h-[100dvh] opacity-100 pointer-events-auto" : "max-h-0 opacity-0 pointer-events-none"
           }`}
           aria-hidden={!isOpen}
         >
