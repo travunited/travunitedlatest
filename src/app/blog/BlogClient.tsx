@@ -131,8 +131,9 @@ export function BlogClient({ posts }: { posts: BlogClientPost[] }) {
                       <span>{post.category}</span>
                     </div>
                   )}
-                  <div 
-                    className="absolute top-4 right-4 z-10"
+                  <div
+                    className="absolute top-4 right-4 z-10 cursor-pointer"
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <ShareButton

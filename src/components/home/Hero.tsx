@@ -321,7 +321,7 @@ export function Hero() {
                         key={index}
                         type="button"
                         onClick={() => handleSuggestionSelect(suggestion)}
-                        className="w-full text-left px-4 py-2 hover:bg-neutral-100 transition-colors"
+                        className="w-full text-left px-4 py-2 min-h-[44px] hover:bg-neutral-100 transition-colors"
                       >
                         {suggestion}
                       </button>

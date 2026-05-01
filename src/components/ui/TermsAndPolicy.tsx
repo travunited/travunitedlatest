@@ -120,8 +120,9 @@ export default function TermsAndPolicy({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              onPointerDown={() => setShowModal(false)}
               onClick={() => setShowModal(false)}
-              className="fixed inset-0 bg-black/50 z-50"
+              className="fixed inset-0 bg-black/50 z-50 cursor-pointer"
               role="dialog"
               aria-modal="true"
               aria-labelledby="policy-modal-title"
@@ -134,6 +135,7 @@ export default function TermsAndPolicy({
             >
               <div
                 className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-xl"
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="p-6 border-b border-neutral-200 flex items-center justify-between bg-neutral-50">

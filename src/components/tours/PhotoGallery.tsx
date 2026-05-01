@@ -92,13 +92,14 @@ export function PhotoGallery({ images, tourName }: PhotoGalleryProps) {
       {/* Carousel Modal */}
       {selectedIndex !== null && (
         <div
-          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center cursor-pointer"
+          onPointerDown={closeGallery}
           onClick={closeGallery}
         >
           {/* Close Button */}
           <button
             onClick={closeGallery}
-            className="absolute top-4 right-4 z-10 text-white hover:text-neutral-300 transition-colors p-2"
+            className="absolute top-4 right-4 z-10 text-white hover:text-neutral-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label="Close gallery"
           >
             <X size={28} />
@@ -134,7 +135,8 @@ export function PhotoGallery({ images, tourName }: PhotoGalleryProps) {
 
           {/* Image Container */}
           <div
-            className="relative max-w-7xl w-full h-full flex items-center justify-center p-4 md:p-8"
+            className="relative max-w-7xl w-full h-full flex items-center justify-center p-4 md:p-8 cursor-auto"
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative w-full h-full max-h-[90vh] flex items-center justify-center">

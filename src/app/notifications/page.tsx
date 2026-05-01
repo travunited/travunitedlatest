@@ -297,7 +297,8 @@ export default function NotificationsPage() {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] flex items-center justify-center text-neutral-400 hover:text-neutral-600"
+                  aria-label="Clear search"
                 >
                   <X size={18} />
                 </button>
@@ -373,7 +374,7 @@ export default function NotificationsPage() {
                       key={notification.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`p-6 hover:bg-neutral-50 active:bg-neutral-100 transition-colors cursor-pointer ${
+                      className={`p-6 hover:bg-neutral-50 active:bg-neutral-100 transition-colors cursor-pointer select-none ${
                         !notification.readAt ? "bg-blue-50/30" : ""
                       } ${selectedIds.has(notification.id) ? "bg-primary-50" : ""}`}
                       onClick={() => handleNotificationClick(notification)}
@@ -445,7 +446,7 @@ export default function NotificationsPage() {
                                     e.stopPropagation();
                                     markAsRead(notification.id);
                                   }}
-                                  className="p-2 hover:bg-neutral-200 rounded-lg transition-colors"
+                                  className="min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-200 rounded-lg transition-colors"
                                   aria-label="Mark as read"
                                 >
                                   <Check size={18} className="text-neutral-600" />
@@ -457,7 +458,7 @@ export default function NotificationsPage() {
                                     e.stopPropagation();
                                     deleteNotification(notification.id);
                                   }}
-                                  className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                  className="min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-red-50 rounded-lg transition-colors"
                                   aria-label="Delete"
                                 >
                                   <Trash2 size={16} className="text-neutral-400 hover:text-red-600" />

@@ -187,7 +187,7 @@ export function ShareButton({
     <div className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
+        className="inline-flex items-center gap-2 px-4 py-2 min-h-[44px] bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
         aria-label="Share"
       >
         <Share2 size={18} />
@@ -223,7 +223,7 @@ export function ShareButton({
                     <button
                       key={option.name}
                       onClick={option.onClick}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white ${option.color} transition-colors text-sm font-medium`}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg text-white ${option.color} transition-colors text-sm font-medium`}
                     >
                       <Icon size={18} />
                       <span>{option.name}</span>
@@ -233,7 +233,7 @@ export function ShareButton({
                 <div className="border-t border-neutral-200 pt-2 mt-2">
                   <button
                     onClick={handleCopyLink}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors text-sm font-medium"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 min-h-[44px] rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors text-sm font-medium"
                   >
                     {copied ? (
                       <>

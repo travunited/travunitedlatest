@@ -57,14 +57,16 @@ export function SampleVisaPreview({ sampleVisaUrl }: SampleVisaPreviewProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 cursor-pointer"
+            onPointerDown={() => setIsOpen(false)}
             onClick={() => setIsOpen(false)}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col"
+              className="relative bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col cursor-auto"
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
@@ -72,7 +74,7 @@ export function SampleVisaPreview({ sampleVisaUrl }: SampleVisaPreviewProps) {
                 <h2 className="text-xl font-bold text-neutral-900">Visa Sample</h2>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
                   aria-label="Close preview"
                 >
                   <X size={24} />

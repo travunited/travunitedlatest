@@ -212,7 +212,7 @@ export function NotificationBell() {
                         e.stopPropagation();
                         markAllAsRead();
                       }}
-                      className="text-xs text-primary-600 hover:text-primary-700 font-medium px-2 py-1 hover:bg-primary-50 rounded transition-colors"
+                      className="text-xs text-primary-600 hover:text-primary-700 font-medium px-2 py-1 min-h-[44px] hover:bg-primary-50 rounded transition-colors"
                     >
                       Mark all read
                     </button>
@@ -246,10 +246,11 @@ export function NotificationBell() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.05 }}
-                        className={`p-4 cursor-pointer transition-colors active:bg-neutral-100 ${
+                        className={`p-4 cursor-pointer transition-colors active:bg-neutral-100 select-none ${
                           !notification.readAt ? "bg-blue-50/50 border-l-4 border-primary-500 active:bg-blue-100" : "hover:bg-neutral-50"
                         }`}
                         onClick={() => handleNotificationClick(notification)}
+                        style={{ WebkitTapHighlightColor: "transparent" }}
                       >
                         <div className="flex items-start space-x-3">
                           <div className={`text-xl flex-shrink-0 p-2 rounded-lg ${getNotificationColor(notification.type)}`}>

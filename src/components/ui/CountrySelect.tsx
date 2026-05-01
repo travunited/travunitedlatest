@@ -149,7 +149,7 @@ export function CountrySelect({
                 onClick={() => !disabled && setIsOpen(!isOpen)}
                 onKeyDown={handleKeyDown}
                 disabled={disabled}
-                className={`w-full px-4 py-2 border rounded-lg text-left flex items-center justify-between transition-colors ${disabled
+                className={`w-full px-4 py-2 min-h-[44px] border rounded-lg text-left flex items-center justify-between transition-colors ${disabled
                         ? "bg-neutral-100 text-neutral-500 cursor-not-allowed border-neutral-200"
                         : isOpen
                             ? "border-primary-500 ring-2 ring-primary-500/20"
@@ -166,7 +166,7 @@ export function CountrySelect({
                         <button
                             type="button"
                             onClick={handleClear}
-                            className="min-h-[36px] min-w-[36px] flex items-center justify-center hover:bg-neutral-100 rounded transition-colors"
+                            className="min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-100 rounded transition-colors"
                             aria-label="Clear selection"
                         >
                             <X size={14} className="text-neutral-400" />

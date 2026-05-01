@@ -318,8 +318,9 @@ export default function CareersPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
+                onPointerDown={() => !submitting && setShowForm(false)}
                 onClick={() => !submitting && setShowForm(false)}
-                className="fixed inset-0 bg-black/50"
+                className="fixed inset-0 bg-black/50 cursor-pointer"
               />
 
               {/* Modal */}

@@ -6,7 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { Menu, X, User, LogOut, Shield, Home, FileText, Plane, BookOpen, Building2, HelpCircle, LayoutDashboard } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion"; // used only for desktop user-menu dropdown
 import { NotificationBell } from "@/components/ui/NotificationBell";
 import { Logo } from "@/components/ui/Logo";
 
@@ -165,131 +165,127 @@ export function Navbar() {
           </div>
         </div>
 
-        {/* Mobile drawer — opacity animation avoids iOS height-animation touch-target bug.
-            No overflow-y-auto wrapper: that caused the iOS "first tap activates scroll
-            container, second tap fires click" double-tap issue. */}
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="md:hidden bg-white border-t border-neutral-200 shadow-lg"
-            >
-              <div className="px-4 py-3 divide-y divide-neutral-100">
+        {/* Mobile drawer — CSS-only transition, always in DOM.
+            Framer Motion JS-driven styles inside position:fixed interfere with
+            iOS Safari's touch hit-test system; pure CSS opacity+pointer-events
+            avoids that entirely. No overflow-y-auto: that caused the iOS
+            "first tap activates scroll container, second tap fires click" bug. */}
+        <div
+          className={`md:hidden bg-white border-t border-neutral-200 shadow-lg transition-opacity duration-150 ${
+            isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
+          aria-hidden={!isOpen}
+        >
+          <div className="px-4 py-3 divide-y divide-neutral-100">
 
-                {/* Nav links */}
-                <div className="pb-3 space-y-1">
-                  {navLinks.map(({ href, label, icon: Icon }) => (
+            {/* Nav links */}
+            <div className="pb-3 space-y-1">
+              {navLinks.map(({ href, label, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
+                  onClick={close}
+                  onPointerDown={close}
+                >
+                  <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
+                    <Icon size={18} className="text-neutral-600" />
+                  </span>
+                  {label}
+                </Link>
+              ))}
+            </div>
+
+            {/* Auth section */}
+            <div className="pt-3 pb-2">
+              {session ? (
+                <div className="space-y-1">
+                  {/* User identity row */}
+                  <div className="flex items-center gap-3 px-3 py-2 mb-1">
+                    <span className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center shrink-0 pointer-events-none">
+                      <User size={18} className="text-primary-600" />
+                    </span>
+                    <div className="min-w-0 pointer-events-none">
+                      <p className="text-sm font-semibold text-neutral-900 truncate">
+                        {session.user?.name || "My Account"}
+                      </p>
+                      <p className="text-xs text-neutral-500 truncate">{session.user?.email}</p>
+                    </div>
+                    {isAdmin && (
+                      <span className="ml-auto shrink-0 text-xs font-medium bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full flex items-center gap-1 pointer-events-none">
+                        <Shield size={11} /> Admin
+                      </span>
+                    )}
+                  </div>
+
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
+                    onClick={close}
+                    onPointerDown={close}
+                  >
+                    <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
+                      <LayoutDashboard size={18} className="text-neutral-600" />
+                    </span>
+                    Dashboard
+                  </Link>
+
+                  {isAdmin && (
                     <Link
-                      key={href}
-                      href={href}
+                      href="/admin"
                       className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
                       onClick={close}
+                      onPointerDown={close}
                     >
-                      <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
-                        <Icon size={18} className="text-neutral-600" />
+                      <span className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0 pointer-events-none">
+                        <Shield size={18} className="text-primary-600" />
                       </span>
-                      {label}
+                      Admin Panel
                     </Link>
-                  ))}
-                </div>
-
-                {/* Auth section */}
-                <div className="pt-3 pb-2">
-                  {session ? (
-                    <div className="space-y-1">
-                      {/* User identity row */}
-                      <div className="flex items-center gap-3 px-3 py-2 mb-1">
-                        <span className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center shrink-0 pointer-events-none">
-                          <User size={18} className="text-primary-600" />
-                        </span>
-                        <div className="min-w-0 pointer-events-none">
-                          <p className="text-sm font-semibold text-neutral-900 truncate">
-                            {session.user?.name || "My Account"}
-                          </p>
-                          <p className="text-xs text-neutral-500 truncate">{session.user?.email}</p>
-                        </div>
-                        {isAdmin && (
-                          <span className="ml-auto shrink-0 text-xs font-medium bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full flex items-center gap-1 pointer-events-none">
-                            <Shield size={11} /> Admin
-                          </span>
-                        )}
-                      </div>
-
-                      <Link
-                        href="/dashboard"
-                        className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
-                        onClick={close}
-                      >
-                        <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
-                          <LayoutDashboard size={18} className="text-neutral-600" />
-                        </span>
-                        Dashboard
-                      </Link>
-
-                      {isAdmin && (
-                        <Link
-                          href="/admin"
-                          className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
-                          onClick={close}
-                        >
-                          <span className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0 pointer-events-none">
-                            <Shield size={18} className="text-primary-600" />
-                          </span>
-                          Admin Panel
-                        </Link>
-                      )}
-
-                      <button
-                        onClick={() => { signOut({ callbackUrl: "/" }); close(); }}
-                        className="w-full flex items-center gap-3 text-red-600 font-medium py-3 px-3 rounded-xl active:bg-red-100 transition-colors cursor-pointer"
-                      >
-                        <span className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0 pointer-events-none">
-                          <LogOut size={18} className="text-red-500" />
-                        </span>
-                        Sign Out
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-2 pt-1">
-                      <Link
-                        href="/login"
-                        className="flex items-center justify-center py-3 px-6 rounded-xl border border-neutral-200 text-neutral-700 font-medium active:bg-neutral-100 transition-colors cursor-pointer"
-                        onClick={close}
-                      >
-                        Login
-                      </Link>
-                      <Link
-                        href="/signup"
-                        className="flex items-center justify-center py-3 px-6 rounded-xl bg-primary-600 text-white font-medium active:bg-primary-800 transition-colors cursor-pointer"
-                        onClick={close}
-                      >
-                        Sign Up — It&apos;s Free
-                      </Link>
-                    </div>
                   )}
+
+                  <button
+                    onClick={() => { signOut({ callbackUrl: "/" }); close(); }}
+                    className="w-full flex items-center gap-3 text-red-600 font-medium py-3 px-3 rounded-xl active:bg-red-100 transition-colors cursor-pointer"
+                  >
+                    <span className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0 pointer-events-none">
+                      <LogOut size={18} className="text-red-500" />
+                    </span>
+                    Sign Out
+                  </button>
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              ) : (
+                <div className="flex flex-col gap-2 pt-1">
+                  <Link
+                    href="/login"
+                    className="flex items-center justify-center py-3 px-6 rounded-xl border border-neutral-200 text-neutral-700 font-medium active:bg-neutral-100 transition-colors cursor-pointer"
+                    onClick={close}
+                    onPointerDown={close}
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="flex items-center justify-center py-3 px-6 rounded-xl bg-primary-600 text-white font-medium active:bg-primary-800 transition-colors cursor-pointer"
+                    onClick={close}
+                    onPointerDown={close}
+                  >
+                    Sign Up — It&apos;s Free
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </nav>
 
-      {/* Full-screen backdrop behind open menu (closes on tap) */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-40 bg-black/30 md:hidden pointer-events-none"
-            aria-hidden="true"
-          />
-        )}
-      </AnimatePresence>
+      {/* Full-screen backdrop behind open menu — CSS-only, always in DOM */}
+      <div
+        className={`fixed inset-0 z-40 bg-black/30 md:hidden transition-opacity duration-150 pointer-events-none ${
+          isOpen ? "opacity-100" : "opacity-0"
+        }`}
+        aria-hidden="true"
+      />
     </>
   );
 }

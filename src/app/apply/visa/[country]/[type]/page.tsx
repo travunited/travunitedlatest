@@ -2950,14 +2950,16 @@ export default function VisaApplicationPage({ params }: { params: { country: str
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 cursor-pointer"
+            onPointerDown={() => setPreviewModal(null)}
             onClick={() => setPreviewModal(null)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+              className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col cursor-auto"
+              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
@@ -2967,7 +2969,7 @@ export default function VisaApplicationPage({ params }: { params: { country: str
                 </h3>
                 <button
                   onClick={() => setPreviewModal(null)}
-                  className="p-2 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors"
                   aria-label="Close preview"
                 >
                   <X size={20} />

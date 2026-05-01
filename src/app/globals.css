@@ -81,28 +81,44 @@ input, textarea, select, [contenteditable="true"] {
   -webkit-touch-callout: default;
 }
 
-/* Scrollable containers — correct axis per scroll direction so iOS
-   doesn't mistake a tap for a failed pan on the wrong axis */
-[class*="overflow-y"] {
-  touch-action: pan-y;
+/* Scrollable containers — set touch-action only on the container itself,
+   NOT inherited by children (touch-action is NOT inherited in CSS, which
+   is correct — child elements keep the touch-action:manipulation from *).
+   This lets iOS pan the scroll container while children stay tappable.
+   NOTE: touch-action is not an inherited property, so child buttons/links
+   inside these containers correctly keep touch-action:manipulation from *.
+   These rules are intentionally kept as direct selectors, not !important,
+   so component-level inline styles can still override when needed. */
+[class*="overflow-y-"] {
+  touch-action: pan-y pinch-zoom;
 }
-[class*="overflow-x"] {
-  touch-action: pan-x;
+[class*="overflow-x-"] {
+  touch-action: pan-x pinch-zoom;
 }
 
-/* Active state tap feedback — strong enough to feel on mobile.
-   Covers buttons, links, and divs that use onClick (notification rows, cards). */
+/* Ensure ALL links and buttons have a pointer cursor so iOS Safari
+   treats them as tappable even without a hover state defined */
+a[href], button, [role="button"] {
+  cursor: pointer;
+}
+
+/* Active state tap feedback — use filter rather than opacity.
+   Opacity changes can make an element briefly "see-through" to iOS
+   touch-hittest, causing the tap to register on the element behind it.
+   filter:brightness() keeps full opacity (no hittest side-effect). */
 button:active, a:active, [role="button"]:active,
 [role="option"]:active, [role="menuitem"]:active, [role="tab"]:active {
-  opacity: 0.65;
+  filter: brightness(0.85);
 }
 
 /* On touch devices, darken any button/link on press so it always feels
-   responsive regardless of whether the designer added an active: class. */
+   responsive regardless of whether the designer added an active: class.
+   Intentionally redundant with the rule above — ensures touch-specific
+   brightness overrides any Tailwind active: class the component may set. */
 @media (hover: none) and (pointer: coarse) {
   button:active, a:active, [role="button"]:active {
     filter: brightness(0.88);
-    opacity: 1;
+    opacity: 1; /* keep opacity at 1 to maintain iOS touch hittest surface */
   }
 }
 
