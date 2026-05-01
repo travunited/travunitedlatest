@@ -186,7 +186,6 @@ export function Navbar() {
                   href={href}
                   className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
                   onClick={close}
-                  onPointerDown={close}
                 >
                   <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
                     <Icon size={18} className="text-neutral-600" />
@@ -222,7 +221,6 @@ export function Navbar() {
                     href="/dashboard"
                     className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
                     onClick={close}
-                    onPointerDown={close}
                   >
                     <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
                       <LayoutDashboard size={18} className="text-neutral-600" />
@@ -235,7 +233,6 @@ export function Navbar() {
                       href="/admin"
                       className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer"
                       onClick={close}
-                      onPointerDown={close}
                     >
                       <span className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0 pointer-events-none">
                         <Shield size={18} className="text-primary-600" />
@@ -260,7 +257,6 @@ export function Navbar() {
                     href="/login"
                     className="flex items-center justify-center py-3 px-6 rounded-xl border border-neutral-200 text-neutral-700 font-medium active:bg-neutral-100 transition-colors cursor-pointer"
                     onClick={close}
-                    onPointerDown={close}
                   >
                     Login
                   </Link>
@@ -268,7 +264,6 @@ export function Navbar() {
                     href="/signup"
                     className="flex items-center justify-center py-3 px-6 rounded-xl bg-primary-600 text-white font-medium active:bg-primary-800 transition-colors cursor-pointer"
                     onClick={close}
-                    onPointerDown={close}
                   >
                     Sign Up — It&apos;s Free
                   </Link>
