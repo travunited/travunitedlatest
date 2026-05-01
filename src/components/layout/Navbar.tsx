@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { Menu, X, User, LogOut, Shield, Home, FileText, Plane, BookOpen, Building2, HelpCircle, LayoutDashboard } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // used only for desktop user-menu dropdown
+import { motion, AnimatePresence } from "framer-motion";
 import { NotificationBell } from "@/components/ui/NotificationBell";
 import { Logo } from "@/components/ui/Logo";
 
@@ -15,47 +15,23 @@ export function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const navRef = useRef<HTMLElement>(null);
 
   const isAdmin = session?.user?.role === "STAFF_ADMIN" || session?.user?.role === "SUPER_ADMIN";
 
-  const close = useCallback(() => {
-    // Delay closing slightly to ensure iOS tap events and Next.js route transitions complete gracefully
-    setTimeout(() => setIsOpen(false), 150);
-  }, []);
-
-  // Auto-close on route change (back button, router.push, Link clicks)
+  // Close mobile drawer on every route change — direct, no delay
   useEffect(() => {
-    close();
-  }, [pathname, close]);
+    setIsOpen(false);
+  }, [pathname]);
 
-  // Close on outside tap
-  useEffect(() => {
-    if (!isOpen) return;
-    const handler = (e: MouseEvent | TouchEvent) => {
-      if (navRef.current && !navRef.current.contains(e.target as Node)) close();
-    };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("touchstart", handler, { passive: true });
-    return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("touchstart", handler);
-    };
-  }, [isOpen, close]);
-
-  // Close desktop user menu on outside click
+  // Close desktop user menu on outside tap
   useEffect(() => {
     if (!isUserMenuOpen) return;
-    const handler = (e: MouseEvent | TouchEvent) => {
+    const handler = (e: PointerEvent) => {
       const el = document.getElementById("user-menu-desktop");
       if (el && !el.contains(e.target as Node)) setIsUserMenuOpen(false);
     };
-    document.addEventListener("mousedown", handler);
-    document.addEventListener("touchstart", handler, { passive: true });
-    return () => {
-      document.removeEventListener("mousedown", handler);
-      document.removeEventListener("touchstart", handler);
-    };
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
   }, [isUserMenuOpen]);
 
   const navLinks: { href: string; label: string; icon: LucideIcon }[] = [
@@ -69,19 +45,16 @@ export function Navbar() {
 
   return (
     <>
-      <nav
-        ref={navRef}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-neutral-200 shadow-soft"
-      >
+      {/* Nav bar — only the 64px strip. Mobile drawer is a separate sibling below. */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 border-b border-neutral-200 shadow-soft">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
 
-            {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2 shrink-0" onClick={close}>
+            <Link href="/" className="flex items-center space-x-2 shrink-0">
               <Logo priority />
             </Link>
 
-            {/* Desktop nav links */}
+            {/* Desktop nav */}
             <div className="hidden md:flex items-center space-x-6">
               {navLinks.map(({ href, label, icon: Icon }) => (
                 <Link
@@ -161,7 +134,7 @@ export function Navbar() {
               )}
             </div>
 
-            {/* Mobile right side: bell (if logged in) + hamburger */}
+            {/* Mobile: bell + hamburger */}
             <div className="flex md:hidden items-center gap-1">
               {session && <NotificationBell />}
               <button
@@ -175,124 +148,127 @@ export function Navbar() {
             </div>
           </div>
         </div>
-
-        {/* Mobile drawer — CSS-only transition, always in DOM.
-            max-h-0 + overflow-hidden collapses it to zero height when closed so it
-            doesn't extend the fixed nav and cover page content invisibly.
-            max-h-[100dvh] gives enough room to expand; transition-all animates both
-            height and opacity together. No overflow-y-auto: causes iOS double-tap bug. */}
-        <div
-          className={`md:hidden bg-white border-t border-neutral-200 shadow-lg overflow-hidden transition-all duration-200 ${
-            isOpen ? "max-h-[100dvh] opacity-100 pointer-events-auto" : "max-h-0 opacity-0 pointer-events-none"
-          }`}
-          aria-hidden={!isOpen}
-        >
-          <div className="px-4 py-3 divide-y divide-neutral-100">
-
-            {/* Nav links */}
-            <div className="pb-3 space-y-1">
-              {navLinks.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer touch-manipulation"
-                  onClick={close}
-                >
-                  <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
-                    <Icon size={18} className="text-neutral-600" />
-                  </span>
-                  {label}
-                </Link>
-              ))}
-            </div>
-
-            {/* Auth section */}
-            <div className="pt-3 pb-2">
-              {session ? (
-                <div className="space-y-1">
-                  {/* User identity row */}
-                  <div className="flex items-center gap-3 px-3 py-2 mb-1">
-                    <span className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center shrink-0 pointer-events-none">
-                      <User size={18} className="text-primary-600" />
-                    </span>
-                    <div className="min-w-0 pointer-events-none">
-                      <p className="text-sm font-semibold text-neutral-900 truncate">
-                        {session.user?.name || "My Account"}
-                      </p>
-                      <p className="text-xs text-neutral-500 truncate">{session.user?.email}</p>
-                    </div>
-                    {isAdmin && (
-                      <span className="ml-auto shrink-0 text-xs font-medium bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full flex items-center gap-1 pointer-events-none">
-                        <Shield size={11} /> Admin
-                      </span>
-                    )}
-                  </div>
-
-                  <Link
-                    href="/dashboard"
-                    className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer touch-manipulation"
-                    onClick={close}
-                  >
-                    <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
-                      <LayoutDashboard size={18} className="text-neutral-600" />
-                    </span>
-                    Dashboard
-                  </Link>
-
-                  {isAdmin && (
-                    <Link
-                      href="/admin"
-                      className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors cursor-pointer touch-manipulation"
-                      onClick={close}
-                    >
-                      <span className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0 pointer-events-none">
-                        <Shield size={18} className="text-primary-600" />
-                      </span>
-                      Admin Panel
-                    </Link>
-                  )}
-
-                  <button
-                    onClick={() => { signOut({ callbackUrl: "/" }); close(); }}
-                    className="w-full flex items-center gap-3 text-red-600 font-medium py-3 px-3 rounded-xl active:bg-red-100 transition-colors cursor-pointer"
-                  >
-                    <span className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0 pointer-events-none">
-                      <LogOut size={18} className="text-red-500" />
-                    </span>
-                    Sign Out
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2 pt-1">
-                  <Link
-                    href="/login"
-                    className="flex items-center justify-center py-3 px-6 rounded-xl border border-neutral-200 text-neutral-700 font-medium active:bg-neutral-100 transition-colors cursor-pointer touch-manipulation"
-                    onClick={close}
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="flex items-center justify-center py-3 px-6 rounded-xl bg-primary-600 text-white font-medium active:bg-primary-800 transition-colors cursor-pointer touch-manipulation"
-                    onClick={close}
-                  >
-                    Sign Up — It&apos;s Free
-                  </Link>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
       </nav>
 
-      {/* Full-screen backdrop behind open menu — CSS-only, always in DOM */}
+      {/*
+        Mobile drawer — a standalone position:fixed sibling, NOT inside <nav>.
+
+        Why this matters for iOS Safari:
+        CSS transitions on a child of a position:fixed parent invalidate iOS's
+        touch hit-test map. Even opacity/max-height changes cause the browser to
+        defer or drop click events on elements inside that stacking context.
+        Moving the drawer outside <nav> gives it its own isolated stacking context
+        so iOS can correctly deliver clicks to the links inside it.
+
+        Show/hide uses opacity + pointer-events only — no height animation, no
+        overflow-hidden. Links carry zero event handlers; the pathname useEffect
+        above fires after Next.js finishes routing and closes the drawer cleanly.
+      */}
       <div
-        className={`fixed inset-0 z-40 bg-black/30 md:hidden transition-opacity duration-150 pointer-events-none ${
-          isOpen ? "opacity-100" : "opacity-0"
+        className={`md:hidden fixed top-16 left-0 right-0 z-[49] bg-white border-t border-neutral-200 shadow-lg transition-opacity duration-200 ${
+          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!isOpen}
+      >
+        <div className="px-4 py-3 divide-y divide-neutral-100">
+
+          {/* Nav links — zero handlers intentionally, pathname effect closes drawer */}
+          <div className="pb-3 space-y-1">
+            {navLinks.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors"
+              >
+                <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
+                  <Icon size={18} className="text-neutral-600" />
+                </span>
+                {label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Auth section */}
+          <div className="pt-3 pb-2">
+            {session ? (
+              <div className="space-y-1">
+                <div className="flex items-center gap-3 px-3 py-2 mb-1">
+                  <span className="w-9 h-9 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
+                    <User size={18} className="text-primary-600" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-neutral-900 truncate">
+                      {session.user?.name || "My Account"}
+                    </p>
+                    <p className="text-xs text-neutral-500 truncate">{session.user?.email}</p>
+                  </div>
+                  {isAdmin && (
+                    <span className="ml-auto shrink-0 text-xs font-medium bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Shield size={11} /> Admin
+                    </span>
+                  )}
+                </div>
+
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors"
+                >
+                  <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
+                    <LayoutDashboard size={18} className="text-neutral-600" />
+                  </span>
+                  Dashboard
+                </Link>
+
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors"
+                  >
+                    <span className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0">
+                      <Shield size={18} className="text-primary-600" />
+                    </span>
+                    Admin Panel
+                  </Link>
+                )}
+
+                <button
+                  onClick={() => { signOut({ callbackUrl: "/" }); setIsOpen(false); }}
+                  className="w-full flex items-center gap-3 text-red-600 font-medium py-3 px-3 rounded-xl active:bg-red-100 transition-colors"
+                >
+                  <span className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                    <LogOut size={18} className="text-red-500" />
+                  </span>
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 pt-1">
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center py-3 px-6 rounded-xl border border-neutral-200 text-neutral-700 font-medium active:bg-neutral-100 transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/signup"
+                  className="flex items-center justify-center py-3 px-6 rounded-xl bg-primary-600 text-white font-medium active:bg-primary-800 transition-colors"
+                >
+                  Sign Up — It&apos;s Free
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Backdrop — tap anywhere outside drawer to close */}
+      <div
+        className={`md:hidden fixed inset-0 z-[48] bg-black/30 transition-opacity duration-200 ${
+          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         aria-hidden="true"
+        onPointerDown={() => setIsOpen(false)}
       />
     </>
   );
 }
-
