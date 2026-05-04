@@ -75,73 +75,77 @@ export function Navbar() {
 
             {/* Desktop auth */}
             <div className="hidden md:flex items-center space-x-4">
-              {session ? (
+              {mounted && (
                 <>
-                  <NotificationBell />
-                  <div id="user-menu-desktop" className="relative">
-                    <button
-                      onClick={() => setIsUserMenuOpen((v) => !v)}
-                      className="flex items-center space-x-2 text-neutral-700 hover:text-primary-600 font-medium transition-colors"
-                    >
-                      <User size={20} />
-                      <span className="max-w-[120px] truncate">{session.user?.name || session.user?.email}</span>
-                      {isAdmin && <Shield size={16} className="text-primary-600 shrink-0" />}
-                    </button>
-                    <AnimatePresence>
-                      {isUserMenuOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -8 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-large border border-neutral-200 py-2 z-50"
+                  {session ? (
+                    <>
+                      <NotificationBell />
+                      <div id="user-menu-desktop" className="relative">
+                        <button
+                          onClick={() => setIsUserMenuOpen((v) => !v)}
+                          className="flex items-center space-x-2 text-neutral-700 hover:text-primary-600 font-medium transition-colors"
                         >
-                          <Link
-                            href="/dashboard"
-                            className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-                            onClick={() => setIsUserMenuOpen(false)}
-                          >
-                            Dashboard
-                          </Link>
-                          {isAdmin && (
-                            <Link
-                              href="/admin"
-                              className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
-                              onClick={() => setIsUserMenuOpen(false)}
+                          <User size={20} />
+                          <span className="max-w-[120px] truncate">{session.user?.name || session.user?.email}</span>
+                          {isAdmin && <Shield size={16} className="text-primary-600 shrink-0" />}
+                        </button>
+                        <AnimatePresence>
+                          {isUserMenuOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -8 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-large border border-neutral-200 py-2 z-50"
                             >
-                              Admin Panel
-                            </Link>
+                              <Link
+                                href="/dashboard"
+                                className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                Dashboard
+                              </Link>
+                              {isAdmin && (
+                                <Link
+                                  href="/admin"
+                                  className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+                                  onClick={() => setIsUserMenuOpen(false)}
+                                >
+                                  Admin Panel
+                                </Link>
+                              )}
+                              <button
+                                onClick={() => { signOut({ callbackUrl: "/" }); setIsUserMenuOpen(false); }}
+                                className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center space-x-2"
+                              >
+                                <LogOut size={16} />
+                                <span>Sign Out</span>
+                              </button>
+                            </motion.div>
                           )}
-                          <button
-                            onClick={() => { signOut({ callbackUrl: "/" }); setIsUserMenuOpen(false); }}
-                            className="w-full text-left px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50 flex items-center space-x-2"
-                          >
-                            <LogOut size={16} />
-                            <span>Sign Out</span>
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <Link href="/login" className="text-neutral-700 hover:text-primary-600 font-medium transition-colors">
-                    Login
-                  </Link>
-                  <Link
-                    href="/signup"
-                    className="bg-primary-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors shadow-soft"
-                  >
-                    Sign Up
-                  </Link>
+                        </AnimatePresence>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Link href="/login" className="text-neutral-700 hover:text-primary-600 font-medium transition-colors">
+                        Login
+                      </Link>
+                      <Link
+                        href="/signup"
+                        className="bg-primary-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors shadow-soft"
+                      >
+                        Sign Up
+                      </Link>
+                    </>
+                  )}
                 </>
               )}
             </div>
 
             {/* Mobile: bell + hamburger */}
             <div className="flex md:hidden items-center gap-1">
-              {session && <NotificationBell />}
+              {mounted && session && <NotificationBell />}
               <button
                 onClick={() => setIsOpen((v) => !v)}
                 className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-700 hover:bg-neutral-100 active:bg-neutral-200"
@@ -267,13 +271,15 @@ export function Navbar() {
       </div>
 
       {/* Backdrop — tap anywhere outside drawer to close */}
-      <div
-        className={`md:hidden fixed inset-0 z-[48] bg-black/30 transition-opacity duration-200 ${
-          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
-        aria-hidden="true"
-        onPointerDown={() => setIsOpen(false)}
-      />
+      {mounted && (
+        <div
+          className={`md:hidden fixed inset-0 z-[48] bg-black/30 transition-opacity duration-200 ${
+            isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
+          aria-hidden="true"
+          onPointerDown={() => setIsOpen(false)}
+        />
+      )}
     </>
   );
 }

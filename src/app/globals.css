@@ -120,8 +120,6 @@ button:active, a:active, [role="button"]:active,
     filter: brightness(0.88);
     opacity: 1; /* keep opacity at 1 to maintain iOS touch hittest surface */
   }
-
-  }
 }
 
 /* Force GPU layer fix (Safari hack) */
