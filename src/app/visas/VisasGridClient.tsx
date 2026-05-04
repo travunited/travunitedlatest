@@ -54,12 +54,19 @@ export default function VisasGridClient({ countries }: Props) {
     };
   }, [searchParams]);
 
-  const initialState = getInitialState();
-
-  const [searchQuery, setSearchQuery] = useState(initialState.searchQuery);
-  const [selectedRegion, setSelectedRegion] = useState<string>(initialState.selectedRegion);
-  const [sortOption, setSortOption] = useState<"alpha" | "volume">(initialState.sortOption);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState("all");
+  const [sortOption, setSortOption] = useState<"alpha" | "volume">("alpha");
   const [showFilters, setShowFilters] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const state = getInitialState();
+    setSearchQuery(state.searchQuery);
+    setSelectedRegion(state.selectedRegion);
+    setSortOption(state.sortOption);
+    setMounted(true);
+  }, [getInitialState]);
 
   // Save filter state to sessionStorage whenever it changes
   useEffect(() => {

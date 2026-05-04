@@ -172,9 +172,9 @@ export function NotificationBell() {
             ) : (
               <div className="divide-y divide-neutral-100">
                 {notifications.map((notification) => (
-                  <div
+                  <button
                     key={notification.id}
-                    className={`p-4 cursor-pointer transition-colors active:bg-neutral-100 ${
+                    className={`w-full text-left p-4 transition-colors active:bg-neutral-100 ${
                       !notification.readAt ? "bg-blue-50/50 active:bg-blue-100" : "hover:bg-neutral-50"
                     }`}
                     onClick={() => handleNotificationClick(notification)}
@@ -217,7 +217,7 @@ export function NotificationBell() {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
