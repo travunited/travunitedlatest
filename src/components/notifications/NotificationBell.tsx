@@ -172,52 +172,53 @@ export function NotificationBell() {
             ) : (
               <div className="divide-y divide-neutral-100">
                 {notifications.map((notification) => (
-                  <button
-                    key={notification.id}
-                    className={`w-full text-left p-4 transition-colors active:bg-neutral-100 ${
-                      !notification.readAt ? "bg-blue-50/50 active:bg-blue-100" : "hover:bg-neutral-50"
-                    }`}
-                    onClick={() => handleNotificationClick(notification)}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <span className="text-xl flex-shrink-0">
-                        {getNotificationIcon(notification.type)}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={`text-sm font-medium ${
-                            !notification.readAt
-                              ? "text-neutral-900"
-                              : "text-neutral-700"
-                          }`}
-                        >
-                          {notification.title}
-                        </p>
-                        <p className="text-xs text-neutral-600 mt-1 line-clamp-2">
-                          {notification.message}
-                        </p>
-                        <p className="text-xs text-neutral-400 mt-2">
-                          {formatDistanceToNow(new Date(notification.createdAt), {
-                            addSuffix: true,
-                          })}
-                        </p>
-                      </div>
-                      {!notification.readAt && (
-                        <div className="flex-shrink-0">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              markAsRead(notification.id);
-                            }}
-                            className="min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-200 rounded"
-                            aria-label="Mark as read"
+                  <div key={notification.id} className="relative group/item">
+                    <button
+                      className={`w-full text-left p-4 transition-colors active:bg-neutral-100 ${
+                        !notification.readAt ? "bg-blue-50/50 active:bg-blue-100" : "hover:bg-neutral-50"
+                      }`}
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <span className="text-xl flex-shrink-0">
+                          {getNotificationIcon(notification.type)}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className={`text-sm font-medium ${
+                              !notification.readAt
+                                ? "text-neutral-900"
+                                : "text-neutral-700"
+                            }`}
                           >
-                            <Check size={14} className="text-neutral-600" />
-                          </button>
+                            {notification.title}
+                          </p>
+                          <p className="text-xs text-neutral-600 mt-1 line-clamp-2">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-neutral-400 mt-2">
+                            {formatDistanceToNow(new Date(notification.createdAt), {
+                              addSuffix: true,
+                            })}
+                          </p>
                         </div>
-                      )}
-                    </div>
-                  </button>
+                        {/* Spacer for the absolute-positioned check button */}
+                        {!notification.readAt && <div className="w-10" />}
+                      </div>
+                    </button>
+                    {!notification.readAt && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAsRead(notification.id);
+                        }}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] flex items-center justify-center bg-white/80 hover:bg-neutral-200 rounded-full shadow-soft border border-neutral-100 transition-colors z-10"
+                        aria-label="Mark as read"
+                      >
+                        <Check size={14} className="text-neutral-600" />
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             )}

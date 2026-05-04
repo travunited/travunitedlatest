@@ -121,9 +121,6 @@ button:active, a:active, [role="button"]:active,
     opacity: 1; /* keep opacity at 1 to maintain iOS touch hittest surface */
   }
 
-  /* Disable hover behavior on mobile to prevent double-tap issue */
-  *:hover {
-    all: unset;
   }
 }
 
@@ -132,14 +129,9 @@ button, a, [role="button"] {
   transform: translateZ(0);
 }
 
-/* Kill invisible overlays */
-.overlay, .backdrop, .modal-wrapper {
-  pointer-events: none !important;
-}
-
-.overlay.active, .backdrop.active, .modal-wrapper.active,
-[data-state="open"] .overlay, [data-state="open"] .backdrop {
-  pointer-events: auto !important;
+/* Stacking context fixes for iOS */
+.backdrop {
+  -webkit-tap-highlight-color: transparent;
 }
 
 @layer utilities {
