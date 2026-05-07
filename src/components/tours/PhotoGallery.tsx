@@ -93,7 +93,6 @@ export function PhotoGallery({ images, tourName }: PhotoGalleryProps) {
       {selectedIndex !== null && (
         <div
           className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center cursor-pointer"
-          onPointerDown={closeGallery}
           onClick={closeGallery}
         >
           {/* Close Button */}
@@ -136,7 +135,6 @@ export function PhotoGallery({ images, tourName }: PhotoGalleryProps) {
           {/* Image Container */}
           <div
             className="relative max-w-7xl w-full h-full flex items-center justify-center p-4 md:p-8 cursor-auto"
-            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative w-full h-full max-h-[90vh] flex items-center justify-center">

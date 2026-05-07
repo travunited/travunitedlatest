@@ -216,7 +216,6 @@ export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectU
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 cursor-pointer"
-            onClick={onClose}
         onClick={onClose}
       >
         <motion.div
@@ -224,7 +223,6 @@ export function AccountGate({ isOpen, onClose, onContinue, email = "", redirectU
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto cursor-auto"
-          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-6">

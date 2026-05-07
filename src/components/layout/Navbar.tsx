@@ -263,10 +263,6 @@ export function Navbar() {
                         signOut({ callbackUrl: "/" });
                       }}
                       className="w-full flex items-center gap-3 text-red-600 font-medium py-3 px-3 rounded-xl active:bg-red-100 transition-colors"
-
-                        setIsOpen(false);
-                        signOut({ callbackUrl: "/" });
-                      }}
                     >
                       <span className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
                         <LogOut size={18} className="text-red-500" />

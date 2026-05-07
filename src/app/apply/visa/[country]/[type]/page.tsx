@@ -2951,7 +2951,6 @@ export default function VisaApplicationPage({ params }: { params: { country: str
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 cursor-pointer"
-            onPointerDown={() => setPreviewModal(null)}
             onClick={() => setPreviewModal(null)}
           >
             <motion.div
@@ -2959,7 +2958,6 @@ export default function VisaApplicationPage({ params }: { params: { country: str
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col cursor-auto"
-              onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
