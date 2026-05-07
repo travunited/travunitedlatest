@@ -263,7 +263,7 @@ export function Navbar() {
                         signOut({ callbackUrl: "/" });
                       }}
                       className="w-full flex items-center gap-3 text-red-600 font-medium py-3 px-3 rounded-xl active:bg-red-100 transition-colors"
-                      onClick={() => {
+
                         setIsOpen(false);
                         signOut({ callbackUrl: "/" });
                       }}
