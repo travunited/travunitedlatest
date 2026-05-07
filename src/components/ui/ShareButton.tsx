@@ -137,7 +137,7 @@ export function ShareButton({ url, title, description = "", image, variant = "fu
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onPointerDown={() => setIsOpen(false)}
+                onClick={() => setIsOpen(false)}
                 className="fixed inset-0 z-40"
               />
               <motion.div

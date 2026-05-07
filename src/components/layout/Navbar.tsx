@@ -183,7 +183,7 @@ export function Navbar() {
           <div
             className="md:hidden fixed inset-0 z-[48] bg-black/30"
             aria-hidden="true"
-            onPointerDown={() => setIsOpen(false)}
+            onClick={() => setIsOpen(false)}
           />
 
           {/* Drawer panel */}
@@ -200,6 +200,7 @@ export function Navbar() {
                     key={href}
                     href={href}
                     className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors"
+                    onClick={() => setIsOpen(false)}
                   >
                     <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
                       <Icon size={18} className="text-neutral-600" />
@@ -235,6 +236,7 @@ export function Navbar() {
                     <Link
                       href="/dashboard"
                       className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors"
+                      onClick={() => setIsOpen(false)}
                     >
                       <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
                         <LayoutDashboard size={18} className="text-neutral-600" />
@@ -246,6 +248,7 @@ export function Navbar() {
                       <Link
                         href="/admin"
                         className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors"
+                        onClick={() => setIsOpen(false)}
                       >
                         <span className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0">
                           <Shield size={18} className="text-primary-600" />
@@ -260,6 +263,10 @@ export function Navbar() {
                         signOut({ callbackUrl: "/" });
                       }}
                       className="w-full flex items-center gap-3 text-red-600 font-medium py-3 px-3 rounded-xl active:bg-red-100 transition-colors"
+                      onClick={() => {
+                        setIsOpen(false);
+                        signOut({ callbackUrl: "/" });
+                      }}
                     >
                       <span className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
                         <LogOut size={18} className="text-red-500" />
@@ -272,12 +279,14 @@ export function Navbar() {
                     <Link
                       href="/login"
                       className="flex items-center justify-center py-3 px-6 rounded-xl border border-neutral-200 text-neutral-700 font-medium active:bg-neutral-100 transition-colors"
+                      onClick={() => setIsOpen(false)}
                     >
                       Login
                     </Link>
                     <Link
                       href="/signup"
                       className="flex items-center justify-center py-3 px-6 rounded-xl bg-primary-600 text-white font-medium active:bg-primary-800 transition-colors"
+                      onClick={() => setIsOpen(false)}
                     >
                       Sign Up — It&apos;s Free
                     </Link>

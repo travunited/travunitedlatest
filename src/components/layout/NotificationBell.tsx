@@ -138,7 +138,7 @@ export function NotificationBell() {
           <>
             <div
               className="fixed inset-0 z-40"
-              onPointerDown={() => setIsOpen(false)}
+              onClick={() => setIsOpen(false)}
             />
             <motion.div
               initial={{ opacity: 0, y: -10 }}

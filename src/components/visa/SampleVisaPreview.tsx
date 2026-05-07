@@ -58,7 +58,7 @@ export function SampleVisaPreview({ sampleVisaUrl }: SampleVisaPreviewProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 cursor-pointer"
-            onPointerDown={() => setIsOpen(false)}
+            onClick={() => setIsOpen(false)}
             onClick={() => setIsOpen(false)}
           >
             <motion.div
@@ -66,7 +66,7 @@ export function SampleVisaPreview({ sampleVisaUrl }: SampleVisaPreviewProps) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               className="relative bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col cursor-auto"
-              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
