@@ -52,8 +52,8 @@ export function CountrySelect({
             }
         };
 
-        document.addEventListener("pointerdown", handleClickOutside);
-        return () => document.removeEventListener("pointerdown", handleClickOutside);
+        document.addEventListener("click", handleClickOutside);
+        return () => document.removeEventListener("click", handleClickOutside);
     }, []);
 
     // Focus input when opening dropdown

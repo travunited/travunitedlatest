@@ -74,8 +74,8 @@ export function NotificationBell() {
       }
     };
 
-    document.addEventListener("pointerdown", handleClickOutside);
-    return () => document.removeEventListener("pointerdown", handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   const markAsRead = async (id: string) => {

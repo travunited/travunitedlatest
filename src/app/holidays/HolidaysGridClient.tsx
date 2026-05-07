@@ -637,7 +637,7 @@ export default function HolidaysGridClient({ tours, countries, regions, tourType
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.05 }}
               whileHover={{ y: -4 }}
-              className="group select-none"
+              className="group"
             >
               <Link href={buildToursUrl(tour.slug || tour.id)}>
                 <div className="bg-white rounded-2xl shadow-medium hover:shadow-large transition-shadow duration-300 overflow-hidden h-full flex flex-col">

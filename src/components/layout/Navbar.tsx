@@ -31,12 +31,12 @@ export function Navbar() {
   // Close desktop user menu on outside tap
   useEffect(() => {
     if (!isUserMenuOpen) return;
-    const handler = (e: PointerEvent) => {
+    const handler = (e: MouseEvent) => {
       const el = document.getElementById("user-menu-desktop");
       if (el && !el.contains(e.target as Node)) setIsUserMenuOpen(false);
     };
-    document.addEventListener("pointerdown", handler);
-    return () => document.removeEventListener("pointerdown", handler);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
   }, [isUserMenuOpen]);
 
   const navLinks: { href: string; label: string; icon: LucideIcon }[] = [

@@ -30,15 +30,15 @@ export function GlobalSearch() {
 
   // Close on outside click
   useEffect(() => {
-    const handleClickOutside = (event: PointerEvent) => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener("pointerdown", handleClickOutside);
-      return () => document.removeEventListener("pointerdown", handleClickOutside);
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
     }
   }, [isOpen]);
 
