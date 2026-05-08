@@ -73,11 +73,11 @@ export function NotificationBell() {
     };
 
     if (isOpen) {
-      document.addEventListener("pointerdown", handleClickOutside);
+      document.addEventListener("click", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener("pointerdown", handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
     };
   }, [isOpen]);
 

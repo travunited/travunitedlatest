@@ -72,7 +72,7 @@ export function PopularDestinations() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
               whileHover={{ y: -4 }}
-              className="group select-none"
+              className="group"
             >
               <Link href={`/visas/${destination.id}`}>
                 <div className="relative overflow-hidden rounded-2xl shadow-medium hover:shadow-large transition-shadow duration-300">

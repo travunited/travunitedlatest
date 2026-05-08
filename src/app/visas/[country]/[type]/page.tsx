@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import React, { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -255,7 +256,14 @@ export default async function VisaDetailPage({
   // const isVisaFreeEntry = visa.visaMode === "VISA_FREE_ENTRY"; // redundant now if we group them, but useful if text differs slightly
 
   return (
-    <VisaDetailClient searchParams={resolvedSearchParams}>
+    <Suspense fallback={<div className="min-h-screen bg-white animate-pulse">
+      <div className="h-64 bg-neutral-200"></div>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="h-10 bg-neutral-200 w-1/3 mb-4"></div>
+        <div className="h-4 bg-neutral-200 w-2/3"></div>
+      </div>
+    </div>}>
+      <VisaDetailClient searchParams={resolvedSearchParams}>
       <div className="min-h-screen bg-white">
         <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-12">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -620,6 +628,7 @@ export default async function VisaDetailPage({
         </div>
       </div>
     </VisaDetailClient>
+    </Suspense>
   );
 }
 

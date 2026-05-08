@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import React, { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -199,7 +200,14 @@ export default async function TourDetailPage({
   const originalPrice = tour.originalPrice;
 
   return (
-    <TourDetailClient searchParams={searchParams}>
+    <Suspense fallback={<div className="min-h-screen bg-white animate-pulse">
+      <div className="h-96 bg-neutral-200"></div>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="h-10 bg-neutral-200 w-1/2 mb-4"></div>
+        <div className="h-4 bg-neutral-200 w-full"></div>
+      </div>
+    </div>}>
+      <TourDetailClient searchParams={searchParams}>
       <div className="min-h-screen bg-white">
         <Hero
           tour={tour}
@@ -612,6 +620,7 @@ export default async function TourDetailPage({
         </div>
       </div>
     </TourDetailClient>
+    </Suspense>
   );
 }
 

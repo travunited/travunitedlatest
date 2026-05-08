@@ -62,7 +62,7 @@ const steps = [
   { id: 7, name: "Documents", icon: FileText },
 ];
 
-export default function VisaApplicationPage({ params }: { params: { country: string; type: string } }) {
+function VisaApplicationPageContent({ params }: { params: { country: string; type: string } }) {
 
 
   const { data: session } = useSession();
@@ -3073,5 +3073,15 @@ export default function VisaApplicationPage({ params }: { params: { country: str
         subtitle="Login or create an account to save your visa application"
       />
     </div>
+  );
+}
+
+export default function VisaApplicationPage(props: any) {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+    </div>}>
+      <VisaApplicationPageContent {...props} />
+    </Suspense>
   );
 }

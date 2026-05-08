@@ -220,7 +220,7 @@ export default function VisasGridClient({ countries }: Props) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.04 }}
               whileHover={{ y: -4 }}
-              className="group select-none"
+              className="group"
             >
               <Link href={`/visas/${country.code.toLowerCase()}`}>
                 <div className="bg-white rounded-2xl shadow-medium hover:shadow-large transition-shadow duration-300 overflow-hidden">

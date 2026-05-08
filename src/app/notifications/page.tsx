@@ -374,7 +374,7 @@ export default function NotificationsPage() {
                       key={notification.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className={`p-6 hover:bg-neutral-50 active:bg-neutral-100 transition-colors cursor-pointer select-none ${
+                      className={`p-6 hover:bg-neutral-50 active:bg-neutral-100 transition-colors cursor-pointer  ${
                         !notification.readAt ? "bg-blue-50/30" : ""
                       } ${selectedIds.has(notification.id) ? "bg-primary-50" : ""}`}
                       onClick={() => handleNotificationClick(notification)}

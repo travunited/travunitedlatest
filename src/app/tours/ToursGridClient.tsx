@@ -78,74 +78,55 @@ export default function ToursGridClient({ tours, countries, regions, tourTypes, 
     return Math.max(...tours.map((t) => t.price), 500000);
   }, [tours]);
 
-  // Initialize state from URL params or sessionStorage
-  const getInitialState = useCallback(() => {
-    // Try to restore from sessionStorage first (for back navigation)
-    if (typeof window !== "undefined") {
-      const stored = sessionStorage.getItem("tours-filter-state");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          // Only use stored state if we're coming from a detail page (no URL params except destination)
-          const hasOtherParams = Array.from(searchParams?.keys() || []).some(
-            (key) => key !== "destination"
-          );
-          if (!hasOtherParams && Object.keys(parsed).length > 0) {
-            // Ensure ranges are valid
-            return {
-              ...parsed,
-              durationRange: parsed.durationRange || [0, maxDuration],
-              priceRange: parsed.priceRange || [0, maxPrice],
-            };
-          }
-        } catch (e) {
-          // Ignore parse errors
-        }
-      }
-    }
-    
-    // Otherwise, use URL params
-    return {
-      searchQuery: destinationParam,
-      selectedCountry: searchParams?.get("country") || "all",
-      selectedRegion: searchParams?.get("region") || "all",
-      selectedTourType: searchParams?.get("tourType") || "all",
-      selectedThemes: searchParams?.get("themes")?.split(",").filter(Boolean) || [],
-      durationRange: [
-        parseInt(searchParams?.get("durationMin") || "0"),
-        parseInt(searchParams?.get("durationMax") || maxDuration.toString()),
-      ] as [number, number],
-      priceRange: [
-        parseInt(searchParams?.get("priceMin") || "0"),
-        parseInt(searchParams?.get("priceMax") || maxPrice.toString()),
-      ] as [number, number],
-      onlyFeatured: searchParams?.get("featured") === "true",
-      onlyAdvance: searchParams?.get("advance") === "true",
-      sortOption: (searchParams?.get("sort") || "recommended") as
-        | "recommended"
-        | "price-asc"
-        | "price-desc"
-        | "duration-asc"
-        | "duration-desc"
-        | "newest",
-    };
-  }, [searchParams, destinationParam, maxDuration, maxPrice]);
-
-  const initialState = getInitialState();
-  
-  const [searchQuery, setSearchQuery] = useState(initialState.searchQuery);
-  const [selectedCountry, setSelectedCountry] = useState<string>(initialState.selectedCountry);
-  const [selectedRegion, setSelectedRegion] = useState<string>(initialState.selectedRegion);
-  const [selectedTourType, setSelectedTourType] = useState<string>(initialState.selectedTourType);
-  const [selectedThemes, setSelectedThemes] = useState<string[]>(initialState.selectedThemes);
-  const [durationRange, setDurationRange] = useState<[number, number]>(initialState.durationRange);
-  const [priceRange, setPriceRange] = useState<[number, number]>(initialState.priceRange);
-  const [onlyFeatured, setOnlyFeatured] = useState(initialState.onlyFeatured);
-  const [onlyAdvance, setOnlyAdvance] = useState(initialState.onlyAdvance);
+  // Initialize state from URL params only (safe for SSR)
+  const [searchQuery, setSearchQuery] = useState(destinationParam);
+  const [selectedCountry, setSelectedCountry] = useState<string>(searchParams?.get("country") || "all");
+  const [selectedRegion, setSelectedRegion] = useState<string>(searchParams?.get("region") || "all");
+  const [selectedTourType, setSelectedTourType] = useState<string>(searchParams?.get("tourType") || "all");
+  const [selectedThemes, setSelectedThemes] = useState<string[]>(searchParams?.get("themes")?.split(",").filter(Boolean) || []);
+  const [durationRange, setDurationRange] = useState<[number, number]>([
+    parseInt(searchParams?.get("durationMin") || "0"),
+    parseInt(searchParams?.get("durationMax") || maxDuration.toString()),
+  ]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([
+    parseInt(searchParams?.get("priceMin") || "0"),
+    parseInt(searchParams?.get("priceMax") || maxPrice.toString()),
+  ]);
+  const [onlyFeatured, setOnlyFeatured] = useState(searchParams?.get("featured") === "true");
+  const [onlyAdvance, setOnlyAdvance] = useState(searchParams?.get("advance") === "true");
   const [sortOption, setSortOption] = useState<
     "recommended" | "price-asc" | "price-desc" | "duration-asc" | "duration-desc" | "newest"
-  >(initialState.sortOption);
+  >((searchParams?.get("sort") || "recommended") as any);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Restore from sessionStorage on mount (hydration-safe)
+  useEffect(() => {
+    const stored = sessionStorage.getItem("tours-filter-state");
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        // Only use stored state if we're coming from a detail page (no URL params except destination)
+        const hasOtherParams = Array.from(searchParams?.keys() || []).some(
+          (key) => key !== "destination"
+        );
+
+        if (!hasOtherParams && Object.keys(parsed).length > 0) {
+          if (parsed.searchQuery) setSearchQuery(parsed.searchQuery);
+          if (parsed.selectedCountry) setSelectedCountry(parsed.selectedCountry);
+          if (parsed.selectedRegion) setSelectedRegion(parsed.selectedRegion);
+          if (parsed.selectedTourType) setSelectedTourType(parsed.selectedTourType);
+          if (parsed.selectedThemes) setSelectedThemes(parsed.selectedThemes);
+          if (parsed.durationRange) setDurationRange(parsed.durationRange);
+          if (parsed.priceRange) setPriceRange(parsed.priceRange);
+          if (parsed.onlyFeatured !== undefined) setOnlyFeatured(parsed.onlyFeatured);
+          if (parsed.onlyAdvance !== undefined) setOnlyAdvance(parsed.onlyAdvance);
+          if (parsed.sortOption) setSortOption(parsed.sortOption);
+        }
+      } catch (e) {
+        console.error("Error restoring filter state:", e);
+      }
+    }
+  }, []); // Run once on mount
   
   // Debounce search query for better performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -611,7 +592,7 @@ export default function ToursGridClient({ tours, countries, regions, tourTypes, 
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.05 }}
               whileHover={{ y: -4 }}
-              className="group select-none"
+              className="group "
             >
               <Link href={buildToursUrl(tour.id)}>
                 <div className="bg-white rounded-2xl shadow-medium hover:shadow-large transition-shadow duration-300 overflow-hidden h-full flex flex-col">

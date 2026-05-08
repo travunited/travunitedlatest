@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
 import ToursGridClient from "./ToursGridClient";
@@ -163,13 +164,15 @@ export default async function ToursPage({
         </div>
       </div>
 
-      <ToursGridClient
-        tours={formatted}
-        countries={countryFilters}
-        regions={regions}
-        tourTypes={tourTypes}
-        themes={allThemes}
-      />
+      <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-20 text-center text-neutral-500">Loading tours...</div>}>
+        <ToursGridClient
+          tours={formatted}
+          countries={countryFilters}
+          regions={regions}
+          tourTypes={tourTypes}
+          themes={allThemes}
+        />
+      </Suspense>
     </div>
   );
 }

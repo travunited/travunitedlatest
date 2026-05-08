@@ -100,7 +100,7 @@ export function FeaturedVisas({ visas }: { visas: FeaturedVisa[] }) {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
               whileHover={{ y: -4 }}
-              className="group select-none"
+              className="group"
             >
               <Link href={`/visas/${visa.countryCode}/${visa.slug}`}>
                 <div className="bg-white rounded-2xl shadow-medium hover:shadow-large transition-shadow duration-300 overflow-hidden h-full flex flex-col">

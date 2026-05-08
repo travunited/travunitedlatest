@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 
@@ -74,7 +75,9 @@ export default async function BlogPage() {
           </p>
         </div>
       </div>
-      <BlogClient posts={serialized} />
+      <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-20 text-center text-neutral-500">Loading articles...</div>}>
+        <BlogClient posts={serialized} />
+      </Suspense>
     </div>
   );
 }
