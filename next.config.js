@@ -7,7 +7,6 @@ const nextConfig = {
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
-    turbopack: {},
   },
   images: {
     // Allow images from any domain - simplified configuration
