@@ -2,7 +2,7 @@ import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
 export default withAuth(
-  function middleware(req) {
+  function proxy(req) {
     const token = req.nextauth.token;
     const isAdmin = token?.role === "STAFF_ADMIN" || token?.role === "SUPER_ADMIN";
     const isSuperAdmin = token?.role === "SUPER_ADMIN";
