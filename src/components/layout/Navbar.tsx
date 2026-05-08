@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import {
@@ -12,31 +12,46 @@ import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationBell } from "@/components/ui/NotificationBell";
 import { Logo } from "@/components/ui/Logo";
+import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
-  const isAdmin =
-    session?.user?.role === "STAFF_ADMIN" ||
-    session?.user?.role === "SUPER_ADMIN";
+  const isAdmin = ["STAFF_ADMIN", "SUPER_ADMIN"].includes(session?.user?.role || "");
 
   // Close mobile drawer on route change
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
 
-  // Close desktop user menu on outside tap
+  // Handle outside clicks and Escape key
   useEffect(() => {
-    if (!isUserMenuOpen) return;
-    const handler = (e: MouseEvent) => {
-      const el = document.getElementById("user-menu-desktop");
-      if (el && !el.contains(e.target as Node)) setIsUserMenuOpen(false);
+    const handleEvents = (e: MouseEvent | KeyboardEvent) => {
+      // Handle Escape key
+      if (e instanceof KeyboardEvent && e.key === "Escape") {
+        setIsUserMenuOpen(false);
+        setIsOpen(false);
+        return;
+      }
+
+      // Handle outside click for user menu
+      if (e instanceof MouseEvent && isUserMenuOpen) {
+        if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+          setIsUserMenuOpen(false);
+        }
+      }
     };
-    document.addEventListener("click", handler);
-    return () => document.removeEventListener("click", handler);
+
+    document.addEventListener("click", handleEvents);
+    document.addEventListener("keydown", handleEvents);
+    return () => {
+      document.removeEventListener("click", handleEvents);
+      document.removeEventListener("keydown", handleEvents);
+    };
   }, [isUserMenuOpen]);
 
   const navLinks: { href: string; label: string; icon: LucideIcon }[] = [
@@ -59,18 +74,24 @@ export function Navbar() {
               <Logo priority />
             </Link>
 
-            {/* Desktop nav */}
             <div className="hidden md:flex items-center space-x-6">
-              {navLinks.map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="flex items-center space-x-1.5 text-neutral-700 hover:text-primary-600 font-medium transition-colors duration-200"
-                >
-                  <Icon size={18} />
-                  <span>{label}</span>
-                </Link>
-              ))}
+              {navLinks.map(({ href, label, icon: Icon }) => {
+                const isActive = pathname === href;
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      "flex items-center space-x-1.5 font-medium transition-colors duration-200",
+                      isActive ? "text-primary-600" : "text-neutral-700 hover:text-primary-600"
+                    )}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <Icon size={18} />
+                    <span>{label}</span>
+                  </Link>
+                );
+              })}
             </div>
 
             {/* Desktop auth */}
@@ -78,10 +99,13 @@ export function Navbar() {
               {session ? (
                 <>
                   <NotificationBell />
-                  <div id="user-menu-desktop" className="relative">
+                  <div ref={userMenuRef} className="relative">
                     <button
                       onClick={() => setIsUserMenuOpen((v) => !v)}
                       className="flex items-center space-x-2 text-neutral-700 hover:text-primary-600 font-medium transition-colors"
+                      aria-haspopup="menu"
+                      aria-expanded={isUserMenuOpen}
+                      aria-controls="user-menu-desktop-dropdown"
                     >
                       <User size={20} />
                       <span className="max-w-[120px] truncate">
@@ -92,6 +116,8 @@ export function Navbar() {
                     <AnimatePresence>
                       {isUserMenuOpen && (
                         <motion.div
+                          id="user-menu-desktop-dropdown"
+                          role="menu"
                           initial={{ opacity: 0, y: -8 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -8 }}
@@ -100,6 +126,7 @@ export function Navbar() {
                         >
                           <Link
                             href="/dashboard"
+                            role="menuitem"
                             className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
                             onClick={() => setIsUserMenuOpen(false)}
                           >
@@ -108,6 +135,7 @@ export function Navbar() {
                           {isAdmin && (
                             <Link
                               href="/admin"
+                              role="menuitem"
                               className="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
                               onClick={() => setIsUserMenuOpen(false)}
                             >
@@ -115,6 +143,7 @@ export function Navbar() {
                             </Link>
                           )}
                           <button
+                            role="menuitem"
                             onClick={() => {
                               signOut({ callbackUrl: "/" });
                               setIsUserMenuOpen(false);
@@ -195,19 +224,28 @@ export function Navbar() {
 
               {/* Nav links */}
               <div className="pb-3 space-y-1">
-                {navLinks.map(({ href, label, icon: Icon }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 pointer-events-none">
-                      <Icon size={18} className="text-neutral-600" />
-                    </span>
-                    {label}
-                  </Link>
-                ))}
+                {navLinks.map(({ href, label, icon: Icon }) => {
+                  const isActive = pathname === href;
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      className={cn(
+                        "flex items-center gap-3 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors",
+                        isActive ? "text-primary-600 bg-primary-50" : "text-neutral-700"
+                      )}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      <span className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 pointer-events-none",
+                        isActive ? "bg-primary-100" : "bg-neutral-100"
+                      )}>
+                        <Icon size={18} className={isActive ? "text-primary-600" : "text-neutral-600"} />
+                      </span>
+                      {label}
+                    </Link>
+                  );
+                })}
               </div>
 
               {/* Auth section */}
@@ -235,11 +273,16 @@ export function Navbar() {
 
                     <Link
                       href="/dashboard"
-                      className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors"
-                      onClick={() => setIsOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors",
+                        pathname === "/dashboard" ? "text-primary-600 bg-primary-50" : "text-neutral-700"
+                      )}
                     >
-                      <span className="w-8 h-8 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0">
-                        <LayoutDashboard size={18} className="text-neutral-600" />
+                      <span className={cn(
+                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                        pathname === "/dashboard" ? "bg-primary-100" : "bg-neutral-100"
+                      )}>
+                        <LayoutDashboard size={18} className={pathname === "/dashboard" ? "text-primary-600" : "text-neutral-600"} />
                       </span>
                       Dashboard
                     </Link>
@@ -247,10 +290,15 @@ export function Navbar() {
                     {isAdmin && (
                       <Link
                         href="/admin"
-                        className="flex items-center gap-3 text-neutral-700 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors"
-                        onClick={() => setIsOpen(false)}
+                        className={cn(
+                          "flex items-center gap-3 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors",
+                          pathname.startsWith("/admin") ? "text-primary-600 bg-primary-50" : "text-neutral-700"
+                        )}
                       >
-                        <span className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0">
+                        <span className={cn(
+                          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                          pathname.startsWith("/admin") ? "bg-primary-100" : "bg-primary-50"
+                        )}>
                           <Shield size={18} className="text-primary-600" />
                         </span>
                         Admin Panel

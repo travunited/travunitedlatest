@@ -24,7 +24,7 @@ export default function RefundPage() {
 
         <div className="prose prose-lg max-w-none">
           <p className="text-neutral-600 mb-8">
-            Last updated: {new Date().toLocaleDateString()}
+            Last updated: May 8, 2026
           </p>
 
           <section className="mb-8">

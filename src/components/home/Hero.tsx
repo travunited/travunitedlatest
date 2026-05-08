@@ -342,7 +342,7 @@ export function Hero() {
                   type="date"
                   value={tourDate}
                   onChange={(e) => setTourDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
+                  min={mounted ? new Date().toISOString().split("T")[0] : undefined}
                   className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
                 />
               </div>

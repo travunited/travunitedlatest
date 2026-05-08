@@ -170,7 +170,7 @@ export function Footer() {
               </a>
             </div>
             <p className="text-sm text-neutral-500">
-              © {new Date().getFullYear()} Travunited. All rights reserved.
+              © 2026 Travunited. All rights reserved.
             </p>
           </div>
         </div>
