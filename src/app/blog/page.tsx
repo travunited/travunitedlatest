@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "Travel Blog – Visa Tips, Destination Guides & Travel Advice",
   description:
     "Expert travel tips, visa guides, destination reviews and packing advice from the Travunited team. Stay informed before your next international trip.",
+  alternates: {
+    canonical: "/blog",
+  },
   openGraph: {
     title: "Travel Blog – Visa Tips, Destination Guides & Travel Advice",
     description: "Expert travel tips, visa guides and destination reviews from Travunited.",

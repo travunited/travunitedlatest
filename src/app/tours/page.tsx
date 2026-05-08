@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import React, { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { getMediaProxyUrl } from "@/lib/media";
 import ToursGridClient from "./ToursGridClient";
 import { Prisma } from "@prisma/client";
+
+export const metadata: Metadata = {
+  title: "Holiday Packages & Group Tours – Travunited",
+  description: "Explore our handpicked holiday packages and group tours. Best deals on international and domestic travel with visa assistance.",
+  alternates: {
+    canonical: "/holidays",
+  },
+};
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

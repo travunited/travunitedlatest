@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "Visa Services for 50+ Countries – Travunited",
   description:
     "Browse visa options for 50+ countries including UAE, UK, USA, Schengen, Thailand and more. Fast processing, expert guidance, and competitive prices for Indian travellers.",
+  alternates: {
+    canonical: "/visas",
+  },
   openGraph: {
     title: "Visa Services for 50+ Countries – Travunited",
     description:

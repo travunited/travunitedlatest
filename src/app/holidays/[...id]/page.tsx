@@ -199,6 +199,30 @@ export default async function TourDetailPage({
   const displayPrice = tour.basePriceInInr ?? tour.price ?? 0;
   const originalPrice = tour.originalPrice;
 
+  // Structured Data
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "TouristTrip",
+    "name": tour.name,
+    "description": tour.metaDescription || tour.shortDescription || tour.description?.substring(0, 160),
+    "touristType": bestFor.join(", "),
+    "itinerary": (tour as any).TourDay?.map((day: any) => ({
+      "@type": "City",
+      "name": day.title,
+      "description": day.content
+    })),
+    "offers": {
+      "@type": "Offer",
+      "price": displayPrice,
+      "priceCurrency": tour.currency || "INR"
+    },
+    "provider": {
+      "@type": "Organization",
+      "name": "Travunited",
+      "url": "https://travunited.in"
+    }
+  };
+
   return (
     <Suspense fallback={<div className="min-h-screen bg-white animate-pulse">
       <div className="h-96 bg-neutral-200"></div>
@@ -207,6 +231,10 @@ export default async function TourDetailPage({
         <div className="h-4 bg-neutral-200 w-full"></div>
       </div>
     </div>}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <TourDetailClient searchParams={searchParams}>
       <div className="min-h-screen bg-white">
         <Hero

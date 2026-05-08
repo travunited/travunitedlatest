@@ -251,9 +251,46 @@ export default async function VisaDetailPage({
   const stayTypeDisplay = formatEnumLabel(visa.stayType ?? null, stayTypeLabels);
 
   // Check if this is an information-only visa (VOA or Visa Free Entry - these don't allow applications)
-  // E_VISA is separate - it allows applications but skips payment
   const isInformationOnly = visa.visaMode === "VOA" || visa.visaMode === "VISA_FREE_ENTRY";
-  // const isVisaFreeEntry = visa.visaMode === "VISA_FREE_ENTRY"; // redundant now if we group them, but useful if text differs slightly
+
+  // Structured Data
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      "name": visa.name,
+      "description": visa.metaDescription || visa.subtitle || visa.overview?.substring(0, 160),
+      "provider": {
+        "@type": "Organization",
+        "name": "Travunited",
+        "url": "https://travunited.in"
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": (visa as any).Country?.name
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": visa.govtFee !== null && visa.serviceFee !== null ? visa.govtFee + visa.serviceFee : visa.priceInInr,
+        "priceCurrency": "INR"
+      }
+    }
+  ];
+
+  if ((visa as any).VisaFaq && (visa as any).VisaFaq.length > 0) {
+    jsonLd.push({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": (visa as any).VisaFaq.map((faq: any) => ({
+        "@type": "Question",
+        "name": faq.question,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": faq.answer
+        }
+      }))
+    } as any);
+  }
 
   return (
     <Suspense fallback={<div className="min-h-screen bg-white animate-pulse">
@@ -263,6 +300,10 @@ export default async function VisaDetailPage({
         <div className="h-4 bg-neutral-200 w-2/3"></div>
       </div>
     </div>}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <VisaDetailClient searchParams={resolvedSearchParams}>
       <div className="min-h-screen bg-white">
         <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-12">

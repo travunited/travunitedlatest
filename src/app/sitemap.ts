@@ -12,11 +12,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/visas`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${BASE_URL}/holidays`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${BASE_URL}/blog`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: `${BASE_URL}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${BASE_URL}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE_URL}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${BASE_URL}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${BASE_URL}/faq`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
-    { url: `${BASE_URL}/help`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${BASE_URL}/corporate`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${BASE_URL}/help`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE_URL}/corporate`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${BASE_URL}/privacy`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
+    { url: `${BASE_URL}/terms`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
+    { url: `${BASE_URL}/refund`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
+    { url: `${BASE_URL}/cookies`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
   ];
 
   // Dynamic: visa pages
@@ -51,7 +55,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.75,
       });
     }
-  } catch {}
+  } catch (err) {
+    console.error("Sitemap visaPages error:", err);
+  }
 
   // Dynamic: blog posts
   let blogPages: MetadataRoute.Sitemap = [];
@@ -66,7 +72,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly" as const,
       priority: 0.6,
     }));
-  } catch {}
+  } catch (err) {
+    console.error("Sitemap blogPages error:", err);
+  }
 
   // Dynamic: holiday/tour pages
   let tourPages: MetadataRoute.Sitemap = [];
@@ -81,7 +89,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.7,
     }));
-  } catch {}
+  } catch (err) {
+    console.error("Sitemap tourPages error:", err);
+  }
 
   return [...staticPages, ...visaPages, ...blogPages, ...tourPages];
 }

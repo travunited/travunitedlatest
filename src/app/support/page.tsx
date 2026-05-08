@@ -1,5 +1,29 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Mail, Phone, MessageCircle, Clock, HelpCircle } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Support Center – Travunited Help & Assistance",
+  description:
+    "Need help with your visa or holiday booking? Contact Travunited support via phone, email, or WhatsApp. We're here to assist you 24/7.",
+  alternates: {
+    canonical: "/support",
+  },
+  openGraph: {
+    title: "Support Center – Travunited Help & Assistance",
+    description: "Contact our support team for any visa or travel inquiry.",
+    url: "https://travunited.in/support",
+    siteName: "Travunited",
+    images: [{ url: "https://travunited.in/og-default.png", width: 1200, height: 630 }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Support Center – Travunited",
+    description: "Contact our support team for any visa or travel inquiry.",
+    images: ["https://travunited.in/og-default.png"],
+  },
+};
 
 export default function SupportPage() {
   const supportOptions = [

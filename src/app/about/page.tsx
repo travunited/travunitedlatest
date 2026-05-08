@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "About Travunited – Trusted Visa & Travel Experts",
   description:
     "Learn about Travunited's mission to simplify travel for Indian families and professionals. Discover our story, values and the team behind your seamless travel experience.",
+  alternates: {
+    canonical: "/about",
+  },
   openGraph: {
     title: "About Travunited – Trusted Visa & Travel Experts",
     description: "Learn about our mission to simplify travel for Indian families and professionals.",

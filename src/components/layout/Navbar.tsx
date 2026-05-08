@@ -59,7 +59,7 @@ export function Navbar() {
     { href: "/holidays", label: "Holidays", icon: Plane },
     { href: "/blog", label: "Blog", icon: BookOpen },
     { href: "/corporate", label: "Corporate", icon: Building2 },
-    { href: "/help", label: "Support", icon: HelpCircle },
+    { href: "/support", label: "Support", icon: HelpCircle },
   ];
 
   return (

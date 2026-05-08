@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "Holiday Packages from India – Travunited",
   description:
     "Discover handpicked holiday packages and group tours from India. Beach getaways, cultural escapes, adventure trips and more — all with visa assistance included.",
+  alternates: {
+    canonical: "/holidays",
+  },
   openGraph: {
     title: "Holiday Packages from India – Travunited",
     description:

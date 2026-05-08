@@ -69,6 +69,9 @@ export async function generateMetadata({
   return {
     title: `${countryName} Visa – Requirements, Documents & Apply Online`,
     description: `Apply for a ${countryName} visa online with Travunited. View entry types, processing times, document requirements and competitive prices for Indian passport holders.`,
+    alternates: {
+      canonical: `/visas/${params.country}`,
+    },
     openGraph: {
       title: `${countryName} Visa – Apply Online with Travunited`,
       description: `Visa options for ${countryName} – entry types, fees, documents and fast processing for Indians.`,

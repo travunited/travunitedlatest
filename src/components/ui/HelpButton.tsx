@@ -15,18 +15,18 @@ export function HelpButton() {
 
   return (
     <>
-      {/* Floating WhatsApp Button */}
+      {/* Floating Help Button */}
       <motion.button
-        onClick={handleWhatsAppClick}
-        className="fixed bottom-6 right-6 z-50 bg-[#25D366] text-white p-4 rounded-full shadow-large hover:bg-[#20BA5A] transition-colors"
+        onClick={() => setIsOpen(true)}
+        className="fixed bottom-6 right-6 z-50 bg-primary-600 text-white p-3 rounded-full shadow-large hover:bg-primary-700 transition-colors flex items-center justify-center"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        aria-label="Chat on WhatsApp"
+        aria-label="Get Help"
       >
         <img 
           src="/Agent Travi.svg" 
           alt="Agent Travi" 
-          className="w-6 h-6"
+          className="w-10 h-10"
         />
       </motion.button>
 
@@ -63,6 +63,21 @@ export function HelpButton() {
               </div>
 
               <div className="space-y-3">
+                <button
+                  onClick={handleWhatsAppClick}
+                  className="w-full flex items-center space-x-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors text-left"
+                >
+                  <div className="p-2 bg-[#25D366]/10 rounded-lg">
+                    <MessageCircle size={20} className="text-[#25D366]" />
+                  </div>
+                  <div>
+                    <div className="font-medium text-neutral-900">WhatsApp Chat</div>
+                    <div className="text-sm text-neutral-600">
+                      Instant assistance
+                    </div>
+                  </div>
+                </button>
+
                 <a
                   href="mailto:info@travunited.com"
                   className="flex items-center space-x-3 p-3 rounded-lg hover:bg-neutral-50 transition-colors"

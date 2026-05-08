@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "Travunited – Visa Services & Holiday Packages for Indians",
   description:
     "Apply for visas to 50+ countries online. Explore curated holiday packages designed for Indian travellers. Trusted by thousands for seamless travel experiences.",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "Travunited – Visa Services & Holiday Packages for Indians",
     description:
