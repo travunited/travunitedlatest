@@ -12,7 +12,6 @@ import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NotificationBell } from "@/components/ui/NotificationBell";
 import { Logo } from "@/components/ui/Logo";
-import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const { data: session } = useSession();
@@ -81,10 +80,9 @@ export function Navbar() {
                   <Link
                     key={href}
                     href={href}
-                    className={cn(
-                      "flex items-center space-x-1.5 font-medium transition-colors duration-200",
+                    className={`flex items-center space-x-1.5 font-medium transition-colors duration-200 ${
                       isActive ? "text-primary-600" : "text-neutral-700 hover:text-primary-600"
-                    )}
+                    }`}
                     aria-current={isActive ? "page" : undefined}
                   >
                     <Icon size={18} />
@@ -230,16 +228,14 @@ export function Navbar() {
                     <Link
                       key={href}
                       href={href}
-                      className={cn(
-                        "flex items-center gap-3 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors",
+                      className={`flex items-center gap-3 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors ${
                         isActive ? "text-primary-600 bg-primary-50" : "text-neutral-700"
-                      )}
+                      }`}
                       aria-current={isActive ? "page" : undefined}
                     >
-                      <span className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 pointer-events-none",
+                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 pointer-events-none ${
                         isActive ? "bg-primary-100" : "bg-neutral-100"
-                      )}>
+                      }`}>
                         <Icon size={18} className={isActive ? "text-primary-600" : "text-neutral-600"} />
                       </span>
                       {label}
@@ -273,15 +269,13 @@ export function Navbar() {
 
                     <Link
                       href="/dashboard"
-                      className={cn(
-                        "flex items-center gap-3 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors",
+                      className={`flex items-center gap-3 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors ${
                         pathname === "/dashboard" ? "text-primary-600 bg-primary-50" : "text-neutral-700"
-                      )}
+                      }`}
                     >
-                      <span className={cn(
-                        "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                         pathname === "/dashboard" ? "bg-primary-100" : "bg-neutral-100"
-                      )}>
+                      }`}>
                         <LayoutDashboard size={18} className={pathname === "/dashboard" ? "text-primary-600" : "text-neutral-600"} />
                       </span>
                       Dashboard
@@ -290,15 +284,13 @@ export function Navbar() {
                     {isAdmin && (
                       <Link
                         href="/admin"
-                        className={cn(
-                          "flex items-center gap-3 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors",
+                        className={`flex items-center gap-3 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors ${
                           pathname.startsWith("/admin") ? "text-primary-600 bg-primary-50" : "text-neutral-700"
-                        )}
+                        }`}
                       >
-                        <span className={cn(
-                          "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                        <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                           pathname.startsWith("/admin") ? "bg-primary-100" : "bg-primary-50"
-                        )}>
+                        }`}>
                           <Shield size={18} className="text-primary-600" />
                         </span>
                         Admin Panel
