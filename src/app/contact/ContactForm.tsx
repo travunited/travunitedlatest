@@ -172,7 +172,7 @@ export function ContactForm() {
         {/* Contact Form */}
         <div className="bg-neutral-50 rounded-2xl p-8">
           <h2 className="text-2xl font-bold text-neutral-900 mb-6">Send us a Message</h2>
-          <form 
+          <form
             className="space-y-6"
             onSubmit={async (e) => {
               e.preventDefault();
@@ -200,11 +200,11 @@ export function ContactForm() {
                 });
 
                 const result = await response.json().catch(() => ({}));
-                
+
                 if (!response.ok) {
                   throw new Error(result?.error || `Server error: ${response.status} ${response.statusText}`);
                 }
-                
+
                 if (result?.success === false) {
                   throw new Error(result?.error || "Failed to send message. Please try again.");
                 }
@@ -225,56 +225,62 @@ export function ContactForm() {
           >
             {(successMessage || errorMessage) && (
               <div
-                className={`rounded-lg px-4 py-3 text-sm ${
-                  successMessage
-                    ? "bg-green-50 text-green-800 border border-green-200"
-                    : "bg-red-50 text-red-800 border border-red-200"
-                }`}
+                className={`rounded-lg px-4 py-3 text-sm ${successMessage
+                  ? "bg-green-50 text-green-800 border border-green-200"
+                  : "bg-red-50 text-red-800 border border-red-200"
+                  }`}
               >
                 {successMessage || errorMessage}
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Your Name *
+              <label className="block text-sm font-medium text-neutral-700 mb-2" htmlFor="contact-name">
+                Your Name <span className="text-red-500" aria-hidden="true">*</span>
               </label>
               <input
                 type="text"
+                id="contact-name"
                 name="name"
                 required
+                autoComplete="name"
                 className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
                 placeholder="John Doe"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Email Address *
+              <label className="block text-sm font-medium text-neutral-700 mb-2" htmlFor="contact-email">
+                Email Address <span className="text-red-500" aria-hidden="true">*</span>
               </label>
               <input
                 type="email"
+                id="contact-email"
                 name="email"
                 required
+                autoComplete="email"
                 className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
                 placeholder="your.email@example.com"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
+              <label className="block text-sm font-medium text-neutral-700 mb-2" htmlFor="contact-phone">
                 Phone Number
               </label>
               <input
                 type="tel"
+                id="contact-phone"
                 name="phone"
+                autoComplete="tel"
                 className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
                 placeholder="+91 6360392398"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Subject *
+              <label className="block text-sm font-medium text-neutral-700 mb-2" htmlFor="contact-subject">
+                Subject <span className="text-red-500" aria-hidden="true">*</span>
               </label>
               <input
                 type="text"
+                id="contact-subject"
                 name="subject"
                 required
                 className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all outline-none"
@@ -282,10 +288,11 @@ export function ContactForm() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Message *
+              <label className="block text-sm font-medium text-neutral-700 mb-2" htmlFor="contact-message">
+                Message <span className="text-red-500" aria-hidden="true">*</span>
               </label>
               <textarea
+                id="contact-message"
                 rows={5}
                 name="message"
                 required
@@ -296,7 +303,7 @@ export function ContactForm() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
             >
               {isSubmitting ? "Sending..." : "Send Message"}
             </button>

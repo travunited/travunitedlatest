@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface FAQItem {
@@ -61,38 +61,52 @@ const faqs: FAQItem[] = [
 
 export function FAQClient() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const headingId = useId();
 
   const toggleFAQ = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
   return (
-    <div className="space-y-4">
-      {faqs.map((faq, index) => (
-        <div
-          key={index}
-          className="border border-neutral-200 rounded-lg overflow-hidden bg-white"
-        >
-          <button
-            onClick={() => toggleFAQ(index)}
-            className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors focus:outline-none"
+    <div className="space-y-4" role="region" aria-labelledby={`${headingId}-heading`}>
+      <h2 id={`${headingId}-heading`} className="sr-only">Frequently Asked Questions</h2>
+      {faqs.map((faq, index) => {
+        const panelId = `${headingId}-panel-${index}`;
+        const buttonId = `${headingId}-button-${index}`;
+        const isOpen = openIndex === index;
+        return (
+          <div
+            key={index}
+            className="border border-neutral-200 rounded-lg overflow-hidden bg-white"
           >
-            <span className="font-semibold text-neutral-900 pr-4">
-              {faq.question}
-            </span>
-            {openIndex === index ? (
-              <ChevronUp className="text-primary-600 flex-shrink-0" size={20} />
-            ) : (
-              <ChevronDown className="text-neutral-400 flex-shrink-0" size={20} />
-            )}
-          </button>
-          {openIndex === index && (
-            <div className="px-6 py-4 bg-neutral-50 border-t border-neutral-200">
+            <h3 className="sr-only">{faq.question}</h3>
+            <button
+              id={buttonId}
+              onClick={() => toggleFAQ(index)}
+              aria-expanded={isOpen}
+              aria-controls={panelId}
+              className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-neutral-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-inset"
+            >
+              <span className="font-semibold text-neutral-900 pr-4">
+                {faq.question}
+              </span>
+              {isOpen ? (
+                <ChevronUp className="text-primary-600 flex-shrink-0" size={20} aria-hidden="true" />
+              ) : (
+                <ChevronDown className="text-neutral-400 flex-shrink-0" aria-hidden="true" size={20} />
+              )}
+            </button>
+            <div
+              id={panelId}
+              role="region"
+              aria-labelledby={buttonId}
+              className={`px-6 py-4 bg-neutral-50 border-t border-neutral-200 ${isOpen ? 'block' : 'hidden'}`}
+            >
               <p className="text-neutral-700 leading-relaxed">{faq.answer}</p>
             </div>
-          )}
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

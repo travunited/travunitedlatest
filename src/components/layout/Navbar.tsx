@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import {
@@ -80,12 +80,11 @@ export function Navbar() {
                   <Link
                     key={href}
                     href={href}
-                    className={`flex items-center space-x-1.5 font-medium transition-colors duration-200 ${
-                      isActive ? "text-primary-600" : "text-neutral-700 hover:text-primary-600"
-                    }`}
+                    className={`flex items-center space-x-1.5 font-medium transition-colors duration-200 min-h-[44px] px-3 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${isActive ? "text-primary-600" : "text-neutral-700 hover:text-primary-600"
+                      }`}
                     aria-current={isActive ? "page" : undefined}
                   >
-                    <Icon size={18} />
+                    <Icon size={18} aria-hidden="true" />
                     <span>{label}</span>
                   </Link>
                 );
@@ -100,16 +99,16 @@ export function Navbar() {
                   <div ref={userMenuRef} className="relative">
                     <button
                       onClick={() => setIsUserMenuOpen((v) => !v)}
-                      className="flex items-center space-x-2 text-neutral-700 hover:text-primary-600 font-medium transition-colors"
+                      className="flex items-center space-x-2 text-neutral-700 hover:text-primary-600 font-medium transition-colors min-h-[44px] px-3 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                       aria-haspopup="menu"
                       aria-expanded={isUserMenuOpen}
                       aria-controls="user-menu-desktop-dropdown"
                     >
-                      <User size={20} />
+                      <User size={20} aria-hidden="true" />
                       <span className="max-w-[120px] truncate">
                         {session.user?.name || session.user?.email}
                       </span>
-                      {isAdmin && <Shield size={16} className="text-primary-600 shrink-0" />}
+                      {isAdmin && <Shield size={16} className="text-primary-600 shrink-0" aria-hidden="true" />}
                     </button>
                     <AnimatePresence>
                       {isUserMenuOpen && (
@@ -160,13 +159,13 @@ export function Navbar() {
                 <>
                   <Link
                     href="/login"
-                    className="text-neutral-700 hover:text-primary-600 font-medium transition-colors"
+                    className="text-neutral-700 hover:text-primary-600 font-medium transition-colors min-h-[44px] flex items-center px-3 rounded-lg focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                   >
                     Login
                   </Link>
                   <Link
                     href="/signup"
-                    className="bg-primary-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors shadow-soft"
+                    className="bg-primary-600 text-white px-6 py-2 min-h-[44px] rounded-lg font-medium hover:bg-primary-700 transition-colors shadow-soft flex items-center focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                   >
                     Sign Up
                   </Link>
@@ -228,15 +227,14 @@ export function Navbar() {
                     <Link
                       key={href}
                       href={href}
-                      className={`flex items-center gap-3 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors ${
-                        isActive ? "text-primary-600 bg-primary-50" : "text-neutral-700"
-                      }`}
+                      className={`flex items-center gap-3 font-medium py-3 px-3 min-h-[48px] rounded-xl active:bg-neutral-100 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${isActive ? "text-primary-600 bg-primary-50" : "text-neutral-700"
+                        }`}
                       aria-current={isActive ? "page" : undefined}
+                      onClick={() => setIsOpen(false)}
                     >
-                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 pointer-events-none ${
-                        isActive ? "bg-primary-100" : "bg-neutral-100"
-                      }`}>
-                        <Icon size={18} className={isActive ? "text-primary-600" : "text-neutral-600"} />
+                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 pointer-events-none ${isActive ? "bg-primary-100" : "bg-neutral-100"
+                        }`}>
+                        <Icon size={18} className={isActive ? "text-primary-600" : "text-neutral-600"} aria-hidden="true" />
                       </span>
                       {label}
                     </Link>
@@ -269,14 +267,13 @@ export function Navbar() {
 
                     <Link
                       href="/dashboard"
-                      className={`flex items-center gap-3 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors ${
-                        pathname === "/dashboard" ? "text-primary-600 bg-primary-50" : "text-neutral-700"
-                      }`}
+                      className={`flex items-center gap-3 font-medium py-3 px-3 min-h-[48px] rounded-xl active:bg-neutral-100 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${pathname === "/dashboard" ? "text-primary-600 bg-primary-50" : "text-neutral-700"
+                        }`}
+                      onClick={() => setIsOpen(false)}
                     >
-                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                        pathname === "/dashboard" ? "bg-primary-100" : "bg-neutral-100"
-                      }`}>
-                        <LayoutDashboard size={18} className={pathname === "/dashboard" ? "text-primary-600" : "text-neutral-600"} />
+                      <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${pathname === "/dashboard" ? "bg-primary-100" : "bg-neutral-100"
+                        }`}>
+                        <LayoutDashboard size={18} className={pathname === "/dashboard" ? "text-primary-600" : "text-neutral-600"} aria-hidden="true" />
                       </span>
                       Dashboard
                     </Link>
@@ -284,14 +281,13 @@ export function Navbar() {
                     {isAdmin && (
                       <Link
                         href="/admin"
-                        className={`flex items-center gap-3 font-medium py-3 px-3 rounded-xl active:bg-neutral-100 transition-colors ${
-                          pathname.startsWith("/admin") ? "text-primary-600 bg-primary-50" : "text-neutral-700"
-                        }`}
+                        className={`flex items-center gap-3 font-medium py-3 px-3 min-h-[48px] rounded-xl active:bg-neutral-100 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${pathname.startsWith("/admin") ? "text-primary-600 bg-primary-50" : "text-neutral-700"
+                          }`}
+                        onClick={() => setIsOpen(false)}
                       >
-                        <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          pathname.startsWith("/admin") ? "bg-primary-100" : "bg-primary-50"
-                        }`}>
-                          <Shield size={18} className="text-primary-600" />
+                        <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${pathname.startsWith("/admin") ? "bg-primary-100" : "bg-primary-50"
+                          }`}>
+                          <Shield size={18} className="text-primary-600" aria-hidden="true" />
                         </span>
                         Admin Panel
                       </Link>
@@ -314,14 +310,14 @@ export function Navbar() {
                   <div className="flex flex-col gap-2 pt-1">
                     <Link
                       href="/login"
-                      className="flex items-center justify-center py-3 px-6 rounded-xl border border-neutral-200 text-neutral-700 font-medium active:bg-neutral-100 transition-colors"
+                      className="flex items-center justify-center py-3 px-6 min-h-[48px] rounded-xl border border-neutral-200 text-neutral-700 font-medium active:bg-neutral-100 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                       onClick={() => setIsOpen(false)}
                     >
                       Login
                     </Link>
                     <Link
                       href="/signup"
-                      className="flex items-center justify-center py-3 px-6 rounded-xl bg-primary-600 text-white font-medium active:bg-primary-800 transition-colors"
+                      className="flex items-center justify-center py-3 px-6 min-h-[48px] rounded-xl bg-primary-600 text-white font-medium active:bg-primary-800 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
                       onClick={() => setIsOpen(false)}
                     >
                       Sign Up — It&apos;s Free

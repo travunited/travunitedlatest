@@ -12,7 +12,7 @@ const nextConfig = {
   },
   
   // Turbopack configuration (Required in Next.js 16 when transitioning from Webpack)
-  turbopack: {},
+  // turbopack: {},
 
   images: {
     // Note: '**' is permissive. In a production environment, 

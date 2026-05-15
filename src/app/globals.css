@@ -122,10 +122,10 @@ button:active, a:active, [role="button"]:active,
   }
 }
 
-/* Force GPU layer fix (Safari hack) */
-button, a, [role="button"] {
+/* Force GPU layer fix (Safari hack) - REMOVED AS IT BREAKS STACKING CONTEXTS AND CLICKS ON IOS */
+/* button, a, [role="button"] {
   transform: translateZ(0);
-}
+} */
 
 /* Stacking context fixes for iOS */
 .backdrop {

@@ -35,52 +35,56 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <div className="block mb-4">
-              <img 
-                src="/white-logo.svg" 
-                alt="Travunited Logo" 
+              <img
+                src="/white-logo.svg"
+                alt="Travunited Logo"
                 className="h-14 w-auto"
               />
             </div>
             <p className="text-neutral-400 mb-4 max-w-md">
-              Premium visa services and tour packages for global travellers. 
+              Premium visa services and tour packages for global travellers.
               Trusted by thousands for seamless travel experiences.
             </p>
-            <div className="flex space-x-4">
+            <div className="flex space-x-4" role="list">
               <a
                 href="https://www.facebook.com/travunitedindia"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors"
-                aria-label="Facebook"
+                className="p-3 min-h-[44px] min-w-[44px] rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors flex items-center justify-center"
+                aria-label="Follow us on Facebook"
+                role="listitem"
               >
-                <Facebook size={20} />
+                <Facebook size={20} aria-hidden="true" />
               </a>
               <a
                 href="https://x.com/travunitedin"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors"
-                aria-label="Twitter"
+                className="p-3 min-h-[44px] min-w-[44px] rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors flex items-center justify-center"
+                aria-label="Follow us on X (Twitter)"
+                role="listitem"
               >
-                <Twitter size={20} />
+                <Twitter size={20} aria-hidden="true" />
               </a>
               <a
                 href="https://www.instagram.com/travunited/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors"
-                aria-label="Instagram"
+                className="p-3 min-h-[44px] min-w-[44px] rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors flex items-center justify-center"
+                aria-label="Follow us on Instagram"
+                role="listitem"
               >
-                <Instagram size={20} />
+                <Instagram size={20} aria-hidden="true" />
               </a>
               <a
                 href="https://www.linkedin.com/company/travunited"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors"
-                aria-label="LinkedIn"
+                className="p-3 min-h-[44px] min-w-[44px] rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors flex items-center justify-center"
+                aria-label="Connect with us on LinkedIn"
+                role="listitem"
               >
-                <Linkedin size={20} />
+                <Linkedin size={20} aria-hidden="true" />
               </a>
             </div>
           </div>
