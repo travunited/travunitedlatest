@@ -1844,7 +1844,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                       <button
                         type="button"
                         onClick={() => removeTraveller(traveller.id)}
-                        className="text-red-600 hover:text-red-700 text-sm"
+                        className="min-h-[44px] min-w-[44px] text-red-600 hover:text-red-700 text-sm px-3 py-2 rounded-lg hover:bg-red-50 transition-colors focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
                       >
                         Remove
                       </button>
@@ -1944,16 +1944,18 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      <label htmlFor={`traveller-${index}-passportIssueDate`} className="block text-sm font-medium text-neutral-700 mb-2">
                         Passport Issue Date *
                       </label>
                       <input
+                        id={`traveller-${index}-passportIssueDate`}
                         type="date"
                         required
+                        autoComplete="off"
                         value={traveller.passportIssueDate}
                         onChange={(e) => updateTravellerField(traveller.id, "passportIssueDate", e.target.value)}
                         max={new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split("T")[0]} // Yesterday (must be in past)
-                        className={`w-full px-4 py-2 border rounded-lg ${dateErrors[`traveller-${index}-passportIssueDate`] ? "border-red-500" : "border-neutral-300"
+                        className={`w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${dateErrors[`traveller-${index}-passportIssueDate`] ? "border-red-500" : "border-neutral-300"
                           }`}
                       />
                       {dateErrors[`traveller-${index}-passportIssueDate`] && (
@@ -1961,16 +1963,18 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      <label htmlFor={`traveller-${index}-passportExpiryDate`} className="block text-sm font-medium text-neutral-700 mb-2">
                         Passport Expiry Date *
                       </label>
                       <input
+                        id={`traveller-${index}-passportExpiryDate`}
                         type="date"
                         required
+                        autoComplete="off"
                         value={traveller.passportExpiryDate}
                         onChange={(e) => updateTravellerField(traveller.id, "passportExpiryDate", e.target.value)}
                         min={traveller.passportIssueDate ? new Date(new Date(traveller.passportIssueDate).getTime() + 24 * 60 * 60 * 1000).toISOString().split("T")[0] : new Date().toISOString().split("T")[0]} // Must be after issue date, or today if no issue date
-                        className={`w-full px-4 py-2 border rounded-lg ${dateErrors[`traveller-${index}-passportExpiryDate`] ? "border-red-500" : "border-neutral-300"
+                        className={`w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${dateErrors[`traveller-${index}-passportExpiryDate`] ? "border-red-500" : "border-neutral-300"
                           }`}
                       />
                       {dateErrors[`traveller-${index}-passportExpiryDate`] && (
@@ -1978,14 +1982,16 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                       )}
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      <label htmlFor={`traveller-${index}-currentCity`} className="block text-sm font-medium text-neutral-700 mb-2">
                         Current City (Optional)
                       </label>
                       <input
+                        id={`traveller-${index}-currentCity`}
                         type="text"
+                        autoComplete="address-level2"
                         value={traveller.currentCity || ""}
                         onChange={(e) => updateTravellerField(traveller.id, "currentCity", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                        className="w-full px-4 py-3 min-h-[44px] border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         placeholder="Mumbai"
                       />
                     </div>
@@ -1995,7 +2001,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
               <button
                 type="button"
                 onClick={addTraveller}
-                className="w-full border-2 border-dashed border-neutral-300 rounded-lg py-4 text-neutral-600 hover:border-primary-600 hover:text-primary-600 transition-colors"
+                className="w-full min-h-[48px] border-2 border-dashed border-neutral-300 rounded-lg py-4 text-neutral-600 hover:border-primary-600 hover:text-primary-600 hover:bg-primary-50 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
               >
                 + Add Another Traveller
               </button>
@@ -2347,12 +2353,13 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <label className="flex items-start space-x-3 cursor-pointer">
+              <label htmlFor="terms-accepted" className="flex items-start space-x-3 cursor-pointer min-h-[44px] py-2">
                 <input
+                  id="terms-accepted"
                   type="checkbox"
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-1 h-5 w-5 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                  className="mt-1 h-5 w-5 text-primary-600 border-neutral-300 rounded focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none cursor-pointer"
                 />
                 <div className="flex-1">
                   <span className="text-sm font-medium text-neutral-900">
@@ -2522,7 +2529,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                             {currentDoc && (
                               <button
                                 onClick={() => removeDocument(key)}
-                                className="text-red-600 hover:text-red-700 text-sm font-medium"
+                                className="min-h-[44px] min-w-[44px] text-red-600 hover:text-red-700 text-sm font-medium px-3 py-2 rounded-lg hover:bg-red-50 transition-colors focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
                               >
                                 Remove
                               </button>
@@ -2547,14 +2554,15 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                                     fileName: currentDoc.file?.name || req.name,
                                   })
                                 }
-                                className="ml-3 p-2 text-green-700 hover:bg-green-100 rounded-full"
+                                className="min-h-[44px] min-w-[44px] ml-3 p-2 text-green-700 hover:bg-green-100 rounded-full focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:outline-none"
+                                aria-label="Preview document"
                               >
                                 <Eye size={18} />
                               </button>
                             </div>
                           ) : (
                             <div>
-                              <label className="block w-full cursor-pointer">
+                              <label className="block w-full cursor-pointer focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded-lg">
                                 <input
                                   type="file"
                                   className="hidden"
@@ -2565,7 +2573,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                                     e.target.value = ""; // Reset input
                                   }}
                                 />
-                                <div className="border-2 border-dashed border-neutral-300 rounded-lg p-6 flex flex-col items-center justify-center text-neutral-500 hover:border-primary-500 hover:text-primary-600 transition-colors">
+                                <div className="border-2 border-dashed border-neutral-300 rounded-lg p-6 flex flex-col items-center justify-center text-neutral-500 hover:border-primary-500 hover:text-primary-600 hover:bg-primary-50 transition-colors min-h-[100px]">
                                   <Upload size={24} className="mb-2" />
                                   <span className="text-sm font-medium">Click to upload</span>
                                   <span className="text-xs text-neutral-400 mt-1">
@@ -2698,7 +2706,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                               </div>
                             ) : (
                               <div>
-                                <label className="block w-full cursor-pointer">
+                                <label className="block w-full cursor-pointer focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none rounded-lg">
                                   <input
                                     type="file"
                                     className="hidden"
@@ -2709,7 +2717,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                                       e.target.value = ""; // Reset input
                                     }}
                                   />
-                                  <div className="border-2 border-dashed border-neutral-300 rounded-lg p-6 flex flex-col items-center justify-center text-neutral-500 hover:border-primary-500 hover:text-primary-600 transition-colors">
+                                  <div className="border-2 border-dashed border-neutral-300 rounded-lg p-6 flex flex-col items-center justify-center text-neutral-500 hover:border-primary-500 hover:text-primary-600 hover:bg-primary-50 transition-colors min-h-[100px]">
                                     <Upload size={24} className="mb-2" />
                                     <span className="text-sm font-medium">Click to upload</span>
                                     <span className="text-xs text-neutral-400 mt-1">
@@ -2781,7 +2789,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                 e.preventDefault();
                 router.back();
               }}
-              className="text-primary-600 hover:text-primary-700 text-sm text-left"
+              className="min-h-[44px] px-4 py-2 text-primary-600 hover:text-primary-700 text-sm text-left rounded-lg hover:bg-primary-50 transition-colors focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
               type="button"
             >
               ← Back to Visa Details
@@ -2789,7 +2797,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
             <button
               type="button"
               onClick={handleStartFreshApplication}
-              className="inline-flex items-center justify-center rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-xs font-medium text-neutral-700 shadow-sm hover:bg-neutral-50"
+              className="inline-flex items-center justify-center min-h-[44px] rounded-md border border-neutral-300 bg-white px-4 py-2 text-xs font-medium text-neutral-700 shadow-sm hover:bg-neutral-50 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
               Start fresh application
             </button>
@@ -2868,7 +2876,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
             )}
             <button
               onClick={() => { setStepError(null); setStepErrorAction(null); }}
-              className="ml-1 shrink-0 text-red-400 hover:text-red-600"
+              className="ml-1 shrink-0 min-h-[44px] min-w-[44px] text-red-400 hover:text-red-600 rounded-lg p-2 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
               aria-label="Dismiss"
             >
               ×
@@ -2896,7 +2904,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
           <button
             onClick={prevStep}
             disabled={currentStep === 1}
-            className="px-6 py-3 border border-neutral-300 rounded-lg font-medium hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            className="px-6 py-3 min-h-[44px] border border-neutral-300 rounded-lg font-medium hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
           >
             <ArrowLeft size={20} />
             <span>Previous</span>
@@ -2904,7 +2912,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
           {currentStep < 4 && (
             <button
               onClick={nextStep}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 flex items-center space-x-2"
+              className="px-6 py-3 min-h-[44px] bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 flex items-center space-x-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
               <span>Next</span>
               <ArrowRight size={20} />
@@ -2914,7 +2922,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
             <button
               onClick={handleConfirmAndPay}
               disabled={loading}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              className="px-6 py-3 min-h-[44px] bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
               <span>{loading ? "Saving..." : "Continue to Terms & Conditions"}</span>
               <ArrowRight size={20} />
@@ -2933,7 +2941,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                 setCurrentStep(6);
               }}
               disabled={!termsAccepted}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              className="px-6 py-3 min-h-[44px] bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
               <span>Continue to Payment</span>
               <ArrowRight size={20} />
@@ -2943,7 +2951,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
             <button
               onClick={handleVisaPayment}
               disabled={loading}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              className="px-6 py-3 min-h-[44px] bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
               <span>{loading ? "Processing..." : paymentCompleted ? "Next" : isFreeVisa ? "Submit Application" : "Proceed to Payment"}</span>
               <ArrowRight size={20} />
@@ -2953,7 +2961,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
             <button
               onClick={handleFinishApplication}
               disabled={loading}
-              className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              className="px-6 py-3 min-h-[44px] bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
             >
               <span>{loading ? "Completing..." : "Finish Application"}</span>
               <ArrowRight size={20} />
