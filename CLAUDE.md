@@ -102,3 +102,59 @@ src/
 
 - `publishReady.ts` — helpers to determine if a blog post is ready to publish
 - Blog posts have `isPublished`, `publishedAt`, and `isFeatured` flags in the schema
+
+### Domain Model
+
+Two parallel service lines share many patterns:
+- **Applications** (`Application` model) — visa applications; documents uploaded per `Traveller` via `Document` (mapped to `ApplicationDocument` table)
+- **Bookings** (`Booking` model) — tour bookings; documents uploaded via `BookingDocument`
+
+Both support: status transitions, bulk actions, document review, notes, audit logging, assignment to a staff admin, invoice generation, and Razorpay payments.
+
+### Money / Amounts
+
+All monetary values (fees, discounts, totals) are stored and passed as **paise** (₹1 = 100 paise). Convert only at display boundaries. Promo code logic in `src/lib/promo-codes.ts` also uses paise throughout.
+
+### Auth Helpers (`src/lib/auth-helpers.ts`)
+
+Server-side helpers for protecting pages and API routes:
+- `getCurrentUser()` — returns session user or `null`
+- `requireAuth()` — redirects to `/signup` if unauthenticated
+- `requireAdmin()` — redirects to `/dashboard` if not `STAFF_ADMIN`/`SUPER_ADMIN`
+- `requireSuperAdmin()` — redirects to `/admin` if not `SUPER_ADMIN`
+
+Use these in Server Components and Route Handlers instead of calling `getServerSession` directly.
+
+### Guest Application Flow
+
+Unauthenticated users can start a visa application stored as `GuestApplication`. On sign-in/signup, call `/api/guest-applications/merge` to migrate the draft into a real `Application` under the authenticated user.
+
+### Image Uploads
+
+Accepted types: PNG and JPG/JPEG only (configurable via `ALLOWED_IMAGE_TYPES` env var). Maximum size: 10 MB. Validation helpers are in `src/lib/image-upload-config.ts`. Client-side compression before upload is handled via `browser-image-compression`.
+
+### Booking Helpers (`src/lib/booking-helpers.ts`)
+
+Utility functions for pricing calculations: `calculateAge()`, `getTravellerType()` (adult/child/infant), and `calculateChildPrice()`. Infants are < 1 year (decimal age), children are < `childAgeLimit` (default 12).
+
+### Key Environment Variables
+
+Required at runtime (server):
+```
+DATABASE_URL
+NEXTAUTH_SECRET, NEXTAUTH_URL
+RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET
+MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, MINIO_BUCKET
+AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SES_REGION   # SES email
+MSG91_AUTH_KEY                                               # Mobile OTP
+CRON_SECRET                                                  # Cron job auth
+```
+
+Client-side (`NEXT_PUBLIC_*`):
+```
+NEXT_PUBLIC_APP_URL / NEXT_PUBLIC_SITE_URL
+NEXT_PUBLIC_MINIO_PUBLIC_ENDPOINT, NEXT_PUBLIC_MINIO_BUCKET
+NEXT_PUBLIC_GA_MEASUREMENT_ID, NEXT_PUBLIC_META_PIXEL_ID
+```
+
+Optional overrides: `ADMIN_EMAIL`, `SUPPORT_EMAIL`, `COMPANY_NAME`, `COMPANY_GSTIN`, `MEDIA_PROXY_BASE`, `ALLOWED_IMAGE_TYPES`.
