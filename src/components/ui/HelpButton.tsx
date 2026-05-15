@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, Mail, Phone, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 
 export function HelpButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,10 +24,12 @@ export function HelpButton() {
         whileTap={{ scale: 0.95 }}
         aria-label="Get Help"
       >
-        <img 
-          src="/Agent Travi.svg" 
-          alt="Agent Travi" 
-          className="w-10 h-10 pointer-events-none"
+        <Image
+          src="/Agent Travi.svg"
+          alt="Agent Travi"
+          width={40}
+          height={40}
+          className="pointer-events-none"
         />
       </motion.button>
 

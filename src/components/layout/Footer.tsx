@@ -35,9 +35,11 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <div className="block mb-4">
-              <img
+              <Image
                 src="/white-logo.svg"
                 alt="Travunited Logo"
+                width={160}
+                height={56}
                 className="h-14 w-auto"
               />
             </div>

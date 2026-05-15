@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -43,20 +43,7 @@ export default function PromoCodesPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    } else if (status === "authenticated") {
-      const isAdmin = session?.user?.role === "STAFF_ADMIN" || session?.user?.role === "SUPER_ADMIN";
-      if (!isAdmin) {
-        router.push("/admin");
-      } else {
-        fetchPromoCodes();
-      }
-    }
-  }, [session, status, router, statusFilter, applicableToFilter, search, page]);
-
-  const fetchPromoCodes = async () => {
+  const fetchPromoCodes = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -80,7 +67,20 @@ export default function PromoCodesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, applicableToFilter, search, page]);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    } else if (status === "authenticated") {
+      const isAdmin = session?.user?.role === "STAFF_ADMIN" || session?.user?.role === "SUPER_ADMIN";
+      if (!isAdmin) {
+        router.push("/admin");
+      } else {
+        fetchPromoCodes();
+      }
+    }
+  }, [session, status, router, fetchPromoCodes]);
 
   const getStatusBadge = (promoCode: PromoCode) => {
     const now = new Date();

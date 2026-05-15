@@ -378,7 +378,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
     }
 
     loadGuestApplication();
-  }, [params.country, params.type, searchParams, session?.user, steps.length]);
+  }, [params.country, params.type, searchParams, session?.user]);
 
   // Load existing application data if editing
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
@@ -63,13 +63,7 @@ export default function PromoCodeAnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
 
-  useEffect(() => {
-    if (session && (session.user.role === "STAFF_ADMIN" || session.user.role === "SUPER_ADMIN")) {
-      fetchAnalytics();
-    }
-  }, [session, params.id]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/promo-codes/${params.id}/analytics`);
       if (response.ok) {
@@ -81,7 +75,13 @@ export default function PromoCodeAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    if (session && (session.user.role === "STAFF_ADMIN" || session.user.role === "SUPER_ADMIN")) {
+      fetchAnalytics();
+    }
+  }, [session, fetchAnalytics]);
 
   if (loading) {
     return (

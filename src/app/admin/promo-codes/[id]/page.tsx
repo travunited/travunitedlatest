@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
@@ -41,13 +41,7 @@ export default function EditPromoCodePage() {
     restrictedEmails: [] as string[],
   });
 
-  useEffect(() => {
-    if (session && (session.user.role === "STAFF_ADMIN" || session.user.role === "SUPER_ADMIN")) {
-      fetchPromoCode();
-    }
-  }, [session, params.id]);
-
-  const fetchPromoCode = async () => {
+  const fetchPromoCode = useCallback(async () => {
     try {
       const response = await fetch(`/api/admin/promo-codes/${params.id}`);
       if (response.ok) {
@@ -80,7 +74,13 @@ export default function EditPromoCodePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
+
+  useEffect(() => {
+    if (session && (session.user.role === "STAFF_ADMIN" || session.user.role === "SUPER_ADMIN")) {
+      fetchPromoCode();
+    }
+  }, [session, fetchPromoCode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
