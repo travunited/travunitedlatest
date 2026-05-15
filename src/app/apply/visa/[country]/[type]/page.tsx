@@ -1622,14 +1622,15 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
             <div className="space-y-4">
               {visaInfo?.subTypes && visaInfo.subTypes.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                  <label htmlFor="visa-subtype" className="block text-sm font-medium text-neutral-700 mb-2">
                     Visa Subtype {visaInfo.visaSubTypeLabel ? `(${visaInfo.visaSubTypeLabel})` : ""} *
                   </label>
                   <select
+                    id="visa-subtype"
                     value={formData.selectedSubTypeId || ""}
                     onChange={(e) => setFormData({ ...formData, selectedSubTypeId: e.target.value || undefined })}
                     required
-                    className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-4 py-3 min-h-[44px] border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                   >
                     <option value="">Select a subtype</option>
                     {visaInfo.subTypes.map((subtype) => (
@@ -1644,10 +1645,11 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <label htmlFor="travel-date" className="block text-sm font-medium text-neutral-700 mb-2">
                   Travel Date (Optional)
                 </label>
                 <input
+                  id="travel-date"
                   type="date"
                   value={formData.travelDate || ""}
                   onChange={(e) => {
@@ -1665,7 +1667,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                     return tomorrow.toISOString().split("T")[0];
                   })()}
 
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 ${dateErrors.travelDate ? "border-red-500" : "border-neutral-300"
+                  className={`w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${dateErrors.travelDate ? "border-red-500" : "border-neutral-300"
                     }`}
                 />
                 {dateErrors.travelDate && (
@@ -1673,13 +1675,14 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <label htmlFor="trip-type" className="block text-sm font-medium text-neutral-700 mb-2">
                   Trip Type (Optional)
                 </label>
                 <select
+                  id="trip-type"
                   value={formData.tripType || ""}
                   onChange={(e) => setFormData({ ...formData, tripType: e.target.value })}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-3 min-h-[44px] border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                 >
                   <option value="">Select trip type</option>
                   <option value="tourism">Tourism</option>
@@ -1701,12 +1704,14 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
             </p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <label htmlFor="primary-name" className="block text-sm font-medium text-neutral-700 mb-2">
                   Full Name *
                 </label>
                 <input
+                  id="primary-name"
                   type="text"
                   required
+                  autoComplete="name"
                   value={formData.primaryContact?.name || ""}
                   onChange={(e) =>
                     setFormData({
@@ -1714,17 +1719,19 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                       primaryContact: { ...formData.primaryContact!, name: e.target.value },
                     })
                   }
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-3 min-h-[44px] border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                   placeholder="John Doe"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <label htmlFor="primary-email" className="block text-sm font-medium text-neutral-700 mb-2">
                   Email Address *
                 </label>
                 <input
+                  id="primary-email"
                   type="email"
                   required
+                  autoComplete="email"
                   value={formData.primaryContact?.email || ""}
                   onChange={(e) =>
                     setFormData({
@@ -1732,7 +1739,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                       primaryContact: { ...formData.primaryContact!, email: e.target.value },
                     })
                   }
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-3 min-h-[44px] border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                   placeholder="john@example.com"
                 />
                 <p className="text-xs text-neutral-500 mt-1">
@@ -1740,14 +1747,16 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <label htmlFor="primary-phone" className="block text-sm font-medium text-neutral-700 mb-2">
                   Mobile Number (Optional)
                 </label>
                 <input
+                  id="primary-phone"
                   type="tel"
                   inputMode="numeric"
                   pattern="[0-9\\+\\s-]*"
                   maxLength={15}
+                  autoComplete="tel"
                   value={formData.primaryContact?.phone || ""}
                   onChange={(e) => {
                     const sanitized = sanitizePhoneInput(e.target.value);
@@ -1779,7 +1788,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                       }
                     }
                   }}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 ${phoneErrors.primaryContact
+                  className={`w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${phoneErrors.primaryContact
                     ? "border-red-500 focus:border-red-500"
                     : "border-neutral-300"
                     }`}
@@ -1797,10 +1806,12 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                 )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
+                <label htmlFor="primary-address" className="block text-sm font-medium text-neutral-700 mb-2">
                   Address (Optional)
                 </label>
                 <textarea
+                  id="primary-address"
+                  autoComplete="street-address"
                   value={formData.primaryContact?.address || ""}
                   onChange={(e) =>
                     setFormData({
@@ -1809,7 +1820,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                     })
                   }
                   rows={3}
-                  className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-3 min-h-[44px] border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                   placeholder="Your address"
                 />
               </div>
@@ -1841,40 +1852,46 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      <label htmlFor={`traveller-${index}-firstName`} className="block text-sm font-medium text-neutral-700 mb-2">
                         First Name (as per passport) *
                       </label>
                       <input
+                        id={`traveller-${index}-firstName`}
                         type="text"
                         required
+                        autoComplete="given-name"
                         value={traveller.firstName}
                         onChange={(e) => updateTravellerField(traveller.id, "firstName", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                        className="w-full px-4 py-3 min-h-[44px] border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      <label htmlFor={`traveller-${index}-lastName`} className="block text-sm font-medium text-neutral-700 mb-2">
                         Last Name (as per passport) *
                       </label>
                       <input
+                        id={`traveller-${index}-lastName`}
                         type="text"
                         required
+                        autoComplete="family-name"
                         value={traveller.lastName}
                         onChange={(e) => updateTravellerField(traveller.id, "lastName", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                        className="w-full px-4 py-3 min-h-[44px] border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      <label htmlFor={`traveller-${index}-dateOfBirth`} className="block text-sm font-medium text-neutral-700 mb-2">
                         Date of Birth *
                       </label>
                       <input
+                        id={`traveller-${index}-dateOfBirth`}
                         type="date"
                         required
+                        autoComplete="bday"
                         value={traveller.dateOfBirth}
                         onChange={(e) => updateTravellerField(traveller.id, "dateOfBirth", e.target.value)}
                         max={new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]} // At least 1 year ago
-                        className={`w-full px-4 py-2 border rounded-lg ${dateErrors[`traveller-${index}-dateOfBirth`] ? "border-red-500" : "border-neutral-300"
+                        className={`w-full px-4 py-3 min-h-[44px] border rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none ${dateErrors[`traveller-${index}-dateOfBirth`] ? "border-red-500" : "border-neutral-300"
                           }`}
                       />
                       {dateErrors[`traveller-${index}-dateOfBirth`] && (
@@ -1882,14 +1899,16 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      <label htmlFor={`traveller-${index}-gender`} className="block text-sm font-medium text-neutral-700 mb-2">
                         Gender *
                       </label>
                       <select
+                        id={`traveller-${index}-gender`}
                         required
+                        autoComplete="sex"
                         value={traveller.gender}
                         onChange={(e) => updateTravellerField(traveller.id, "gender", e.target.value)}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg"
+                        className="w-full px-4 py-3 min-h-[44px] border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                       >
                         <option value="">Select</option>
                         <option value="male">Male</option>
@@ -1898,15 +1917,17 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      <label htmlFor={`traveller-${index}-passportNumber`} className="block text-sm font-medium text-neutral-700 mb-2">
                         Passport Number *
                       </label>
                       <input
+                        id={`traveller-${index}-passportNumber`}
                         type="text"
                         required
+                        autoComplete="off"
                         value={traveller.passportNumber}
                         onChange={(e) => updateTravellerField(traveller.id, "passportNumber", e.target.value.toUpperCase())}
-                        className="w-full px-4 py-2 border border-neutral-300 rounded-lg uppercase"
+                        className="w-full px-4 py-3 min-h-[44px] border border-neutral-300 rounded-lg uppercase focus:ring-2 focus:ring-primary-500 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
                         maxLength={20}
                         placeholder="Enter passport number"
                       />
@@ -2791,25 +2812,23 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
                   {/* Step: icon + label */}
                   <div className="flex flex-col items-center flex-shrink-0 w-10 sm:w-14">
                     <div
-                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors ${
-                        isCompleted
-                          ? "bg-green-500 text-white"
-                          : isActive
-                            ? "bg-primary-600 text-white"
-                            : "bg-neutral-200 text-neutral-500"
-                      }`}
+                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-colors ${isCompleted
+                        ? "bg-green-500 text-white"
+                        : isActive
+                          ? "bg-primary-600 text-white"
+                          : "bg-neutral-200 text-neutral-500"
+                        }`}
                     >
                       {isCompleted ? <CheckCircle size={15} /> : <Icon size={15} />}
                     </div>
                     {/* Label: hidden on mobile unless active */}
                     <span
-                      className={`mt-1 text-[9px] sm:text-[11px] font-medium text-center leading-tight px-0.5 ${
-                        isActive
-                          ? "text-primary-600"
-                          : isCompleted
-                            ? "text-green-600"
-                            : "text-neutral-400"
-                      } ${isActive || isCompleted ? "block" : "hidden sm:block"}`}
+                      className={`mt-1 text-[9px] sm:text-[11px] font-medium text-center leading-tight px-0.5 ${isActive
+                        ? "text-primary-600"
+                        : isCompleted
+                          ? "text-green-600"
+                          : "text-neutral-400"
+                        } ${isActive || isCompleted ? "block" : "hidden sm:block"}`}
                     >
                       {step.name}
                     </span>
@@ -2836,7 +2855,7 @@ function VisaApplicationPageContent({ params }: { params: { country: string; typ
         {stepError && (
           <div className="mb-4 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
             <span className="mt-0.5 shrink-0 text-red-500">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12A5 5 0 1 1 8 3a5 5 0 0 1 0 10zm-.75-7.25a.75.75 0 1 1 1.5 0v3a.75.75 0 0 1-1.5 0v-3zm.75 5.5a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5z"/></svg>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 12A5 5 0 1 1 8 3a5 5 0 0 1 0 10zm-.75-7.25a.75.75 0 1 1 1.5 0v3a.75.75 0 0 1-1.5 0v-3zm.75 5.5a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5z" /></svg>
             </span>
             <span className="flex-1">{stepError}</span>
             {stepErrorAction && (
